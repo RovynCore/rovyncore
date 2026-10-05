@@ -429,14 +429,16 @@ async function handle(request: Request) {
     sameOrigin(request);
     await rate(request, route, route === "upload" ? 5 : 40);
     if (route === "v1") await rate(request, "public-api-v1", publicApiRateLimit());
-    if (["upload", "metadata", "report"].includes(route)) {
+    // The public whitelist registration is gated like uploads and reports (Turnstile action names allow no "/").
+    const humanAction = ["upload", "metadata", "report"].includes(route) ? route : route === "rvyn" && path[1] === "register" ? "rvyn-register" : null;
+    if (humanAction) {
       try {
-        await verifyHumanRequest(request, route, protection);
+        await verifyHumanRequest(request, humanAction, protection);
       } catch (error) {
         const known = error instanceof HumanVerificationError;
         // Never log the proof, secret, request headers, or file contents.
         console.error("human-verification", {
-          action: route,
+          action: humanAction,
           code: known ? error.code : "unexpected-response",
         });
         fail(

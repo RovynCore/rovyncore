@@ -22,7 +22,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "Administrator powers & content",
-        "The RVYN presale contract is sponsored by a Safe multisignature wallet (any 2 of 3 signers). Platform administration and fee collection (Treasury) still use a single wallet without multisignature protection; moving them to the multisig is planned. The administrator can exercise applicable fee and pause powers in deployed contracts. The RVYN sale contract has no pause or refund function; its sponsor can close an open sale but cannot reverse completed purchases. Boost code is retained, but paid promotion is not currently open or part of the service. Administrative powers and key compromise create centralization risk. Bugs, attacks, RPC failures and network outages may affect service. Creators are responsible for token information, links and rights to uploaded materials. Impersonation, fraud, phishing and unlawful content are prohibited. Report projects from their token pages or through official X. Hiding a website listing does not delete or freeze immutable onchain tokens.",
+        "The RVYN presale contract is sponsored by a Safe multisignature wallet (any 2 of 3 signers). Platform administration and fee collection (Treasury) use a single admin wallet without multisignature protection, which is a centralization risk. The administrator can exercise applicable fee and pause powers in deployed contracts. The RVYN sale contract has no pause or refund function; its sponsor can close an open sale but cannot reverse completed purchases. Boost code is retained, but paid promotion is not currently open or part of the service. Administrative powers and key compromise create centralization risk. Bugs, attacks, RPC failures and network outages may affect service. Creators are responsible for token information, links and rights to uploaded materials. Impersonation, fraud, phishing and unlawful content are prohibited. Report projects from their token pages or through official X. Hiding a website listing does not delete or freeze immutable onchain tokens.",
       ],
       [
         "Privacy & backups",
@@ -55,7 +55,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "管理權限與內容",
-        "RVYN 預售合約的發起人是 Safe 多簽錢包（3 位簽署人中任兩位同意）。平台管理與費用收款（Treasury）目前仍採單一錢包，尚未使用多簽，之後規劃轉移至多簽。管理者可行使已部署合約中適用的費率及暫停權限。RVYN 預售合約沒有暫停或退款功能；發起者可以結束進行中的預售，但無法撤銷已完成的購買。Boost 程式雖予保留，目前未開放付費推廣，也不屬於現行服務。管理權限及私鑰外洩均有中心化風險。漏洞、攻擊、RPC 異常及網路中斷可能影響服務。創作者須對 Token 資訊、連結及上傳素材權利負責，不得冒名、詐騙、釣魚或提供違法內容。可於 Token 頁或官方 X 檢舉。隱藏網站展示不會刪除或凍結不可變更的鏈上代幣。",
+        "RVYN 預售合約的發起人是 Safe 多簽錢包（3 位簽署人中任兩位同意）。平台管理與費用收款（Treasury）採用單一管理錢包，沒有多簽保護，這是中心化風險。管理者可行使已部署合約中適用的費率及暫停權限。RVYN 預售合約沒有暫停或退款功能；發起者可以結束進行中的預售，但無法撤銷已完成的購買。Boost 程式雖予保留，目前未開放付費推廣，也不屬於現行服務。管理權限及私鑰外洩均有中心化風險。漏洞、攻擊、RPC 異常及網路中斷可能影響服務。創作者須對 Token 資訊、連結及上傳素材權利負責，不得冒名、詐騙、釣魚或提供違法內容。可於 Token 頁或官方 X 檢舉。隱藏網站展示不會刪除或凍結不可變更的鏈上代幣。",
       ],
       [
         "隱私與備份",
@@ -88,7 +88,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "管理权限与内容",
-        "RVYN 预售合约的发起人是 Safe 多签钱包（3 位签署人中任两位同意）。平台管理与费用收款（Treasury）目前仍采用单一钱包，尚未使用多签，之后规划转移至多签。管理员可行使已部署合约中适用的费率及暂停权限。RVYN 预售合约没有暂停或退款功能；发起者可以结束进行中的预售，但无法撤销已完成的购买。Boost 程序虽予保留，目前未开放付费推广，也不属于现行服务。管理权限和私钥泄露均有中心化风险。漏洞、攻击、RPC 异常和网络中断可能影响服务。创作者须对 Token 信息、链接及上传素材权利负责，不得冒名、诈骗、钓鱼或提供违法内容。可在 Token 页面或官方 X 举报。隐藏网站展示不会删除或冻结不可变更的链上代币。",
+        "RVYN 预售合约的发起人是 Safe 多签钱包（3 位签署人中任两位同意）。平台管理与费用收款（Treasury）采用单一管理钱包，没有多签保护，这是中心化风险。管理员可行使已部署合约中适用的费率及暂停权限。RVYN 预售合约没有暂停或退款功能；发起者可以结束进行中的预售，但无法撤销已完成的购买。Boost 程序虽予保留，目前未开放付费推广，也不属于现行服务。管理权限和私钥泄露均有中心化风险。漏洞、攻击、RPC 异常和网络中断可能影响服务。创作者须对 Token 信息、链接及上传素材权利负责，不得冒名、诈骗、钓鱼或提供违法内容。可在 Token 页面或官方 X 举报。隐藏网站展示不会删除或冻结不可变更的链上代币。",
       ],
       [
         "隐私与备份",
@@ -121,7 +121,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "관리 권한 및 콘텐츠",
-        "RVYN 프리세일 컨트랙트의 스폰서는 Safe 멀티시그 지갑입니다(서명자 3명 중 2명 승인). 플랫폼 관리와 수수료 수금(Treasury)은 현재 멀티시그 없이 단일 지갑을 사용하며, 멀티시그로 옮기는 것을 계획하고 있습니다. 관리자는 배포된 계약의 해당 수수료 및 일시 중지 권한을 행사할 수 있습니다. RVYN 판매 계약에는 일시 중지나 환불 기능이 없으며, 운영자는 진행 중인 판매를 종료할 수 있지만 완료된 구매를 되돌릴 수 없습니다. Boost 코드는 보존되어 있지만 유료 홍보는 현재 열려 있지 않으며 현행 서비스에 포함되지 않습니다. 관리 권한 및 키 유출에는 중앙화 위험이 있습니다. 버그, 공격, RPC 장애 및 네트워크 중단이 서비스에 영향을 줄 수 있습니다. 창작자는 토큰 정보, 링크 및 업로드 자료의 권리를 책임집니다. 사칭, 사기, 피싱 및 불법 콘텐츠는 금지됩니다. 토큰 페이지 또는 공식 X에서 신고하세요. 웹사이트 목록을 숨겨도 변경 불가능한 온체인 토큰이 삭제되거나 동결되지 않습니다.",
+        "RVYN 프리세일 컨트랙트의 스폰서는 Safe 멀티시그 지갑입니다(서명자 3명 중 2명 승인). 플랫폼 관리와 수수료 수금(Treasury)은 멀티시그 없이 단일 관리 지갑을 사용하며 이는 중앙화 위험입니다. 관리자는 배포된 계약의 해당 수수료 및 일시 중지 권한을 행사할 수 있습니다. RVYN 판매 계약에는 일시 중지나 환불 기능이 없으며, 운영자는 진행 중인 판매를 종료할 수 있지만 완료된 구매를 되돌릴 수 없습니다. Boost 코드는 보존되어 있지만 유료 홍보는 현재 열려 있지 않으며 현행 서비스에 포함되지 않습니다. 관리 권한 및 키 유출에는 중앙화 위험이 있습니다. 버그, 공격, RPC 장애 및 네트워크 중단이 서비스에 영향을 줄 수 있습니다. 창작자는 토큰 정보, 링크 및 업로드 자료의 권리를 책임집니다. 사칭, 사기, 피싱 및 불법 콘텐츠는 금지됩니다. 토큰 페이지 또는 공식 X에서 신고하세요. 웹사이트 목록을 숨겨도 변경 불가능한 온체인 토큰이 삭제되거나 동결되지 않습니다.",
       ],
       [
         "개인정보 및 백업",

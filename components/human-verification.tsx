@@ -23,7 +23,9 @@ let active = false;
 export async function humanProof(
   action: string,
 ): Promise<Record<string, string>> {
-  if (!["metadata", "upload", "report"].includes(action)) return {};
+  if (!["metadata", "upload", "report", "rvyn/register"].includes(action)) return {};
+  // Turnstile action names allow letters, digits, "_" and "-" only.
+  const challengeAction = action === "rvyn/register" ? "rvyn-register" : action;
   const response = await fetch("/api/protection", {
     cache: "no-store",
     signal: AbortSignal.timeout(10000),
@@ -46,7 +48,7 @@ export async function humanProof(
       window.dispatchEvent(
         new CustomEvent<Challenge>("rovyn:verification", {
           detail: {
-            action,
+            action: challengeAction,
             key: config.siteKey,
             resolve: (v) => {
               clearTimeout(timeout);

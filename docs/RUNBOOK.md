@@ -10,7 +10,7 @@ Short, practical, and honest about what exists today. Update it whenever a step 
 | Roll the website back | Same | `npx wrangler rollback <previous-version-id> --config wrangler.production.jsonc`; the previous version id is in `releases/production/baseline.json` |
 | Admin actions on the site | The admin wallet (signs each action) | `/admin` |
 | Onchain actions for the V5/V6 sale | The Safe multisig (2 of 3 signers) | Admin page, "Multisig proposals (Safe)" panel, then Safe Transaction Builder |
-| Platform contract owner / Treasury | Admin wallet today; the Safe after the planned two-step transfers | Only after founder approval |
+| Platform contract owner / Treasury | The admin wallet (a single wallet; the founder decided on 2026-10-06 to keep it that way) | Only after founder approval |
 
 Rule: no contract deployment, onchain transaction, D1 migration, sale opening or allowlist root change without the founder's explicit go-ahead. Keep at least two people able to perform every critical action; today that is not yet true for the website deploy and the Cloudflare account.
 
