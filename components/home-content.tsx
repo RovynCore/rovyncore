@@ -357,7 +357,7 @@ export function HomeFeatured() {
         const client = createPublicClient({ chain: CHAINS[config.chainId], transport: http() });
         let isOpen = false;
         let metrics: { raised: bigint; hardCap: bigint } | null = null;
-        if (config.presaleVersion === 2 || config.presaleVersion === 3 || config.presaleVersion === 4 || config.presaleVersion === 5) {
+        if (config.presaleVersion === 2 || config.presaleVersion === 3 || config.presaleVersion === 4 || config.presaleVersion === 5 || config.presaleVersion === 6) {
           const [state, closedAt, endsAt, raised, hardCap] = await Promise.all([
             client.readContract({ address: config.sale, abi: presaleReadAbi, functionName: "state" }),
             client.readContract({ address: config.sale, abi: presaleReadAbi, functionName: "closedAt" }),

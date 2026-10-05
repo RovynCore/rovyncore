@@ -20,6 +20,7 @@ import artifacts from "@/packages/web3/artifacts.json";
 import rvynArtifacts from "@/packages/contracts/v2/artifacts/contracts.json";
 import rvynV4Artifacts from "@/packages/contracts/v4/artifacts/contracts.json";
 import rvynV5Artifacts from "@/packages/contracts/v5/artifacts/contracts.json";
+import rvynV6Artifacts from "@/packages/contracts/v6/artifacts/contracts.json";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
 import Image from "next/image";
 import { RetainedRvynTokenomics } from "@/components/visual/rvyn-canonical";
@@ -128,9 +129,12 @@ export default function RovynCore() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const officialTokenAddress = config.genesis || (config.chainId === 4663 ? RVYN_MODEL.contractMainnet : null);
-  const isPresale = config.presaleVersion === 2 || config.presaleVersion === 3 || config.presaleVersion === 4 || config.presaleVersion === 5;
+  const isPresale = config.presaleVersion === 2 || config.presaleVersion === 3 || config.presaleVersion === 4 || config.presaleVersion === 5 || config.presaleVersion === 6;
+  const isV6 = config.presaleVersion === 6;
   const presaleAbi =
-    config.presaleVersion === 5
+    isV6
+      ? rvynV6Artifacts.RovynPresaleV6.abi
+      : config.presaleVersion === 5
       ? rvynV5Artifacts.RovynPresaleV5.abi
       : config.presaleVersion === 4
       ? rvynV4Artifacts.GenesisPresaleV4.abi
@@ -249,7 +253,7 @@ export default function RovynCore() {
       if (!config.sale || !sale || !valid || !saleDesk?.purchasesOpen || !saleDesk.allowlistEnforcedOnchain)
         throw new Error(tr("目前尚未開放購買"));
       let proof: Hex[] = [];
-      if (config.presaleVersion === 4 || config.presaleVersion === 5) {
+      if (config.presaleVersion === 4 || config.presaleVersion === 5 || isV6) {
         const buyer = account || await connect();
         const eligibility = await api<AllowlistCheck>(`rvyn/allowlist?address=${encodeURIComponent(buyer)}`);
         if (eligibility.result !== "listed" || !eligibility.proof)
@@ -262,7 +266,7 @@ export default function RovynCore() {
         data: encodeFunctionData({
           abi: isPresale ? presaleAbi : artifacts.GenesisSale.abi,
           functionName: "buy",
-          args: config.presaleVersion === 4 || config.presaleVersion === 5 ? [qty, proof] : [qty],
+          args: config.presaleVersion === 4 || config.presaleVersion === 5 || isV6 ? [qty, proof] : [qty],
         }),
         value: qty * sale.price,
         details: [
@@ -287,7 +291,7 @@ export default function RovynCore() {
   async function claim() {
     setBusy(true);
     try {
-      if (!isPresale || sale?.state !== 2n || !config.sale)
+      if (!isPresale || sale?.state !== (isV6 ? 3n : 2n) || !config.sale)
         throw new Error(tr("目前尚未進入領取階段"));
       const recipient = account || (await connect());
       await transact({
@@ -296,8 +300,8 @@ export default function RovynCore() {
         data: encodeFunctionData({
           abi: presaleAbi,
           functionName: "claim",
-          args: [recipient],
-        }),
+          args: isV6 ? [] : [recipient],
+        } as never),
         value: 0n,
       });
       toast.success(tr("RVYN 已轉入你的錢包"));
@@ -457,10 +461,10 @@ export default function RovynCore() {
               <dt>{verifiedV5 ? rvynPageCopy.verifiedWalletCap[locale] : rvynPageCopy.planWalletCap[locale]}</dt><dd>{RVYN_MODEL.walletCapTokens.toLocaleString(locale)} RVYN</dd>
             </dl></PresaleTerms>
           </div>}
-          {config.presaleVersion !== 5 && isPresale && sale?.state === 2n && (
+          {config.presaleVersion !== 5 && isPresale && sale?.state === (isV6 ? 3n : 2n) && (
             <button className="secondary full-width top-gap" disabled={busy} onClick={() => void claim()}>{tr("領取已購買的 RVYN")}</button>
           )}
-          {config.presaleVersion !== 5 && isPresale && sale?.state === 3n && (
+          {config.presaleVersion !== 5 && !isV6 && isPresale && sale?.state === 3n && (
             <button className="secondary full-width top-gap" disabled={busy} onClick={() => void refund()}>{rvynPageCopy.refund[locale]}</button>
           )}
           {canPurchase ? <p className="side-note">{tr("Gas 另計。購買不代表獲得公司股份、分潤或保證報酬。")}</p> : null}

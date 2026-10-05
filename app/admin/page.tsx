@@ -38,6 +38,7 @@ import artifacts from "@/packages/web3/artifacts.json";
 import rvynArtifacts from "@/packages/contracts/v2/artifacts/contracts.json";
 import rvynV4Artifacts from "@/packages/contracts/v4/artifacts/contracts.json";
 import rvynV5Artifacts from "@/packages/contracts/v5/artifacts/contracts.json";
+import rvynV6Artifacts from "@/packages/contracts/v6/artifacts/contracts.json";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
 import { type AllowlistWindow, type SaleDesk, type SalePhase } from "@/lib/rvyn-sale-desk";
 import { isAddress } from "viem";
@@ -64,7 +65,7 @@ type AdminDashboard = {
   reports: AdminReport[];
   audit: unknown[];
   treasuryBalance: string;
-  saleStatus: { state: string; raised: string; poolEth: string; withdrawable: string; closedAt: string; allowlistRoot: string; inventory: string; inventoryAllowance?: string; endsAt: string; settlementReady: boolean; failAvailable: boolean; liquidityRevenue?: string; lpRemaining?: string; productRemaining?: string; communityRemaining?: string; airdropRemaining?: string; teamVesting?: string } | null;
+  saleStatus: { state: string; raised: string; poolEth: string; withdrawable: string; closedAt: string; allowlistRoot: string; inventory: string; inventoryAllowance?: string; endsAt: string; settlementReady: boolean; failAvailable: boolean; liquidityRevenue?: string; lpRemaining?: string; productRemaining?: string; communityRemaining?: string; airdropRemaining?: string; teamVesting?: string; settledAt?: string; settleGraceEndsAt?: string; minPoolEth?: string; maxPoolEth?: string; operatingFunds?: string; claimableRemaining?: string; withdrawStepBps?: string } | null;
   saleDesk: SaleDesk;
   allowlistWindow: AllowlistWindow;
   allowlistWindowStatus: "disabled" | "scheduled" | "open" | "closed";
@@ -106,8 +107,12 @@ export default function Admin() {
   const { tr, locale } = useLanguage();
 
   const { config, admin, transact, refresh } = usePlatform();
-  const isAllowlistSale = config.presaleVersion === 4 || config.presaleVersion === 5;
-  const managedPresaleAbi = config.presaleVersion === 5
+  const isV6 = config.presaleVersion === 6;
+  const isV5Family = config.presaleVersion === 5 || isV6;
+  const isAllowlistSale = config.presaleVersion === 4 || isV5Family;
+  const managedPresaleAbi = isV6
+    ? rvynV6Artifacts.RovynPresaleV6.abi
+    : config.presaleVersion === 5
     ? rvynV5Artifacts.RovynPresaleV5.abi
     : config.presaleVersion === 4
       ? rvynV4Artifacts.GenesisPresaleV4.abi
@@ -161,6 +166,7 @@ export default function Admin() {
   const raisedWei = (() => { try { return data?.saleStatus ? parseEther(data.saleStatus.raised) : 0n; } catch { return 0n; } })();
   const withdrawableWei = (() => { try { return data?.saleStatus ? parseEther(data.saleStatus.withdrawable) : 0n; } catch { return 0n; } })();
   const maxLiquidityWei = raisedWei / 2n + liquidityRevenueWei;
+  const parseEtherSafe = (value?: string) => { try { return value ? parseEther(value) : 0n; } catch { return 0n; } };
   const liquidityRevenueInputWei = parseTokenAmount(liquidityRevenueEth);
   const futureLiquidityEthWei = parseTokenAmount(futureLiquidityEth);
   const futureLiquidityTokenWei = parseTokenAmount(futureLiquidityTokens);
@@ -300,7 +306,7 @@ export default function Admin() {
       ["팀 베스팅 해제", "1년 cliff 이후 누구나 해제를 실행할 수 있고, 지급 토큰은 고정된 팀 수령인에게만 전달됩니다."],
     ] },
   }[locale];
-  const saleOpsGuide = config.presaleVersion === 5 ? v5SaleOpsGuide : legacySaleOpsGuide;
+  const saleOpsGuide = isV5Family ? v5SaleOpsGuide : legacySaleOpsGuide;
   const v5CheckpointText = {
     en: { title: "Your next step", contract: "Onchain contract", root: "Allowlist root synced", inventory: "Inventory deposited", allowance: "Token use approved", yes: "Yes", no: "No", state: "State", pending: "Not opened", openState: "Open", closedState: "Closed", settledState: "Settled", cancelledState: "Cancelled", loading: "Loading contract status…", list: "Finish reviewing the allowlist, close registration, then preview and publish the root.", deposit: "Next: approve the 10M RVYN allowance, then deposit 10M RVYN. These are two separate wallet transactions; neither opens the sale.", depositOnly: "Allowance is already set. Next, deposit 10M RVYN into the presale contract; this still does not open the sale.", closeRegistration: "Before opening, close the application window and set the website display stage to Allowlist open. This only prepares the site; it does not open the onchain sale.", open: "Ready to open. Recheck the list, price, dates, and contract address first. Opening starts the 14-day sale and releases the scheduled allocations.", live: "Sale is live. Monitor purchases and close it when you decide to stop; closing is an onchain transaction.", closed: "Sale is closed. Reconcile proceeds and manually forward any launchpad revenue before deciding whether and how much ETH to put into the initial pool.", settled: "Pool settlement is complete. You may withdraw only the uncommitted ETH and manage remaining token budgets.", cancelled: "Sale was cancelled before opening. The contract has returned its token balance; do not use the open-sale controls." },
     "zh-Hant": { title: "你現在的下一步", contract: "鏈上合約狀態", root: "白名單根值已同步", inventory: "預售庫存已存入", allowance: "代幣使用已授權", yes: "是", no: "否", state: "狀態", pending: "尚未開售", openState: "開售中", closedState: "已關閉", settledState: "已結算", cancelledState: "已取消", loading: "正在讀取合約狀態…", list: "先完成地址審核、關閉登記，再預覽並發布白名單根值。", deposit: "下一步：先授權 1,000 萬枚 RVYN，再存入 1,000 萬枚。這是兩筆分開的錢包交易，都不會開售。", depositOnly: "授權已完成。下一步把 1,000 萬枚 RVYN 存入預售合約；這一步仍不會開售。", closeRegistration: "開售前先關閉登記時段，並把網站顯示階段設為「白名單開放」。這只是準備網站，不會開啟鏈上預售。", open: "條件已齊，可以考慮開售。簽署前再核對名單、價格、時間與合約地址；開售會啟動 14 天預售並撥出既定份額。", live: "預售進行中。確認要停止時再手動關閉；關閉會送出一筆鏈上交易。", closed: "預售已關閉。先核對募資，再手動轉入發射台收益；之後才決定是否建池及投入多少 ETH。", settled: "首池已結算。只能提領未投入建池的 ETH，並依各自額度管理剩餘代幣。", cancelled: "預售已在開售前取消，合約已退回代幣餘額；不要再使用開售按鈕。" },
@@ -309,7 +315,7 @@ export default function Admin() {
   }[locale];
   const v5ApprovalComplete = parseTokenAmount(data?.saleStatus?.inventoryAllowance || "") >= parseEther(RVYN_MODEL.escrowTokens);
   const v5Checkpoint = (() => {
-    if (config.presaleVersion !== 5) return null;
+    if (!isV5Family) return null;
     const status = data?.saleStatus;
     const rootReady = Boolean(data && data.allowlistRootMatchesList && data.allowlistRoot && data.allowlistRoot.root.toLowerCase() === (status?.allowlistRoot || "").toLowerCase());
     const inventoryReady = status?.inventory === RVYN_MODEL.escrowTokens;
@@ -555,7 +561,7 @@ export default function Admin() {
               <button key={key} type="button" className={`admin-tabs__tab${tab === key ? " is-active" : ""}`} aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>{label}</button>
             ))}
           </nav>
-          <AdminOverview data={data} sale={config.sale} multisigSale={(config.sale || "").toLowerCase() === "0x6496fc99ba4d5904e6c99488a9a9f477605146ac"} onTab={setTab} />
+          <AdminOverview data={data} sale={config.sale} multisigSale={(config.sale || "").toLowerCase() === "0x6496fc99ba4d5904e6c99488a9a9f477605146ac"} saleVersion={config.presaleVersion} onTab={setTab} />
           <div className="admin-grid">
             <section data-admin-tab="settings" className="panel">
               <h2>{tr("01 全站設定")}</h2>
@@ -720,8 +726,8 @@ export default function Admin() {
               <textarea id="rvyn-sale-reason" value={phaseReason} onChange={(event) => setPhaseReason(event.target.value)} maxLength={500} />
               {button(deskText.save, saveSaleStage, phaseReason.trim().length < 10 || nextPhase === data.saleDesk.phase || (nextPhase === "sale_open" && !isAllowlistSale) || (nextPhase === "sale_closed" && !isAllowlistSale) || data.saleDesk.phase === "sale_closed")}
               <p className="side-note">{isAllowlistSale ? workflowText.noV4 : deskText.locked}</p>
-              {config.presaleVersion === 5 && <p className="side-note">{workflowText.v4}</p>}
-              {config.presaleVersion === 5 && <p className="side-note">{workflowText.sequence}</p>}
+              {isV5Family && <p className="side-note">{workflowText.v4}</p>}
+              {isV5Family && <p className="side-note">{workflowText.sequence}</p>}
               <h3 className="top-gap">{deskText.registry}</h3>
               <p className="side-note">{deskText.note}</p>
               <label className="block top-gap" htmlFor="rvyn-allowlist-addresses">{deskText.addresses}</label>
@@ -748,7 +754,7 @@ export default function Admin() {
               {button(workflowText.root, publishAllowlistRoot, !rootPreview || !isAllowlistSale || data.saleStatus?.state !== "0")}
               <p className="side-note">{workflowText.rootConfirm}</p>
             </section>
-            <SafeProposalPanel sale={config.sale} root={rootPreview?.root || data.allowlistRoot?.root} />
+            <SafeProposalPanel sale={config.sale} root={rootPreview?.root || data.allowlistRoot?.root} minPoolEth={data.saleStatus?.minPoolEth} maxPoolEth={data.saleStatus?.maxPoolEth} />
             <section data-admin-tab="presale" className="panel">
               <h2>{tr("04 RVYN 預售")}</h2>
               <p className="side-note">{deskText.locked}</p>
@@ -764,11 +770,11 @@ export default function Admin() {
                 <span>{v5CheckpointText.contract}</span>
                 <code className="address">{config.sale || tr("尚未部署 Sale")}</code>
               </div>}
-              <details className="admin-sale-guide" open={config.presaleVersion === 5}>
+              <details className="admin-sale-guide" open={isV5Family}>
                 <summary>{saleOpsGuide.heading}</summary>
                 <ol>{saleOpsGuide.steps.map(([title, detail]) => <li key={title}><strong>{title}</strong><p>{detail}</p></li>)}</ol>
               </details>
-              {config.presaleVersion === 5 && <>
+              {isV5Family && <>
               <label className="block top-gap">
                 {tr("預售部署交易 Hash")}
                 <input value={saleTxHash} onChange={(event) => setSaleTxHash(event.target.value.trim())} placeholder="0x…" spellCheck={false} />
@@ -781,7 +787,7 @@ export default function Admin() {
               <p className="side-note">{tr("改用新部署的預售合約時使用。伺服器只會在舊合約從未開啟、沒有募資也沒有庫存時才允許替換。")}</p>
               <code className="address">{config.sale || tr("尚未部署 Sale")}</code>
               </>}
-              {config.presaleVersion !== 5 && <>
+              {!isV5Family && <>
               <label className="block top-gap">
                 {tr("單枚價格（ETH，合約固定）")}
                 <input
@@ -834,9 +840,9 @@ export default function Admin() {
                 />
               </label>
               </>}
-              {config.presaleVersion === 5 && <h3 className="admin-action-heading">{v5GroupText.primary}</h3>}
+              {isV5Family && <h3 className="admin-action-heading">{v5GroupText.primary}</h3>}
               <div className="actions">
-                {config.presaleVersion === 5 ? (
+                {isV5Family ? (
                   <>
                     {button(
                       v5ApprovalComplete || v5Checkpoint?.inventoryReady ? v5ButtonText.approveDone : v5ButtonText.approve,
@@ -855,13 +861,13 @@ export default function Admin() {
                       !config.sale || data.saleStatus?.state !== "0" || !v5ApprovalComplete || data.saleStatus?.inventory !== RVYN_MODEL.escrowTokens,
                     )}
                     {button(
-                      tr("手動開啟預售（14 天；買家即時收到 RVYN）"),
-                      () => chainAction(tr("開啟 RVYN V5 預售"), "open", [], config.sale, managedPresaleAbi),
+                      isV6 ? tr("手動開啟預售（14 天；買家在結算後領取 RVYN）") : tr("手動開啟預售（14 天；買家即時收到 RVYN）"),
+                      () => chainAction((isV6 ? tr("開啟 RVYN V6 預售") : tr("開啟 RVYN V5 預售")), "open", [], config.sale, managedPresaleAbi),
                       !config.sale || !data.allowlistRootMatchesList || data.saleDesk.phase !== "allowlist_open" || !["disabled", "closed"].includes(data.allowlistWindowStatus) || !data.allowlistRoot || data.allowlistRoot.root.toLowerCase() !== (data.saleStatus?.allowlistRoot || "").toLowerCase() || data.saleStatus?.state !== "0" || data.saleStatus?.inventory !== RVYN_MODEL.escrowTokens,
                     )}
                     {button(
                       tr("手動關閉預售"),
-                      () => chainAction(tr("關閉 RVYN V5 預售"), "close", [], config.sale, managedPresaleAbi),
+                      () => chainAction((isV6 ? tr("關閉 RVYN V6 預售") : tr("關閉 RVYN V5 預售")), "close", [], config.sale, managedPresaleAbi),
                       !config.sale || data.saleStatus?.state !== "1" || data.saleStatus.closedAt !== "0",
                     )}
                     <details className="admin-ops-group">
@@ -869,13 +875,13 @@ export default function Admin() {
                       <p>{v5GroupText.cancelNote}</p>
                       {button(
                         tr("開售前取消並取回尚未分配庫存"),
-                        () => chainAction(tr("取消尚未開啟的 V5 預售"), "cancelBeforeOpen", [], config.sale, managedPresaleAbi),
+                        () => chainAction((isV6 ? tr("取消尚未開啟的 V6 預售") : tr("取消尚未開啟的 V5 預售")), "cancelBeforeOpen", [], config.sale, managedPresaleAbi),
                         !config.sale || data.saleStatus?.state !== "0",
                       )}
                     </details>
                     <details className="admin-ops-group" open={data.saleStatus?.state === "2" || data.saleStatus?.state === "3"}>
                       <summary>{v5GroupText.after}</summary>
-                      {button(
+                      {!isV6 && button(
                         tr("無募資或發射台收入時完成無池結算"),
                         () => chainAction(tr("完成 RVYN 無池結算"), "settleWithoutPool", [], config.sale, managedPresaleAbi, [[tr("效果"), tr("將未售出的預售配置依決議銷毀；沒有買家付款，因此不涉及退款。")]]),
                         !config.sale || data.saleStatus?.state !== "2" || data.saleStatus.raised !== "0" || data.saleStatus.liquidityRevenue !== "0",
@@ -899,10 +905,18 @@ export default function Admin() {
                       2: formatEther(maxLiquidityWei),
                       3: poolAmountWei > 0n ? (poolAmountWei / 10n ** 14n).toLocaleString(locale) : "0",
                     })}</p>
-                    {button(
+                    {!isV6 && button(
                       tr("建立首池並鎖定 LP（不可逆；先確認金額）"),
                       () => chainAction(tr("建立 RVYN 首池並鎖定 LP"), "createInitialPool", [poolAmountWei], config.sale, managedPresaleAbi),
                       !config.sale || data.saleStatus?.state !== "2" || !data.saleStatus?.settlementReady || poolAmountWei <= 0n || poolAmountWei > maxLiquidityWei,
+                    )}
+                    {isV6 && <p className="side-note">{tr("V6 池子下限 {0} ETH、上限 {1} ETH；結束滿 7 天後任何人都能以下限結算。結算前買家無法領取 RVYN。", {
+                      0: data.saleStatus?.minPoolEth || "—", 1: data.saleStatus?.maxPoolEth || "—",
+                    })}</p>}
+                    {isV6 && button(
+                      tr("結算：建池、鎖定 LP、開放買家領取（不可逆；先確認金額）"),
+                      () => chainAction(tr("結算 RVYN V6 預售"), "settle", [poolAmountWei], config.sale, managedPresaleAbi, [[tr("池子 ETH"), `${poolEthAmount} ETH`], [tr("效果"), tr("以固定價把對應 RVYN 與 ETH 放入池子並鎖定 LP，銷毀未售出的預售配置，之後買家才能領取 RVYN。")]]),
+                      !config.sale || data.saleStatus?.state !== "2" || poolAmountWei < parseEtherSafe(data.saleStatus?.minPoolEth) || poolAmountWei > parseEtherSafe(data.saleStatus?.maxPoolEth),
                     )}
                     <label className="block top-gap">
                       {tr("結算後提領 ETH 金額（由管理者決定用途）")}
@@ -1192,7 +1206,7 @@ export default function Admin() {
                   </>
                 )}
               </div>
-              {(config.presaleVersion === 3 || config.presaleVersion === 4 || config.presaleVersion === 5) && (
+              {(config.presaleVersion === 3 || config.presaleVersion === 4 || isV5Family) && (
                 <>
                   {data?.saleStatus && (
                     <p className="side-note">

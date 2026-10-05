@@ -47,6 +47,7 @@ import artifacts from "@/packages/web3/artifacts.json";
 import rvynArtifacts from "@/packages/contracts/v2/artifacts/contracts.json";
 import rvynV4Artifacts from "@/packages/contracts/v4/artifacts/contracts.json";
 import rvynV5Artifacts from "@/packages/contracts/v5/artifacts/contracts.json";
+import rvynV6Artifacts from "@/packages/contracts/v6/artifacts/contracts.json";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
 import { buildAllowlistTree } from "@/lib/allowlist-merkle";
 import { DEFAULT_ALLOWLIST_WINDOW, DEFAULT_SALE_DESK, SALE_PHASES, allowlistRootKey, allowlistWindowKey, allowlistWindowStatus, allowedPhaseChange, normalizeAllowlistWindow, normalizeSaleDesk, saleDeskKey, saleIsPubliclyOpen } from "@/lib/rvyn-sale-desk";
@@ -60,6 +61,9 @@ import {
   consumeWriteQuota,
 } from "@/lib/operations";
 export const dynamic = "force-dynamic";
+const isAllowlistSale = (version?: number) => version === 4 || version === 5 || version === 6;
+const allowlistSaleAbi = (version?: number) =>
+  version === 6 ? rvynV6Artifacts.RovynPresaleV6.abi : version === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
 const address = z.string().refine(isAddress);
 const hash = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 const erc20ReadAbi = [
@@ -229,10 +233,10 @@ async function handle(request: Request) {
         let onchainState = -1;
         let onchainClosedAt = 0n;
         let onchainEndsAt = 0n;
-        if (c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
+        if (c.sale && isAllowlistSale(c.presaleVersion)) {
           try {
             const client = rpc(c.chainId);
-            const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+            const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
             const [root, state, closedAt, endsAt] = await Promise.all([
               client.readContract({ address: c.sale, abi: allowlistAbi, functionName: "allowlistRoot" }),
               client.readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" }),
@@ -248,7 +252,7 @@ async function handle(request: Request) {
           }
         }
         const rootVerified = Boolean(snapshot?.root && snapshot.addresses?.length && onchainRoot === snapshot.root.toLowerCase());
-        const allowlistContract = c.presaleVersion === 4 || c.presaleVersion === 5;
+        const allowlistContract = isAllowlistSale(c.presaleVersion);
         const registryOpen = registrationStatus === "open" && desk.phase !== "sale_open" && desk.phase !== "sale_closed" && (!c.sale || !allowlistContract || onchainState === 0);
         const legacyListed = registryOpen && !allowlistContract
           ? await db().prepare("SELECT COUNT(*) AS total FROM rvyn_allowlist WHERE chain_id=? AND status='listed'")
@@ -280,7 +284,7 @@ async function handle(request: Request) {
         // Keep submitted application status visible after registration closes;
         // a database row alone is not an onchain purchase entitlement.
         if (!registryOpen && !rootVerified) return respond({ ...publicStatus, address: walletAddress, result: "preparing" });
-        if (row?.status === "listed" && !rootVerified && c.presaleVersion !== 4 && c.presaleVersion !== 5)
+        if (row?.status === "listed" && !rootVerified && !isAllowlistSale(c.presaleVersion))
           return respond({ ...publicStatus, address: walletAddress, result: "listed", listedAt: row.listed_at || null });
         if (rootVerified && snapshot) {
           const tree = buildAllowlistTree(snapshot.addresses);
@@ -478,8 +482,8 @@ async function handle(request: Request) {
       if (desk.phase === "sale_open" || desk.phase === "sale_closed" || allowlistWindowStatus(allowlistWindow, now()) !== "open") fail(409, "白名單登記目前尚未開放");
       const actor = await walletSessionAccount(request, db());
       if (!actor) fail(401, "請先連接錢包並簽署登入訊息；這不會送出交易或花費資產");
-      if (c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
-        const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+      if (c.sale && isAllowlistSale(c.presaleVersion)) {
+        const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
         const state = await rpc(c.chainId).readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" }).catch(() => null);
         if (state !== 0) fail(409, "白名單已凍結；目前不接受新登記");
       }
@@ -727,14 +731,24 @@ async function handle(request: Request) {
           communityRemaining?: string;
           airdropRemaining?: string;
           teamVesting?: string;
+          // V6 only
+          settledAt?: string;
+          settleGraceEndsAt?: string;
+          minPoolEth?: string;
+          maxPoolEth?: string;
+          operatingFunds?: string;
+          claimableRemaining?: string;
+          withdrawStepBps?: string;
         } | null = null;
-        if (c.sale && (c.presaleVersion === 3 || c.presaleVersion === 4 || c.presaleVersion === 5)) {
+        if (c.sale && (c.presaleVersion === 3 || isAllowlistSale(c.presaleVersion))) {
           try {
-          const saleAbi = c.presaleVersion === 5
+          const saleAbi = c.presaleVersion === 6
+            ? rvynV6Artifacts.RovynPresaleV6.abi
+            : c.presaleVersion === 5
             ? rvynV5Artifacts.RovynPresaleV5.abi
             : c.presaleVersion === 4 ? rvynV4Artifacts.GenesisPresaleV4.abi : rvynArtifacts.GenesisPresaleV3.abi;
           const saleClient = rpc(c.chainId);
-          if (c.presaleVersion === 5) {
+          if (c.presaleVersion === 5 || c.presaleVersion === 6) {
             const [state, raised, poolEth, withdrawable, closedAt, endsAt, allowlistRoot, inventory, inventoryAllowance, revenue, lpRemaining, productSpent, communitySpent, airdropSpent, teamVesting] = await Promise.all([
               saleClient.readContract({ address: c.sale, abi: saleAbi, functionName: "state" }),
               saleClient.readContract({ address: c.sale, abi: saleAbi, functionName: "raised" }),
@@ -771,6 +785,21 @@ async function handle(request: Request) {
               airdropRemaining: formatEther(parseEther("500000") - (airdropSpent as bigint)),
               teamVesting: String(teamVesting),
             };
+            if (c.presaleVersion === 6) {
+              const v6 = (functionName: string) => saleClient.readContract({ address: c.sale!, abi: saleAbi, functionName } as never);
+              const [settledAt, minPool, maxPool, operating, claimable, step] = await Promise.all([
+                v6("settledAt"), v6("minPoolEth"), v6("maxPoolEth"), v6("operatingFunds"), v6("claimableTokensRemaining"), v6("withdrawStepBps"),
+              ]);
+              Object.assign(saleStatus, {
+                settledAt: String(settledAt),
+                settleGraceEndsAt: Number(closedAt) > 0 ? String(Number(closedAt) + 7 * 24 * 60 * 60) : "0",
+                minPoolEth: formatEther(minPool as bigint),
+                maxPoolEth: formatEther(maxPool as bigint),
+                operatingFunds: formatEther(operating as bigint),
+                claimableRemaining: formatEther(claimable as bigint),
+                withdrawStepBps: String(step),
+              });
+            }
           } else {
           const [state, raised, poolEth, withdrawable, closedAt, endsAt, hardCap, settlementDeadline] = await Promise.all([
             saleClient.readContract({ address: c.sale, abi: saleAbi, functionName: "state" }),
@@ -814,7 +843,7 @@ async function handle(request: Request) {
         const allowlistSnapshot = await readAllowlist(c.chainId);
         const allowlistRoot = await setting<{ root: string; addresses: string[]; tx: string; committedAt: number } | null>(allowlistRootKey(c.chainId), null);
         let allowlistRootMatchesList = false;
-        if (c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5) && allowlistRoot?.root && saleStatus?.allowlistRoot) {
+        if (c.sale && isAllowlistSale(c.presaleVersion) && allowlistRoot?.root && saleStatus?.allowlistRoot) {
           const currentMembers = await db().prepare("SELECT wallet_address FROM rvyn_allowlist WHERE chain_id=? AND status IN ('approved','listed') ORDER BY wallet_address")
             .bind(c.chainId).all<{ wallet_address: string }>();
           if (currentMembers.results.length) {
@@ -841,8 +870,8 @@ async function handle(request: Request) {
         const timestamp = now();
         if (p.enabled && (p.closesAt <= p.opensAt || p.closesAt <= timestamp || p.closesAt - p.opensAt > 366 * 24 * 60 * 60))
           fail(400, "白名單登記時間無效；請確認截止時間晚於開始時間與現在，且期間不超過一年");
-        if (p.enabled && c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
-          const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (p.enabled && c.sale && isAllowlistSale(c.presaleVersion)) {
+          const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
           const state = await rpc(c.chainId).readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" }).catch(() => null);
           if (state !== 0) fail(409, "預售已開始或已結束，不能再開放白名單登記");
         }
@@ -859,13 +888,13 @@ async function handle(request: Request) {
         const previous = normalizeSaleDesk(await setting(saleDeskKey(c.chainId), DEFAULT_SALE_DESK));
         if (!allowedPhaseChange(previous.phase, p.phase)) fail(409, "此階段轉換不允許；請先確認目前狀態");
         if (p.phase === "sale_open") {
-          if (!c.sale || (c.presaleVersion !== 4 && c.presaleVersion !== 5)) fail(409, "必須先部署並驗證具鏈上白名單功能的預售合約");
+          if (!c.sale || !isAllowlistSale(c.presaleVersion)) fail(409, "必須先部署並驗證具鏈上白名單功能的預售合約");
           const registrationStatus = allowlistWindowStatus(
             normalizeAllowlistWindow(await setting(allowlistWindowKey(c.chainId), DEFAULT_ALLOWLIST_WINDOW)),
             now(),
           );
           if (registrationStatus === "open" || registrationStatus === "scheduled") fail(409, "白名單登記必須先關閉，才能開啟預售");
-          const saleAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+          const saleAbi = allowlistSaleAbi(c.presaleVersion);
           const [state, closedAt, endsAt, root, members] = await Promise.all([
             rpc(c.chainId).readContract({ address: c.sale, abi: saleAbi, functionName: "state" }),
             rpc(c.chainId).readContract({ address: c.sale, abi: saleAbi, functionName: "closedAt" }),
@@ -883,8 +912,8 @@ async function handle(request: Request) {
             fail(409, "鏈上白名單根與目前核准名單不一致；請重新發布並確認根值");
         }
         if (p.phase === "sale_closed") {
-          if (!c.sale || (c.presaleVersion !== 4 && c.presaleVersion !== 5)) fail(409, "目前預售合約不支援此階段同步");
-          const saleAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+          if (!c.sale || !isAllowlistSale(c.presaleVersion)) fail(409, "目前預售合約不支援此階段同步");
+          const saleAbi = allowlistSaleAbi(c.presaleVersion);
           const [state, closedAt] = await Promise.all([
             rpc(c.chainId).readContract({ address: c.sale, abi: saleAbi, functionName: "state" }),
             rpc(c.chainId).readContract({ address: c.sale, abi: saleAbi, functionName: "closedAt" }),
@@ -900,8 +929,8 @@ async function handle(request: Request) {
         ]);
         return respond({ ok: true, saleDesk: next });
       } else if (action === "allowlist-import") {
-        if (c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
-          const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (c.sale && isAllowlistSale(c.presaleVersion)) {
+          const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
           const state = await rpc(c.chainId).readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" });
           if (state !== 0) fail(409, "預售已開始；白名單已凍結，不能新增地址");
         }
@@ -920,8 +949,8 @@ async function handle(request: Request) {
         ]);
         return respond({ ok: true, imported: addresses.length, ...await readAllowlist(c.chainId) });
       } else if (action === "allowlist-approve") {
-        if (c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
-          const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (c.sale && isAllowlistSale(c.presaleVersion)) {
+          const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
           const state = await rpc(c.chainId).readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" });
           if (state !== 0) fail(409, "預售已開始；白名單已凍結，不能再核准地址");
         }
@@ -942,8 +971,8 @@ async function handle(request: Request) {
         return respond({ ok: true, ...await readAllowlist(c.chainId) });
       } else if (action === "allowlist-root-preview") {
         z.object({}).strict().parse(payload);
-        if (!c.sale || (c.presaleVersion !== 4 && c.presaleVersion !== 5)) fail(409, "請先部署並登錄支援鏈上白名單的預售合約");
-        const saleAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (!c.sale || !isAllowlistSale(c.presaleVersion)) fail(409, "請先部署並登錄支援鏈上白名單的預售合約");
+        const saleAbi = allowlistSaleAbi(c.presaleVersion);
         const [state, members] = await Promise.all([
           rpc(c.chainId).readContract({ address: c.sale, abi: saleAbi, functionName: "state" }),
           db().prepare("SELECT wallet_address FROM rvyn_allowlist WHERE chain_id=? AND status IN ('approved','listed') ORDER BY wallet_address")
@@ -955,8 +984,8 @@ async function handle(request: Request) {
         return respond({ root: tree.root, count: tree.addresses.length, addresses: tree.addresses });
       } else if (action === "allowlist-root-confirm") {
         const p = z.object({ tx: hash, root: z.string().regex(/^0x[a-fA-F0-9]{64}$/) }).strict().parse(payload);
-        if (!c.sale || (c.presaleVersion !== 4 && c.presaleVersion !== 5)) fail(409, "請先部署並登錄支援鏈上白名單的預售合約");
-        const saleAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (!c.sale || !isAllowlistSale(c.presaleVersion)) fail(409, "請先部署並登錄支援鏈上白名單的預售合約");
+        const saleAbi = allowlistSaleAbi(c.presaleVersion);
         const client = rpc(c.chainId);
         const receipt = await client.getTransactionReceipt({ hash: p.tx as Hex });
         if (receipt.status !== "success" || receipt.from.toLowerCase() !== OWNER.toLowerCase() || receipt.to?.toLowerCase() !== c.sale.toLowerCase())
@@ -990,8 +1019,8 @@ async function handle(request: Request) {
         const existing = await db().prepare("SELECT status FROM rvyn_allowlist WHERE chain_id=? AND wallet_address=?")
           .bind(c.chainId, walletAddress).first<{ status: string }>();
         if (!existing || !["pending", "approved", "listed"].includes(existing.status)) fail(404, "找不到可撤銷的登記地址");
-        if (existing.status === "listed" && c.sale && (c.presaleVersion === 4 || c.presaleVersion === 5)) {
-          const allowlistAbi = c.presaleVersion === 5 ? rvynV5Artifacts.RovynPresaleV5.abi : rvynV4Artifacts.GenesisPresaleV4.abi;
+        if (existing.status === "listed" && c.sale && isAllowlistSale(c.presaleVersion)) {
+          const allowlistAbi = allowlistSaleAbi(c.presaleVersion);
           const state = await rpc(c.chainId).readContract({ address: c.sale, abi: allowlistAbi, functionName: "state" });
           if (state !== 0) fail(409, "預售已開始，鏈上根值已凍結；此地址不能再從有效資格中撤銷");
         }
@@ -1118,12 +1147,13 @@ async function handle(request: Request) {
         // Normalize hex before matching: some RPC providers may vary casing.
         // Keep this check strict while avoiding a false negative on valid V2 deploys.
         const txInput = tx.input.toLowerCase();
+        const isPresaleV6 = txInput.startsWith(rvynV6Artifacts.RovynPresaleV6.bytecode.toLowerCase());
         const isPresaleV5 = txInput.startsWith(rvynV5Artifacts.RovynPresaleV5.bytecode.toLowerCase());
         const isPresaleV4 = txInput.startsWith(rvynV4Artifacts.GenesisPresaleV4.bytecode.toLowerCase());
         const isPresaleV3 = txInput.startsWith(
           rvynArtifacts.GenesisPresaleV3.bytecode.toLowerCase(),
         );
-        const isPresale = isPresaleV5 || isPresaleV4 || isPresaleV3 || txInput.startsWith(
+        const isPresale = isPresaleV6 || isPresaleV5 || isPresaleV4 || isPresaleV3 || txInput.startsWith(
           rvynArtifacts.GenesisPresale.bytecode.toLowerCase(),
         );
         if (
@@ -1138,14 +1168,52 @@ async function handle(request: Request) {
           // Read the fixed parameters sequentially.  A burst of ten eth_call
           // requests can trigger provider throttling, which used to surface as
           // a generic 503 even though the deployment itself was valid.
-          const presaleAbi = isPresaleV5
+          const presaleAbi = isPresaleV6
+            ? rvynV6Artifacts.RovynPresaleV6.abi
+            : isPresaleV5
             ? rvynV5Artifacts.RovynPresaleV5.abi
             : isPresaleV4
             ? rvynV4Artifacts.GenesisPresaleV4.abi
             : isPresaleV3
             ? rvynArtifacts.GenesisPresaleV3.abi
             : rvynArtifacts.GenesisPresale.abi;
-          if (isPresaleV5) {
+          if (isPresaleV6) {
+            const readNames = [
+              "sponsor", "token", "router", "PRICE", "HARD_CAP", "WALLET_CAP",
+              "SALE_TOKENS", "LP_ALLOCATION", "MANAGER_ALLOCATION", "TEAM_ALLOCATION",
+              "PRODUCT_ALLOCATION", "COMMUNITY_ALLOCATION", "AIRDROP_ALLOCATION", "TOTAL_INVENTORY",
+              "teamBeneficiary", "lpLockDuration", "lpBeneficiary", "withdrawStepBps", "MIN_POOL_BPS", "SETTLE_GRACE",
+            ] as const;
+            const reads: unknown[] = [];
+            for (const functionName of readNames) {
+              reads.push(await client.readContract({ address: sale, abi: presaleAbi, functionName }));
+            }
+            const token = String(reads[1]).toLowerCase();
+            const totalSupply = await client.readContract({ address: token as Address, abi: rvynArtifacts.LaunchToken.abi, functionName: "totalSupply" });
+            const expected = [
+              parseEther(RVYN_MODEL.priceEth), parseEther("100"), parseEther(RVYN_MODEL.walletCapEth),
+              parseEther("1000000"), parseEther("5000000"), parseEther("500000"), parseEther("1000000"),
+              parseEther("1000000"), parseEther("1000000"), parseEther("500000"), parseEther(RVYN_MODEL.supply),
+            ];
+            // Sponsor, team and LP wallets must all be a wallet the project controls (admin wallet or the Safe),
+            // so a mistyped constructor argument cannot send vested RVYN or the LP lock to a stranger.
+            const controlled = [OWNER, RVYN_MODEL.multisigMainnet].map((a) => a.toLowerCase());
+            const step = BigInt(String(reads[17]));
+            if (
+              !controlled.includes(String(reads[0]).toLowerCase()) ||
+              !controlled.includes(String(reads[14]).toLowerCase()) ||
+              !controlled.includes(String(reads[16]).toLowerCase()) ||
+              token !== c.genesis.toLowerCase() ||
+              String(reads[2]).toLowerCase() !== RVYN_MODEL.routerMainnet.toLowerCase() ||
+              BigInt(String(reads[15])) < 365n * 24n * 60n * 60n ||
+              BigInt(String(reads[15])) > 730n * 24n * 60n * 60n ||
+              step < 1n || step > 10_000n ||
+              String(reads[18]) !== "5000" ||
+              String(reads[19]) !== String(7 * 24 * 60 * 60) ||
+              reads.slice(3, 14).some((value, index) => String(value) !== expected[index].toString()) ||
+              totalSupply !== parseEther(RVYN_MODEL.supply)
+            ) fail(400, "RVYN V6 預售參數不符");
+          } else if (isPresaleV5) {
             const readNames = [
               "sponsor", "token", "router", "PRICE", "HARD_CAP", "WALLET_CAP",
               "SALE_TOKENS", "LP_ALLOCATION", "MANAGER_ALLOCATION", "TEAM_ALLOCATION",
@@ -1240,9 +1308,11 @@ async function handle(request: Request) {
         if (c.sale && c.sale.toLowerCase() !== sale.toLowerCase()) {
           if (!p.replace)
             fail(409, "Sale 已設定；若要替換未啟用版本，請明確選擇新版替換");
-          if (c.chainId !== 4663 || (c.presaleVersion !== 2 && c.presaleVersion !== 3 && c.presaleVersion !== 4 && c.presaleVersion !== 5))
+          if (c.chainId !== 4663 || (c.presaleVersion !== 2 && c.presaleVersion !== 3 && !isAllowlistSale(c.presaleVersion)))
             fail(409, "只能替換 Robinhood Chain 上尚未啟用的 RVYN 預售");
-          const oldAbi = c.presaleVersion === 5
+          const oldAbi = c.presaleVersion === 6
+            ? rvynV6Artifacts.RovynPresaleV6.abi
+            : c.presaleVersion === 5
             ? rvynV5Artifacts.RovynPresaleV5.abi
             : c.presaleVersion === 4
             ? rvynV4Artifacts.GenesisPresaleV4.abi
@@ -1258,7 +1328,7 @@ async function handle(request: Request) {
             functionName: "balanceOf",
             args: [c.sale as Address],
           });
-          if (!(["0", "3"].includes(String(oldState)) && String(oldRaised) === "0" && String(oldInventory) === "0"))
+          if (!(["0", "3", "4"].includes(String(oldState)) && String(oldRaised) === "0" && String(oldInventory) === "0"))
             fail(409, "舊預售已啟用、募資或持有庫存，不能替換");
         }
         await setSetting(`deployment:${c.chainId}`, {
@@ -1268,7 +1338,7 @@ async function handle(request: Request) {
           sale,
           platformVersion: c.platformVersion,
           legacyPlatform: c.legacyPlatform,
-          presaleVersion: isPresaleV5 ? 5 : isPresaleV4 ? 4 : isPresaleV3 ? 3 : isPresale ? 2 : 1,
+          presaleVersion: isPresaleV6 ? 6 : isPresaleV5 ? 5 : isPresaleV4 ? 4 : isPresaleV3 ? 3 : isPresale ? 2 : 1,
         });
       } else if (action === "metadata") {
         const p = z

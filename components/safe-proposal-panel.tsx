@@ -32,6 +32,15 @@ const copy = {
   sDeposit: { en: "2 · Deposit RVYN inventory (approve + deposit)", "zh-Hant": "2・存入 RVYN 庫存（授權＋存入）", "zh-Hans": "2・存入 RVYN 库存（授权＋存入）", ko: "2 · RVYN 재고 입금 (승인 + 입금)" },
   sOpen: { en: "3 · Open the sale", "zh-Hant": "3・開啟預售", "zh-Hans": "3・开启预售", ko: "3 · 세일 열기" },
   sClose: { en: "4 · Close the sale", "zh-Hant": "4・結束預售", "zh-Hans": "4・结束预售", ko: "4 · 세일 종료" },
+  sSettle: { en: "5 · Settle (V6: build pool, burn unsold, unlock claims)", "zh-Hant": "5・結算（V6：建池、銷毀未售出、開放領取）", "zh-Hans": "5・结算（V6：建池、销毁未售出、开放领取）", ko: "5 · 정산 (V6: 풀 생성, 미판매 소각, 클레임 개시)" },
+  sWithdraw: { en: "6 · Withdraw unlocked operating funds (V6)", "zh-Hant": "6・提領已解鎖營運資金（V6）", "zh-Hans": "6・提取已解锁运营资金（V6）", ko: "6 · 해제된 운영 자금 인출 (V6)" },
+  sCancel: { en: "Cancel before opening (returns the inventory)", "zh-Hant": "開啟前取消（退回庫存）", "zh-Hans": "开启前取消（退回库存）", ko: "개시 전 취소 (재고 반환)" },
+  poolEth: { en: "Pool ETH (between the minimum and maximum shown)", "zh-Hant": "池子 ETH（介於下方顯示的下限與上限）", "zh-Hans": "池子 ETH（介于下方显示的下限与上限）", ko: "풀 ETH (아래 표시된 최소·최대 사이)" },
+  amountEth: { en: "ETH to withdraw", "zh-Hant": "提領的 ETH", "zh-Hans": "提取的 ETH", ko: "인출할 ETH" },
+  settleHint: { en: "V6 only. The pool must hold at least 50% of the raise plus forwarded revenue and at most all of it. Anyone can settle at the minimum 7 days after the sale closed, so settling yourself only matters if you want a larger pool. After settlement buyers claim their RVYN.", "zh-Hant": "僅適用 V6。池子至少要放募資的 50% 加上轉入的營收，最多放全部。預售結束滿 7 天後任何人都能以下限結算，所以自行結算只在想放更大的池子時才有意義。結算後買家才能領取 RVYN。", "zh-Hans": "仅适用 V6。池子至少要放募资的 50% 加上转入的营收，最多放全部。预售结束满 7 天后任何人都能以下限结算，所以自行结算只在想放更大的池子时才有意义。结算后买家才能领取 RVYN。", ko: "V6 전용입니다. 풀에는 모금액의 50%와 전달된 수익 이상, 최대 전액까지 넣을 수 있습니다. 판매 종료 7일 후에는 누구나 최소 금액으로 정산할 수 있으므로 더 큰 풀을 원할 때만 직접 정산하면 됩니다. 정산 후 구매자가 RVYN을 클레임합니다." },
+  invalidAmount: { en: "Enter a valid ETH amount.", "zh-Hant": "請輸入有效的 ETH 數量。", "zh-Hans": "请输入有效的 ETH 数量。", ko: "올바른 ETH 수량을 입력하세요." },
+  minLabel: { en: "Minimum", "zh-Hant": "下限", "zh-Hans": "下限", ko: "최소" },
+  maxLabel: { en: "Maximum", "zh-Hant": "上限", "zh-Hans": "上限", ko: "최대" },
 } satisfies Record<string, Copy>;
 
 const SALE_ABI = parseAbi([
@@ -39,13 +48,22 @@ const SALE_ABI = parseAbi([
   "function depositInventory()",
   "function open()",
   "function close()",
+  "function settle(uint256 poolEth)",
+  "function withdrawProjectFunds(uint256 amount)",
+  "function cancelBeforeOpen()",
 ]);
 const ERC20_ABI = parseAbi(["function approve(address spender, uint256 amount) returns (bool)"]);
 
-type StepKey = "root" | "deposit" | "open" | "close";
+type StepKey = "root" | "deposit" | "open" | "close" | "settle" | "withdraw" | "cancel";
 type Call = { to: string; name: string; inputs: Array<{ internalType: string; name: string; type: string }>; values: Record<string, string>; data: `0x${string}` };
 
-function buildCalls(step: StepKey, sale: `0x${string}`, root: string): Call[] | null {
+function buildCalls(step: StepKey, sale: `0x${string}`, root: string, amountWei: bigint | null): Call[] | null {
+  if (step === "settle" || step === "withdraw") {
+    if (amountWei === null || (step === "withdraw" && amountWei === 0n)) return null;
+    const name = step === "settle" ? "settle" : "withdrawProjectFunds";
+    const arg = step === "settle" ? "poolEth" : "amount";
+    return [{ to: sale, name, inputs: [{ internalType: "uint256", name: arg, type: "uint256" }], values: { [arg]: amountWei.toString() }, data: encodeFunctionData({ abi: SALE_ABI, functionName: name, args: [amountWei] }) }];
+  }
   if (step === "root") {
     if (!/^0x[0-9a-fA-F]{64}$/.test(root)) return null;
     return [{ to: sale, name: "setAllowlistRoot", inputs: [{ internalType: "bytes32", name: "newRoot", type: "bytes32" }], values: { newRoot: root }, data: encodeFunctionData({ abi: SALE_ABI, functionName: "setAllowlistRoot", args: [root as `0x${string}`] }) }];
@@ -57,20 +75,26 @@ function buildCalls(step: StepKey, sale: `0x${string}`, root: string): Call[] | 
       { to: sale, name: "depositInventory", inputs: [], values: {}, data: encodeFunctionData({ abi: SALE_ABI, functionName: "depositInventory" }) },
     ];
   }
-  const name = step === "open" ? "open" : "close";
+  const name = step === "open" ? "open" : step === "cancel" ? "cancelBeforeOpen" : "close";
   return [{ to: sale, name, inputs: [], values: {}, data: encodeFunctionData({ abi: SALE_ABI, functionName: name }) }];
 }
 
-export function SafeProposalPanel({ sale, root }: { sale?: string | null; root?: string | null }) {
+export function SafeProposalPanel({ sale, root, minPoolEth, maxPoolEth }: { sale?: string | null; root?: string | null; minPoolEth?: string | null; maxPoolEth?: string | null }) {
   const { locale } = useLanguage();
   const t = (value: Copy) => value[locale];
   const [safe, setSafe] = useState(SAFE_DEFAULT);
   const [saleAddress, setSaleAddress] = useState(sale || "");
   const [step, setStep] = useState<StepKey>("root");
+  const [ethInput, setEthInput] = useState("");
+  const amountWei = useMemo(() => {
+    const value = (ethInput || (step === "settle" ? minPoolEth || "" : "")).trim();
+    if (!/^\d+(\.\d{1,18})?$/.test(value)) return null;
+    try { return parseEther(value); } catch { return null; }
+  }, [ethInput, step, minPoolEth]);
   const saleInput = (saleAddress || sale || "").trim();
   const valid = isAddress(safe.trim()) && isAddress(saleInput);
 
-  const calls = useMemo(() => (valid ? buildCalls(step, saleInput as `0x${string}`, root || "") : null), [valid, step, saleInput, root]);
+  const calls = useMemo(() => (valid ? buildCalls(step, saleInput as `0x${string}`, root || "", amountWei) : null), [valid, step, saleInput, root, amountWei]);
   const needsRoot = step === "root" && !calls;
 
   function batchJson() {
@@ -94,7 +118,7 @@ export function SafeProposalPanel({ sale, root }: { sale?: string | null; root?:
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   const builderUrl = `https://app.safe.global/apps/open?safe=robinhood:${safe.trim()}&appUrl=${encodeURIComponent("https://apps-portal.safe.global/tx-builder")}`;
-  const steps: Array<[StepKey, Copy]> = [["root", copy.sRoot], ["deposit", copy.sDeposit], ["open", copy.sOpen], ["close", copy.sClose]];
+  const steps: Array<[StepKey, Copy]> = [["root", copy.sRoot], ["deposit", copy.sDeposit], ["open", copy.sOpen], ["close", copy.sClose], ["settle", copy.sSettle], ["withdraw", copy.sWithdraw], ["cancel", copy.sCancel]];
 
   return (
     <section data-admin-tab="presale" className="panel safe-proposal-panel">
@@ -109,6 +133,19 @@ export function SafeProposalPanel({ sale, root }: { sale?: string | null; root?:
         {steps.map(([key, label]) => <option key={key} value={key}>{t(label)}</option>)}
       </select>
       {step === "root" && <p className="side-note">{t(copy.root)}: <code>{root || "—"}</code></p>}
+      {step === "settle" && (
+        <>
+          <p className="side-note">{t(copy.settleHint)}</p>
+          {(minPoolEth || maxPoolEth) && <p className="side-note">{t(copy.minLabel)}: <code>{minPoolEth || "—"}</code> ETH · {t(copy.maxLabel)}: <code>{maxPoolEth || "—"}</code> ETH</p>}
+        </>
+      )}
+      {(step === "settle" || step === "withdraw") && (
+        <>
+          <label className="block top-gap" htmlFor="safe-eth">{t(step === "settle" ? copy.poolEth : copy.amountEth)}</label>
+          <input id="safe-eth" inputMode="decimal" value={ethInput} onChange={(e) => setEthInput(e.target.value)} placeholder={step === "settle" ? minPoolEth || "0.0" : "0.0"} spellCheck={false} />
+          {valid && !calls && <p className="side-note">{t(copy.invalidAmount)}</p>}
+        </>
+      )}
       {!valid && <p className="side-note">{t(copy.invalid)}</p>}
       {valid && needsRoot && <p className="side-note">{t(copy.rootMissing)}</p>}
       {calls && (

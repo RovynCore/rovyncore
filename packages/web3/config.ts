@@ -40,8 +40,8 @@ export type PlatformConfig = {
   platformVersion?: 1 | 2;
   /** Previous V1 platform retained for historical indexing/compatibility. */
   legacyPlatform?: Address | null;
-  /** Sale contract generation: V1 legacy, V2/V3 historical, V4 allowlist, V5 tokenomics-complete candidate. */
-  presaleVersion?: 1 | 2 | 3 | 4 | 5;
+  /** Sale contract generation: V1 legacy, V2/V3 historical, V4 allowlist, V5 tokenomics-complete, V6 claim-after-settlement (settlement floor, direct pair mint). */
+  presaleVersion?: 1 | 2 | 3 | 4 | 5 | 6;
   maintenance: boolean;
   launchFee: string;
   plans: {

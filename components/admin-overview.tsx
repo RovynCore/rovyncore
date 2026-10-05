@@ -35,9 +35,10 @@ function Card({ title, value, note, tone, children }: { title: string; value: st
   );
 }
 
-export function AdminOverview({ data, sale, multisigSale, onTab }: { data: Overview; sale: string | null | undefined; multisigSale: boolean; onTab: (tab: AdminTab) => void }) {
+export function AdminOverview({ data, sale, multisigSale, saleVersion, onTab }: { data: Overview; sale: string | null | undefined; multisigSale: boolean; saleVersion?: number; onTab: (tab: AdminTab) => void }) {
   const s = data.saleStatus;
-  const onNewSale = (sale || "").toLowerCase() === NEW_SALE;
+  const isV6 = saleVersion === 6;
+  const onNewSale = isV6 || (sale || "").toLowerCase() === NEW_SALE;
   const rootPublished = Boolean(s && s.allowlistRoot && s.allowlistRoot.toLowerCase() !== ZERO_ROOT && data.allowlistRootMatchesList);
   const inventoryIn = Boolean(s && Number(s.inventory) >= 10_000_000);
   const state = s ? Number(s.state) : -1;
@@ -59,7 +60,7 @@ export function AdminOverview({ data, sale, multisigSale, onTab }: { data: Overv
         <Card title="網站階段" value={PHASE_LABEL[data.saleDesk.phase]} note={`登記：${WINDOW_LABEL[data.allowlistWindowStatus]}`} tone={data.saleDesk.phase === "allowlist_prep" ? "idle" : "ok"} />
         <Card title="鏈上預售" value={s ? CHAIN_STATE[state] || "未知" : "未連線"} note={s ? `募得 ${s.raised} ETH` : "請重新載入管理資料"} tone={state === 1 ? "ok" : "idle"} />
         <Card title="白名單" value={`${data.allowlistCount.toLocaleString()} 位有效`} note={`待審 ${data.pendingCount.toLocaleString()} · 已核准 ${data.approvedCount.toLocaleString()}`} tone={data.pendingCount > 0 ? "warn" : "idle"} />
-        <Card title="預售合約" value={onNewSale ? "新 V5（多簽）" : sale ? "舊 V5（單一錢包）" : "未登記"} note={sale ? `${sale.slice(0, 8)}…${sale.slice(-6)}` : undefined} tone={onNewSale ? "ok" : "warn"} />
+        <Card title="預售合約" value={isV6 ? (multisigSale ? "V6（多簽）" : "V6") : onNewSale ? "新 V5（多簽）" : sale ? "舊 V5（單一錢包）" : "未登記"} note={sale ? `${sale.slice(0, 8)}…${sale.slice(-6)}` : undefined} tone={onNewSale ? "ok" : "warn"} />
         <Card title="平台待提領費用" value={`${data.treasuryBalance} ETH`} note="發射費與 Boost 收入" tone="idle" />
         <Card title="內容" value={`${data.tokens.length.toLocaleString()} 個 Token`} note={data.reports.length ? `${data.reports.length.toLocaleString()} 筆檢舉待看` : "沒有檢舉"} tone={data.reports.length ? "warn" : "idle"} />
       </div>
