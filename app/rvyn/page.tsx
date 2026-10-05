@@ -367,7 +367,11 @@ export default function RovynCore() {
           { key: "net", label: { en: "NETWORK", "zh-Hant": "網路", "zh-Hans": "网络", ko: "네트워크" }, value: "Robinhood Chain · 4663" },
           { key: "supply", label: { en: "SUPPLY", "zh-Hant": "總量", "zh-Hans": "总量", ko: "총 공급량" }, value: "10,000,000 RVYN" },
           { key: "stage", label: { en: "STAGE", "zh-Hant": "階段", "zh-Hans": "阶段", ko: "단계" }, value: !saleDesk ? { en: "Checking", "zh-Hant": "確認中", "zh-Hans": "确认中", ko: "확인 중" } : saleDesk.purchasesOpen ? { en: "Presale open", "zh-Hant": "預售開放中", "zh-Hans": "预售开放中", ko: "프리세일 진행 중" } : saleDesk.registryOpen ? { en: "Whitelist open", "zh-Hant": "白名單登記中", "zh-Hans": "白名单登记中", ko: "화이트리스트 신청 중" } : saleDesk.phase === "sale_closed" ? { en: "Presale closed", "zh-Hant": "預售已結束", "zh-Hans": "预售已结束", ko: "프리세일 종료" } : { en: "Preparing", "zh-Hant": "準備中", "zh-Hans": "准备中", ko: "준비 중" }, live: Boolean(saleDesk?.purchasesOpen || saleDesk?.registryOpen) },
-          { key: "reg", label: { en: "WHITELIST", "zh-Hant": "白名單", "zh-Hans": "白名单", ko: "화이트리스트" }, value: saleDesk?.registryOpen ? { en: "Registration open", "zh-Hant": "登記開放", "zh-Hans": "登记开放", ko: "신청 가능" } : { en: "Registration closed", "zh-Hant": "登記未開放", "zh-Hans": "登记未开放", ko: "신청 불가" } },
+          { key: "reg", label: { en: "WHITELIST", "zh-Hant": "白名單", "zh-Hans": "白名单", ko: "화이트리스트" }, value: saleDesk?.registryOpen ? { en: "Registration open", "zh-Hant": "登記開放", "zh-Hans": "登记开放", ko: "신청 가능" } : saleDesk?.registrationStatus === "scheduled" && saleDesk.registrationOpensAt ? (() => {
+            // Fixed UTC+8 like the dates in the whitelist section, so every visitor reads the same day.
+            const day = (l: string) => new Date(saleDesk.registrationOpensAt! * 1000).toLocaleDateString(l, { month: "short", day: "numeric", timeZone: "Etc/GMT-8" });
+            return { en: `Opens ${day("en")}`, "zh-Hant": `${day("zh-Hant")} 開放`, "zh-Hans": `${day("zh-Hans")} 开放`, ko: `${day("ko")} 시작` };
+          })() : { en: "Registration closed", "zh-Hant": "登記未開放", "zh-Hans": "登记未开放", ko: "신청 불가" } },
         ]} />
         <div className="rvyn-hero-contract">
           <span>{tr("合約")}</span>
