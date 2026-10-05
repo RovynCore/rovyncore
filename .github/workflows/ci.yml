@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -35,6 +35,7 @@ jobs:
         run: |
           npm run test:contracts
           npm run test:presale:v5
+          npm run test:presale:v6
       - name: Build
         run: npm run build
       - name: API integration tests
