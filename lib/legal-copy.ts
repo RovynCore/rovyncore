@@ -6,7 +6,7 @@ export const legalCopy: Record<Locale, Copy> = {
     sections: [
       [
         "Operator & contact",
-        "ROVYN CORE is operated by Sean as an individual. Primary domain: rovyncore.com; backup: rovyncore.net. Public contact: official X @RovynCORE. The intended market is global, only where providing and using the service is lawful. Global access does not mean authorization in every jurisdiction. This is an independent platform, not an official Robinhood product or a claim of partnership.",
+        "This service is operated by the ROVYN CORE team. Primary domain: rovyncore.com; backup: rovyncore.net. Public contact: official X @RovynCORE. The intended market is global, only where providing and using the service is lawful. Global access does not mean authorization in every jurisdiction. This is an independent platform, not an official Robinhood product or a claim of partnership.",
       ],
       [
         "Service, fees & wallets",
@@ -39,7 +39,7 @@ export const legalCopy: Record<Locale, Copy> = {
     sections: [
       [
         "營運者與聯絡",
-        "ROVYN CORE 由 Sean 以個人形式營運。主要網域：rovyncore.com；備用：rovyncore.net。公開聯絡：官方 X @RovynCORE。目標市場為全球，但僅限提供及使用服務均合法的地區；全球可存取不代表取得各地許可。本平台獨立營運，並非 Robinhood 官方產品，也不表示合作關係。",
+        "本平台由 ROVYN CORE 團隊營運。主要網域：rovyncore.com；備用：rovyncore.net。公開聯絡：官方 X @RovynCORE。目標市場為全球，但僅限提供及使用服務均合法的地區；全球可存取不代表取得各地許可。本平台獨立營運，並非 Robinhood 官方產品，也不表示合作關係。",
       ],
       [
         "服務、費用與錢包",
@@ -72,7 +72,7 @@ export const legalCopy: Record<Locale, Copy> = {
     sections: [
       [
         "运营者与联系",
-        "ROVYN CORE 由 Sean 以个人形式运营。主要域名：rovyncore.com；备用：rovyncore.net。公开联系：官方 X @RovynCORE。目标市场为全球，但仅限提供和使用服务均合法的地区；全球可访问不代表取得各地许可。本平台独立运营，并非 Robinhood 官方产品，也不表示合作关系。",
+        "本平台由 ROVYN CORE 团队运营。主要域名：rovyncore.com；备用：rovyncore.net。公开联系：官方 X @RovynCORE。目标市场为全球，但仅限提供和使用服务均合法的地区；全球可访问不代表取得各地许可。本平台独立运营，并非 Robinhood 官方产品，也不表示合作关系。",
       ],
       [
         "服务、费用与钱包",
@@ -105,7 +105,7 @@ export const legalCopy: Record<Locale, Copy> = {
     sections: [
       [
         "운영자 및 연락처",
-        "ROVYN CORE는 Sean이 개인으로 운영합니다. 기본 도메인은 rovyncore.com, 예비 도메인은 rovyncore.net입니다. 공개 연락처는 공식 X @RovynCORE입니다. 전 세계를 대상으로 하되 서비스 제공과 이용이 모두 합법인 지역으로 한정됩니다. 전 세계 접속 가능 여부는 각 지역의 허가를 의미하지 않습니다. 독립 플랫폼이며 Robinhood 공식 제품 또는 제휴를 의미하지 않습니다.",
+        "본 서비스는 ROVYN CORE 팀이 운영합니다. 기본 도메인은 rovyncore.com, 예비 도메인은 rovyncore.net입니다. 공개 연락처는 공식 X @RovynCORE입니다. 전 세계를 대상으로 하되 서비스 제공과 이용이 모두 합법인 지역으로 한정됩니다. 전 세계 접속 가능 여부는 각 지역의 허가를 의미하지 않습니다. 독립 플랫폼이며 Robinhood 공식 제품 또는 제휴를 의미하지 않습니다.",
       ],
       [
         "서비스, 수수료 및 지갑",

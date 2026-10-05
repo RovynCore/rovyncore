@@ -284,6 +284,7 @@ Token 合約|Token contract|Token 合约|토큰 계약
 未偵測到 · 前往官方網站|Not detected · Visit official site|未检测到 · 前往官方网站|감지되지 않음 · 공식 사이트 방문
 其他相容錢包|Other compatible wallets|其他兼容钱包|기타 호환 지갑
 尚未偵測到錢包。安裝後重新整理此頁，即可連線。|No wallet detected yet. Install one and reload this page to connect.|尚未检测到钱包。安装后刷新此页面即可连接。|아직 지갑이 감지되지 않았습니다. 설치 후 페이지를 새로고침하면 연결할 수 있습니다.
+改用新部署的預售合約時使用。伺服器只會在舊合約從未開啟、沒有募資也沒有庫存時才允許替換。|Use this when switching to a newly deployed presale contract. The server only allows replacement if the old contract was never opened, funded or stocked.|改用新部署的预售合约时使用。服务器只会在旧合约从未开启、没有募资也没有库存时才允许替换。|새로 배포한 프리세일 컨트랙트로 바꿀 때 사용합니다. 서버는 이전 컨트랙트가 개시·모금·재고 입금된 적이 없을 때만 교체를 허용합니다.
 正在掃描可用錢包…|Checking available wallets…|正在扫描可用钱包…|사용 가능한 지갑 확인 중…
 選擇或安裝錢包|Choose or install a wallet|选择或安装钱包|지갑 선택 또는 설치
 安裝錢包後即可繼續|Install a wallet to continue|安装钱包后即可继续|지갑을 설치한 뒤 계속하세요

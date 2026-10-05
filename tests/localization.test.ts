@@ -58,7 +58,7 @@ test("interpolation preserves user data and four legal versions identify the ope
   );
   assert.equal(translate("User supplied story", "ko"), "User supplied story");
   for (const copy of Object.values(legalCopy)) {
-    assert.ok(JSON.stringify(copy).includes("Sean"));
+    assert.ok(JSON.stringify(copy).includes("ROVYN CORE"));
     assert.ok(JSON.stringify(copy).includes("30"));
     assert.equal(copy.sections.length, 7);
   }
