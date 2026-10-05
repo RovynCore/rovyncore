@@ -26,7 +26,6 @@ import { RetainedRvynTokenomics } from "@/components/visual/rvyn-canonical";
 import { useScrollReveal } from "@/components/scroll-reveal";
 import { RvynEligibilityFlow } from "@/components/rvyn-eligibility-flow";
 import { PresaleTerms } from "@/components/presale-terms";
-import { PresaleConsole } from "@/components/presale-console";
 import { HeroHud, TelemetryRail } from "@/components/hero-hud";
 
 type OfficialRvynRecord = {
@@ -374,7 +373,6 @@ export default function RovynCore() {
           </button>
         </div>
       </section>
-      <PresaleConsole />
       <section className="rvyn-allowlist workspace" id="allowlist" aria-labelledby="rvyn-allowlist-title">
         <div className="rvyn-allowlist__copy">
           <span className="eyebrow">RVYN / WHITELIST</span>
