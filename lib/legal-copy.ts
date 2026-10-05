@@ -14,7 +14,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "RVYN & risk",
-        "ROVYN CORE (RVYN) is the platform's first token; its verified contract and issuance data are shown in the Onchain Record. RVYN is planned as the core currency of our first game, which is in development; no in-game or other utility is live yet. RVYN grants no company equity, dividends, staking rewards, principal protection or guaranteed returns. Tokens may have no buyers, liquidity or market and can lose all value. The RVYN sale contract (V5) is deployed on Robinhood Chain but has not been funded or opened, and no sale date has been set. Its fixed terms are: 1,000,000 RVYN at 0.0001 ETH each; a cumulative cap of 0.25 ETH (2,500 RVYN) per wallet and 100 ETH in total; a 14-day sale window once opened; purchases only from wallets in the published onchain whitelist, which the contract checks with a Merkle proof; and delivery of purchased RVYN in the same transaction as payment. The contract has no buyer refund, no later claim step, no minimum raise and no emergency pause during a sale. The sale contract has not been audited by an independent third party; it has only been tested by its developers, so bugs may exist and funds sent to it can be lost. Its allocation caps for the 10,000,000 RVYN supply are 10% presale, 50% liquidity (initial pool and future liquidity), 5% manager wallet, 10% team vesting, 10% product/ecosystem, 10% community/creators and 5% airdrops. Team vesting starts when the sale opens: a 365-day cliff, then 24 releases every 30 days. The initial pool may use at most half of the ETH raised plus separately deposited launchpad revenue, paired at the sale price, and its LP tokens are locked for the 730 days set in the contract; unsold presale tokens are burned at settlement. These caps describe what the contract allows; they are not proof that tokens have been transferred, locked or put into circulation. Check the live onchain state before any purchase. Listing is not an investment endorsement.",
+        "ROVYN CORE (RVYN) is the platform's first token; its verified contract and issuance data are shown in the Onchain Record. RVYN is planned as the core currency of our first game, which is in development; no in-game or other utility is live yet. RVYN grants no company equity, dividends, staking rewards, principal protection or guaranteed returns. Tokens may have no buyers, liquidity or market and can lose all value. The RVYN sale contract (V6) has not been funded or opened, and no sale date has been set; the earlier V5 sale contract was cancelled before it opened and is not used. V6's fixed terms are: 1,000,000 RVYN at 0.0001 ETH each; a cumulative cap of 0.25 ETH (2,500 RVYN) per wallet and 100 ETH in total; a 14-day sale window once opened; and purchases only from wallets in the published onchain whitelist, which the contract checks with a Merkle proof. Paying only records your purchase: no RVYN is delivered at purchase. After the sale closes and the contract is settled, each buyer claims the RVYN they paid for from the contract. Anyone may settle seven days after the sale closes, so claims do not depend on the sponsor acting. The contract has no buyer refund, no minimum raise and no emergency pause during a sale. The sale contract has not been audited by an independent third party; it has only been tested by its developers (automated, randomized and local-fork tests), so bugs may exist and funds sent to it can be lost. Its allocation caps for the 10,000,000 RVYN supply are 10% presale, 50% liquidity (initial pool and future liquidity), 5% manager wallet, 10% team vesting, 10% product/ecosystem, 10% community/creators and 5% airdrops. At settlement the contract builds the initial pool at the sale price, using at least half of the ETH raised (plus separately deposited launchpad revenue) and at most all of it; the pool's LP tokens are locked for 730 days; unsold presale tokens are burned; the manager allocation is released; and team vesting starts (a 365-day cliff, then 24 releases every 30 days). The ETH not placed in the pool is project operating funds, which the sponsor (a Safe multisignature wallet) can withdraw at 25% every 30 days from settlement. These caps describe what the contract allows; they are not proof that tokens have been transferred, locked or put into circulation. Check the live onchain state before any purchase. Listing is not an investment endorsement.",
       ],
       [
         "Allowlist and sale stages",
@@ -30,7 +30,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "Pre-launch status & changes",
-        "Version 0.4 · 4 October 2026 · Updated for the deployed V5 sale contract, the unset sale date and RVYN's planned role as the game's core currency. The network displayed in the interface determines whether an action uses testnet or mainnet. A domain or translated page does not mean fundraising is open. Applicable legal, registration and consumer-protection requirements still need assessment before commercial sale. These terms do not establish regulatory approval or waive mandatory rights. Material changes will be dated here. Report translation discrepancies through the official contact.",
+        "Version 0.5 · 6 October 2026 · Updated for the V6 sale contract (claim after settlement, a pool of at least half the raise, settlement open to anyone after seven days), the cancelled V5 contract, the unset sale date and RVYN's planned role as the game's core currency. The network displayed in the interface determines whether an action uses testnet or mainnet. A domain or translated page does not mean fundraising is open. Applicable legal, registration and consumer-protection requirements still need assessment before commercial sale. These terms do not establish regulatory approval or waive mandatory rights. Material changes will be dated here. Report translation discrepancies through the official contact.",
       ],
     ],
   },
@@ -47,7 +47,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "RVYN 與風險",
-        "ROVYN CORE（RVYN）是平台首個代幣；經核對的合約與發行資料請以鏈上紀錄為準。RVYN 規劃為我們第一款遊戲的核心貨幣，遊戲目前開發中；遊戲內或其他用途皆尚未上線。RVYN 不賦予公司股權、分紅、staking 收益、保本或保證報酬。代幣可能沒有買方、流動性或市場，價值可能歸零。RVYN 預售合約（V5）已部署於 Robinhood Chain，但尚未存入庫存、尚未開售，也尚未訂定預售日期。合約固定條件為：1,000,000 RVYN、每枚 0.0001 ETH；單錢包累計上限 0.25 ETH（2,500 RVYN），總上限 100 ETH；開售後銷售期 14 天；只有列入已公布鏈上白名單的錢包可以購買，由合約以 Merkle proof 驗證；購買的 RVYN 與付款在同一筆交易中交付。合約沒有買家退款、事後領取、最低募資門檻，也沒有售中緊急暫停。此預售合約尚未經過獨立第三方審計，僅由開發者自行測試，可能存在漏洞，匯入的資金有可能損失。10,000,000 RVYN 的合約配置上限為預售 10%、流動性 50%（首池及未來流動性）、管理者錢包 5%、團隊鎖倉 10%、產品與生態 10%、社群與創作者 10%、空投 5%。團隊鎖倉於開售時啟動：365 天 cliff，之後每 30 天釋出一次，共 24 次。首池最多使用募得 ETH 的一半，加上另行轉入的發射台收益，依預售價格配對；首池 LP 依合約設定鎖倉 730 天；未售出的預售代幣於結算時銷毀。以上配置上限說明的是合約允許的範圍，不代表代幣已轉出、已鎖倉或已流通。購買前請查核即時鏈上狀態。平台收錄不是投資背書。",
+        "ROVYN CORE（RVYN）是平台首個代幣；經核對的合約與發行資料請以鏈上紀錄為準。RVYN 規劃為我們第一款遊戲的核心貨幣，遊戲目前開發中；遊戲內或其他用途皆尚未上線。RVYN 不賦予公司股權、分紅、staking 收益、保本或保證報酬。代幣可能沒有買方、流動性或市場，價值可能歸零。RVYN 預售合約（V6）尚未存入庫存、尚未開售，也尚未訂定預售日期；先前的 V5 預售合約已在開售前取消，不再使用。V6 的固定條件為：1,000,000 RVYN、每枚 0.0001 ETH；單錢包累計上限 0.25 ETH（2,500 RVYN），總上限 100 ETH；開售後銷售期 14 天；只有列入已公布鏈上白名單的錢包可以購買，由合約以 Merkle proof 驗證。付款只會記錄你的購買，購買當下不會交付 RVYN；預售結束且合約完成結算後，每位買家再向合約領取所付款項對應的 RVYN。預售結束滿七天後任何人都可以執行結算，因此領取不取決於發起人是否行動。合約沒有買家退款、最低募資門檻，也沒有售中緊急暫停。此預售合約尚未經過獨立第三方審計，僅由開發者自行測試（自動化、隨機化與本機分叉測試），可能存在漏洞，匯入的資金有可能損失。10,000,000 RVYN 的合約配置上限為預售 10%、流動性 50%（首池及未來流動性）、管理者錢包 5%、團隊鎖倉 10%、產品與生態 10%、社群與創作者 10%、空投 5%。結算時合約依預售價格建立首池，至少使用募得 ETH 的一半（加上另行轉入的發射台收益），最多使用全部；首池 LP 鎖倉 730 天；未售出的預售代幣銷毀；管理者配置釋出；團隊鎖倉開始計算（365 天 cliff，之後每 30 天釋出一次，共 24 次）。未放入首池的 ETH 為專案營運資金，由發起人（Safe 多簽錢包）自結算起每 30 天最多提領 25%。以上配置上限說明的是合約允許的範圍，不代表代幣已轉出、已鎖倉或已流通。購買前請查核即時鏈上狀態。平台收錄不是投資背書。",
       ],
       [
         "白名單與銷售階段",
@@ -63,7 +63,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "正式營運前狀態與修改",
-        "版本 0.4 · 2026 年 10 月 4 日 · 依已部署的 V5 預售合約、尚未訂定的預售日期，以及 RVYN 作為遊戲核心貨幣的規劃更新。測試網或主網以介面顯示的網路為準，有網域或翻譯頁面不代表募資已開放。正式商業販售前仍須評估適用法律、登記與消費者保護要求。本條款不構成主管機關核准，也不排除強制權利。重大修改會在本頁標示日期；翻譯差異請透過官方管道反映。",
+        "版本 0.5 · 2026 年 10 月 6 日 · 依 V6 預售合約（結算後領取、首池至少為募資的一半、結束滿七天後任何人可結算）、已取消的 V5 合約、尚未訂定的預售日期，以及 RVYN 作為遊戲核心貨幣的規劃更新。測試網或主網以介面顯示的網路為準，有網域或翻譯頁面不代表募資已開放。正式商業販售前仍須評估適用法律、登記與消費者保護要求。本條款不構成主管機關核准，也不排除強制權利。重大修改會在本頁標示日期；翻譯差異請透過官方管道反映。",
       ],
     ],
   },
@@ -80,7 +80,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "RVYN 与风险",
-        "ROVYN CORE（RVYN）是平台首个代币；经核对的合约和发行资料请以链上记录为准。RVYN 规划为我们第一款游戏的核心货币，游戏目前开发中；游戏内或其他用途均尚未上线。RVYN 不赋予公司股权、分红、staking 收益、保本或保证回报。代币可能没有买方、流动性或市场，价值可能归零。RVYN 预售合约（V5）已部署于 Robinhood Chain，但尚未存入库存、尚未开售，也尚未确定预售日期。合约固定条件为：1,000,000 RVYN、每枚 0.0001 ETH；单钱包累计上限 0.25 ETH（2,500 RVYN），总上限 100 ETH；开售后销售期 14 天；只有列入已公布链上白名单的钱包可以购买，由合约以 Merkle proof 验证；购买的 RVYN 与付款在同一笔交易中交付。合约没有买家退款、事后领取、最低募资门槛，也没有售中紧急暂停。此预售合约尚未经过独立第三方审计，仅由开发者自行测试，可能存在漏洞，转入的资金有可能损失。10,000,000 RVYN 的合约配置上限为预售 10%、流动性 50%（首池及未来流动性）、管理者钱包 5%、团队锁仓 10%、产品与生态 10%、社群与创作者 10%、空投 5%。团队锁仓于开售时启动：365 天 cliff，之后每 30 天释放一次，共 24 次。首池最多使用募得 ETH 的一半，加上另行转入的发射台收益，按预售价格配对；首池 LP 按合约设定锁仓 730 天；未售出的预售代币在结算时销毁。以上配置上限说明的是合约允许的范围，不代表代币已转出、已锁仓或已流通。购买前请核对实时链上状态。平台收录不是投资背书。",
+        "ROVYN CORE（RVYN）是平台首个代币；经核对的合约和发行资料请以链上记录为准。RVYN 规划为我们第一款游戏的核心货币，游戏目前开发中；游戏内或其他用途均尚未上线。RVYN 不赋予公司股权、分红、staking 收益、保本或保证回报。代币可能没有买方、流动性或市场，价值可能归零。RVYN 预售合约（V6）尚未存入库存、尚未开售，也尚未确定预售日期；此前的 V5 预售合约已在开售前取消，不再使用。V6 的固定条件为：1,000,000 RVYN、每枚 0.0001 ETH；单钱包累计上限 0.25 ETH（2,500 RVYN），总上限 100 ETH；开售后销售期 14 天；只有列入已公布链上白名单的钱包可以购买，由合约以 Merkle proof 验证。付款只会记录你的购买，购买当下不会交付 RVYN；预售结束且合约完成结算后，每位买家再向合约领取所付款项对应的 RVYN。预售结束满七天后任何人都可以执行结算，因此领取不取决于发起人是否行动。合约没有买家退款、最低募资门槛，也没有售中紧急暂停。此预售合约尚未经过独立第三方审计，仅由开发者自行测试（自动化、随机化与本地分叉测试），可能存在漏洞，转入的资金有可能损失。10,000,000 RVYN 的合约配置上限为预售 10%、流动性 50%（首池及未来流动性）、管理者钱包 5%、团队锁仓 10%、产品与生态 10%、社群与创作者 10%、空投 5%。结算时合约按预售价格建立首池，至少使用募得 ETH 的一半（加上另行转入的发射台收益），最多使用全部；首池 LP 锁仓 730 天；未售出的预售代币销毁；管理者配置释放；团队锁仓开始计算（365 天 cliff，之后每 30 天释放一次，共 24 次）。未放入首池的 ETH 为项目运营资金，由发起人（Safe 多签钱包）自结算起每 30 天最多提取 25%。以上配置上限说明的是合约允许的范围，不代表代币已转出、已锁仓或已流通。购买前请核对实时链上状态。平台收录不是投资背书。",
       ],
       [
         "白名单与销售阶段",
@@ -96,7 +96,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "正式运营前状态与修改",
-        "版本 0.4 · 2026 年 10 月 4 日 · 依已部署的 V5 预售合约、尚未确定的预售日期，以及 RVYN 作为游戏核心货币的规划更新。测试网或主网以界面显示的网络为准，域名或翻译页面不代表募资已开放。正式商业销售前仍须评估适用法律、登记和消费者保护要求。本条款不构成监管批准，也不排除强制权利。重大修改会在本页标示日期；翻译差异请通过官方渠道反馈。",
+        "版本 0.5 · 2026 年 10 月 6 日 · 依 V6 预售合约（结算后领取、首池至少为募资的一半、结束满七天后任何人可结算）、已取消的 V5 合约、尚未确定的预售日期，以及 RVYN 作为游戏核心货币的规划更新。测试网或主网以界面显示的网络为准，域名或翻译页面不代表募资已开放。正式商业销售前仍须评估适用法律、登记和消费者保护要求。本条款不构成监管批准，也不排除强制权利。重大修改会在本页标示日期；翻译差异请通过官方渠道反馈。",
       ],
     ],
   },
@@ -113,7 +113,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "RVYN 및 위험",
-        "ROVYN CORE(RVYN)는 플랫폼의 첫 토큰입니다. 검증된 계약과 발행 정보는 온체인 기록에서 확인하세요. RVYN은 개발 중인 첫 게임의 핵심 화폐로 계획되어 있으며, 게임 내 용도나 기타 효용은 아직 제공되지 않습니다. RVYN은 회사 지분, 배당, 스테이킹 보상, 원금 보호 또는 보장 수익을 제공하지 않습니다. 토큰에는 구매자, 유동성 또는 시장이 없을 수 있고 가치가 전부 소실될 수 있습니다. RVYN 판매 계약(V5)은 Robinhood Chain에 배포되었지만 아직 재고가 예치되지 않았고 판매가 열리지 않았으며 판매 일정도 정해지지 않았습니다. 계약의 고정 조건은 다음과 같습니다. 1,000,000 RVYN을 개당 0.0001 ETH에 판매하며, 지갑당 누적 0.25 ETH(2,500 RVYN), 전체 100 ETH로 제한합니다. 판매가 열리면 기간은 14일입니다. 공개된 온체인 화이트리스트에 있는 지갑만 구매할 수 있고 계약이 Merkle proof로 확인합니다. 구매한 RVYN은 결제와 같은 트랜잭션에서 지급됩니다. 계약에는 구매자 환불, 사후 청구 단계, 최소 모금액, 판매 중 긴급 일시 중지 기능이 없습니다. 이 판매 계약은 독립적인 제3자 감사를 받지 않았고 개발자가 자체 테스트만 했으므로 버그가 있을 수 있으며 송금한 자금을 잃을 수 있습니다. 총 10,000,000 RVYN에 대한 계약상 배분 상한은 프리세일 10%, 유동성 50%(초기 풀 및 향후 유동성), 관리자 지갑 5%, 팀 베스팅 10%, 제품/생태계 10%, 커뮤니티/크리에이터 10%, 에어드롭 5%입니다. 팀 베스팅은 판매 개시 시점에 시작되며 365일 cliff 후 30일마다 24회 해제됩니다. 초기 풀은 모금된 ETH의 최대 절반과 별도로 입금된 런치패드 수익을 판매 가격으로 짝지어 사용할 수 있으며, LP 토큰은 계약에 설정된 730일 동안 잠깁니다. 미판매 프리세일 토큰은 정산 시 소각됩니다. 이 상한은 계약이 허용하는 범위일 뿐 토큰의 이전, 잠금 또는 유통을 증명하지 않습니다. 구매 전 실시간 온체인 상태를 확인하세요. 등록은 투자 보증이 아닙니다.",
+        "ROVYN CORE(RVYN)는 플랫폼의 첫 토큰입니다. 검증된 계약과 발행 정보는 온체인 기록에서 확인하세요. RVYN은 개발 중인 첫 게임의 핵심 화폐로 계획되어 있으며, 게임 내 용도나 그 밖의 용도는 아직 제공되지 않습니다. RVYN은 회사 지분, 배당, 스테이킹 보상, 원금 보장 또는 수익 보장을 제공하지 않습니다. 토큰은 구매자, 유동성 또는 시장이 없을 수 있고 가치가 전부 사라질 수 있습니다. RVYN 판매 계약(V6)은 아직 재고가 입금되지 않았고 판매가 시작되지 않았으며 판매 일정도 정해지지 않았습니다. 이전 V5 판매 계약은 시작 전에 취소되어 사용하지 않습니다. V6의 고정 조건은 다음과 같습니다. RVYN 1,000,000개를 개당 0.0001 ETH에 판매하고, 지갑당 누적 0.25 ETH(RVYN 2,500개), 전체 100 ETH 한도가 있으며, 시작 후 판매 기간은 14일입니다. 공개된 온체인 화이트리스트에 있는 지갑만 구매할 수 있고 계약이 Merkle proof로 검증합니다. 결제는 구매 내역만 기록하며 구매 시점에는 RVYN이 지급되지 않습니다. 판매가 종료되고 계약이 정산된 뒤 각 구매자가 결제한 금액에 해당하는 RVYN을 계약에서 직접 클레임합니다. 판매 종료 7일 후에는 누구나 정산을 실행할 수 있으므로 클레임은 스폰서의 행동에 좌우되지 않습니다. 계약에는 구매자 환불, 최소 모금액, 판매 중 긴급 일시 중지가 없습니다. 이 판매 계약은 독립적인 제3자의 감사를 받지 않았으며 개발자가 자동화·무작위·로컬 포크 테스트를 한 것이 전부이므로 버그가 있을 수 있고 보낸 자금을 잃을 수 있습니다. 10,000,000 RVYN 공급량의 계약상 배분 상한은 프리세일 10%, 유동성 50%(초기 풀과 향후 유동성), 관리자 지갑 5%, 팀 베스팅 10%, 제품·생태계 10%, 커뮤니티·크리에이터 10%, 에어드롭 5%입니다. 정산 시 계약은 판매 가격으로 초기 풀을 만들며 모금된 ETH의 절반 이상(별도로 입금된 런치패드 수익 포함)에서 전부까지 사용하고, 풀의 LP 토큰은 730일 동안 잠기며, 미판매 프리세일 토큰은 소각되고, 관리자 배분이 해제되며, 팀 베스팅이 시작됩니다(365일 cliff 후 30일마다 24회 해제). 풀에 넣지 않은 ETH는 프로젝트 운영 자금이며 스폰서(Safe 멀티시그 지갑)가 정산 시점부터 30일마다 25%씩 인출할 수 있습니다. 이 상한은 계약이 허용하는 범위를 설명할 뿐이며 토큰이 이전·잠금·유통되었다는 증거가 아닙니다. 구매 전에 최신 온체인 상태를 확인하세요. 목록 등재는 투자 보증이 아닙니다.",
       ],
       [
         "허용 목록 및 판매 단계",
@@ -129,7 +129,7 @@ export const legalCopy: Record<Locale, Copy> = {
       ],
       [
         "정식 운영 전 상태 및 변경",
-        "버전 0.4 · 2026년 10월 4일 · 배포된 V5 판매 계약, 아직 정해지지 않은 판매 일정, 게임 핵심 화폐로서 RVYN의 계획된 역할을 반영해 갱신했습니다. 테스트넷 또는 메인넷 여부는 화면에 표시된 네트워크를 따릅니다. 도메인이나 번역 페이지가 모금 개시를 의미하지 않습니다. 상업적 판매 전 관련 법률, 등록 및 소비자 보호 요건을 검토해야 합니다. 이 약관은 규제 승인을 의미하거나 강행 권리를 포기시키지 않습니다. 중요한 변경은 이 페이지에 날짜와 함께 표시합니다. 번역 차이는 공식 연락처로 알려주세요.",
+        "버전 0.5 · 2026년 10월 6일 · V6 판매 계약(정산 후 클레임, 모금액의 절반 이상으로 구성하는 풀, 7일 후 누구나 정산 가능), 취소된 V5 계약, 아직 정해지지 않은 판매 일정, 게임 핵심 화폐로서 RVYN의 계획된 역할을 반영해 갱신했습니다. 테스트넷 또는 메인넷 여부는 화면에 표시된 네트워크를 따릅니다. 도메인이나 번역 페이지가 모금 개시를 의미하지 않습니다. 상업적 판매 전 관련 법률, 등록 및 소비자 보호 요건을 검토해야 합니다. 이 약관은 규제 승인을 의미하거나 강행 권리를 포기시키지 않습니다. 중요한 변경은 이 페이지에 날짜와 함께 표시합니다. 번역 차이는 공식 연락처로 알려주세요.",
       ],
     ],
   },

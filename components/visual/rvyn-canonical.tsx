@@ -13,13 +13,13 @@ const copy = {
 };
 
 const verifiedTerms = {
-  en: { heading: "TOKENOMICS / CONTRACT ALLOCATION CAPS", note: "The V5 contract defines these allocation caps. They do not prove that tokens have been transferred or distributed.", footer: "CONTRACT CAPS · CHECK LIVE BALANCES" },
-  "zh-Hant": { heading: "代幣經濟 / 合約配置上限", note: "這些是 V5 合約設定的配置上限，不代表代幣已轉入或完成分配。", footer: "合約上限・請核對即時餘額" },
-  "zh-Hans": { heading: "代币经济 / 合约配置上限", note: "这些是 V5 合约设定的配置上限，不代表代币已转入或完成分配。", footer: "合约上限・请核对实时余额" },
-  ko: { heading: "토크노믹스 / 계약상 배분 한도", note: "이 수치는 V5 계약에 정의된 배분 한도이며 토큰 이전이나 실제 분배를 증명하지 않습니다.", footer: "계약 한도 · 실시간 잔액 확인" },
+  en: { heading: "TOKENOMICS / CONTRACT ALLOCATION CAPS", note: "The sale contract defines these allocation caps. They do not prove that tokens have been transferred or distributed.", footer: "CONTRACT CAPS · CHECK LIVE BALANCES" },
+  "zh-Hant": { heading: "代幣經濟 / 合約配置上限", note: "這些是預售合約設定的配置上限，不代表代幣已轉入或完成分配。", footer: "合約上限・請核對即時餘額" },
+  "zh-Hans": { heading: "代币经济 / 合约配置上限", note: "这些是预售合约设定的配置上限，不代表代币已转入或完成分配。", footer: "合约上限・请核对实时余额" },
+  ko: { heading: "토크노믹스 / 계약상 배분 한도", note: "이 수치는 판매 계약에 정의된 배분 한도이며 토큰 이전이나 실제 분배를 증명하지 않습니다.", footer: "계약 한도 · 실시간 잔액 확인" },
 } as const;
 
-// Color separates the seven real V5 allocation caps; hue is visual encoding, not an additional category.
+// Color separates the seven real allocation caps; hue is visual encoding, not an additional category.
 const TOKENS = ["#dbeaa6","#c9ff55","#a8cd79","#718c53","#8eb761","#bdcf83","#e5efc4"];
 function ringNoise(seed: number) {
   let value = Math.imul(seed + 17, 1664525) + 1013904223;

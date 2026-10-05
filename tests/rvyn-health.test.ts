@@ -122,6 +122,16 @@ test("an open sale shows progress, the allowlist flag and the time left from the
   assert.equal(view.allocations.find((entry) => entry.id === "manager")?.released, true);
 });
 
+test("a V6 sale has no manager getter: release is derived from the settled state", async () => {
+  const pending = pendingSale(); delete pending[`${SALE}:managerAllocationReleased`];
+  const before = deriveHealth(await readRvynHealth(fakeChain(pending), config));
+  assert.equal(before.allocations.find((entry) => entry.id === "manager")?.released, false);
+  assert.equal(before.complete, true, "the derived value counts as a successful read");
+  const settled = pendingSale(); delete settled[`${SALE}:managerAllocationReleased`]; settled[`${SALE}:state`] = 3;
+  const after = deriveHealth(await readRvynHealth(fakeChain(settled), config));
+  assert.equal(after.allocations.find((entry) => entry.id === "manager")?.released, true);
+});
+
 test("an open sale whose window has passed is flagged but not called closed", async () => {
   const table = pendingSale();
   Object.assign(table, { [`${SALE}:state`]: 1, [`${SALE}:endsAt`]: 1_700_000_000n });

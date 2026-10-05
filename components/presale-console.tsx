@@ -19,7 +19,7 @@ type SaleStatus = {
   listedCount: number | null;
 };
 
-// Only live status from the site's own sale desk plus the V5 contract's fixed caps.
+// Only live status from the site's own sale desk plus the sale contract's fixed caps.
 // No dates, raise totals or participation numbers are ever invented: missing data shows "TBA".
 const copy = {
   kicker: { en: "RVYN LAUNCH CONSOLE", "zh-Hant": "RVYN 發射控制台", "zh-Hans": "RVYN 发射控制台", ko: "RVYN 런치 콘솔" },
@@ -41,7 +41,7 @@ const copy = {
   closesIn: { en: "Closes in", "zh-Hant": "截止倒數", "zh-Hans": "截止倒计时", ko: "마감까지" },
   noDate: { en: "No date announced", "zh-Hant": "尚未公布日期", "zh-Hans": "尚未公布日期", ko: "일정 미공개" },
   allocTitle: { en: "10,000,000 RVYN · contract caps", "zh-Hant": "10,000,000 RVYN・合約上限", "zh-Hans": "10,000,000 RVYN・合约上限", ko: "10,000,000 RVYN · 계약 상한" },
-  allocNote: { en: "Caps defined in the V5 contract. Not a record of tokens sold or distributed.", "zh-Hant": "取自 V5 合約定義的上限，並非已售出或已分發的紀錄。", "zh-Hans": "取自 V5 合约定义的上限，并非已售出或已分发的记录。", ko: "V5 계약에 정의된 상한이며 판매·배분 기록이 아닙니다." },
+  allocNote: { en: "Caps defined in the sale contract. Not a record of tokens sold or distributed.", "zh-Hant": "取自預售合約定義的上限，並非已售出或已分發的紀錄。", "zh-Hans": "取自预售合约定义的上限，并非已售出或已分发的记录。", ko: "판매 계약에 정의된 상한이며 판매·배분 기록이 아닙니다." },
   cta: { en: "Open the sale desk", "zh-Hant": "前往預售頁", "zh-Hans": "前往预售页", ko: "프리세일 페이지로" },
   days: { en: "d", "zh-Hant": "天", "zh-Hans": "天", ko: "일" },
 } satisfies Record<string, Copy>;

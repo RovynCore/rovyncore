@@ -96,13 +96,13 @@ const rvynPageCopy = {
   purchasesNotOpen: { en: "Purchases not open", "zh-Hant": "目前尚未開放購買", "zh-Hans": "目前尚未开放购买", ko: "구매 미개시" },
   phaseUnavailable: { en: "Sale status unavailable. Purchases remain closed.", "zh-Hant": "銷售狀態暫不可讀，購買維持關閉。", "zh-Hans": "销售状态暂不可读，购买维持关闭。", ko: "판매 상태를 확인할 수 없어 구매가 닫혀 있습니다." },
   plannedTerms: { en: "Planned sale terms and allocations", "zh-Hant": "規劃中的銷售條件與配置", "zh-Hans": "规划中的销售条件与配置", ko: "예정된 판매 조건과 배분" },
-  verifiedTerms: { en: "V5 contract terms and allocation caps", "zh-Hant": "V5 合約條款與配置上限", "zh-Hans": "V5 合约条款与配置上限", ko: "V5 계약 조건과 배분 상한" },
+  verifiedTerms: { en: "Sale contract terms and allocation caps", "zh-Hant": "預售合約條款與配置上限", "zh-Hans": "预售合约条款与配置上限", ko: "판매 계약 조건과 배분 상한" },
   verifiedLabel: { en: "CONTRACT CAPS · SALE CLOSED", "zh-Hant": "合約上限・尚未開售", "zh-Hans": "合约上限・尚未开售", ko: "계약 상한 · 판매 미개시" },
   verifiedAllocation: { en: "Sale allocation cap", "zh-Hant": "預售配置上限", "zh-Hans": "预售配置上限", ko: "판매 배분 상한" },
-  verifiedPrice: { en: "V5 contract price", "zh-Hant": "V5 合約單價", "zh-Hans": "V5 合约单价", ko: "V5 계약 가격" },
-  verifiedWalletCap: { en: "V5 wallet cap", "zh-Hant": "V5 單錢包上限", "zh-Hans": "V5 单钱包上限", ko: "V5 지갑 상한" },
-  verifiedDisclaimer: { en: "These are deployed V5 contract constants, not proof of funded inventory, transfers, an open sale or live fundraising. Check current onchain state before any purchase.", "zh-Hant": "以上為已部署 V5 合約常數，不代表庫存已轉入、代幣已分配、預售開放或正在募資。購買前仍須查核即時鏈上狀態。", "zh-Hans": "以上为已部署 V5 合约常数，不代表库存已转入、代币已分配、预售开放或正在募资。购买前仍须核对实时链上状态。", ko: "이는 배포된 V5 계약의 상수일 뿐 재고 입금, 토큰 분배, 판매 개시 또는 모금 진행을 증명하지 않습니다. 구매 전 최신 온체인 상태를 확인하세요." },
-  verifiedSignal: { en: "Supply and decimals come from the official token record. The V5 sale price and caps are deployed contract constants, but purchases are not open.", "zh-Hant": "供應量與小數位取自官方代幣紀錄；V5 預售單價及上限為已部署合約常數，但目前未開放購買。", "zh-Hans": "供应量与小数位取自官方代币记录；V5 预售单价及上限为已部署合约常数，但目前未开放购买。", ko: "공급량과 소수 자릿수는 공식 토큰 기록에서 확인됩니다. V5 판매 가격과 상한은 배포된 계약 상수이지만 구매는 아직 열리지 않았습니다." },
+  verifiedPrice: { en: "Sale contract price", "zh-Hant": "預售合約單價", "zh-Hans": "预售合约单价", ko: "판매 계약 가격" },
+  verifiedWalletCap: { en: "Sale wallet cap", "zh-Hant": "預售單錢包上限", "zh-Hans": "预售单钱包上限", ko: "판매 지갑 상한" },
+  verifiedDisclaimer: { en: "These are deployed sale contract constants, not proof of funded inventory, transfers, an open sale or live fundraising. Check current onchain state before any purchase.", "zh-Hant": "以上為已部署預售合約常數，不代表庫存已轉入、代幣已分配、預售開放或正在募資。購買前仍須查核即時鏈上狀態。", "zh-Hans": "以上为已部署预售合约常数，不代表库存已转入、代币已分配、预售开放或正在募资。购买前仍须核对实时链上状态。", ko: "이는 배포된 판매 계약의 상수일 뿐 재고 입금, 토큰 분배, 판매 개시 또는 모금 진행을 증명하지 않습니다. 구매 전 최신 온체인 상태를 확인하세요." },
+  verifiedSignal: { en: "Supply and decimals come from the official token record. The sale price and caps are deployed contract constants, but purchases are not open.", "zh-Hant": "供應量與小數位取自官方代幣紀錄；預售單價及上限為已部署合約常數，但目前未開放購買。", "zh-Hans": "供应量与小数位取自官方代币记录；预售单价及上限为已部署合约常数，但目前未开放购买。", ko: "공급량과 소수 자릿수는 공식 토큰 기록에서 확인됩니다. 판매 가격과 상한은 배포된 계약 상수이지만 구매는 아직 열리지 않았습니다." },
   allocationCaveat: { en: "Token allocations and presale terms are planning figures unless confirmed by the currently configured onchain contract. Purchases are enabled only when the live contract, published whitelist root, and public sale stage all agree. Locks and unsold-token treatment follow the deployed contract, not this description alone.", "zh-Hant": "除非由目前設定的鏈上合約確認，代幣配置與預售條件均屬規劃值。只有鏈上合約、已發布白名單根值與公開銷售階段彼此一致時，才會開放購買。鎖倉與未售 Token 處理以實際部署合約為準，不能只依賴本頁說明。", "zh-Hans": "除非由当前配置的链上合约确认，代币配置与预售条件均属规划值。只有链上合约、已发布白名单根值与公开销售阶段一致时，才会开放购买。锁仓与未售 Token 处理以实际部署合约为准，不能只依赖本页说明。", ko: "현재 설정된 온체인 계약으로 확인되지 않는 한 토큰 배분과 프리세일 조건은 계획값입니다. 온체인 계약, 게시된 허용 목록 루트, 공개 판매 단계가 모두 일치할 때만 구매가 열립니다. 잠금과 미판매 토큰 처리는 이 설명만이 아니라 실제 배포된 계약을 따릅니다." },
 } as const;
 
@@ -344,7 +344,7 @@ export default function RovynCore() {
   }[saleState][locale];
   const verifiedV5 = config.chainId === 4663
     && officialTokenAddress?.toLowerCase() === RVYN_MODEL.contractMainnet
-    && (!config.sale || (config.presaleVersion === 5 && ["0x3cb9443f4726155817106a0fe115b26e9ad14b5f", "0x6496fc99ba4d5904e6c99488a9a9f477605146ac"].includes(config.sale.toLowerCase())));
+    && (!config.sale || (config.presaleVersion === 6 || (config.presaleVersion === 5 && ["0x3cb9443f4726155817106a0fe115b26e9ad14b5f", "0x6496fc99ba4d5904e6c99488a9a9f477605146ac"].includes(config.sale.toLowerCase()))));
   const plannedLabel = {
     en: "PLANNED · NOT LIVE",
     "zh-Hant": "規劃值・尚未生效",
@@ -468,6 +468,7 @@ export default function RovynCore() {
             <button className="secondary full-width top-gap" disabled={busy} onClick={() => void refund()}>{rvynPageCopy.refund[locale]}</button>
           )}
           {canPurchase ? <p className="side-note">{tr("Gas 另計。購買不代表獲得公司股份、分潤或保證報酬。")}</p> : null}
+          {canPurchase && isV6 ? <p className="side-note">{tr("購買時不會立即收到 RVYN；預售結束並結算後，請回到本頁領取。沒有退款。")}</p> : null}
         </div>
       </section>
       <RetainedRvynTokenomics locale={locale} contractV5={verifiedV5} translate={tr} />

@@ -45,7 +45,7 @@ import { isAddress } from "viem";
 
 // Keep new deployments closed: the audited V5 mainnet contract is already registered.
 const V5_MAINNET_DEPLOYMENT_ENABLED = false;
-// V6 stays closed until the founder explicitly approves the mainnet deployment (preflight: scripts/v6-preflight.mjs).
+// V6 was deployed on 2026-10-06 (0xfa2b…f888); keep the control closed so it cannot create a second sale (preflight: scripts/v6-preflight.mjs).
 const V6_MAINNET_DEPLOYMENT_ENABLED = false;
 
 type AdminToken = {

@@ -167,7 +167,13 @@ export async function readRvynHealth(client: HealthClient, config: HealthConfig)
     attempt(sale("closedAt"), asBigint),
     attempt(sale("allowlistRoot"), asBytes32),
     attempt(sale("inventoryDeposited"), asBool),
-    attempt(sale("managerAllocationReleased"), asBool),
+    // V5 exposes the flag; V6 has no such getter because the manager allocation is released at settlement (state 3).
+    (async () => {
+      const direct = await attempt(sale("managerAllocationReleased"), asBool);
+      if (direct.ok) return direct;
+      const settled = await attempt(sale("state"), asNumber);
+      return settled.ok ? { ok: true as const, value: settled.value === 3 } : direct;
+    })(),
     attempt(sale("pair"), asAddress),
     attempt(sale("initialLpLock"), asAddress),
     attempt(sale("teamVesting"), asAddress),
