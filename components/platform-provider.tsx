@@ -521,6 +521,13 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       )}
       {children}
       <footer className="site-footer atelier-footer">
+        <div className="atelier-footer__bar">
+          <span className="atelier-footer__tag">SEC·END</span>
+          <i aria-hidden="true" />
+          <button type="button" className="atelier-footer__top-link" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            ↑ {{ en: "Back to top", "zh-Hant": "回到頂端", "zh-Hans": "回到顶部", ko: "맨 위로" }[locale]}
+          </button>
+        </div>
         <div className="atelier-footer__top">
           <div className="atelier-footer__brand">
             <Link className="brand" href="/">
@@ -558,7 +565,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <Dialog open={walletOpen} onOpenChange={setWalletOpen}>
-        <DialogContent className="wallet-dialog">
+        <DialogContent className="wallet-dialog" data-lenis-prevent>
           <DialogTitle>
             {account ? tr("你的錢包") : tr("連接你的錢包")}
           </DialogTitle>

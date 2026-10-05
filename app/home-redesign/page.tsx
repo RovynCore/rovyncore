@@ -12,6 +12,7 @@ import { ConstellationStory } from "@/components/constellation-story";
 import { SectorTag } from "@/components/sector-tag";
 import { PresaleConsole } from "@/components/presale-console";
 import { HeroHud, TelemetryRail } from "@/components/hero-hud";
+import { HeroParallax } from "@/components/hero-parallax";
 import type { Locale } from "@/lib/translations";
 
 type Copy = Record<Locale, string>;
@@ -128,6 +129,7 @@ export default function HomeRedesign() {
       <section className="reboot-hero" aria-labelledby="reboot-title">
         <HomeHeroMedia />
         <HeroHud />
+        <HeroParallax />
         <div className="reboot-hero__copy">
           <div className="reboot-hero__eyebrow"><span className="reboot-network-pill"><Image src="/robinhood-chain-feather-avatar.jpg" alt="" width={19} height={19} />{c(locale, copy.network)}</span><span className="reboot-release"><i />{c(locale, saleStatusText)}</span></div>
           <h1 className="reboot-hero__headline" id="reboot-title"><span>{c(locale, copy.headlineFirst)}</span><em>{c(locale, copy.headlineSecond)}</em></h1>

@@ -28,10 +28,10 @@ export function HeroHud() {
 }
 
 // Facts only: each cell is either a fixed contract fact or the live stage text passed in by the page.
-export function TelemetryRail({ cells, label }: { cells: Array<{ key: string; label: Copy; value: string | Copy; live?: boolean }>; label: string }) {
+export function TelemetryRail({ cells, label, flow = false }: { cells: Array<{ key: string; label: Copy; value: string | Copy; live?: boolean }>; label: string; flow?: boolean }) {
   const { locale } = useLanguage();
   return (
-    <dl className="telemetry" aria-label={label}>
+    <dl className={flow ? "telemetry telemetry--flow" : "telemetry"} aria-label={label}>
       {cells.map((cell) => (
         <div key={cell.key} className={cell.live ? "telemetry__cell is-live" : "telemetry__cell"}>
           <dt>{cell.label[locale]}</dt>

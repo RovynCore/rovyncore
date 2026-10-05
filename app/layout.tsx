@@ -15,6 +15,8 @@ import { AtelierEffects } from "@/components/atelier-effects";
 import { AgentTools } from "@/components/agent-tools";
 import { LanguageProvider } from "@/components/language-provider";
 import { SiteMotion } from "@/components/site-motion";
+import { IntroSplash } from "@/components/intro-splash";
+import { SmoothScroll } from "@/components/smooth-scroll";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.rovyncore.com"),
@@ -71,6 +73,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="antialiased">
+        <script
+          dangerouslySetInnerHTML={{ __html: "(function(){try{var d=document.documentElement;if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('rc-intro')){d.classList.add('intro-on');setTimeout(function(){d.classList.remove('intro-on')},6000)}}catch(e){}})();" }}
+        />
+        <IntroSplash />
+        <SmoothScroll />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({

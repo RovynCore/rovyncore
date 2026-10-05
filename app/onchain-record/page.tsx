@@ -13,6 +13,7 @@ import { RVYN_MODEL } from "@/lib/rvyn-model";
 import { rvynPublicCopy } from "@/lib/rvyn-public-copy";
 import { useScrollReveal } from "@/components/scroll-reveal";
 import { ParticleField } from "@/components/visual/particle-field";
+import { TelemetryRail } from "@/components/hero-hud";
 import type { ReactNode } from "react";
 
 const RECORDS_PER_PAGE = 12;
@@ -131,6 +132,12 @@ export default function OnchainRecordDirectory() {
           <ParticleField mode="explorer"/>
         </div>
       </div>
+      <TelemetryRail flow label="Records" cells={[
+        { key: "net", label: { en: "NETWORK", "zh-Hant": "網路", "zh-Hans": "网络", ko: "네트워크" }, value: "Robinhood Chain · 4663" },
+        { key: "src", label: { en: "SOURCE", "zh-Hant": "來源", "zh-Hans": "来源", ko: "출처" }, value: { en: "RovynCore launches only", "zh-Hant": "僅限 RovynCore 發射", "zh-Hans": "仅限 RovynCore 发射", ko: "RovynCore 발행만" } },
+        { key: "ord", label: { en: "ORDER", "zh-Hant": "排序", "zh-Hans": "排序", ko: "정렬" }, value: { en: "By creation time", "zh-Hant": "依建立時間", "zh-Hans": "按创建时间", ko: "생성 시간순" } },
+        { key: "snap", label: { en: "ORIGIN SNAPSHOT", "zh-Hant": "起源快照", "zh-Hans": "起源快照", ko: "초기 스냅샷" }, value: { en: "Immutable", "zh-Hant": "不可覆寫", "zh-Hans": "不可覆盖", ko: "변경 불가" } },
+      ]} />
 
       <section className="record-directory__toolbar" aria-label={tr("資產紀錄篩選")}>
         <label className="search record-directory__search">
