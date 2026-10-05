@@ -45,6 +45,8 @@ import { isAddress } from "viem";
 
 // Keep new deployments closed: the audited V5 mainnet contract is already registered.
 const V5_MAINNET_DEPLOYMENT_ENABLED = false;
+// V6 stays closed until the founder explicitly approves the mainnet deployment (preflight: scripts/v6-preflight.mjs).
+const V6_MAINNET_DEPLOYMENT_ENABLED = false;
 
 type AdminToken = {
   address: string;
@@ -499,6 +501,33 @@ export default function Admin() {
     await admin("sale", { tx, replace: !!config.sale });
     toast.success(tr("RVYN 預售已註冊"));
   }
+  async function deploySaleV6() {
+    if (config.chainId !== 4663) throw new Error(tr("RVYN 正式預售只能部署在 Robinhood Chain 主網。"));
+    if (!config.genesis) throw new Error(tr("請先發行 RovynCore"));
+    if (!V6_MAINNET_DEPLOYMENT_ENABLED) throw new Error(tr("V6 部署尚未開放；需創辦人明確同意後才會啟用。"));
+    const safe = RVYN_MODEL.multisigMainnet;
+    const tx = await transact({
+      title: tr("部署 RVYN V6 預售合約"),
+      onSubmitted: setTxHash,
+      data: encodeDeployData({
+        abi: rvynV6Artifacts.RovynPresaleV6.abi as unknown as Abi,
+        bytecode: rvynV6Artifacts.RovynPresaleV6.bytecode as Hex,
+        args: [config.genesis, safe, RVYN_MODEL.routerMainnet, safe, safe, BigInt(RVYN_MODEL.v6Deployment.lpLockSeconds), BigInt(RVYN_MODEL.v6Deployment.withdrawStepBps)],
+      }),
+      value: 0n,
+      allowUndeployed: true,
+      details: [
+        [tr("Token"), config.genesis],
+        [tr("Router"), RVYN_MODEL.routerMainnet],
+        [tr("發起人／團隊／LP 受益地址"), safe],
+        [tr("LP 鎖定期限"), `24 ${tr("個月")}`],
+        [tr("營運資金解鎖"), tr("每 30 天 25%")],
+      ],
+    });
+    setTxHash(tx);
+    await admin("sale", { tx, replace: !!config.sale });
+    toast.success(tr("RVYN 預售已註冊"));
+  }
   const button = (
     label: string,
     fn: () => Promise<unknown>,
@@ -784,6 +813,11 @@ export default function Admin() {
                 () => admin("sale", { tx: saleTxHash, replace: !!config.sale }),
                 !saleTxHash,
               )}
+              <details className="admin-ops-group">
+                <summary>{tr("部署 V6 預售合約（參數已固定；目前未開放）")}</summary>
+                <p>{tr("發起人、團隊與 LP 受益地址皆為 Safe 多簽；LP 鎖定 24 個月；營運資金每 30 天解鎖 25%。部署是鏈上交易，需創辦人明確同意後才會開啟此按鈕。")}</p>
+                {button(tr("部署 RVYN V6 預售合約"), deploySaleV6, !V6_MAINNET_DEPLOYMENT_ENABLED)}
+              </details>
               <p className="side-note">{tr("改用新部署的預售合約時使用。伺服器只會在舊合約從未開啟、沒有募資也沒有庫存時才允許替換。")}</p>
               <code className="address">{config.sale || tr("尚未部署 Sale")}</code>
               </>}

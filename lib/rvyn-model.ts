@@ -1,5 +1,5 @@
 // V5 allocation and supply constants were read back from the deployed mainnet
-// contracts on 2026-09-30. Contract-defined allocations do not imply funding,
+// contracts on 2026-09-30 (the V6 candidate keeps the same allocations). Contract-defined allocations do not imply funding,
 // distribution, whitelist opening or sale opening. See the onchain-facts audit.
 export const RVYN_MODEL = {
   name: "RovynCore",
@@ -11,7 +11,7 @@ export const RVYN_MODEL = {
   decimals: 18,
   priceEth: "0.0001",
   presaleTokens: "1000000",
-  // Full fixed supply is initially routed through the audited distribution flow.
+  // The full fixed supply is deposited into the sale contract, which holds it until settlement.
   escrowTokens: "10000000",
   walletCapEth: "0.25",
   walletCapTokens: 2500,
@@ -23,6 +23,12 @@ export const RVYN_MODEL = {
   multisigMainnet: "0xe574e30153efcd94F686124B2d586A0643b33Ef4",
   factoryMainnet: "0x8bceaa40b9acdfaedf85adf4ff01f5ad6517937f",
   wethMainnet: "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+  // Constructor parameters decided by the founder on 2026-10-05 for the V6 sale (not yet deployed): the Safe is sponsor,
+  // team beneficiary and LP beneficiary; LP locked 24 months; operating funds unlock 25% per 30 days from settlement.
+  v6Deployment: {
+    lpLockSeconds: 730 * 24 * 60 * 60,
+    withdrawStepBps: 2500,
+  },
   allocations: [
     { label: "Presale", percent: 10, tokens: 1000000 },
     { label: "Liquidity allocation", percent: 50, tokens: 5000000 },
