@@ -3,6 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "@/components/site-link";
 import { useLanguage } from "@/components/language-provider";
+import { RvynHealthPanel } from "@/components/rvyn-health-panel";
 import type { Locale } from "@/lib/translations";
 
 type Copy = Record<Locale, string>;
@@ -85,6 +86,7 @@ export default function TransparencyPage() {
           ))}
         </ul>
       </section>
+      <RvynHealthPanel />
       <section className="game-principles" aria-labelledby="transparency-audit">
         <div className="game-principles__head">
           <span className="game-chapter__kicker">{t(copy.auditTitle)}</span>

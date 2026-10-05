@@ -20,6 +20,8 @@
     "test:presale:v5": "node scripts/compile-contracts-v5.mjs && node --experimental-strip-types --test tests/presale-v5.test.mjs",
     "test:contracts": "node --test tests/contracts.test.mjs",
     "test:validation": "node --experimental-strip-types --test tests/validation.test.ts",
+    "test:health": "node --experimental-strip-types --test tests/rvyn-health.test.ts",
+    "test:badge": "node --experimental-strip-types --test tests/record-badge.test.ts tests/badge-route.test.ts",
     "test:api": "node tests/api-integration.mjs",
     "typecheck": "tsc --noEmit"
   },

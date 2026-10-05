@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -28,6 +28,8 @@ jobs:
         run: |
           npm run test:validation
           npm run test:allowlist
+          npm run test:health
+          npm run test:badge
           node --import tsx --test tests/localization.test.ts
       - name: Contract tests
         run: |

@@ -11,6 +11,7 @@ import { ArrowLeft, ArrowUpRight, Check, CircleHelp, Copy, ExternalLink, LoaderC
 import { toast } from "sonner";
 import { useLanguage } from "@/components/language-provider";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
+import { RecordBadgeEmbed } from "@/components/record-badge-embed";
 import { rvynPublicCopy } from "@/lib/rvyn-public-copy";
 
 import { ReadingNav, MotionDisclosure } from "@/components/workflow-motion";
@@ -303,6 +304,7 @@ export default function AssetRecordPage({ params }: { params: Promise<{ contract
 
         <aside className="record-detail__side">
           <section className="record-panel"><span className="eyebrow">{tr("RECORD STATUS")}</span><dl className="record-kv"><div><dt>{tr("紀錄狀態")}</dt><dd>{statusLabel(record.recordStatus, tr)}</dd></div><div><dt>{tr("比較狀態")}</dt><dd>{statusLabel(record.comparisonStatus, tr)}</dd></div><div><dt>{tr("最近同步")}</dt><dd>{current.lastSyncedAt ? new Date(current.lastSyncedAt * 1000).toLocaleString(locale) : "—"}</dd></div><div><dt>{tr("資料來源")}</dt><dd title={record.dataSource}>{sourceLabel(record.dataSource)}</dd></div></dl><p className="record-muted"><Check size={13} /> {tr("可核對紀錄，不是安全認證或投資建議。")}</p></section>
+          <RecordBadgeEmbed address={record.asset.contractAddress} status={record.recordStatus} />
           <a className="record-explorer" href={explorerContract} target="_blank" rel="noreferrer">{tr("在 Robinhood Chain Explorer 查看合約")} <ExternalLink size={15} /></a>
         </aside>
       </div>

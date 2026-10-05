@@ -1,0 +1,8 @@
+.record-badge-embed img { display: block; max-width: 100%; height: auto; margin: 10px 0 14px; border-radius: 12px; }
+.record-badge-embed__tabs { display: flex; gap: 8px; margin: 0 0 8px; }
+.record-badge-embed__tabs button, .record-badge-embed__copy { min-height: 36px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--foreground); font: inherit; font-size: 13px; cursor: pointer; }
+.record-badge-embed__tabs button[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
+.record-badge-embed__tabs button:focus-visible, .record-badge-embed__copy:focus-visible, .record-badge-embed__code:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.record-badge-embed__code { display: block; width: 100%; min-height: 96px; margin: 0 0 8px; padding: 10px 12px; box-sizing: border-box; resize: vertical; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.record-badge-embed__row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.record-badge-embed__status { font-size: 13px; color: var(--muted-foreground); }
