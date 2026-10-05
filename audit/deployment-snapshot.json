@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-11T21:53:59.866Z",
+  "compiler": "0.8.28+commit.7893614a.Emscripten.clang",
+  "expectedChainId": 46630,
+  "contracts": {
+    "GenesisPlatform": {
+      "address": "0xa5b8d31ce298e39ee30378d7791ec307a8cb8621",
+      "hasCode": true,
+      "codeHash": "0x4d81c1dcdd110034f2b421e9fc6e2903d5342651854d693573a35562d4d722cd",
+      "compiledArtifactMatches": true,
+      "runtimeMatchesIgnoringOnlyCompilerImmutableSlots": true,
+      "immutableSlots": [],
+      "state": {
+        "owner": "0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e",
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "treasury": "0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e",
+        "paused": false,
+        "launchFee": "100000000000000",
+        "tokenCount": "2",
+        "isToken:0x37c675766a27b98eb50bdb777ac32a920deafa8e": true,
+        "plans:0": [
+          "200000000000000",
+          "86400",
+          10,
+          true
+        ],
+        "plans:1": [
+          "800000000000000",
+          "86400",
+          50,
+          true
+        ],
+        "plans:2": [
+          "1500000000000000",
+          "86400",
+          100,
+          true
+        ],
+        "proceeds:0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e": "0"
+      },
+      "ethBalance": "0",
+      "explorer": {
+        "httpStatus": 200,
+        "is_verified": false,
+        "sourcePresent": false,
+        "abiPresent": false,
+        "creationTx": "0x9348d54af7b251977b0e7498733cdeb2f48eafc715fa29e1a4233918ed78412c",
+        "creationBytecodeMatchesLocalPrefix": true
+      }
+    },
+    "LaunchToken": {
+      "address": "0x37c675766a27b98eb50bdb777ac32a920deafa8e",
+      "hasCode": true,
+      "codeHash": "0xd33be8cd4f6f3c6488cb142d1afb5a5dd7ef0308cfb848a463283b9df33422c5",
+      "compiledArtifactMatches": true,
+      "runtimeMatchesIgnoringOnlyCompilerImmutableSlots": true,
+      "immutableSlots": [],
+      "state": {
+        "name": "Genesis",
+        "symbol": "GEN",
+        "decimals": 18,
+        "totalSupply": "1000000000000000000000000000",
+        "balanceOf:0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e": "900000000000000000000000000",
+        "balanceOf:0x9b331e142efe2e8d49fe8a3a866e24dda40d1f38": "99999999000000000000000000"
+      },
+      "ethBalance": "0",
+      "explorer": {
+        "httpStatus": 200,
+        "is_verified": false,
+        "sourcePresent": false,
+        "abiPresent": false,
+        "creationTx": "0x67cf68c532759b1e2d4ebd452efedc13d70966e35efd116d57c43f2b4a5139fc",
+        "creationBytecodeMatchesLocalPrefix": true
+      }
+    },
+    "GenesisSale": {
+      "address": "0x9b331e142efe2e8d49fe8a3a866e24dda40d1f38",
+      "hasCode": true,
+      "codeHash": "0xb2881191cb94de8ff344eb77d61b1d21466057cb655ca1418725eada734ac778",
+      "compiledArtifactMatches": true,
+      "runtimeMatchesIgnoringOnlyCompilerImmutableSlots": true,
+      "immutableSlots": [
+        {
+          "length": 32,
+          "start": 705
+        },
+        {
+          "length": 32,
+          "start": 1357
+        },
+        {
+          "length": 32,
+          "start": 1559
+        },
+        {
+          "length": 32,
+          "start": 478
+        },
+        {
+          "length": 32,
+          "start": 1209
+        }
+      ],
+      "state": {
+        "owner": "0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e",
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "treasury": "0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e",
+        "active": false,
+        "token": "0x37C675766a27B98Eb50bdb777AC32A920deAfA8e",
+        "pricePerToken": "1000000000000000",
+        "proceeds:0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e": "0"
+      },
+      "ethBalance": "0",
+      "immutableWords": [
+        "00000000000000000000000037c675766a27b98eb50bdb777ac32a920deafa8e",
+        "00000000000000000000000037c675766a27b98eb50bdb777ac32a920deafa8e",
+        "00000000000000000000000037c675766a27b98eb50bdb777ac32a920deafa8e",
+        "00000000000000000000000000000000000000000000000000038d7ea4c68000",
+        "00000000000000000000000000000000000000000000000000038d7ea4c68000"
+      ],
+      "immutableWordsMatchReadValues": true,
+      "explorer": {
+        "httpStatus": 200,
+        "is_verified": false,
+        "sourcePresent": false,
+        "abiPresent": false,
+        "creationTx": "0xf35b0dcf5c773c90966fcc06f53a09fe50f3686a631bf4a2695e6218b99a763c",
+        "creationBytecodeMatchesLocalPrefix": true
+      }
+    }
+  },
+  "errors": [],
+  "chainId": 46630,
+  "block": "117701277"
+}

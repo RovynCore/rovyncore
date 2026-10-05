@@ -1,0 +1,18 @@
+[
+  {
+    "path": "app/home-redesign/page.tsx",
+    "sha256": "1e090b35456daae53e7f100234689d613a412ac7df30c4dafb013769e92b479d"
+  },
+  {
+    "path": "components/home-content.tsx",
+    "sha256": "90f931c1888915bc54a0cba0876bee4cceeef0586bfbe35d7aedf1f46611d3d5"
+  },
+  {
+    "path": "components/home-hero-media.tsx",
+    "sha256": "fe7e48b2693fdea5b380db42dc5c846b338b71e6e6b40b17b9fad2376906a3de"
+  },
+  {
+    "path": "app/interaction-polish.css",
+    "sha256": "1fdac7fd77af625acc160455fd76568534ebb0c6af7e5e42ace59f8dd0d7d294"
+  }
+]

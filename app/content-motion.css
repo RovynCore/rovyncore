@@ -1,0 +1,186 @@
+/* Motion belongs to the information it explains. All effects remain inside existing surfaces. */
+.home-reboot .constellation-story { grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr); gap:clamp(36px,5vw,80px); }
+.home-reboot .constellation-story .reboot-flow__intro { position:relative; top:auto; padding-top:0; }
+.story-constellation { width:min(100%,390px); margin:16px auto 0; }
+.story-constellation svg { display:block; width:100%; height:auto; overflow:visible; }
+.story-constellation__orbit { fill:none; stroke:#a8cd79; stroke-width:1; stroke-opacity:.22; stroke-dasharray:3 7; }
+.story-constellation__core-ring { fill:none; stroke:#c9ff55; stroke-opacity:.36; }
+.story-constellation__core-ring--outer { stroke-opacity:.12; stroke-dasharray:2 6; }
+.story-constellation__node path { fill:none; stroke:#aac57c; stroke-width:1; stroke-opacity:.16; transition:stroke-opacity .4s ease; }
+.story-constellation__halo { fill:#c9ff55; fill-opacity:.025; stroke:#a8cd79; stroke-opacity:.25; transition:fill-opacity .4s ease,stroke-opacity .4s ease; }
+.story-constellation__dot { fill:#9ab575; transition:fill .4s ease; }
+.story-constellation__node text { fill:#8ca56f; font:10px ui-monospace,monospace; letter-spacing:2px; }
+.story-constellation__node.is-active path { stroke:#c9ff55; stroke-opacity:.65; }
+.story-constellation__node.is-active .story-constellation__halo { fill-opacity:.12; stroke:#c9ff55; stroke-opacity:.7; }
+.story-constellation__node.is-active .story-constellation__dot { fill:#c9ff55; }
+.story-constellation__node.is-active text { fill:#dbeaa6; }
+.story-constellation__word { fill:#edf3e4; font:650 23px sans-serif; letter-spacing:5px; }
+.story-constellation__subword { fill:#a8cd79; font:10px ui-monospace,monospace; letter-spacing:6px; }
+.story-constellation__caption { display:flex; align-items:baseline; gap:14px; min-height:58px; padding:0 18px; border-top:1px solid rgba(168,205,121,.16); }
+.story-constellation__caption>span { color:#c9ff55; font:11px ui-monospace,monospace; }
+.home-reboot .story-constellation__caption>p { margin:14px 0 0; font-size:13px; line-height:1.65; }
+.home-reboot .constellation-story .reboot-flow__steps { align-self:center; }
+.home-reboot .constellation-story .reboot-step { display:block; padding:24px 22px; border-radius:0; transition:background-color .3s ease,border-color .3s ease; }
+.home-reboot .constellation-story .reboot-step.is-active { background:linear-gradient(90deg,rgba(168,205,121,.08),transparent); border-bottom-color:rgba(201,255,85,.35); }
+.story-step-selector { display:block; width:100%; min-height:48px; padding:0; border:0; border-radius:5px; color:inherit; background:none; text-align:left; cursor:pointer; }
+.story-step-selector:focus-visible { outline:2px solid #c9ff55; outline-offset:7px; }
+.home-reboot .constellation-story .reboot-step__top { display:flex; align-items:center; justify-content:space-between; margin-bottom:13px; }
+.story-step-selector__title { display:block; color:#edf3e4; font-size:clamp(21px,2vw,27px); line-height:1.3; font-weight:500; letter-spacing:-.02em; }
+.home-reboot .constellation-story .reboot-step>p { margin:13px 0 0; font-size:15px; line-height:1.85; color:#aebfa1; }
+.home-reboot .constellation-story .reboot-step.is-active .reboot-step__top { color:#c9ff55; }
+
+/* The moving marker identifies the selected stage, not a completion percentage. */
+.unified-roadmap__route { position:relative; height:26px; margin:8px 16.6667% 15px; }
+.unified-roadmap__route::before { position:absolute; inset:12px 0 auto; height:1px; content:""; background:rgba(168,205,121,.24); }
+.unified-roadmap__route>i { position:absolute; top:9px; width:7px; height:7px; border:1px solid #82995d; border-radius:50%; background:#0a1008; translate:-50% 0; }
+.unified-roadmap__route>span { position:absolute; top:6px; width:13px; height:13px; border:1px solid #c9ff55; border-radius:50%; background:#c9ff55; box-shadow:0 0 16px rgba(201,255,85,.32); translate:-50% 0; transition:left .45s cubic-bezier(.2,.75,.2,1); }
+.unified-roadmap__panel { min-height:340px; }
+.unified-roadmap__panel .unified-roadmap__milestones { align-items:stretch; }
+.home-reboot .unified-roadmap__panel .home-roadmap__card { min-height:248px; }
+
+/* A small record axis uses actual loaded facts, without invented verification activity. */
+.home-reboot .home-featured .home-featured__card--official .home-featured__facts.record-fact-timeline { position:relative; display:grid; grid-template-columns:1fr; gap:0; margin-top:24px; padding:3px 0; border:0; }
+.record-fact-timeline::before { position:absolute; top:22px; bottom:22px; left:6px; width:1px; content:""; background:rgba(168,205,121,.25); }
+.home-reboot .home-featured .home-featured__card--official .home-featured__facts.record-fact-timeline>span { position:relative; padding:10px 0 10px 27px; border:none; }
+.record-fact-timeline>span::before { position:absolute; top:16px; left:3px; width:7px; height:7px; border:1px solid #b6d88c; border-radius:50%; content:""; background:#14210d; }
+.home-reboot .home-featured .home-featured__card--official .home-featured__facts.record-fact-timeline strong { display:block; margin-top:4px; font-size:16px; font-variant-numeric:tabular-nums; }
+.home-reboot .home-featured__progress-track>span { transition:width .5s ease; }
+
+/* Education, not an automatically advancing application status. */
+.eligibility-flow { max-width:520px; margin-top:44px; padding:26px 0 0; border-top:1px solid rgba(168,205,121,.2); }
+.eligibility-flow__heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 16px; }
+.eligibility-flow__heading h3 { margin:0; color:#edf3e4; font-size:19px; font-weight:500; }
+.eligibility-flow__heading>span { color:#94a783; font-size:12px; }
+.eligibility-flow__stages { position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:28px; }
+.eligibility-flow__path { position:absolute; top:28px; right:16.6667%; left:16.6667%; height:1px; background:rgba(168,205,121,.26); }
+.eligibility-flow__path>span { position:absolute; top:-2px; width:36px; height:5px; border-radius:5px; background:#b6de82; opacity:.6; translate:-50% 0; transition:left .45s cubic-bezier(.2,.75,.2,1); }
+.eligibility-flow__stages>button { position:relative; display:flex; min-width:0; flex-direction:column; align-items:center; gap:12px; padding:0 3px 8px; border:0; border-radius:8px; background:transparent; color:#9fae91; cursor:pointer; }
+.eligibility-flow__stages>button:focus-visible { outline:2px solid #c9ff55; outline-offset:4px; }
+.eligibility-flow__node { display:grid; width:56px; height:56px; place-items:center; border:1px solid rgba(168,205,121,.3); border-radius:50%; color:#adc88e; background:#0b1209; transition:border-color .3s ease,box-shadow .3s ease,color .3s ease; }
+.eligibility-flow__stages>button>span:not(.eligibility-flow__node) { font-size:13px; line-height:1.5; text-align:center; }
+.eligibility-flow__stages>button>small { font:10px ui-monospace,monospace; color:#758b61; }
+.eligibility-flow__stages>button.is-active { color:#edf3e4; }
+.eligibility-flow__stages>button.is-active .eligibility-flow__node { color:#c9ff55; border-color:#9abf65; box-shadow:0 0 22px rgba(168,205,121,.13); }
+.eligibility-flow__explanation { min-height:126px; margin-top:18px; padding:18px 20px; border:1px solid rgba(168,205,121,.18); border-radius:10px; background:rgba(22,32,15,.4); }
+.rvyn-page .eligibility-flow__explanation p { margin:0; font-size:14px; line-height:1.8; color:#bac9ad; }
+.rvyn-page .eligibility-flow__note { margin:12px 0 0; color:#819475; font-size:11px; line-height:1.6; }
+.rvyn-page .rvyn-allowlist__result { animation:content-settle .28s ease both; }
+
+.presale-terms { margin-top:22px; border-top:1px solid rgba(168,205,121,.2); }
+.presale-terms__toggle { display:flex; width:100%; min-height:72px; align-items:center; justify-content:space-between; gap:14px; padding:17px 0; border:0; border-radius:4px; color:#dfe9d5; background:none; text-align:left; font-size:14px; cursor:pointer; }
+.presale-terms__toggle>span { display:grid; gap:6px; }
+.presale-terms__toggle small { color:#9ebc80; font-size:10px; letter-spacing:.035em; }
+.presale-terms__toggle svg { flex:none; transition:transform .3s ease; }
+.presale-terms__toggle[aria-expanded="true"] svg { transform:rotate(180deg); }
+.presale-terms__toggle:focus-visible { outline:2px solid #c9ff55; outline-offset:4px; }
+.presale-terms__body { display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows .32s ease,opacity .25s ease; }
+.presale-terms__body[data-expanded="true"] { grid-template-rows:1fr; opacity:1; }
+.presale-terms__body>div { min-height:0; overflow:hidden; }
+.rvyn-page .presale-terms .receipt { margin-block:0 10px; font-variant-numeric:tabular-nums; }
+.rvyn-page .rvyn-sale-status>span { animation:content-settle .28s ease both; }
+
+/* The crystal does not move; a slow low-opacity illumination stays behind it. */
+.rvyn-page .genesis-hero.content-motion-zone::after { background:radial-gradient(ellipse at 72% 47%,rgba(185,224,94,.11),transparent 45%); opacity:.65; pointer-events:none; }
+
+@keyframes content-settle { from { opacity:.55; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@keyframes content-light-breathe { 0%,100% { opacity:.45; } 50% { opacity:.9; } }
+@keyframes content-core-breathe { 0%,100% { stroke-opacity:.2; } 50% { stroke-opacity:.45; } }
+@media (prefers-reduced-motion:no-preference) {
+  .story-constellation[data-motion-in-view="true"] .story-constellation__core-ring--outer { animation:content-core-breathe 9s ease-in-out infinite; }
+  .story-constellation[data-motion-in-view="true"] .story-constellation__node.is-active .story-constellation__halo { animation:content-core-breathe 7s ease-in-out infinite; }
+  .story-constellation__caption>p,.eligibility-flow__explanation>p.is-active,.unified-roadmap__panel.is-active { animation:content-settle .32s ease both; }
+  .record-fact-timeline[data-motion-entered="true"]>span { animation:content-settle .45s ease both; }
+  .record-fact-timeline[data-motion-entered="true"]>span:nth-child(2) { animation-delay:.09s; }
+  .record-fact-timeline[data-motion-entered="true"]>span:nth-child(3) { animation-delay:.18s; }
+  .rvyn-page .genesis-hero[data-motion-in-view="true"]::after { animation:content-light-breathe 12s ease-in-out infinite; }
+  .rvyn-page .genesis-hero[data-motion-entered="true"] .hero-copy>:is(.tag,h1,p,.rvyn-hero-actions,.hero-note) { animation:content-settle .65s ease both; }
+  .rvyn-page .genesis-hero[data-motion-entered="true"] .hero-copy>h1 { animation-delay:.06s; }
+  .rvyn-page .genesis-hero[data-motion-entered="true"] .hero-copy>p { animation-delay:.12s; }
+  .rvyn-page .genesis-hero[data-motion-entered="true"] .hero-copy>.rvyn-hero-actions { animation-delay:.18s; }
+}
+@media (max-width:1000px) {
+  .home-reboot .constellation-story { grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:28px; }
+  .unified-roadmap__panel { min-height:390px; }
+}
+@media (max-width:760px) {
+  .home-reboot .constellation-story { grid-template-columns:1fr; gap:22px; }
+  .story-constellation { width:min(78%,290px); margin-top:4px; }
+  .story-constellation__caption { min-height:54px; padding:0 8px; }
+  .home-reboot .constellation-story .reboot-step { padding:20px 14px; }
+  .home-reboot .constellation-story .reboot-step>p { font-size:14px; line-height:1.8; }
+  .unified-roadmap__route { margin-inline:16.6667%; }
+  .unified-roadmap__panel { min-height:0; }
+  .home-reboot .unified-roadmap__panel .home-roadmap__card { min-height:0; }
+  .eligibility-flow { margin-top:28px; padding-top:22px; }
+  .eligibility-flow__explanation { min-height:128px; padding:16px; }
+  .eligibility-flow__heading h3 { font-size:18px; }
+  .eligibility-flow__node { width:52px; height:52px; }
+  .eligibility-flow__path { top:26px; }
+}
+@media (max-width:420px) {
+  .eligibility-flow__stages { gap:4px; }
+  .eligibility-flow__stages>button>span:not(.eligibility-flow__node) { font-size:12px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .home-reboot .constellation-story *, .home-reboot .unified-roadmap__route *, .home-reboot .unified-roadmap__panel,
+  .home-reboot .record-fact-timeline>span,.home-reboot .home-featured__progress-track>span,
+  .rvyn-page .eligibility-flow *, .rvyn-page .presale-terms *, .rvyn-page .rvyn-sale-status>span,
+  .rvyn-page .rvyn-allowlist__result,.rvyn-page .genesis-hero .hero-copy>* { animation:none !important; transition:none !important; }
+  .rvyn-page .genesis-hero::after { animation:none !important; }
+}
+.home-reboot .constellation-story .reboot-step>.story-step-heading { margin:0; font:inherit; }
+
+/* Layer the three natural-size panels in one grid cell, preserving the largest
+   localized height at every breakpoint without pixel-based height guesses. */
+.unified-roadmap__panels { display:grid; }
+.unified-roadmap__panels>.unified-roadmap__panel { grid-area:1 / 1; min-height:0; visibility:hidden; pointer-events:none; }
+.unified-roadmap__panels>.unified-roadmap__panel.is-active { visibility:visible; pointer-events:auto; }
+.home-reboot .constellation-story .reboot-step>p { max-width:none; }
+
+.story-selector-hint { display:none; }
+.eligibility-flow__explanation { display:grid; }
+.eligibility-flow__explanation>p { grid-area:1 / 1; visibility:hidden; pointer-events:none; }
+.eligibility-flow__explanation>p.is-active { visibility:visible; pointer-events:auto; }
+@media (max-width:760px) {
+  .home-reboot .constellation-story .reboot-flow__steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 8px; border-top:none; }
+  .home-reboot .constellation-story .reboot-flow__steps>.story-selector-hint { display:block; grid-column:1 / -1; grid-row:1; margin:0 0 2px; max-width:none; color:#9cb18c; font-size:12px; line-height:1.6; }
+  .home-reboot .constellation-story .reboot-step { display:contents; }
+  .home-reboot .constellation-story .reboot-step>.story-step-heading { grid-row:2; grid-column:auto; min-width:0; }
+  .story-step-selector { min-height:82px; padding:10px; border:1px solid rgba(168,205,121,.22); border-radius:10px; background:rgba(19,29,12,.4); }
+  .home-reboot .constellation-story .reboot-step .reboot-step__top { display:flex; flex-direction:column; justify-content:center; gap:9px; margin:0; font-size:11px; }
+  .home-reboot .constellation-story .reboot-step .reboot-step__top svg { width:23px; height:23px; }
+  .home-reboot .constellation-story .reboot-step.is-active .story-step-selector { border-color:#97bb62; background:rgba(35,49,21,.65); }
+  .story-step-selector__title { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .home-reboot .constellation-story .reboot-step>p { grid-area:3 / 1 / 4 / -1; align-self:stretch; visibility:hidden; pointer-events:none; margin:4px 0 0; padding:20px; border:1px solid rgba(168,205,121,.2); border-radius:10px; background:rgba(18,27,12,.45); }
+  .home-reboot .constellation-story .reboot-step.is-active>p { visibility:visible; pointer-events:auto; }
+}
+
+
+/* Read each locale as a reader would: CJK glyphs need room, while Korean
+   phrases stay together and long identifiers retain an emergency wrap. */
+:is(html:lang(zh-Hant),html:lang(zh-Hans)) main :is(p,li,button,label) { line-break:strict; }
+:is(html:lang(zh-Hant),html:lang(zh-Hans)) :is(.home-reboot,.rvyn-page) :is(.reboot-hero__headline,.reboot-flow__intro h2,.home-featured h2,.home-roadmap h2,.reboot-final h2,.rvyn-allowlist__copy h2,.rc-rvyn-tokenomics h2) { letter-spacing:-.018em; line-height:1.24; }
+:is(html:lang(zh-Hant),html:lang(zh-Hans)) .rvyn-page .genesis-hero .hero-copy h1 { letter-spacing:-.02em; line-height:1.26; }
+:is(html:lang(zh-Hant),html:lang(zh-Hans)) :is(.launchpad-page,.record-directory,.record-detail,.latest-info,.legal) :is(h1,h2,h3) { letter-spacing:-.018em; line-height:1.3; }
+:is(html:lang(zh-Hant),html:lang(zh-Hans)) :is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.latest-info,.legal) p { text-wrap:pretty; }
+html:lang(ko) main :is(h1,h2,h3,p,li,dd,button,label) { word-break:keep-all; overflow-wrap:anywhere; }
+html:lang(ko) :is(.home-reboot,.rvyn-page) :is(.reboot-hero__headline,.reboot-flow__intro h2,.home-featured h2,.home-roadmap h2,.reboot-final h2,.rvyn-allowlist__copy h2,.rc-rvyn-tokenomics h2) { letter-spacing:-.025em; line-height:1.28; }
+html:lang(ko) .rvyn-page .genesis-hero .hero-copy h1 { letter-spacing:-.025em; line-height:1.28; }
+html:lang(ko) :is(.launchpad-page,.record-directory,.record-detail,.latest-info,.legal) :is(h1,h2,h3) { letter-spacing:-.02em; line-height:1.3; }
+html:lang(ko) :is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.latest-info,.legal) p { text-wrap:pretty; }
+.story-step-selector__title,.eligibility-flow__stages>button { text-wrap:balance; }
+@media (max-width:760px) {
+  html:lang(ko) .home-reboot .reboot-hero__headline { font-size:clamp(30px,8.6vw,40px); }
+  html:lang(ko) .home-reboot .reboot-flow__intro h2 { font-size:clamp(28px,7.5vw,34px); }
+  :is(html:lang(zh-Hant),html:lang(zh-Hans),html:lang(ko)) .home-reboot .home-roadmap h2 { font-size:clamp(26px,7vw,32px); }
+  html:lang(ko) .rvyn-page .genesis-hero .hero-copy h1 { font-size:clamp(27px,7.6vw,34px); }
+  html:lang(ko) .rvyn-page .rvyn-hero-actions { align-items:stretch; }
+  html:lang(ko) .rvyn-page .rvyn-hero-actions a { display:flex; align-items:center; justify-content:center; white-space:normal; line-height:1.5; min-height:48px; }
+}
+/* Keep the brand and localized label intact instead of stranding one CJK glyph. */
+.home-reboot #home-featured-title>span { display:inline-block; }
+
+.rvyn-page .genesis-hero .hero-copy { width:min(100%,760px); }
+@media (min-width:761px) {
+  html:lang(ko) .rvyn-page .genesis-hero .hero-copy h1 { font-size:clamp(38px,4.3vw,62px); }
+}

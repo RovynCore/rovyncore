@@ -1,0 +1,5 @@
+Contact: https://x.com/RovynCORE
+Expires: 2027-10-05T00:00:00.000Z
+Preferred-Languages: en, zh
+Canonical: https://www.rovyncore.com/.well-known/security.txt
+Policy: https://www.rovyncore.com/transparency

@@ -1,0 +1,68 @@
+{
+  "version": "3.0.0-rc.1-rvyn-manual-pool",
+  "builtAt": "2026-09-14T15:20:02.592Z",
+  "status": "local-regression-passed-not-deployed",
+  "contracts": [
+    "GenesisPlatform",
+    "GenesisPresale",
+    "GenesisPresaleV3",
+    "GenesisTokenLock"
+  ],
+  "legacyOnly": [
+    "GenesisSale"
+  ],
+  "compiler": {
+    "version": "0.8.28+commit.7893614a.Emscripten.clang",
+    "settings": {
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "evmVersion": "paris",
+      "outputSelection": {
+        "*": {
+          "*": [
+            "abi",
+            "evm.bytecode.object",
+            "evm.deployedBytecode.object"
+          ]
+        }
+      }
+    }
+  },
+  "files": {
+    "GenesisPlatform.sol": "3c69d556f497a6f929186d050b483f447a3c5a4897e6939307f6b4482fe1dd5e",
+    "GenesisPresale.sol": "d04cf9a9872391b4f15e1a687f92ef773cfc1651f72c4045c637b889bd282427",
+    "artifacts/contracts.json": "040a2a29f323462c597c95b66397505e99de2e48a3568f3410ccd98d02ab6b94",
+    "artifacts/standard-input.json": "1205b74c25934eaaaa08e7e5e9c7e79bc4407defa22ee9a6c287f435edad1afa",
+    "artifacts/compiler.json": "ad651a7ce10fea7488dd41c66c33281f81b15fca4399be0b9c2d1b1e230ecfed"
+  },
+  "deploymentGates": [
+    "Independently review new presale and real DEX integration",
+    "Verify chain-specific router/factory/WETH and deployed code",
+    "Verify constructor arguments, sponsor wallet and GEN provenance",
+    "Integrate version-aware website ABI and registration; deposit 8000000 RVYN before opening presale",
+    "For V3, choose and disclose the pool ETH amount before settlement; only post-settlement surplus is withdrawable",
+    "Publish operator, jurisdiction and contact details"
+  ],
+  "rules": {
+    "supply": "10000000 RVYN",
+    "price": "0.0001 ETH",
+    "softCap": "none",
+    "hardCap": "100 ETH",
+    "walletCap": "0.25 ETH cumulative / 2500 RVYN",
+    "saleTokens": "1000000 RVYN",
+    "durationDays": 14,
+    "settlementWindowDays": 7,
+    "lpPercent": 50,
+    "teamPercent": 20,
+    "ecosystemPercent": 10,
+    "marketingPercent": 10,
+    "requiredEscrow": "8000000 RVYN",
+    "unsoldPresale": "burn",
+    "lpLockDays": 365,
+    "teamLockDays": 730,
+    "unusedReserveLockDays": 365
+  },
+  "testScope": "Local Ganache, mock DEX; not third-party audit or real-network acceptance"
+}

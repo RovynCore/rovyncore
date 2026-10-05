@@ -1,0 +1,34 @@
+{
+  "name": "rovyncore-production",
+  "main": "scripts/production-worker.mjs",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "dist/client"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rovyncore-prod-db",
+      "database_id": "5bda42c4-4544-4767-b869-d1f845a3d61e",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "rovyncore-prod-assets"
+    }
+  ],
+  "vars": {
+    "X_AUTO_SYNC": "disabled",
+    "HUMAN_VERIFICATION": "off",
+    "LAUNCH_CONFIRMATION_DEPTH": "8",
+    "ASSET_STATE_FRESHNESS_SECONDS": "600",
+    "PUBLIC_API_RATE_LIMIT": "120"
+  },
+  "triggers": { "crons": [] },
+  "observability": {
+    "enabled": true
+  }
+}

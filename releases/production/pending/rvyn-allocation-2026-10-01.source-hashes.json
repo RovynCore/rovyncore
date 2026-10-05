@@ -1,0 +1,18 @@
+[
+  {
+    "path": "app/rvyn/page.tsx",
+    "sha256": "312efbb0d87da9ee68c3e436de03e66b77411a3983128c9a267ac09d0d705a43"
+  },
+  {
+    "path": "components/visual/rvyn-canonical.tsx",
+    "sha256": "6ea66e39d500d5292a016fa1499c1699ffb193b4e99eff30474cae96f6299559"
+  },
+  {
+    "path": "app/retained-visuals.css",
+    "sha256": "82c63018541be3cb7be9436fa1fc113f08afbbd49bec9f7c25430dce159bce91"
+  },
+  {
+    "path": "app/interaction-polish.css",
+    "sha256": "3d96a716cdfa1fb97a242d5d4f4f8e4ee758670a6010131200c86678d04caf59"
+  }
+]

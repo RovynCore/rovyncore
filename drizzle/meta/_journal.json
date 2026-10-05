@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789153152430,
+      "tag": "0000_chief_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790280000000,
+      "tag": "0001_asset_record_layer",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790370000000,
+      "tag": "0002_rvyn_sale_desk",
+      "breakpoints": true
+    }
+  ]
+}

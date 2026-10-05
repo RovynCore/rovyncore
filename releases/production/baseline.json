@@ -1,0 +1,86 @@
+{
+  "site": "https://www.rovyncore.com",
+  "worker": "rovyncore-production",
+  "latestDocumentedProductionRelease": {
+    "name": "Remove location wording; hide record loading light",
+    "date": "2026-10-05",
+    "workerVersion": "6e4d592a-0943-4838-b27c-4c5835b8417e",
+    "history": "releases/production/release-2026-10-05-11.md",
+    "releasedBy": "Claude Code (website handover from Codex)",
+    "baseGitCommit": "1c473f6a83def91bd4f84a13de9298f7d61be9a3",
+    "sourceManifest": "releases/production/snapshots/release-2026-10-05-11.json",
+    "sourceManifestSha256": "7A45992F29D068A7F449EEE4009792764C8CDD6520592268A23EC861C5EC3827",
+    "sourceFileCount": 284,
+    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-10.json",
+    "changedFileCountFromPreReleaseManifest": 3,
+    "previousRelease": {
+      "name": "Hide record loading light",
+      "date": "2026-10-05",
+      "workerVersion": "2e8aeb44-bd12-488e-b6fe-4719e5f80d09",
+      "history": "releases/production/release-2026-10-05-10.md"
+    },
+    "sourceFolder": "local working copy (path omitted in the public export)",
+    "builtWorkerSha256": "3639B460E1E56BF4A654921FDF19EEDE6537831EA407DD363A5F4B8476FEEEC1",
+    "builtWorkerHashArtifact": "Wrangler dry-run bundled production-worker.js",
+    "builtApplicationSha256": "F607949AA730ACD554ABE52EDA7888303F74F7EAC54FC7929B6F298473BBEE70",
+    "builtApplicationHashArtifact": "dist/server/index.js",
+    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot."
+  },
+  "productionObservedAt": "2026-10-04",
+  "observedLiveBehavior": {
+    "home": {
+      "route": "/",
+      "localeObserved": "en",
+      "live": [
+        "Hero leads with 'A world in the making. RVYN at its core.', game-first lead copy and a mono spec line (chain 4663, 10,000,000 RVYN, first game in development)",
+        "Chapter one / first game section: status in development, release to be announced, RVYN (planned), Robinhood Chain; observatory dial art from genesis-core.png",
+        "Stable looping crystal video without pointer parallax",
+        "Five marquee lines in four languages; line 01 carries the game line",
+        "Creator-route block removed",
+        "One unified three-stage roadmap; near-term includes the first game; first presale date to be announced (no tentative date)",
+        "Four-node story constellation linked to selected story; touch selectors and naturally stable localized paragraph heights",
+        "Roadmap selection marker and three layered equal-height panels",
+        "Actual official token facts on a three-node record axis",
+        "Marquee above navigation,34px desktop/30px mobile, muted forest surface, refined letter spacing and fading edges; actual track width sets28px/s in all four locales"
+      ],
+      "verification": "Current marquee release: four languages at1280,390,320px; sticky order, viewport bounds, anchors and mobile navigation checked. Previous home content/motion checks retained."
+    },
+    "routesRendered": [
+      "/rvyn",
+      "/launchpad",
+      "/onchain-record",
+      "/latest-info",
+      "/development-log (renders Latest Information)",
+      "/legal",
+      "/admin (wallet-authentication gate)"
+    ],
+    "legal": "Version 0.4 (2026-10-04) in four locales describes the deployed V5 contract: Merkle whitelist proof, same-transaction delivery, caps, 14-day window, no refund/claim/minimum/pause, vesting, pool funding limit, 730-day LP lock; no sale date set; RVYN planned as game currency with no live utility.",
+    "atelierLayer": "app/atelier.css + components/atelier-effects.tsx: aria-hidden frames with registration marks and pointer-led hairline light on panels/cards, film grain, header glass after scroll, reading-progress line, editorial footer with explore/information columns and outline wordmark. Reduced motion stops decorative loops.",
+    "rvynPage": "Hero second line and description position RVYN as the planned core currency of the first game (no live utility, staking, profit-sharing or promised returns). Existing crystal and real sale gates retained. Subtle hero illumination, educational three-step whitelist guide explicitly separate from real application status, and accessible expanding terms. Public wallet lookup returned preparation/no-purchase status. Price0.0001 ETH and caps unchanged; platform launch fee0.001 ETH. Chinese/Korean typography and responsive actions reviewed.",
+    "latestInformation": "Automatic discovery/import of both2105584118692200907 and2102971536395427964 confirmed on production API, SSR and browser. The latter was never manually supplied. Last-sync status and native cards verified on desktop and mobile in four locales. Daily release2026.10.02-03. Five-minute production scheduled handler heartbeat confirmed. New incoming posts wait behind an arrival notice to preserve reading position; removed posts disappear immediately. Accessible release details, visible timeline nodes and sticky scroll-aware chapter navigation.",
+    "admin": "Public wallet gate retained. Manual URL form removed from the admin UI; automatic collection explanation/status and signed hide controls remain. Hidden IDs persist across later scans. Legacy authenticated import API retained for compatibility. Generated-wallet isolated tests cover administrator operations; no production administrator signature attempted.",
+    "dynamicChecks": "15 production routes200/rendered,10 UI/CSS assertions,48 production locale/viewport/page checks without horizontal overflow. Stable local search and draft preview, keyboard disclosures and public production wallet picker verified. X sync enabled/statusok every300 seconds with both cached posts, production cron retained. Platform fee0.001 ETH; sale allowlist_prep/closed. Worker0c5b8340-4da2-4134-b882-daf1db4ac0b2 serves100%traffic.",
+    "workflowMotion": "Launchpad live draft preview, mobile sticky summary, actual wallet/submission/confirmation/record stages, focus and step transitions. Directory retains loaded results while querying; latest-request guard. Detail highlights only real changed values and exposes actual event timeline. Latest info/legal reading markers; admin operation feedback. Reduced-motion preferences respected. Public wallet picker opens/closes normally; no production signature or transaction attempted.",
+    "footer": "Editorial footer (2026-10-04): brand, game-first tagline, Explore and Information columns, outline wordmark; © 2026 ROVYN CORE retained lower-left in the base row.",
+    "typography": "Reading/interface sans; selected home/RVYN/news editorial headings use locale-specific serif; addresses/numeric facts use mono. Four locales reviewed across desktop/mobile prototype and compiled desktop candidate. Fonts self-hosted with licenses. Final production mobile8 routes×4 locales passed; live English/Traditional Chinese desktop screenshots reviewed.",
+    "userReview": "User-perspective flow review across the existing site. Mobile record chapter bar reduced169px→72px; section anchors positioned below header/bar. Active chapter revealed within horizontal bar without scrolling the page. Clear draft uses localized accessible AlertDialog, initially focused on Cancel; confirm-only clearing and focus restoration verified. Mobile launch workflow padding22→16px. Editorial serif line-height/spacing tuned; CJK spacing reset.",
+    "globalMarquee": "One shared34px desktop/30px mobile signal strip above navigation; fixed orbit mark, five numbered symbols, multilingual text emphasis,28px/s idle movement with bounded smooth scroll boost. Hover/keyboard focus pause; reduced-motion static reading; existing93/118px offsets retained."
+  },
+  "pendingLocalChanges": "None for release 2026-10-04-01. Game integration (Grok's game-v8/admin-v1 in the Grok bot workspace) is not in this repository and has not shipped. Rejected concept previews remain local-only.",
+  "lastDeploymentAttempt": {
+    "date": "2026-10-04",
+    "status": "deployed",
+    "workerVersion": "23d0b59f-4621-41af-9578-29c81d68395a",
+    "scope": "Game nav tab and /game page, OG/Twitter share card, genesis-core.webp, asset-page layout-shift fix, Legal audit disclosure, per-page descriptions, robots sitemap origin",
+    "checks": [
+      "TypeScript, ESLint, production build and Wrangler dry-run passed; unit tests passed (mjs with strip-types, ts with tsx)",
+      "276 source inputs: exactly 19 authorized changes against release 2026-10-04-01",
+      "Local and production: 9 routes × 4 locales × 1280/390/320px = 108 checks each; no horizontal overflow or console errors; mobile menu shows Game",
+      "Production: og:image/twitter large card on all audited routes; /og-rovyncore.jpg 200; sitemap lists /game; asset-page CLS 0.578 → 0; home transfer 5.22 → 3.48 MB, /rvyn 2.40 → 0.67 MB",
+      "Sale desk allowlist_prep with purchases and registry closed after publish; cron retained; withheld images absent"
+    ],
+    "reason": "Founder asked for a top-bar game entry and for the website to be analyzed and improved; direct production deployment authorized for website updates."
+  },
+  "databaseMigrationAppliedByThisAttempt": false,
+  "onchainDeploymentByThisAttempt": false
+}

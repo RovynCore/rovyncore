@@ -1,0 +1,97 @@
+/* Only the two approved visual sections and the shared action material live here. */
+.rc-rvyn-tokenomics {
+  --rc-border:rgba(157,190,112,.22); --rc-border-active:rgba(201,255,85,.65);
+  --rc-surface-1:rgba(18,26,14,.78);
+  display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.2fr) minmax(0,1fr);
+  align-items:center; gap:clamp(20px,2.4vw,44px); min-height:620px;
+  padding:64px clamp(24px,3.25vw,64px); border-block:1px solid rgba(157,190,112,.22);
+  scroll-margin-top:88px; color:#f1f4e9; background:#080c07;
+}
+.rc-rvyn-tokenomics__intro { padding:0; }
+.rc-rvyn-tokenomics .rc-kicker { display:block; color:#b4cb8d; font:600 11px/1.7 ui-monospace,monospace; letter-spacing:.16em; text-transform:uppercase; }
+.rc-rvyn-tokenomics__intro h2 { max-width:440px; margin:22px 0; color:#f1f4e9; font-size:clamp(32px,2.65vw,48px); line-height:1.12; letter-spacing:-.035em; text-wrap:balance; }
+.rc-rvyn-tokenomics__intro p { max-width:380px; margin:0 0 28px; color:#aab79d; font-size:15px; line-height:1.8; }
+.rc-rvyn-tokenomics__intro .rc-cta { display:inline-flex; min-height:46px; align-items:center; gap:14px; padding:0 20px; font-size:14px; text-decoration:none; }
+.rc-rvyn-orbit { display:grid; min-width:0; place-items:center; overflow:hidden; background:radial-gradient(circle at 50% 50%,rgba(160,201,78,.07),transparent 60%); }
+.rc-rvyn-orbit svg { width:min(100%,510px); height:auto; aspect-ratio:1; filter:drop-shadow(0 0 8px rgba(201,255,85,.12)); }
+.rc-rvyn-orbit__segment { cursor:pointer; outline:none; }
+.rc-rvyn-orbit__segment:focus-visible { filter:drop-shadow(0 0 8px #c9ff55); }
+.rc-rvyn-allocations { display:grid; min-width:0; align-content:center; gap:8px; }
+.rc-rvyn-allocations>button { display:grid; min-height:62px; grid-template-columns:8px minmax(0,1fr) 44px; gap:3px 12px; align-items:center; padding:10px 16px; border:1px solid var(--rc-border); border-radius:10px; color:#f1f4e9; background:var(--rc-surface-1); text-align:left; cursor:pointer; }
+.rc-rvyn-allocations>button:is(:hover,:focus-visible,.is-active) { border-color:var(--rc-border-active); background:rgba(35,48,21,.8); box-shadow:0 0 16px rgba(201,255,85,.07); }
+.rc-rvyn-allocations>button:focus-visible { outline:2px solid #c9ff55; outline-offset:3px; }
+.rc-rvyn-allocations i { width:8px; height:8px; border-radius:50%; }
+.rc-rvyn-allocations span { font-size:14px; line-height:1.35; }
+.rc-rvyn-allocations strong { grid-column:3; grid-row:1 / 3; color:#c9ff55; font-size:19px; font-weight:600; text-align:right; }
+.rc-rvyn-allocations small { grid-column:2; color:#aab79d; font-size:12px; line-height:1.4; }
+
+.record-directory--retained-hero .record-directory__heading { position:relative; min-height:175px; align-items:start; margin-bottom:18px; }
+.record-directory--retained-hero .record-directory__heading>div:first-child { position:relative; z-index:1; max-width:545px; }
+.record-directory--retained-hero .record-directory__heading h1 { font-size:clamp(42px,4vw,58px); line-height:1.06; }
+.record-directory--retained-hero .record-directory__heading p { max-width:535px; font-size:14px; line-height:1.5; }
+.record-directory--retained-hero .rc-explorer-hero-art { position:absolute; top:-56px; right:0; width:58%; height:225px; pointer-events:none; mask-image:linear-gradient(90deg,transparent,#000 17%,#000 92%,transparent); }
+.record-directory--retained-hero .rc-explorer-hero-art__image { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0 12px rgba(26,239,191,.2)); }
+.record-directory--retained-hero .rc-particle-field { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.record-directory--retained-hero .rc-particle-field canvas { display:block; width:100%; height:100%; }
+.record-directory--retained-hero .rc-particle-fallback { position:absolute; inset:0; width:100%; height:100%; opacity:.25; }
+.record-directory--retained-hero .rc-explorer-hero-art canvas { opacity:.2; }
+
+/* Shared dark glass actions use the same lime/olive palette as the navigation. */
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(a.primary,button.primary,a.secondary,button.secondary,a.reboot-button,a.rvyn-hero-action,.rc-cta) {
+  border:1px solid #89ad4d; border-radius:10px; color:#f1f4e9;
+  background:linear-gradient(118deg,rgba(35,53,22,.98),rgba(17,28,12,.97) 65%,rgba(11,18,8,.98));
+  box-shadow:inset 0 1px 0 rgba(210,238,175,.1),0 0 16px rgba(201,255,85,.04);
+  text-align:center; text-decoration:none; transition:border-color .18s,background .18s,box-shadow .18s,transform .18s;
+}
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(a.primary,button.primary,a.secondary,button.secondary,a.reboot-button,a.rvyn-hero-action,.rc-cta):not(:disabled):hover {
+  border-color:#c9ff55; color:#fff; background:linear-gradient(118deg,rgba(47,67,27,.98),rgba(23,36,15,.98));
+  box-shadow:0 0 20px rgba(201,255,85,.12); transform:translateY(-1px);
+}
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(a.secondary,button.secondary,.rc-cta--outline,.reboot-button--glass,.rvyn-hero-action--secondary) { border-color:rgba(157,190,112,.35); background:rgba(15,23,11,.82); box-shadow:inset 0 1px 0 rgba(210,238,175,.04); }
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) .secondary.is-selected { border-color:rgba(201,255,85,.65); color:#d7f7a0; background:rgba(201,255,85,.09); }
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(.text-button,.icon-button):focus-visible { outline:2px solid #c9ff55; outline-offset:3px; border-radius:6px; }
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(a.primary,button.primary,a.secondary,button.secondary,a.reboot-button,a.rvyn-hero-action,.rc-cta):focus-visible { outline:2px solid #c9ff55; outline-offset:3px; }
+:is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(button.primary,button.secondary):disabled { border-color:rgba(157,190,112,.22); color:#9daa8e; opacity:.66; background:#11190d; box-shadow:none; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button { border-color:#89ad4d; color:#f1f4e9; background:linear-gradient(118deg,rgba(35,53,22,.98),rgba(17,28,12,.97) 65%,rgba(11,18,8,.98)); }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-hero__secondary { border-color:rgba(157,190,112,.35); background:rgba(15,23,11,.82); }
+.home-reboot .reboot-hero .reboot-hero__headline { margin-bottom:30px; }
+.home-reboot .reboot-hero .reboot-actions--hero { position:relative; z-index:5; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-hero__whitelist { grid-column:1 / -1; grid-row:1; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-hero__secondary--launch { grid-column:1; grid-row:2; z-index:2; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-hero__secondary--record { grid-column:2; grid-row:2; z-index:2; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button:hover { border-color:#c9ff55; color:#fff; background:linear-gradient(118deg,rgba(47,67,27,.98),rgba(23,36,15,.98)); }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button .reboot-button__label,
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button .home-cta-mark,
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button .home-cta-arrow,
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button .reboot-button__status { color:#f2f8f4; }
+.home-reboot .reboot-hero .reboot-actions--hero>.reboot-button .reboot-button__status i { background:#c9ff55; }
+.rvyn-page .rvyn-hero-action { grid-template-columns:minmax(0,1fr) 18px; }
+.rvyn-page .rvyn-hero-action span { text-align:center; }
+.rvyn-page .genesis-hero { padding-bottom:124px; }
+.rvyn-hero-contract { position:absolute; z-index:2; left:var(--page-gutter); bottom:28px; display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:5px 14px; align-items:center; width:fit-content; max-width:calc(100% - 2 * var(--page-gutter)); }
+.rvyn-hero-contract>span { color:#9caa8c; font-size:11px; line-height:1.4; letter-spacing:.08em; }
+.rvyn-hero-contract>code { grid-column:1; color:#d3e6b6; font-size:13px; line-height:1.6; overflow-wrap:anywhere; user-select:all; }
+.rvyn-hero-contract>code>span { display:inline-block; }
+.rvyn-hero-contract__copy { grid-column:2; grid-row:1 / 3; display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid rgba(157,190,112,.3); border-radius:10px; color:#c2d4a9; background:rgba(15,23,11,.72); cursor:pointer; transition:color .18s,border-color .18s,background .18s; }
+.rvyn-hero-contract__copy:hover { color:#c9ff55; border-color:#89ad4d; background:rgba(35,48,21,.8); }
+.rvyn-hero-contract__copy:focus-visible { outline:2px solid #c9ff55; outline-offset:3px; }
+@media (max-width:700px) { .rvyn-page .genesis-hero { padding-bottom:132px; } .rvyn-hero-contract { bottom:24px; gap:4px 10px; } .rvyn-hero-contract>code { font-size:12px; } }
+@media (prefers-reduced-motion:reduce) { .rvyn-hero-contract__copy { transition:none; } }
+
+@media (max-width:1100px) {
+  .rc-rvyn-tokenomics { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; padding-block:48px; }
+  .rc-rvyn-tokenomics__intro { grid-column:1/-1; }
+  .rc-rvyn-tokenomics__intro h2 { max-width:680px; }
+  .rc-rvyn-tokenomics__intro p { max-width:620px; }
+}
+@media (max-width:700px) {
+  .rc-rvyn-tokenomics { grid-template-columns:1fr; gap:24px; min-height:0; padding:40px 20px; }
+  .rc-rvyn-tokenomics__intro h2 { max-width:none; }
+  .rc-rvyn-orbit svg { max-width:380px; }
+  .rc-rvyn-allocations { grid-template-columns:1fr; gap:8px; }
+  .record-directory--retained-hero .record-directory__heading { min-height:280px; }
+  .record-directory--retained-hero .record-directory__heading>div:first-child { max-width:100%; }
+  .record-directory--retained-hero .rc-explorer-hero-art { top:78px; right:-6%; width:100%; height:205px; opacity:.72; }
+}
+@media (max-width:379px) { .home-reboot .reboot-hero .reboot-actions--hero>.reboot-hero__secondary--record { grid-column:1; grid-row:3; } }
+@media (prefers-reduced-motion:reduce) { :is(.home-reboot,.rvyn-page,.launchpad-page,.record-directory,.record-detail,.wallet-dialog,.legal,.development-log) :is(a.primary,button.primary,a.secondary,button.secondary,a.reboot-button,a.rvyn-hero-action,.rc-cta) { transition:none; } }

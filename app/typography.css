@@ -1,0 +1,48 @@
+@font-face { font-family:'RC Serif TC'; font-style:normal; font-weight:500; font-display:swap; src:url('/fonts/typography/serif-tc.woff2') format('woff2'); }
+@font-face { font-family:'RC Serif SC'; font-style:normal; font-weight:500; font-display:swap; src:url('/fonts/typography/serif-sc.woff2') format('woff2'); }
+@font-face { font-family:'RC Serif KR'; font-style:normal; font-weight:500; font-display:swap; src:url('/fonts/typography/serif-kr.woff2') format('woff2'); }
+
+@font-face { font-family:'RC Geist'; src:url('/fonts/typography/geist.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+@font-face { font-family:'RC Mono'; src:url('/fonts/typography/geist-mono.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+
+/* Font-only study: no size, line-height, spacing, color, surface, or motion changes. */
+:root {
+  --rc-reading:'RC Geist', 'Segoe UI', Arial, sans-serif;
+  --rc-editorial:Georgia, 'Times New Roman', serif;
+  --rc-mono:'RC Mono', ui-monospace, monospace;
+}
+html:lang(zh-Hant) { --rc-reading:'RC Geist', 'PingFang TC', 'Microsoft JhengHei', sans-serif; --rc-editorial:'RC Serif TC', 'Songti TC', 'PMingLiU', serif; }
+html:lang(zh-Hans) { --rc-reading:'RC Geist', 'PingFang SC', 'Microsoft YaHei', sans-serif; --rc-editorial:'RC Serif SC', 'Songti SC', 'SimSun', serif; }
+html:lang(ko) { --rc-reading:'RC Geist', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; --rc-editorial:'RC Serif KR', 'AppleMyungjo', 'Batang', serif; }
+body { font-family:var(--rc-reading); }
+button, input, textarea, select { font-family:var(--rc-reading); }
+main :is(h1,h2,h3,h4) { font-family:var(--rc-reading); }
+
+/* Expressive brand lines; operational headings remain sans-serif. */
+.home-reboot .reboot-hero .reboot-hero__headline { font-family:var(--rc-reading); font-weight:650; }
+.home-reboot .reboot-hero .reboot-hero__headline em,
+.rvyn-page .genesis-hero .hero-copy h1>span {
+  font-family:var(--rc-editorial); font-weight:400; font-style:italic;
+}
+.home-reboot .reboot-flow__intro h2,
+.home-reboot .reboot-final h2,
+.rvyn-page .rc-rvyn-tokenomics__intro h2,
+.latest-info .development-log__header h1,
+.latest-info .latest-info__section-heading h2 {
+  font-family:var(--rc-editorial); font-weight:400;
+}
+.home-reboot .story-step-selector__title { font-family:var(--rc-editorial); font-weight:500; }
+.rvyn-page .genesis-hero .hero-copy h1 { font-family:var(--rc-reading); font-weight:600; }
+html:not(:lang(en)) .home-reboot .reboot-hero .reboot-hero__headline em,
+html:not(:lang(en)) .rvyn-page .genesis-hero .hero-copy h1>span { font-style:normal; font-weight:500; }
+html:not(:lang(en)) .home-reboot .reboot-hero .reboot-hero__headline { font-weight:600; }
+html:not(:lang(en)) :is(.home-reboot .reboot-flow__intro h2,.home-reboot .reboot-final h2,.rvyn-page .rc-rvyn-tokenomics__intro h2) { font-weight:500; }
+html:not(:lang(en)) .latest-info :is(.development-log__header h1,.latest-info__section-heading h2) { font-weight:500; }
+
+/* Numeric values and addresses keep precise, distinct letterforms. */
+:is(.rvyn-hero-contract code,.address,code,.home-featured__progress-stats strong,.rc-rvyn-tokenomics__legend strong,.presale-terms .receipt strong) {
+  font-family:var(--rc-mono); font-variant-numeric:tabular-nums; font-weight:500;
+}
+.header .brand,.site-footer .brand { font-family:var(--rc-reading); }
+
+.site-footer>.site-footer__copyright { font-family:var(--rc-mono); }

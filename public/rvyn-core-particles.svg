@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="none">
+  <defs>
+    <filter id="glow" x="-300%" y="-300%" width="600%" height="600%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft-glow" x="-300%" y="-300%" width="600%" height="600%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+  </defs>
+  <g opacity=".8" filter="url(#soft-glow)" fill="#b8ff52">
+    <circle cx="78" cy="164" r="7"/><circle cx="180" cy="80" r="6"/><circle cx="503" cy="132" r="7"/>
+    <circle cx="570" cy="294" r="6"/><circle cx="94" cy="430" r="6"/><circle cx="518" cy="488" r="8"/>
+    <circle cx="252" cy="548" r="6"/><circle cx="394" cy="92" r="5"/>
+  </g>
+  <g filter="url(#glow)" fill="#d7ff86">
+    <circle cx="78" cy="164" r="2.7"/><circle cx="180" cy="80" r="2.2"/><circle cx="503" cy="132" r="2.8"/>
+    <circle cx="570" cy="294" r="2.3"/><circle cx="94" cy="430" r="2.4"/><circle cx="518" cy="488" r="3"/>
+    <circle cx="252" cy="548" r="2.2"/><circle cx="394" cy="92" r="2"/><circle cx="154" cy="310" r="1.8"/>
+    <circle cx="472" cy="370" r="2"/><circle cx="324" cy="38" r="1.7"/><circle cx="338" cy="596" r="2.4"/>
+    <circle cx="40" cy="282" r="1.6"/><circle cx="600" cy="420" r="1.9"/><circle cx="214" cy="228" r="1.7"/>
+    <circle cx="434" cy="220" r="1.8"/><circle cx="270" cy="126" r="1.5"/><circle cx="392" cy="520" r="1.8"/>
+  </g>
+  <g fill="#9be844" opacity=".9">
+    <path d="m124 242 7-15 10 10-7 15z"/><path d="m546 188 6-13 9 8-5 14z"/>
+    <path d="m152 520 8-17 11 11-8 16z"/><path d="m466 570 7-15 10 9-7 15z"/>
+    <path d="m280 70 5-11 8 7-5 12z"/><path d="m588 360 5-11 8 8-5 11z"/>
+    <path d="m48 520 5-11 8 8-5 11z"/><path d="m356 602 6-13 9 8-6 13z"/>
+  </g>
+</svg>
