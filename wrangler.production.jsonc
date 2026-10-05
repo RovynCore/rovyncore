@@ -22,7 +22,7 @@
   ],
   "vars": {
     "X_AUTO_SYNC": "disabled",
-    "HUMAN_VERIFICATION": "off",
+    "HUMAN_VERIFICATION": "required",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAEyXeuQ-DcPLbSqr",
     "TURNSTILE_HOSTNAMES": "www.rovyncore.com,rovyncore.com",
     "LAUNCH_CONFIRMATION_DEPTH": "8",
