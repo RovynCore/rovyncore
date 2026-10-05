@@ -23,6 +23,8 @@
   "vars": {
     "X_AUTO_SYNC": "disabled",
     "HUMAN_VERIFICATION": "off",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAEyXeuQ-DcPLbSqr",
+    "TURNSTILE_HOSTNAMES": "www.rovyncore.com,rovyncore.com",
     "LAUNCH_CONFIRMATION_DEPTH": "8",
     "ASSET_STATE_FRESHNESS_SECONDS": "600",
     "PUBLIC_API_RATE_LIMIT": "120"
