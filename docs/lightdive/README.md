@@ -10,6 +10,7 @@ Design documents for the first RovynCore game.
 | `simulation/sweep.py` | Parameter sweeps used while choosing the v1.0 values. |
 | `simulation/charts.py` | Renders the simulation charts used in chapter 8. |
 | `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities) for the art team. |
+| `WORKLOG.md` | Work log: what was decided, built and deployed, and what is still open. |
 
 The contracts that implement this design live in `packages/contracts/lightdive/`.
 
