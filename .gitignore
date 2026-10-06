@@ -47,3 +47,6 @@ next-env.d.ts
 /outputs/
 /work/
 /backups/
+
+# Candidate contract builds (regenerate with npm run contracts:compile:lightdive)
+/packages/contracts/lightdive/artifacts/

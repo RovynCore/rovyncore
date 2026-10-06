@@ -381,7 +381,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   };
   return (
     <PlatformContext.Provider
-      value={{ config, ready, account, refresh, connect, transact, admin }}
+      value={{ config, ready, account, refresh, connect, transact, admin, walletProvider: provider, switchWalletChain: walletSession.switchChain }}
     >
       <SiteHeader
         walletBusy={walletSession.busy}

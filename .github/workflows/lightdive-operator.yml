@@ -1,0 +1,46 @@
+name: Lightdive randomness operator (testnet)
+
+# Keeps 48 hours of seed commitments ahead and reveals finished hours for the Lightdive testnet.
+# Mints and dives are refused in hours without a commitment, so this must keep running.
+# Needs repository secrets LIGHTDIVE_OPERATOR_PRIVATE_KEY and LIGHTDIVE_SEED_SECRET (testnet only).
+# Scheduled workflows only run from the default branch.
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lightdive-operator
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            package.json
+            scripts/lightdive-operator.mjs
+            packages/web3
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install viem only
+        run: |
+          VIEM=$(node -p "require('./package.json').dependencies.viem" 2>/dev/null || echo "^2.56.3")
+          mkdir -p "$RUNNER_TEMP/op" && cd "$RUNNER_TEMP/op"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund "viem@$VIEM"
+          ln -s "$RUNNER_TEMP/op/node_modules" "$GITHUB_WORKSPACE/node_modules"
+      - name: Commit and reveal
+        env:
+          OPERATOR_PRIVATE_KEY: ${{ secrets.LIGHTDIVE_OPERATOR_PRIVATE_KEY }}
+          LIGHTDIVE_SEED_SECRET: ${{ secrets.LIGHTDIVE_SEED_SECRET }}
+        run: node --no-warnings --experimental-strip-types scripts/lightdive-operator.mjs
