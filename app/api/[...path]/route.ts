@@ -1,6 +1,3 @@
-import { syncXUpdates, readXSyncState, publicXSync } from "@/lib/x-auto-sync";
-import { canonicalXPost, importXUpdate } from "@/lib/x-updates";
-import { readXUpdates, saveXUpdate } from "@/lib/x-updates-store";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
@@ -216,12 +213,6 @@ async function handle(request: Request) {
       fail(404, "Unknown operations endpoint");
     }
     if (request.method === "GET") {
-      if (route === "x-updates" && path.length === 1) {
-        const enabled = bindings().X_AUTO_SYNC === "enabled";
-        if (enabled) waitUntil(syncXUpdates(db()).catch(() => console.warn("x-auto-sync", { status: "storage_unavailable" })));
-        const [posts, state] = await Promise.all([readXUpdates(), readXSyncState(db())]);
-        return respond({ posts, sync: publicXSync(state, enabled) });
-      }
       if (route === "rvyn" && (path[1] === "status" || path[1] === "allowlist")) {
         await rate(request, "rvyn-public", 120);
         const c = await config();
@@ -642,8 +633,6 @@ async function handle(request: Request) {
         .object({
           action: z.enum([
             "dashboard",
-            "x-update-import",
-            "x-update-remove",
             "settings",
             "deployment",
             "moderate",
@@ -678,21 +667,6 @@ async function handle(request: Request) {
     if (route === "admin") {
       const { action, payload, auth } = body;
       await requireAdmin(request, action, payload, auth);
-      if (action === "x-update-import") {
-        const input = z.object({ url: z.string().min(1).max(500) }).parse(payload);
-        try { canonicalXPost(input.url); } catch { fail(400, "Use an official @RovynCore post URL."); }
-        let post;
-        try { post = await importXUpdate(input.url); } catch (error) { console.warn("x-update-import", error instanceof Error ? { name: error.name, message: error.message } : { name: "unknown" }); fail(502, "X could not provide this public post. Check the URL or try again later."); }
-        const posts = await saveXUpdate(post);
-        await auditAction(action, { id: post.id, url: post.url });
-        return respond({ posts });
-      }
-      if (action === "x-update-remove") {
-        const input = z.object({ id: z.string().regex(/^[1-9]\d{14,19}$/) }).parse(payload);
-        const posts = await saveXUpdate({ remove: input.id });
-        await auditAction(action, { id: input.id });
-        return respond({ posts });
-      }
       const c = await liveConfig();
       if (action === "dashboard") {
         const tokens = await listTokens(c, "new", "", true);

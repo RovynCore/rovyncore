@@ -490,16 +490,6 @@ html.intro-on body { overflow: hidden; }
 }
 
 /* ---------------------------------------------------------------- kept components */
-/* X post cards (components/x-profile-feed.tsx) */
-.x-profile-feed { display: grid; gap: 12px; }
-.x-profile-feed__list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.x-post { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--rv-line); border-radius: var(--rv-r-lg); background: var(--rv-surface); }
-.x-post__header { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--rv-text-3); }
-.x-post__header div { display: grid; }
-.x-post__header strong { color: var(--rv-text); font-size: 14.5px; }
-.x-post p { white-space: pre-line; font-size: 15px; line-height: 1.65; color: var(--rv-text); }
-.x-post a { color: var(--rv-lime); font-size: 14px; }
-
 /* vertical stepper (milestones) at every width */
 .rv-steps--vertical { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .rv-steps--vertical .rv-step { padding: 0 0 22px 26px; border-top: 0; border-left: 2px solid var(--rv-line-2); }
@@ -507,13 +497,6 @@ html.intro-on body { overflow: hidden; }
 .rv-steps--vertical .rv-step.is-done { border-left-color: rgba(166, 226, 58, 0.55); }
 .rv-steps--vertical .rv-step.is-current { border-left-color: var(--rv-lime); }
 .rv-steps--vertical .rv-step:last-child { padding-bottom: 0; border-left-color: transparent; }
-
-/* X feed extras */
-.x-posts { display: grid; gap: 12px; }
-.x-posts__empty, .latest-info__x-notice, .x-sync-status { font-size: 13px; color: var(--rv-text-3); }
-.x-post__link { display: inline-flex; align-items: center; gap: 6px; width: fit-content; }
-.latest-info__x-fallback, .x-new-posts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; color: var(--rv-text-2); }
-.latest-info__x-fallback button, .x-new-posts button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--rv-line-2); border-radius: var(--rv-pill); }
 
 /* ---------------------------------------------------------------- launch widgets (components/workflow-motion.tsx, token-actions.tsx) */
 .token-avatar { display: inline-grid; place-items: center; width: 52px; height: 52px; flex: none; border-radius: 14px; overflow: hidden; border: 1px solid var(--rv-line-2); background: var(--rv-surface-3); font-weight: 700; font-size: 20px; color: var(--rv-lime); }

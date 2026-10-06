@@ -1,5 +1,4 @@
 import application from "../dist/server/index.js";
-import { syncXUpdates } from "../lib/x-auto-sync.ts";
 
 // Baseline browser hardening. No CSP yet: wallet extensions and third-party media need a reviewed policy first.
 const SECURITY_HEADERS = {
@@ -25,14 +24,6 @@ const worker = {
     // Browsers probe /favicon.ico regardless of <link rel=icon>; point them at the SVG icon.
     if (new URL(request.url).pathname === "/favicon.ico") return Response.redirect(new URL("/favicon.svg", request.url).toString(), 301);
     return withSecurityHeaders(await application.fetch(request, env, context));
-  },
-  async scheduled(event, env) {
-    if (env.X_AUTO_SYNC !== "enabled") return;
-    const result = await syncXUpdates(env.DB);
-    await env.DB.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
-      .bind("official:x-cron-heartbeat", JSON.stringify({ invokedAt: Math.floor(Date.now() / 1000), cron: event.cron, status: result.state.status, skipped: result.skipped })).run();
-    // Record upstream failures as cron failures while preserving the saved feed.
-    if (result.state.status === "error") throw new Error("Official X synchronization is temporarily unavailable.");
   },
 };
 

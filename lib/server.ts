@@ -32,7 +32,6 @@ export const bindings = () =>
     RPC_TESTNET_FALLBACK?: string;
     RPC_MAINNET_FALLBACK?: string;
     OPS_TOKEN?: string;
-    X_AUTO_SYNC?: string;
     HUMAN_VERIFICATION?: string;
     TURNSTILE_SITE_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;

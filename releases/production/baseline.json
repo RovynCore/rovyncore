@@ -2,28 +2,28 @@
   "site": "https://www.rovyncore.com",
   "worker": "rovyncore-production",
   "latestDocumentedProductionRelease": {
-    "name": "Site-wide redesign on one design system; updates page shows the development log only",
-    "date": "2026-10-06",
-    "workerVersion": "b3cc2dc9-f54c-4cf2-a1e4-28ade069c677",
-    "history": "releases/production/release-2026-10-05-25.md",
+    "name": "X post fetching removed (endpoint, admin import/remove, scheduled sync, code and tests)",
+    "date": "2026-10-07",
+    "workerVersion": "07ece9c8-189d-4995-bbc7-151300a2c20d",
+    "history": "releases/production/release-2026-10-05-26.md",
     "releasedBy": "Claude Code (website handover from Codex)",
     "baseGitCommit": "1c473f6a83def91bd4f84a13de9298f7d61be9a3",
-    "sourceManifest": "releases/production/snapshots/release-2026-10-05-25.json",
-    "sourceManifestSha256": "667F3B3E73D9FF34B72B90C632BA385D82AB86100310833B318123A960BA6CE4",
-    "sourceFileCount": 321,
-    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-24.json",
-    "changedFileCountFromPreReleaseManifest": 24,
+    "sourceManifest": "releases/production/snapshots/release-2026-10-05-26.json",
+    "sourceManifestSha256": "D483A0A0938AC908061F31F4C96A5B8FC999BE8D75E782FB7388AB63E9F127BB",
+    "sourceFileCount": 310,
+    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-25.json",
+    "changedFileCountFromPreReleaseManifest": 18,
     "previousRelease": {
-      "name": "Visitor-review fixes: X feed notice, whitelist opening date in RVYN hero, development log entry",
+      "name": "Site-wide redesign on one design system; updates page shows the development log only",
       "date": "2026-10-06",
-      "workerVersion": "d8ed76b2-ed1d-407e-9a9b-2fc60e3e9ee4",
-      "history": "releases/production/release-2026-10-05-24.md"
+      "workerVersion": "b3cc2dc9-f54c-4cf2-a1e4-28ade069c677",
+      "history": "releases/production/release-2026-10-05-25.md"
     },
-    "builtWorkerSha256": "DDDED020245CF2715CB164B70B9B97B43813A09908F1E28E737873FA0DEDEA23",
+    "builtWorkerSha256": "F27AFCEC2C5D87C97D02EFBEF03070D3186143F0D2BDD083210A001159A65805",
     "builtWorkerHashArtifact": "Wrangler dry-run bundled production-worker.js",
-    "builtApplicationSha256": "AB2C48BA87DFED7C785C60C5C0F3CF7798DD93147608BC33861C06928855296E",
+    "builtApplicationSha256": "B92AE0F656523CB0BD50369F5170C9550E735B3B66D9FF1F2B3598B10B0E8AE2",
     "builtApplicationHashArtifact": "dist/server/index.js",
-    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged)."
+    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged). 2026-10-07 release 26: X fetching removed entirely (/api/x-updates 404, no admin import, no scheduled handler, X_AUTO_SYNC dropped); stale official:x-* settings rows left in D1."
   },
   "productionObservedAt": "2026-10-04",
   "observedLiveBehavior": {
