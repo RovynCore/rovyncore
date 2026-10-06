@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Lightdive 白皮書</title>
+<style>
+@font-face { font-family: "NotoTC"; src: url("fonts/NotoSansTC-400.ttf"); font-weight: 400; }
+@font-face { font-family: "NotoTC"; src: url("fonts/NotoSansTC-500.ttf"); font-weight: 500; }
+@font-face { font-family: "NotoTC"; src: url("fonts/NotoSansTC-700.ttf"); font-weight: 700; }
+@font-face { font-family: "NotoTC"; src: url("fonts/NotoSansTC-900.ttf"); font-weight: 900; }
+:root {
+  --ink: #111511; --ink2: #4a4f47; --muted: #80857c; --line: #dfe3d8;
+  --paper: #ffffff; --tint: #f4f7ee; --lime: #c9ff55; --limeDark: #4f7a00;
+  --night: #0b0f0a; --warn: #a14a00; --warnBg: #fff4e8;
+}
+@page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+@page cover { margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font-family: "NotoTC", sans-serif; font-size: 10pt; line-height: 1.68; }
+.cover { page: cover; height: 297mm; width: 210mm; background: var(--night); color: #f2f5ee; position: relative; overflow: hidden; break-after: page; }
+.cover .glow { position: absolute; right: -60mm; top: 40mm; width: 200mm; height: 200mm; border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,255,85,.30) 0%, rgba(201,255,85,.08) 35%, rgba(11,15,10,0) 65%); }
+.cover .ring { position: absolute; border: 1.2px solid rgba(201,255,85,.55); border-radius: 50%; }
+.cover .inner { position: absolute; left: 20mm; right: 20mm; top: 34mm; }
+.cover .kicker { color: var(--lime); letter-spacing: .25em; font-size: 9pt; font-weight: 700; }
+.cover h1 { font-size: 34pt; line-height: 1.15; margin: 8mm 0 3mm; font-weight: 900; }
+.cover h1 small { display: block; font-size: 17pt; font-weight: 500; color: #cfd6c6; margin-top: 3mm; }
+.cover .sub { font-size: 12pt; color: #cfd6c6; max-width: 120mm; }
+.cover .meta { position: absolute; left: 20mm; right: 20mm; bottom: 22mm; font-size: 9pt; color: #aab3a0; border-top: 1px solid #2c3428; padding-top: 5mm; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 10mm; }
+.cover .meta b { color: #f2f5ee; font-weight: 500; }
+.cover .core { position: absolute; right: 38mm; top: 118mm; width: 16mm; height: 16mm; border-radius: 50%; background: var(--lime); box-shadow: 0 0 18mm 6mm rgba(201,255,85,.45); }
+h2 { font-size: 17pt; font-weight: 900; margin: 0 0 4mm; padding-top: 1mm; break-after: avoid; }
+h2 .num { color: var(--limeDark); margin-right: 3mm; }
+h3 { font-size: 12pt; font-weight: 700; margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-size: 10.5pt; font-weight: 700; margin: 4mm 0 1mm; break-after: avoid; }
+section.chap { break-before: page; }
+p { margin: 0 0 2.6mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9pt; line-height: 1.55; break-inside: auto; }
+tr { break-inside: avoid; }
+th { text-align: left; font-weight: 700; background: var(--tint); border-bottom: 1.4px solid var(--ink); padding: 1.2mm 2mm; }
+td { border-bottom: 1px solid var(--line); padding: 1.1mm 2mm; vertical-align: top; }
+td.v { font-variant-numeric: tabular-nums; word-break: break-word; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lead { font-size: 11pt; color: var(--ink2); }
+.box { border: 1px solid var(--line); background: var(--tint); border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 3mm 0 4mm; break-inside: avoid; }
+.box.key { border-left: 4px solid var(--limeDark); }
+.box.warn { background: var(--warnBg); border-color: #f1d2b2; border-left: 4px solid var(--warn); }
+.box h4 { margin-top: 0; }
+.tag { display: inline-block; font-size: 7.5pt; font-weight: 700; padding: .2mm 2mm; border-radius: 2mm; vertical-align: 1px; margin-left: 1.5mm; }
+.tag.int { background: #2a2f27; color: var(--lime); }
+.tag.dec { background: var(--warnBg); color: var(--warn); border: 1px solid #f1d2b2; }
+code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
+.formula { font-family: "DejaVu Sans Mono", "NotoTC", monospace; font-size: 9pt; background: #10140f; color: #e8f5d0; border-radius: 2.5mm; padding: 3mm 4mm; margin: 2mm 0 4mm; white-space: pre-wrap; line-height: 1.6; break-inside: avoid; }
+.figure { margin: 3mm 0 5mm; break-inside: avoid; }
+.figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 2mm; }
+.figure .cap { font-size: 8.5pt; color: var(--ink2); margin-top: 1.5mm; }
+.flow { display: flex; align-items: stretch; gap: 0; margin: 3mm 0 5mm; break-inside: avoid; }
+.flow .step { flex: 1; border: 1.2px solid var(--ink); border-radius: 2.5mm; padding: 2.5mm 2.5mm; font-size: 8.6pt; line-height: 1.5; background: #fff; }
+.flow .step b { display: block; font-size: 9.5pt; margin-bottom: .8mm; }
+.flow .arrow { width: 7mm; display: flex; align-items: center; justify-content: center; color: var(--limeDark); font-weight: 900; font-size: 13pt; }
+.flow .step.hl { background: var(--night); color: #e9efe0; border-color: var(--night); }
+.flow .step.hl b { color: var(--lime); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+.card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3mm 3.5mm; break-inside: avoid; font-size: 9pt; line-height: 1.6; }
+.card .t { font-weight: 700; font-size: 10pt; margin-bottom: 1mm; }
+.card .s { color: var(--muted); font-size: 8pt; letter-spacing: .05em; }
+.toc { columns: 2; column-gap: 10mm; font-size: 10pt; }
+.toc div { break-inside: avoid; padding: 1mm 0; border-bottom: 1px dotted var(--line); }
+.toc span { color: var(--limeDark); font-weight: 700; margin-right: 2mm; }
+.small { font-size: 8.5pt; color: var(--ink2); }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 3mm 0 5mm; }
+.kpi div { border: 1px solid var(--line); border-radius: 2.5mm; padding: 2.5mm 3mm; }
+.kpi b { display: block; font-size: 15pt; font-weight: 900; line-height: 1.2; }
+.kpi span { font-size: 8pt; color: var(--ink2); }
+.tok { display: grid; grid-template-columns: 1fr 9mm 1.25fr 9mm 1fr; align-items: center; margin: 3mm 0 5mm; break-inside: avoid; font-size: 8.6pt; line-height: 1.45; }
+.tok .col { display: flex; flex-direction: column; gap: 2mm; }
+.tok .b { border: 1.2px solid var(--ink); border-radius: 2mm; padding: 2mm 2.5mm; background: #fff; }
+.tok .b b { display: block; font-size: 9pt; }
+.tok .pool { background: var(--night); color: #e9efe0; border-color: var(--night); text-align: center; padding: 5mm 3mm; }
+.tok .pool b { color: var(--lime); font-size: 11pt; }
+.tok .ar { text-align: center; color: var(--limeDark); font-weight: 900; font-size: 13pt; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="glow"></div>
+  <div class="ring" style="right:14mm;top:94mm;width:64mm;height:64mm"></div>
+  <div class="ring" style="right:-2mm;top:78mm;width:96mm;height:96mm;opacity:.6"></div>
+  <div class="ring" style="right:-20mm;top:60mm;width:132mm;height:132mm;opacity:.35"></div>
+  <div class="core"></div>
+  <div class="inner">
+    <div class="kicker">ROVYNCORE · GAME WHITEPAPER</div>
+    <h1>RovynCore: Lightdive<small>潛光遠征　遊戲白皮書與工程設計書</small></h1>
+    <p class="sub">遊戲概念、NFT 與鑄造規則、RVYN 代幣經濟、經濟模擬、智能合約架構與開發路線圖。</p>
+  </div>
+  <div class="meta">
+    <div>版本　<b>v1.0 定案</b></div>
+    <div>日期　<b>2026-10-06</b></div>
+    <div>鏈　<b>Robinhood Chain（主網 4663／測試網 46630）</b></div>
+    <div>NFT 代號　<b>RVDIV</b>　　遊戲貨幣　<b>RVYN</b></div>
+    <div style="grid-column: span 2">狀態：設計定案（2026-10-06 老闆確認）。本文件是開發依據，不是鏈上承諾；合約在獨立審計完成前不會部署到主網。</div>
+  </div>
+</div>
+
+<!-- ============ 0. 說明與目錄 ============ -->
+<section>
+<h2>關於這份文件</h2>
+<p class="lead">這份白皮書同時是給團隊的<b>工程設計圖</b>：合約、後端和畫面都照這裡的規則和參數實作。v1.0 的參數已經由老闆確認（決策紀錄見第 14 章）。之後要改數值或規則，先改這份文件，再改程式。</p>
+<div class="grid2">
+  <div class="box key">
+    <h4>內容來源</h4>
+    <ul class="small" style="margin:0">
+      <li>世界觀、名稱、文案規則：沿用文案行銷組《NFT 世界觀與故事 v3》（2026-10-04／10-05 修訂）。</li>
+      <li>玩法結構：參考 2021 年 CryptoMines「船＋船員→派去星球→領獎勵」的簡單結構，並逐條修正它失敗的原因（第 2 章）。</li>
+      <li>代幣：RVYN 既有設定，總量 10,000,000、不可增發、無轉帳稅。</li>
+      <li>數值：本文件提出、老闆確認，並用經濟模擬驗證（第 8 章）。</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h4>標記說明</h4>
+    <p class="small" style="margin:0">
+      <span class="tag int" style="margin-left:0">內部</span>　演算法、模擬和內部試算。宣傳文案不主動引用，但<b>抽卡機率和潛光結果機率依老闆決定公開</b>（第 12 章），這點取代 v3「機率屬內部資料」的規則。<br><br>
+      <span class="tag dec" style="margin-left:0">待辦</span>　不需要老闆決策、但上線前要完成的事項（例如文案、查證），彙整在第 14 章。<br><br>
+      v3 文件提到的「合約組內部總表」不在提供的資料裡。本文件 v1.0 的數值經老闆確認後，取代總表中任何不一致的數值。
+    </p>
+  </div>
+</div>
+
+<h3>目錄</h3>
+<div class="toc">
+  <div><span>01</span>一頁摘要</div>
+  <div><span>02</span>CryptoMines 檢討：學什麼、改什麼</div>
+  <div><span>03</span>世界觀與角色定位</div>
+  <div><span>04</span>核心玩法</div>
+  <div><span>05</span>NFT 設計與光度</div>
+  <div><span>06</span>鑄造、抽選與供應上限</div>
+  <div><span>07</span>代幣經濟</div>
+  <div><span>08</span>經濟模擬結果</div>
+  <div><span>09</span>智能合約架構</div>
+  <div><span>10</span>鏈下系統與前端</div>
+  <div><span>11</span>透明度與公開資訊</div>
+  <div><span>12</span>風險、安全與合規</div>
+  <div><span>13</span>開發路線圖</div>
+  <div><span>14</span>決策紀錄與待辦</div>
+  <div><span>附錄 A</span>參數總表（設定檔）</div>
+  <div><span>附錄 B</span>名詞對照</div>
+</div>
+</section>
+
+<!-- ============ 1. 摘要 ============ -->
+<section class="chap">
+<h2><span class="num">01</span>一頁摘要</h2>
+<p class="lead"><b>Lightdive／潛光遠征</b>是 RovynCore 在 Robinhood Chain 上的第一款遊戲。玩家用三種 NFT 組成一座「光塔」，每天派探索者「潛光」前往光源座標，把光帶回來，換成 RVYN。</p>
+
+<div class="flow">
+  <div class="step"><b>① 鑄造</b>用 RVYN 抽光塔、稜鏡、探索者三種 NFT</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>② 組隊</b>探索者坐上光塔席位，稜鏡裝上稜鏡座</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>③ 潛光</b>每天一次，選擇光源座標出發</div>
+  <div class="arrow">→</div>
+  <div class="step hl"><b>④ 帶回光塵</b>依隊伍光度與稜鏡光束擲出結果</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>⑤ 換成 RVYN</b>每天按光塵比例分配核光池</div>
+</div>
+
+<h3>和 CryptoMines 最大的不同</h3>
+<table>
+<tr><th style="width:24%">問題</th><th>CryptoMines 的做法</th><th>Lightdive 的做法</th></tr>
+<tr><td>獎勵怎麼算</td><td>每支艦隊固定拿「約 X 美元」的代幣</td><td><b>核光池每天只釋出固定比例</b>，由所有玩家按光塵比例分；人越多，每人分越少，總量不變</td></tr>
+<tr><td>代幣從哪來</td><td>系統持續增發</td><td>RVYN 不能增發；獎勵來自預先注入的核光池，加上玩家消費的回流</td></tr>
+<tr><td>代幣去哪裡</td><td>幾乎只有抽卡</td><td>NFT 次數用完會<b>歸航（燒毀）</b>，要重新鑄造；鑄造費有 15% 直接銷毀、70% 回到核光池</td></tr>
+<tr><td>NFT 數量</td><td>無上限</td><td>光塔、稜鏡有<b>流通硬上限</b>；稀有度用「牌組」抽，數量精確固定</td></tr>
+<tr><td>可玩性</td><td>每天按一下</td><td>席位與光度搭配、稜鏡的風險檔位、六種屬性與同頻圖鑑、每日異相、賽季</td></tr>
+<tr><td>透明度</td><td>不透明</td><td>鑄造剩餘數量、每日釋出、銷毀量全部上鏈，網站即時公開</td></tr>
+</table>
+
+<h3>關鍵數字</h3>
+<div class="kpi">
+  <div><b>1,000,000</b><span>核光池初始注入 RVYN（「產品與生態」配置全額）</span></div>
+  <div><b>1.0%</b><span>每日釋出核光池餘額的比例</span></div>
+  <div><b>3,000</b><span>光塔流通上限（同時存在的最大數量）</span></div>
+  <div><b>70 / 15 / 15</b><span>鑄造費分配：核光池／銷毀／營運金庫（%）</span></div>
+</div>
+
+<div class="box warn">
+  <h4>請先知道的事</h4>
+  <p class="small" style="margin:0">模擬顯示：第一年<b>所有玩家加總</b>拿回的 RVYN 約是投入的 57%–72%。其餘的部分進了銷毀、營運金庫，或暫時留在核光池裡供之後釋出，這是任何不印鈔的遊戲經濟都會有的結果。賺錢的來源是：早期進場、抽到高稀有度、針芒光束的好運，以及在市場上賣出稀有 NFT。這正是「重度 P2E」的刺激感，但它不是穩賺的投資，對外也不能這樣宣傳。</p>
+</div>
+</section>
+
+<!-- ============ 2. CryptoMines ============ -->
+<section class="chap">
+<h2><span class="num">02</span>CryptoMines 檢討：學什麼、改什麼</h2>
+<p>CryptoMines 在 2021 年底的 BSC 上爆紅：玩家用 ETERNAL 代幣抽「船員」和「飛船」NFT，組成艦隊派去星球挖礦，再領回 ETERNAL。它的結構簡單、美術收集感強，入門很快；但上線幾個月後，代幣崩盤，玩家大量流失。</p>
+<p class="small">以下對 CryptoMines 機制的描述來自公開資訊和社群記憶，細節可能有出入；我們只參考概念，不使用它的名稱、美術或素材。</p>
+
+<h3>2.1 要保留的優點</h3>
+<div class="grid3">
+  <div class="card"><div class="t">結構簡單</div>三層物件：船、船員、目的地。新手第一天就看得懂。</div>
+  <div class="card"><div class="t">收集感</div>稀有度分級的卡牌肖像，抽到好卡的興奮感。</div>
+  <div class="card"><div class="t">每日回訪</div>每天派一次艦隊，養成固定上線的習慣。</div>
+</div>
+
+<h3>2.2 失敗原因與對應修正</h3>
+<table>
+<tr><th style="width:4%">#</th><th style="width:28%">失敗原因</th><th>Lightdive 的修正</th><th style="width:10%">章節</th></tr>
+<tr><td>1</td><td><b>獎勵綁美元計價</b>：幣價下跌時，系統要印更多代幣才能付出同樣價值，形成死亡螺旋</td><td>獎勵以 RVYN 計，數量由核光池餘額決定，和幣價無關。幣價下跌時，系統不會多發一枚 RVYN。</td><td>7.2</td></tr>
+<tr><td>2</td><td><b>總發行量隨人數增加</b>：每支新艦隊都有固定收益</td><td>每天釋出 = 核光池 × 1.0%，與人數無關。人多時每人分得少，自然抑制過熱。</td><td>7.2</td></tr>
+<tr><td>3</td><td><b>唯一消耗是抽卡</b>，新人停止進場就崩</td><td>NFT 有航程次數，用完歸航（燒毀）；鑄造費 15% 銷毀、70% 回流核光池；提領有遞減手續費，也回流核光池。</td><td>7.4</td></tr>
+<tr><td>4</td><td><b>玩家都在算回本天數</b>，回本即賣</td><td>不公告保證報酬；收益隨參與人數浮動；高稀有度和收藏、圖鑑、賽季給玩家留下來的理由。</td><td>4、11</td></tr>
+<tr><td>5</td><td><b>沒有遊戲性</b></td><td>席位與光度搭配、稜鏡光束的風險選擇（透過交易取得）、屬性與同頻、每日異相、賽季排行與圖鑑。</td><td>4</td></tr>
+<tr><td>6</td><td><b>NFT 無限量</b>，持續稀釋</td><td>光塔與稜鏡有流通硬上限；稀有度用牌組抽，每副牌組總數精確。</td><td>6</td></tr>
+<tr><td>7</td><td><b>機器人與多帳號</b></td><td>獎勵按光度比例分，開小號不會多拿（NFT 本身要花錢）；需要防的只剩空投和活動獎勵。</td><td>12</td></tr>
+</table>
+
+<div class="box key">
+  <h4>一句話總結</h4>
+  <p style="margin:0">CryptoMines 的收益全部來自新玩家的錢，而且承諾了固定報酬。Lightdive 把獎勵改成<b>一個有上限、會自我回補的池子按比例分配</b>，讓經濟在人多和人少時都能撐住。</p>
+</div>
+</section>
+
+<!-- ============ 3. 世界觀 ============ -->
+<section class="chap">
+<h2><span class="num">03</span>世界觀與角色定位</h2>
+<p class="small">本章摘要《NFT 世界觀與故事 v3》，完整設定和美術指引以原文件為準。</p>
+
+<h3>3.1 故事核心</h3>
+<p>在星系中心，<b>ROVYN CORE</b> 發出了第一道光：<b>核光 RVYN</b>。這道光碎成千萬片，化成光源和光塵，沉進星系深處。觀測者在核心周圍建起<b>光源觀測站</b>，立起一座座<b>光塔</b>，用<b>共鳴稜鏡</b>把晶核的光折成<b>光橋</b>，讓<b>探索者</b>順著光橋潛進深空，把光帶回來。這就是<b>潛光</b>。</p>
+<p class="lead" style="text-align:center;margin:4mm 0">「潛進深空，把第一道光帶回來。」　Dive deep. Bring the First Light home.</p>
+
+<h3>3.2 遊戲物件與 CryptoMines 對照</h3>
+<table>
+<tr><th>Lightdive</th><th>是什麼</th><th>對應 CryptoMines</th></tr>
+<tr><td><b>光塔</b> Beacon Spire</td><td>大型 NFT，玩家的隊伍與基地。Lv.1–5 決定探索者席位 1–5 個</td><td>飛船（決定載幾個船員）</td></tr>
+<tr><td><b>共鳴稜鏡</b> Resonance Prism</td><td>中型 NFT，每座光塔 1 面。光束決定風險風格</td><td>（新增，CryptoMines 沒有）</td></tr>
+<tr><td><b>探索者</b> Seeker</td><td>小型 NFT，7 層圖層肖像，屬性看光紋（B 層）</td><td>船員</td></tr>
+<tr><td><b>光源座標</b> Light Coordinate</td><td>潛光的目的地，有深度與屬性</td><td>星球</td></tr>
+<tr><td><b>光塵</b> Lightdust</td><td>每次潛光帶回的點數，每天換成 RVYN</td><td>挖礦產出</td></tr>
+<tr><td><b>歸航</b> Homecoming</td><td>航程次數用完，NFT 退場（鏈上燒毀）</td><td>船員或飛船到期</td></tr>
+</table>
+<p class="small">文案規則沿用 v3：不使用「挖礦／礦工／打工」等字眼；公開文案不寫期望值、倍率、機率；探索者用完叫「歸航」，不是死亡。</p>
+
+<h3>3.3 Signal-Keeper（訊號守護者）的定位</h3>
+<div class="grid2">
+  <div>
+    <p>現有的 Signal-Keeper 概念圖（白色裂紋面具、胸口萊姆綠核心、環繞軌道球、手持 SIGNAL 終端）和 v3 世界觀高度相容，配色也和品牌主色 <span class="mono">#C9FF55</span> 一致。建議定位為：</p>
+    <ul>
+      <li><b>光源觀測站的守夜人</b>：負責接收深空訊號、校對星圖、公布每天的異相。</li>
+      <li><b>新手引導 NPC</b>：教學、提示、公告都由他發言，成為遊戲的「臉」。</li>
+      <li><b>第一季主視覺</b>：宣傳圖、網站 /game 頁首、X 貼文。</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h4>設定對應</h4>
+    <p class="small" style="margin:0">
+      <b>MASK 面具</b>：過濾核光的觀測面罩（和 v3 探索者頭盔同一系譜）<br>
+      <b>CORE 核心</b>：胸口嵌著一片晶核，所以聽得見深空的光<br>
+      <b>ORBIT 軌道</b>：三顆軌道球是他的「信標」，用來穩住光橋<br>
+      <b>SIGNAL 訊號</b>：終端上顯示每天的光源座標與異相<br><br>
+      <b>定案：</b>Signal-Keeper 是遊戲 NPC，不做成可交易 NFT，避免和探索者的稀有度系統混淆。之後可以考慮做成賽季限定外觀或圖鑑稱號。
+    </p>
+  </div>
+</div>
+</section>
+
+<!-- ============ 4. 玩法 ============ -->
+<section class="chap">
+<h2><span class="num">04</span>核心玩法</h2>
+
+<h3>4.1 每日循環</h3>
+<table>
+<tr><th style="width:16%">時間</th><th>發生什麼</th></tr>
+<tr><td>每日 00:00 UTC</td><td>新的一天（<b>紀元 Epoch</b>）開始。Signal-Keeper 公布當日的光源座標與<b>異相</b>（哪些座標的屬性改變）。前一天的 RVYN 分配結算完成，可以領取。</td></tr>
+<tr><td>當天任何時間</td><td>每座光塔可以<b>出發潛光一次</b>：選一個光源座標（必須達到該深度的總光度門檻），送出交易。</td></tr>
+<tr><td>出發後約 1 小時內</td><td>系統公開該小時的隨機種子，潛光結果揭曉：成功、明亮收穫、罕見光焰，或光橋中斷。帶回的<b>光塵</b>立即顯示。</td></tr>
+<tr><td>當天結束</td><td>當天所有光塵加總，核光池當日釋出量按比例換成 RVYN，記入玩家帳上。</td></tr>
+</table>
+
+<h3>4.2 組成一座光塔</h3>
+<ul>
+  <li>一座<b>光塔</b>（Lv.1–5，等級在鑄造時決定、不能升級）＋最多 1 面<b>共鳴稜鏡</b>＋最多「等級」數量的<b>探索者</b>。</li>
+  <li>至少要有 1 位探索者才能出發。稜鏡座空著時，合約以「聚焦」規則計算（UI 只顯示「稜鏡座空著」）。</li>
+  <li>組隊時 NFT 會放進遊戲合約保管（避免同一位探索者當天被賣掉又被別人使用）。卸下後回到錢包，可以自由交易。</li>
+  <li><b>總光度</b>＝光塔光度 × 席位填滿率 ＋ 稜鏡光度 × 席位填滿率 ＋ 所有探索者光度。席位沒坐滿，光塔和稜鏡的光度只算一部分，鼓勵玩家把席位坐滿。</li>
+</ul>
+
+<h3>4.3 光源座標與深度</h3>
+<p>座標分成六個深度。越深的座標需要越高的總光度才能前往，帶回的光塵有小幅加成。這是給玩家的成長目標，加成幅度刻意保持小，避免大戶的優勢過度放大。<span class="tag int">內部</span></p>
+<table>
+<tr><th>深度</th><th class="n">總光度門檻</th><th class="n">深度係數</th><th>大約需要的隊伍</th></tr>
+<tr><td>I 淺層</td><td class="n">0</td><td class="n">1.00</td><td>任何隊伍</td></tr>
+<tr><td>II</td><td class="n">120</td><td class="n">1.03</td><td>Lv.2 光塔坐滿</td></tr>
+<tr><td>III</td><td class="n">220</td><td class="n">1.06</td><td>Lv.3 光塔、中等稀有度</td></tr>
+<tr><td>IV</td><td class="n">380</td><td class="n">1.10</td><td>Lv.4 光塔坐滿</td></tr>
+<tr><td>V</td><td class="n">600</td><td class="n">1.15</td><td>Lv.5 或高稀有度組合</td></tr>
+<tr><td>VI 深淵</td><td class="n">850</td><td class="n">1.20</td><td>曜核級隊伍</td></tr>
+</table>
+<p><b>和發射台連動：</b>v3 世界觀寫到「每一次在發射台上的發行，星圖上就會多出一個光點」。每個在 RovynCore 發射台發行的代幣，都會在星圖上生成一個以它命名的光源座標（只有名稱和外觀，不影響數值），把發射台和遊戲串成同一個宇宙。</p>
+
+<h3>4.4 稜鏡光束：選擇你的風險</h3>
+<p>三種光束的<b>長期平均回報完全相同</b>，差別只在波動。光束在鑄造時隨機決定，玩家不能切換；想要特定光束，可以在市場上買賣。這讓「我要穩還是要賭」成為一個真正的選擇，也帶動稜鏡的交易。</p>
+<p>每次潛光分兩段決定：先抽出<b>結果</b>，再在該結果的<b>倍率區間</b>內隨機取一個倍率（以 0.01 為單位，區間內每個值機率相同）。所以每次帶回的光塵都不太一樣，例如 1.07 倍或 2.13 倍。成功時最低就是 1.0 倍。</p>
+<table>
+<tr><th style="width:17%">光束</th><th>光橋中斷</th><th>普通成功</th><th>明亮收穫</th><th>罕見光焰</th><th>核光回響</th><th class="n">平均</th></tr>
+<tr><td><b>廣域</b> Wide</td><td>15% · 0</td><td>72% · 1.0–1.2</td><td>13% · 1.4–1.8</td><td>—</td><td>—</td><td class="n">1.00</td></tr>
+<tr><td><b>聚焦</b> Focused</td><td>22.5% · 0</td><td>60.5% · 1.0–1.2</td><td>13.3% · 1.5–2.0</td><td>3.7% · 2.5–3.0</td><td>—</td><td class="n">1.00</td></tr>
+<tr><td><b>針芒</b> Needle</td><td>45% · 0</td><td>27% · 1.0–1.2</td><td>18.5% · 1.8–2.2</td><td>8.7% · 2.6–3.4</td><td>0.8% · 8–10</td><td class="n">1.00</td></tr>
+</table>
+<p class="small">格式為「機率 · 倍率區間」。機率以萬分比寫進合約；合約在設定時檢查「機率總和 = 100%」且「Σ 機率 × 區間中點 = 1.00」，不符合就拒絕寫入，所以任何人都無法把某一種光束調得比較划算。模擬程式已驗算：三種光束平均都是 1.00；標準差依序為廣域 0.46、聚焦 0.65、針芒 1.23。最高倍率依決策定為 10 倍。「光橋中斷」和「核光回響」兩句航行日誌由文案組補上。</p>
+
+<h3>4.5 屬性、同頻與異相</h3>
+<ul>
+  <li>六種光源屬性：曦光、霧光、晶光、熾光、雷光、淵光。探索者的屬性看身後的<b>光紋</b>（B 層）。</li>
+  <li>每個座標有一種屬性；每天的<b>異相</b>會改變部分座標的屬性。</li>
+  <li>探索者與座標屬性相同時觸發<b>同頻</b>：v1 只記錄到<b>圖鑑</b>、解鎖稱號，<b>不影響 RVYN 報酬</b>（依 v3 決定）。屬性不同時沒有任何懲罰。</li>
+  <li>收集要素：同頻圖鑑（6 屬性 × 6 深度）、星圖名冊（歸航的探索者）、星紋與特別款圖鑑。</li>
+</ul>
+
+<h3>4.6 航程與歸航</h3>
+<table>
+<tr><th>NFT</th><th class="n">航程次數</th><th>每天潛光 1 次時的壽命</th><th>用完時</th></tr>
+<tr><td>光塔</td><td class="n">120</td><td>約 4 個月</td><td>鏈上燒毀（玩家看到的名稱由文案組決定）</td></tr>
+<tr><td>共鳴稜鏡</td><td class="n">30</td><td>約 1 個月</td><td>鏈上燒毀（名稱由文案組決定）</td></tr>
+<tr><td>探索者</td><td class="n">10</td><td>約 10 天</td><td>歸航，名字刻上星圖名冊</td></tr>
+</table>
+<p>每次潛光，光塔、稜鏡和每位出發的探索者各扣 1 次航程，失敗也一樣扣。航程用完是本遊戲最主要的消耗機制：探索者大約每 10 天、稜鏡每個月就要重抽一次，抽卡頻率高，稀有 NFT 在市場上的消耗也快，稀有度的價值因此更明顯。光塔是玩家的基地，壽命刻意保留得比較長。</p>
+
+<h3>4.7 第二版以後的玩法（不在 v1 範圍）</h3>
+<div class="grid2">
+  <div class="card"><div class="s">PHASE 2</div><div class="t">訊號校準（主動小遊戲）</div>每天 60 秒，操控 Signal-Keeper 的軌道球穩住光橋，成功可以讓當次光塵小幅加成（上限 +10%）。讓親自玩的人比單純掛機的人多拿一點。需要伺服器驗證，避免腳本作弊。</div>
+  <div class="card"><div class="s">PHASE 3</div><div class="t">光掠（非同步 PvP）</div>深層座標的返航途中，可能被其他玩家攔截一部分光塵。收益來自玩家之間的轉移，不是系統增發。需要另外做經濟模擬和法律評估。</div>
+</div>
+</section>
+
+<!-- ============ 5. NFT ============ -->
+<section class="chap">
+<h2><span class="num">05</span>NFT 設計與光度</h2>
+
+<h3>5.1 共通規格</h3>
+<ul>
+  <li>標準：ERC-721，單一合約、單一系列「RovynCore: Lightdive」（RVDIV），以 <span class="mono">kind</span> 欄位區分光塔、稜鏡、探索者。支援 ERC-2981 版稅（5%）。</li>
+  <li>屬性（稀有度、等級、光束、屬性、光度、剩餘航程、特別款或星紋）<b>全部存在鏈上</b>；圖片與 metadata JSON 由網站依鏈上屬性產生，放在 R2。</li>
+  <li>稀有度：五階，公開名稱 微光／輝脈／澄晶／稜光／曜核（內部：普通～神話）。三種 NFT 共用。</li>
+</ul>
+
+<h3>5.2 光度（Luminance）<span class="tag int">內部</span></h3>
+<p>光度是隊伍的「產能」。鑄造時在區間內隨機決定，之後固定。同一個價格抽到高稀有度，光度就高很多，這是抽卡的刺激來源，也是稀有 NFT 在市場上有價值的原因。</p>
+<table>
+<tr><th>稀有度（公開名）</th><th class="n">光塔（Lv. 與光度）</th><th class="n">稜鏡光度</th><th class="n">探索者光度區間</th></tr>
+<tr><td>普通（微光）</td><td class="n">Lv.1 · 36–44</td><td class="n">9–11</td><td class="n">20–30</td></tr>
+<tr><td>稀有（輝脈）</td><td class="n">Lv.2 · 63–77</td><td class="n">18–22</td><td class="n">32–45</td></tr>
+<tr><td>高級（澄晶）</td><td class="n">Lv.3 · 99–121</td><td class="n">29–35</td><td class="n">48–68</td></tr>
+<tr><td>傳說（稜光）</td><td class="n">Lv.4 · 144–176</td><td class="n">43–53</td><td class="n">75–100</td></tr>
+<tr><td>神話（曜核）</td><td class="n">Lv.5 · 207–253</td><td class="n">63–77</td><td class="n">120–160</td></tr>
+</table>
+<ul class="small">
+  <li>光塔和稜鏡的光度是基準值 ±10%。探索者在區間內均勻隨機。</li>
+  <li>特別款（光塔 2 款、稜鏡 2 款）光度 +4%（依 v3）。星紋不加光度，純外觀。</li>
+  <li>光度只顯示數字，公開文案不寫「光度越高獎勵越多」（v3 規則）。</li>
+</ul>
+
+<h3>5.3 不同隊伍的收支試算 <span class="tag int">內部</span></h3>
+<p>收支比＝每天領到的 RVYN ÷ 每天攤提的 NFT 成本。數字隨參與人數變動。「穩定期」用基準情境第 90 天的分配率（每點光塵約 0.055 RVYN），「早期」用上線初期的上限分配率（每點約 0.166 RVYN，已扣平均提領手續費）。</p>
+<table>
+<tr><th>隊伍組合</th><th class="n">總光度</th><th class="n">每日成本</th><th class="n">穩定期 每日</th><th class="n">穩定期 收支比</th><th class="n">早期 收支比</th></tr>
+<tr><td>入門：Lv.1 光塔＋微光稜鏡＋1 微光探索者</td><td class="n">75</td><td class="n">10.5</td><td class="n">4.15</td><td class="n">0.40</td><td class="n">1.18</td></tr>
+<tr><td>一般：Lv.2＋微光稜鏡＋微光、輝脈探索者</td><td class="n">144</td><td class="n">14.5</td><td class="n">7.94</td><td class="n">0.55</td><td class="n">1.64</td></tr>
+<tr><td>澄晶：Lv.3＋澄晶稜鏡＋3 位混合</td><td class="n">264</td><td class="n">18.5</td><td class="n">14.57</td><td class="n">0.79</td><td class="n">2.36</td></tr>
+<tr><td>稜光：Lv.4＋稜光稜鏡＋4 位混合</td><td class="n">450</td><td class="n">22.5</td><td class="n">24.89</td><td class="n">1.11</td><td class="n">3.31</td></tr>
+<tr><td>曜核：Lv.5＋曜核稜鏡＋5 曜核探索者</td><td class="n">1,000</td><td class="n">26.5</td><td class="n">55.31</td><td class="n">2.09</td><td class="n">6.25</td></tr>
+</table>
+<p class="small">成本以鑄造原價攤提：光塔 300 ÷ 120、稜鏡 120 ÷ 30、探索者 40 ÷ 10（RVYN／天）。實際收支也取決於 RVYN 市價與 NFT 轉售價格，這裡都沒有計入。</p>
+<div class="box">
+  <p class="small" style="margin:0"><b>設計判斷：</b>入門隊伍在穩定期是虧的，高稀有度隊伍是賺的。這是 CryptoMines 類遊戲的本質（抽卡＋產能差異），也是二級市場的價值來源。為了讓入門玩家不至於太挫折，v1 搭配：首次鑄造 9 折（第 6.1 節）、賽季排行獎池（第 7.5 節），以及清楚的「早鳥期」溝通。</p>
+</div>
+</section>
+
+<!-- ============ 6. 鑄造 ============ -->
+<section style="margin-top:8mm">
+<h2><span class="num">06</span>鑄造、抽選與供應上限</h2>
+
+<h3>6.1 價格與數量上限</h3>
+<table>
+<tr><th>NFT</th><th class="n">價格（RVYN）</th><th class="n">流通上限</th><th>牌組</th><th>個人限制</th></tr>
+<tr><td>光塔</td><td class="n">300</td><td class="n">3,000</td><td>每副 3,000 座</td><td>開賣前 48 小時每錢包最多 3 座</td></tr>
+<tr><td>共鳴稜鏡</td><td class="n">120</td><td class="n">6,000</td><td>每副 6,000 面</td><td>每筆最多 5 面</td></tr>
+<tr><td>探索者</td><td class="n">40</td><td class="n">不設上限</td><td>每副 10,000 位</td><td>每筆最多 10 位</td></tr>
+</table>
+<ul>
+  <li><b>流通上限（硬頂）：</b>任何時候同時存在的光塔不會超過 3,000 座、稜鏡不會超過 6,000 面，由合約強制。舊的光塔歸航燒毀後，才會空出名額給新的鑄造。這樣既保證稀缺，也不會出現「整季的名額用完、老玩家的光塔到期卻無法續購」的情況。</li>
+  <li><b>牌組：</b>一副牌組賣完才開下一副，每一副的稀有度數量都精確固定（第 6.3 節）。</li>
+  <li><b>首次鑄造 9 折：</b>每個錢包第一次鑄造光塔、稜鏡、探索者時，三種各有 1 個享 9 折。折扣由營運金庫那 15% 吸收，核光池和銷毀照原價計算，所以不影響玩家的獎池。開多個錢包刷折扣，每個錢包也只省 1 個的 10%，影響很小。</li>
+  <li><b>價格：</b>以 RVYN 計，不掛鉤美元。按預售價 0.0001 ETH／RVYN 換算，光塔約 0.03 ETH、一套平均配置約 0.05 ETH。賽季之間可依 RVYN 市價調整（多簽＋72 小時時間鎖，並事先公告）。</li>
+</ul>
+
+<h3>6.2 牌組抽選（Deck Draw）</h3>
+<p>一般抽卡是每次按固定機率抽，總數會偏離預期；CryptoMines 這類遊戲還能無限抽。Lightdive 改用<b>牌組</b>：每一季先決定每種稀有度「總共幾張」，抽一張就少一張。</p>
+<div class="formula">抽到稀有度 i 的機率 = 牌組中稀有度 i 的剩餘數量 ÷ 牌組總剩餘數量</div>
+<ul>
+  <li><b>數量精確：</b>每副光塔牌組的曜核光塔就是 30 座，不多不少。</li>
+  <li><b>即時公開：</b>網站顯示每種稀有度還剩幾張、目前機率是多少。</li>
+  <li><b>可驗證：</b>牌組數量寫在合約裡，任何人都能讀取。</li>
+</ul>
+
+<h3>6.3 牌組內容（公開）</h3>
+<table>
+<tr><th>稀有度</th><th class="n">比例（光塔／稜鏡／探索者）</th><th class="n">光塔每副 3,000</th><th class="n">稜鏡每副 6,000</th><th class="n">探索者每副 10,000</th></tr>
+<tr><td>普通（微光）</td><td class="n">48% / 50% / 50%</td><td class="n">1,440</td><td class="n">3,000</td><td class="n">5,000</td></tr>
+<tr><td>稀有（輝脈）</td><td class="n">29% / 28% / 28%</td><td class="n">870</td><td class="n">1,680</td><td class="n">2,800</td></tr>
+<tr><td>高級（澄晶）</td><td class="n">15%</td><td class="n">450</td><td class="n">900</td><td class="n">1,500</td></tr>
+<tr><td>傳說（稜光）</td><td class="n">7% / 6% / 6%</td><td class="n">210</td><td class="n">360</td><td class="n">600</td></tr>
+<tr><td>神話（曜核）</td><td class="n">1%</td><td class="n">30</td><td class="n">60</td><td class="n">100</td></tr>
+<tr><td colspan="2">曜核中的特別款／星紋</td><td class="n">空心塔 3、創世塔 2</td><td class="n">回聲 6、核心之淚 4</td><td class="n">星紋 10（6 款）</td></tr>
+</table>
+<ul class="small">
+  <li><b>稜鏡光束</b>在每個稀有度內也用牌組分配：廣域 40%、聚焦 40%、針芒 20%（例如普通稜鏡 1,200／1,200／600）。稀有度和光束分開抽，符合 v3「分開隨機」的設定。</li>
+  <li><b>探索者屬性</b>：六種屬性各 1/6，獨立隨機，不使用牌組。7 層外觀依稀有度從素材池隨機組合；星紋約占曜核探索者的 1/10（依 v3）。</li>
+  <li>特別款與星紋在曜核牌組內再抽一次子牌組，數量同樣精確。</li>
+</ul>
+
+<h3>6.4 鑄造流程與隨機數</h3>
+<div class="flow">
+  <div class="step"><b>① 申請鑄造</b>玩家付 RVYN，合約記下申請與當時區塊</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>② 隨機數</b>等待隨機數來源回覆（VRF，或營運方事先承諾的種子）</div>
+  <div class="arrow">→</div>
+  <div class="step hl"><b>③ 揭曉</b>用隨機數從牌組抽稀有度、光束、光度與外觀</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>④ 發送 NFT</b>NFT 鑄造到玩家錢包，牌組剩餘數量更新</div>
+</div>
+<p><b>為什麼要兩步驟：</b>如果在同一筆交易裡直接用區塊資料當隨機數，懂技術的人可以先模擬結果，只在抽到好卡時才送出交易。分成「申請」和「揭曉」兩步，申請時沒有人知道結果。</p>
+<p><b>隨機數來源：</b>首選鏈上 VRF 服務（例如 Chainlink VRF 或 Pyth Entropy），由開發組在寫合約前確認 Robinhood Chain 是否支援 <span class="tag dec">待辦</span>。如果沒有，改用「承諾－揭露」：營運方事先把一批種子的雜湊值公布在鏈上，之後才揭露種子，再和玩家申請時的區塊資料混合。任何人都可以事後驗證營運方沒有改種子。</p>
+</section>
+
+<!-- ============ 7. 經濟 ============ -->
+<section class="chap">
+<h2><span class="num">07</span>代幣經濟</h2>
+
+<h3>7.1 RVYN 流向</h3>
+<div class="tok">
+  <div class="col">
+    <div class="b"><b>初始注入</b>1,000,000 RVYN，「產品與生態」10% 配置全額</div>
+    <div class="b"><b>鑄造費 70%</b>光塔、稜鏡、探索者（按原價計）</div>
+    <div class="b"><b>提領手續費</b>0–15%，隨持有天數遞減</div>
+  </div>
+  <div class="ar">→</div>
+  <div class="b pool"><b>核光池</b><br>Core Light Pool<br><br>每天釋出餘額的 1.0%<br>按光塵比例分給玩家</div>
+  <div class="ar">→</div>
+  <div class="col">
+    <div class="b"><b>玩家</b>領取 RVYN</div>
+    <div class="b"><b>銷毀</b>鑄造費 15%，永久減少供應量</div>
+    <div class="b"><b>營運金庫</b>鑄造費 15%（扣除首抽折扣）＋市場版稅 5%：開發、加池、賽季獎勵</div>
+  </div>
+</div>
+
+<h3>7.2 每日釋出與分配公式 <span class="tag int">內部</span></h3>
+<div class="formula">每日釋出 E = min( 核光池餘額 × 1.0% ,  當日總基礎光塵 × 0.18 )
+
+一次潛光的基礎光塵 B = 總光度 × 深度係數
+實際帶回的光塵     L = B × 光束倍率（先抽結果、再抽區間內倍率，期望值 1）
+玩家當日領到       R = E × L ÷ 當日所有潛光的 B 總和</div>
+<ul>
+  <li><b>為什麼分母用 B 而不是 L：</b>B 在玩家出發時就確定，合約不必等所有隨機結果揭曉、也不需要伺服器計算，每筆潛光都能在鏈上獨立結算。因為倍率的期望值是 1，L 的總和平均會等於 B 的總和，實際釋出量會在 E 上下小幅波動。核光池餘額遠大於單日釋出量，這個波動不會造成問題。</li>
+  <li><b>上限 0.18（早鳥保護）：</b>上線第一天如果只有很少人，1.0% 的釋出量（1 萬 RVYN）會被少數人瓜分，收益會異常地高。上限讓每點光塵最多換到 0.18 RVYN（大約是平均隊伍成本的 2 倍），沒發出去的部分留在池裡。模擬中上限只在上線最初 1–3 週觸發。</li>
+  <li><b>不會發完：</b>每天只釋出餘額的一個比例，餘額越少發得越少；只要有人鑄造，池子就會回補。</li>
+</ul>
+
+<h3>7.3 提領手續費（光衰）</h3>
+<p>RVYN 先記在遊戲帳上，玩家可以隨時提領。距離上次提領的天數越短，手續費越高：第 0 天 15%，之後每天減 1 個百分點，第 15 天起免費。手續費<b>全部回到核光池</b>，不進營運金庫。這延續了 CryptoMines「等越久稅越低」的設計，但收來的錢回到玩家的獎池裡。</p>
+
+<h3>7.4 消耗機制總表</h3>
+<table>
+<tr><th>消耗</th><th>效果</th><th>RVYN 去向</th></tr>
+<tr><td>航程用完、歸航</td><td>NFT 燒毀，玩家需要重新取得</td><td>帶動新的鑄造</td></tr>
+<tr><td>鑄造費</td><td>每一筆都分流</td><td>70% 核光池、15% 銷毀、15% 營運金庫（首抽折扣由金庫吸收）</td></tr>
+<tr><td>提領手續費</td><td>鼓勵累積後再提領</td><td>100% 核光池</td></tr>
+<tr><td>市場版稅 5%</td><td>二級市場交易</td><td>100% 營運金庫。版稅通常以 ETH 支付，無法直接放進 RVYN 核光池；部分市場也不強制收取版稅</td></tr>
+</table>
+
+<h3>7.5 賽季與排行</h3>
+<ul>
+  <li>每季 180 天，是內容和排行的週期：新季可以推出新的特別款、星紋、座標和牌組外觀。數量限制由流通上限控制，和賽季無關；上一季的 NFT 繼續可以使用，直到航程用完。</li>
+  <li><b>賽季排行獎池：</b>由營運金庫撥款（建議為當季鑄造收入的 5%），依當季累積光塵排名發放。資金來自營運金庫，不額外動用核光池。</li>
+  <li>圖鑑與名冊的成就（同頻全收集、星圖名冊人數）發放稱號和外觀，不發 RVYN。</li>
+</ul>
+
+<h3>7.6 和 RVYN 既有配置的關係</h3>
+<table>
+<tr><th>RVYN 配置</th><th class="n">數量</th><th>和遊戲的關係</th></tr>
+<tr><td>產品與生態 10%</td><td class="n">1,000,000</td><td>全額作為核光池初始注入（老闆確認）。其他產品若需要預算，改由營運金庫或社群配置支應</td></tr>
+<tr><td>社群與創作者 10%</td><td class="n">1,000,000</td><td>可撥一部分作為上線活動和美術創作者獎勵</td></tr>
+<tr><td>空投 5%</td><td class="n">500,000</td><td>可用於早期玩家空投（需另外防女巫）</td></tr>
+</table>
+</section>
+
+<!-- ============ 8. 模擬 ============ -->
+<section class="chap">
+<h2><span class="num">08</span>經濟模擬結果</h2>
+<p>我們寫了一個簡化的經濟模擬程式，以天為單位跑 365 天，觀察核光池、每日釋出、銷毀量和玩家收支。所有數字以 RVYN 計，<b>不模擬 RVYN 市價</b>，因為本設計的重點就是讓經濟不依賴幣價。</p>
+
+<h3>8.1 模擬假設</h3>
+<ul class="small">
+  <li><b>新玩家每天進場人數：</b>前 30 天逐步上升到高峰，第 90 天後每天遞減 2%。基準情境高峰每天 60 人；爆紅情境每天 300 人；冷卻情境第 45 天後完全沒有新玩家。</li>
+  <li><b>進場意願</b>隨近期收支比變化（收益好，來的人多）。每位玩家有自己的「可接受收支比」（0.35–1.2 隨機）：NFT 到期時，如果近期收支比低於他的門檻就離開，否則續購。</li>
+  <li>每位玩家使用平均配置（平均 1.84 個席位、總光度約 160），每天潛光一次。玩家平均每 7 天提領一次。光塔流通上限 3,000 座。參數全部採用 v1.0 定案值（附錄 A）；首抽折扣只影響金庫，沒有納入。</li>
+</ul>
+
+<div class="figure"><img src="c_pool.png"><div class="cap">圖 1　核光池餘額。有玩家持續鑄造時，70% 的回流讓池子持續成長（基準情境一年後約 248 萬）；冷卻情境沒有新玩家，池子緩慢下降，一年後仍有約 90 萬。</div></div>
+<div class="figure"><img src="c_emission.png"><div class="cap">圖 2　爆紅情境下，固定報酬模式的每日發放量會跟著玩家人數暴衝（最高約為本設計的 1.9 倍）。本設計的釋出量只和池子大小有關。</div></div>
+</section>
+
+<section>
+<div class="figure"><img src="c_ratio.png"><div class="cap">圖 3　上線初期收支比很高（受 0.18 上限保護，最高 2.0），之後隨人數增加回落，第 60 天以後平均約 0.67–0.77。收支比下滑時新玩家變少，形成自我平衡。</div></div>
+<div class="figure"><img src="c_players.png"><div class="cap">圖 4　活躍光塔數。爆紅情境在第 43 天觸及 3,000 座流通上限，之後維持滿額，只有光塔歸航時才空出名額。</div></div>
+
+<h3>8.2 數字摘要（第一年）</h3>
+<table>
+<tr><th>情境</th><th class="n">第 30 天光塔</th><th class="n">第 365 天光塔</th><th class="n">第 365 天核光池</th><th class="n">累計銷毀</th><th class="n">玩家投入</th><th class="n">玩家領走</th><th class="n">領走 ÷ 投入</th></tr>
+<tr><td>基準</td><td class="n">1,128</td><td class="n">2,505</td><td class="n">2,483,945</td><td class="n">1,758,483</td><td class="n">11,723,218</td><td class="n">6,722,308</td><td class="n">0.57</td></tr>
+<tr><td>爆紅</td><td class="n">2,257</td><td class="n">3,000</td><td class="n">3,021,732</td><td class="n">2,578,889</td><td class="n">17,192,595</td><td class="n">10,013,085</td><td class="n">0.58</td></tr>
+<tr><td>冷卻</td><td class="n">1,128</td><td class="n">850</td><td class="n">903,499</td><td class="n">749,961</td><td class="n">4,999,739</td><td class="n">3,596,319</td><td class="n">0.72</td></tr>
+</table>
+<p class="small">營運金庫的收入和累計銷毀相同（兩者都是鑄造費的 15%），未扣首抽折扣。</p>
+
+<h3>8.3 結論與限制</h3>
+<ul>
+  <li><b>核光池在三種情境都撐得住</b>，而且只要有人持續遊玩就會成長；最差的冷卻情境一年後仍有約 90 萬 RVYN。</li>
+  <li><b>玩家整體領走約投入的 57%–72%。</b>差額主要是銷毀（15%）、營運金庫（15%），以及留在核光池裡、之後才會釋出的部分。賺錢的是早期玩家、高稀有度和幸運的玩家，對外說明時必須誠實。</li>
+  <li><b>對 RVYN 的需求非常大：</b>基準情境下，玩家一年要投入約 1,170 萬 RVYN（會循環使用），淨吸收約 500 萬，一年銷毀約 176 萬（總供應的 17.6%）。實際上這種需求會推高 RVYN 價格，價格上漲又會限制玩家人數。所以鑄造價格必須每季依市價檢討（第 6.1 節）。</li>
+  <li><b>營運金庫累積的 RVYN 很多：</b>應公開金庫用途（加池、開發、賽季獎勵），定期揭露。</li>
+  <li><b>限制：</b>這是簡化模型。玩家行為、RVYN 市價、二級市場、機器人都沒有完整模擬；上線前應該用測試網的真實資料重新校正。</li>
+</ul>
+</section>
+
+<!-- ============ 9. 合約 ============ -->
+<section style="margin-top:8mm">
+<h2><span class="num">09</span>智能合約架構</h2>
+<p>沿用 repo 既有的做法：Solidity 0.8.28、optimizer 200 runs、EVM paris，放在 <span class="mono">packages/contracts/lightdive/</span>，並產出 standard-input.json 讓任何人自行比對 bytecode。</p>
+
+<h3>9.1 合約清單</h3>
+<table>
+<tr><th style="width:24%">合約</th><th>職責</th><th style="width:30%">主要函式</th></tr>
+<tr><td><b>LightdiveNFT</b><br><span class="small">ERC-721 + ERC-2981</span></td><td>三種 NFT 的所有權、鏈上屬性、剩餘航程、流通數量；只有遊戲合約可以扣航程和燒毀</td><td class="mono">attributes(id)<br>useVoyage(id) [GAME]<br>burn(id) [GAME]<br>mint(to, attrs) [MINTER]</td></tr>
+<tr><td><b>LightdiveMinter</b></td><td>收 RVYN、分流費用、首抽折扣、管理牌組、檢查流通上限、兩步驟鑄造</td><td class="mono">requestMint(kind, qty)<br>fulfill(requestId, rand)<br>deckRemaining(kind)<br>firstMintUsed(wallet, kind)</td></tr>
+<tr><td><b>Expedition</b></td><td>組隊（保管 NFT）、出發潛光、計算光塵、記帳、提領</td><td class="mono">equip(spire, prism, seekers[])<br>unequip(spire)<br>dive(spire, coord)<br>settle(diveId)<br>claim()</td></tr>
+<tr><td><b>CoreLightPool</b></td><td>保管核光池 RVYN、計算每日釋出、接收回流；<b>沒有任何提領到外部地址的函式</b></td><td class="mono">openEpoch(day)<br>emissionOf(day)<br>fund(amount)</td></tr>
+<tr><td><b>RandomnessBeacon</b></td><td>提供鑄造和潛光的隨機數：VRF 轉接，或承諾－揭露</td><td class="mono">commit(hash)<br>reveal(hour, seed)</td></tr>
+<tr><td><b>LightdiveConfig</b></td><td>所有可調參數集中一處，有上下限檢查，經時間鎖修改</td><td class="mono">setParam(key, value) [TIMELOCK]</td></tr>
+</table>
+
+<h3>9.2 一次潛光的鏈上流程</h3>
+<div class="flow">
+  <div class="step"><b>dive()</b>檢查擁有者、今天還沒潛、光度達門檻；記下 B、扣航程；當日 ΣB 增加</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>reveal()</b>該小時的隨機種子公開</div>
+  <div class="arrow">→</div>
+  <div class="step hl"><b>settle()</b>任何人都能呼叫：算出光束倍率與光塵 L；航程為 0 的 NFT 燒毀</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>claim()</b>當日結束後，R = E × L ÷ ΣB 記入帳上；扣光衰手續費後提領</div>
+</div>
+<p class="small">玩家打開網頁時，前端會自動幫他把已揭曉的潛光一起結算（批次 settle），玩家不需要自己操作。種子若超過 48 小時沒有揭露，該小時所有潛光一律以倍率 1.0 結算，營運方無法靠「不揭露」影響結果。</p>
+
+<h3>9.3 權限設計</h3>
+<table>
+<tr><th>角色</th><th>持有者</th><th>能做什麼</th><th>不能做什麼</th></tr>
+<tr><td>Admin</td><td>多簽錢包＋72 小時時間鎖</td><td>在上下限內調參數、開新季、指定隨機數來源</td><td>動用核光池、改已開賣牌組的數量、增發 RVYN</td></tr>
+<tr><td>Operator</td><td>獨立熱錢包</td><td>提交種子承諾與揭露</td><td>改任何參數、碰任何資金</td></tr>
+<tr><td>Pauser</td><td>多簽</td><td>暫停鑄造和新的潛光</td><td>暫停 claim（玩家已賺的 RVYN 永遠可以領）</td></tr>
+</table>
+
+<h3>9.4 寫死在合約裡的保證</h3>
+<ul>
+  <li>牌組一旦開賣，數量不能再改；光塔 3,000、稜鏡 6,000 的流通上限只能調低，不能調高。</li>
+  <li>光束機率表寫入時必須通過檢查：機率總和 100%，且平均倍率剛好 1.00。</li>
+  <li>每日釋出比例只能在 0.2%–1.5% 之間調整；費用分流的核光池比例不得低於 40%。</li>
+  <li>核光池的 RVYN 只能透過每日釋出流向玩家，沒有其他出口。</li>
+  <li>不使用可升級代理合約（和 RVYN 一致）；新版本以新合約部署並公告遷移方式。</li>
+</ul>
+
+<h3>9.5 測試計畫</h3>
+<ul class="small">
+  <li>單元測試：牌組抽選精確度、流通上限、首抽折扣、三種光束的機率表與區間倍率、光度計算、手續費遞減、權限。</li>
+  <li>不變量測試（fuzz）：核光池餘額只會因每日釋出而減少；牌組總數守恆；燒毀後無法再使用。</li>
+  <li>模擬比對：用模擬程式和合約跑同一組輸入，比對每日釋出和分配結果。</li>
+  <li>測試網演練：測試用 RVYN、完整跑一個 7 天的「迷你賽季」。</li>
+  <li><b>獨立第三方審計</b>：主網部署前必須完成。</li>
+</ul>
+</section>
+
+<!-- ============ 10. 鏈下 ============ -->
+<section class="chap">
+<h2><span class="num">10</span>鏈下系統與前端</h2>
+<p>沿用網站現有的技術：React 19（vinext／Vite）、Cloudflare Workers、D1、R2。遊戲放在 <span class="mono">/game</span> 路由下。</p>
+<table>
+<tr><th style="width:22%">元件</th><th>做什麼</th><th style="width:22%">放哪裡</th></tr>
+<tr><td>遊戲畫面</td><td>觀測站主畫面、光塔編隊、星圖（座標選擇）、潛光動畫、結果、圖鑑、星圖名冊</td><td>app/game</td></tr>
+<tr><td>鑄造頁</td><td>三種 NFT 的鑄造、牌組剩餘數量與目前機率即時顯示</td><td>app/game/mint</td></tr>
+<tr><td>事件索引</td><td>讀取合約事件，存成可查詢的資料，供畫面和排行榜使用</td><td>Worker＋D1</td></tr>
+<tr><td>Metadata 產生器</td><td>依鏈上屬性合成 7 層探索者肖像，產生 JSON 與圖片</td><td>Worker＋R2</td></tr>
+<tr><td>種子服務</td><td>每小時提交、揭露隨機種子（承諾－揭露方案時使用）</td><td>排程 Worker</td></tr>
+<tr><td>自動結算</td><td>玩家開頁時批次 settle，降低操作步驟</td><td>前端</td></tr>
+<tr><td>透明度頁</td><td>核光池、每日釋出、銷毀、金庫流向</td><td>/transparency</td></tr>
+</table>
+<p><b>四語系：</b>沿用網站既有的 en／zh-Hant／zh-Hans／ko，術語以 v3 第 5 節對照表為準。韓文待母語者確認。</p>
+<p><b>美術需求（v1 最小集）：</b>光塔 5 個等級＋2 特別款；稜鏡 5 稀有度 × 3 光束（本體和光束分開出圖）＋2 特別款；探索者 7 層 × 5 稀有度的素材池＋6 種光紋＋6 款星紋；Signal-Keeper 主視覺與 3–5 個表情或姿勢；星圖背景與 6 種座標圖示。生成提示詞依 v3 第 3 節。</p>
+</section>
+
+<!-- ============ 11. 透明度 ============ -->
+<section>
+<h2 style="margin-top:8mm"><span class="num">11</span>透明度與公開資訊</h2>
+<p>RovynCore 網站已有「Onchain Record」和「Transparency」頁面。遊戲延續同樣的做法，以下資訊全部從鏈上讀取、即時公開：</p>
+<div class="grid2">
+  <ul>
+    <li>核光池餘額、今日釋出量、歷史曲線</li>
+    <li>累計銷毀、營運金庫收支與用途</li>
+    <li>每季牌組剩餘數量（依稀有度、光束）</li>
+  </ul>
+  <ul>
+    <li>每小時隨機種子的承諾與揭露紀錄</li>
+    <li>所有合約地址、驗證狀態、管理權限持有者</li>
+    <li>參數變更的時間鎖排程</li>
+  </ul>
+</div>
+</section>
+
+<!-- ============ 12. 風險 ============ -->
+<section class="chap">
+<h2><span class="num">12</span>風險、安全與合規</h2>
+
+<div class="box warn">
+  <h4>上主網前必須完成</h4>
+  <ol class="small" style="margin:0">
+    <li><b>獨立安全審計</b>：遊戲合約保管玩家 NFT 和核光池資金，一旦有漏洞，損失是真金白銀。</li>
+    <li><b>管理權限改為多簽</b>：目前 RovynCore 的管理、金庫權限都在單一 EOA 錢包。遊戲上線後風險放大，必須先改。</li>
+    <li><b>法律審查</b>：見下方。</li>
+  </ol>
+</div>
+
+<h3>12.1 法律與合規</h3>
+<table>
+<tr><th style="width:24%">議題</th><th>風險</th><th>建議</th></tr>
+<tr><td>付費隨機抽取</td><td>用代幣抽稀有度 NFT 屬於「機率型商品」。台灣的線上遊戲規範要求公開機率；部分國家可能視為賭博</td><td><b>定案：公開所有機率</b>，包括牌組數量、光束結果機率與倍率區間。這取代 v3「機率屬內部資料」的規則</td></tr>
+<tr><td>隨機倍率獎勵</td><td>高倍率結果帶有博弈色彩</td><td><b>定案：最高倍率 10 倍</b>（針芒「核光回響」8–10 倍，機率 0.8%）；仍需律師確認</td></tr>
+<tr><td>證券／投資</td><td>如果宣傳「收益」「回本」「穩賺」，可能被認定為投資契約</td><td>宣傳只談遊戲與收藏，不寫報酬率；條款寫明不保證任何價值</td></tr>
+<tr><td>地區限制</td><td>部分地區禁止此類遊戲</td><td>依律師意見設定服務條款與地區限制</td></tr>
+</table>
+
+<h3>12.2 經濟風險</h3>
+<ul>
+  <li><b>RVYN 價格大漲：</b>鑄造變貴，新玩家卻步。對策：下一季調整 RVYN 計價。</li>
+  <li><b>RVYN 價格大跌：</b>不會觸發增發，但玩家的法幣收益下降，可能流失。對策：賽季活動、新內容。</li>
+  <li><b>大戶壟斷：</b>高稀有度集中在少數人手上。對策：光塔每錢包早期限購、深度係數只給小幅加成。</li>
+  <li><b>玩家整體收支低於 1：</b>這是設計使然，必須在溝通上誠實，避免「穩賺」的誤解。</li>
+</ul>
+
+<h3>12.3 技術風險</h3>
+<ul>
+  <li><b>隨機數被操縱：</b>不用單一區塊資料；營運方的種子先承諾後揭露，不揭露時以倍率 1.0 結算。</li>
+  <li><b>前端或伺服器被攻擊：</b>所有獎勵規則在鏈上，伺服器停擺不影響玩家領取已賺的 RVYN。</li>
+  <li><b>Robinhood Chain 的依賴：</b>VRF、市場、錢包支援程度需要確認。</li>
+</ul>
+</section>
+
+<!-- ============ 13. 路線圖 ============ -->
+<section class="chap">
+<h2><span class="num">13</span>開發路線圖</h2>
+<p class="lead">「7 天完成第一版」的目標建議定義為：<b>測試網上可以完整遊玩的版本</b>。主網上線還需要審計、多簽和法律審查，無法壓縮在 7 天內。</p>
+
+<h3>13.1 第一週：測試網可玩版</h3>
+<table>
+<tr><th style="width:14%">天</th><th>內容</th><th style="width:26%">產出</th></tr>
+<tr><td>第 1 天</td><td>白皮書 v1.0 定案；參數寫成設定檔；查證 Robinhood Chain 的 VRF</td><td>白皮書 v1.0、config</td></tr>
+<tr><td>第 2–3 天</td><td>合約：NFT、鑄造（牌組＋兩步驟＋首抽折扣）、核光池、潛光與結算；單元測試</td><td>合約與測試</td></tr>
+<tr><td>第 4 天</td><td>不變量測試、模擬比對；部署到測試網 46630（測試用 RVYN）</td><td>測試網地址</td></tr>
+<tr><td>第 5–6 天</td><td>/game 畫面：鑄造、編隊、星圖、潛光、結果、領取；管理頁：參數、牌組、種子、金庫；四語系</td><td>可玩網頁＋管理頁</td></tr>
+<tr><td>第 7 天</td><td>內部試玩、修正、公開測試網體驗</td><td>測試網 v1</td></tr>
+</table>
+
+<h3>13.2 之後</h3>
+<table>
+<tr><th style="width:22%">階段</th><th>內容</th><th style="width:18%">預估</th></tr>
+<tr><td>測試網公測</td><td>邀請社群試玩、蒐集數據、校正模擬參數；完成美術素材</td><td>2–3 週</td></tr>
+<tr><td>審計與合規</td><td>獨立審計、修正、複審；多簽遷移；法律意見</td><td>3–6 週（視審計排程）</td></tr>
+<tr><td>主網第一季</td><td>光塔開賣（早期限購、首抽 9 折）、核光池注入 100 萬 RVYN、遊戲開放</td><td>審計完成後</td></tr>
+<tr><td>Phase 2</td><td>訊號校準小遊戲、賽季排行、圖鑑稱號</td><td>第一季期間</td></tr>
+<tr><td>Phase 3</td><td>光掠 PvP、第二季牌組與新特別款</td><td>第二季</td></tr>
+</table>
+</section>
+
+<!-- ============ 14. 決策 ============ -->
+<section class="chap">
+<h2><span class="num">14</span>決策紀錄與待辦</h2>
+<h3>14.1 決策紀錄（2026-10-06 老闆確認）</h3>
+<table>
+<tr><th style="width:5%">#</th><th style="width:28%">項目</th><th>定案</th></tr>
+<tr><td>1</td><td>核光池初始注入</td><td>1,000,000 RVYN（「產品與生態」配置全額）</td></tr>
+<tr><td>2</td><td>每日釋出比例</td><td>1.0%；早鳥保護上限每點光塵 0.18 RVYN；合約允許範圍 0.2%–1.5%</td></tr>
+<tr><td>3</td><td>鑄造價格</td><td>光塔 300、稜鏡 120、探索者 40 RVYN</td></tr>
+<tr><td>4</td><td>費用分流</td><td>核光池 70%、銷毀 15%、營運金庫 15%</td></tr>
+<tr><td>5</td><td>航程次數</td><td>光塔 120、稜鏡 30、探索者 10</td></tr>
+<tr><td>6</td><td>數量上限</td><td>硬上限：光塔流通 3,000、稜鏡流通 6,000；探索者每副牌組 10,000</td></tr>
+<tr><td>7</td><td>機率公開</td><td>公開（牌組數量、光束結果機率與倍率區間）</td></tr>
+<tr><td>8</td><td>最高倍率</td><td>10 倍；三種光束的成功倍率都改為區間，普通成功一律 1.0–1.2 倍（方案 A）</td></tr>
+<tr><td>9</td><td>提領手續費</td><td>15% 起，每天降 1%，第 15 天起免費，全數回核光池</td></tr>
+<tr><td>10</td><td>隨機數來源</td><td>交由開發組：優先 VRF，沒有則用承諾－揭露</td></tr>
+<tr><td>11</td><td>異相</td><td>v1 不影響報酬，只改屬性與圖鑑</td></tr>
+<tr><td>12</td><td>光塔、稜鏡用完時的名稱</td><td>交給文案組</td></tr>
+<tr><td>13</td><td>新航行日誌</td><td>「光橋中斷」「核光回響」兩句，交給文案組</td></tr>
+<tr><td>14</td><td>Signal-Keeper</td><td>遊戲 NPC（觀測站守夜人、新手引導）、第一季主視覺；不做成 NFT</td></tr>
+<tr><td>15</td><td>新手優惠</td><td>每個錢包第一次鑄造三種 NFT，各 1 個享 9 折，由營運金庫吸收；光塔開賣 48 小時內每錢包最多 3 座</td></tr>
+</table>
+
+<h3>14.2 上線前待辦</h3>
+<table>
+<tr><th style="width:5%">#</th><th style="width:28%">事項</th><th>負責</th></tr>
+<tr><td>1</td><td>查證 Robinhood Chain 的 VRF 支援</td><td>開發組</td></tr>
+<tr><td>2</td><td>光塔、稜鏡燒毀時的名稱；「光橋中斷」「核光回響」航行日誌；「核光池」「光衰」命名確認</td><td>文案組</td></tr>
+<tr><td>3</td><td>美術素材（第 10 章最小集）</td><td>美術組</td></tr>
+<tr><td>4</td><td>法律意見：機率型商品、隨機倍率、地區限制、服務條款</td><td>老闆委託律師</td></tr>
+<tr><td>5</td><td>管理權限改為多簽＋時間鎖</td><td>老闆＋開發組</td></tr>
+<tr><td>6</td><td>獨立第三方安全審計</td><td>老闆委託審計方</td></tr>
+<tr><td>7</td><td>韓文術語確認（v3 第 5 節標示的詞）</td><td>文案組</td></tr>
+</table>
+</section>
+
+<!-- ============ 附錄 ============ -->
+<section class="chap">
+<h2><span class="num">附錄 A</span>參數總表（設定檔）</h2>
+<p class="small">v1.0 定案值。這張表會直接變成合約的 LightdiveConfig 初始值與前端設定檔。修改任何一項，都要同步更新這份文件。</p>
+<table>
+<tr><th style="width:34%">參數 key</th><th style="width:36%">值</th><th>說明</th></tr>
+<tr><td class="mono">pool.seed</td><td class="v">1,000,000 RVYN</td><td>核光池初始注入</td></tr>
+<tr><td class="mono">pool.emissionRateBp</td><td class="v">100</td><td>每日釋出 1.00%（允許 20–150）</td></tr>
+<tr><td class="mono">pool.yieldCapPerPoint</td><td class="v">0.18 RVYN</td><td>每點基礎光塵的釋出上限</td></tr>
+<tr><td class="mono">epoch.length</td><td class="v">24h（UTC 00:00）</td><td>每日紀元</td></tr>
+<tr><td class="mono">reveal.interval</td><td class="v">1h</td><td>種子揭露頻率；48h 未揭露以倍率 1.0 結算</td></tr>
+<tr><td class="mono">mint.price.spire / prism / seeker</td><td class="v">300 / 120 / 40</td><td>RVYN</td></tr>
+<tr><td class="mono">mint.split.pool / burn / treasury</td><td class="v">7000 / 1500 / 1500 bp</td><td>核光池比例不得低於 4000</td></tr>
+<tr><td class="mono">mint.firstDiscountBp</td><td class="v">1000</td><td>每錢包每種 NFT 首個 9 折，由金庫份額吸收</td></tr>
+<tr><td class="mono">voyages.spire / prism / seeker</td><td class="v">120 / 30 / 10</td><td>航程次數</td></tr>
+<tr><td class="mono">season.length</td><td class="v">180 天</td><td>賽季長度（內容與排行週期）</td></tr>
+<tr><td class="mono">supply.maxAlive.spire / prism</td><td class="v">3,000 / 6,000</td><td>流通硬上限（只能調低）</td></tr>
+<tr><td class="mono">deck.size.spire / prism</td><td class="v">3,000 / 6,000</td><td>每副牌組數量</td></tr>
+<tr><td class="mono">deck.seeker.size</td><td class="v">10,000</td><td>探索者每副牌組</td></tr>
+<tr><td class="mono">deck.rarityBp.spire</td><td class="v">4800/2900/1500/700/100</td><td>普通→神話</td></tr>
+<tr><td class="mono">deck.rarityBp.prism, seeker</td><td class="v">5000/2800/1500/600/100</td><td>普通→神話</td></tr>
+<tr><td class="mono">deck.beamBp</td><td class="v">4000/4000/2000</td><td>廣域／聚焦／針芒</td></tr>
+<tr><td class="mono">claim.feeMaxBp / decayDays</td><td class="v">1500 / 15</td><td>光衰手續費</td></tr>
+<tr><td class="mono">royalty.bp</td><td class="v">500</td><td>ERC-2981</td></tr>
+<tr><td class="mono">depth.minLum</td><td class="v">0/120/220/380/600/850</td><td>深度 I–VI 門檻</td></tr>
+<tr><td class="mono">depth.coefBp</td><td class="v">10000/10300/10600/11000/11500/12000</td><td>深度係數</td></tr>
+<tr><td class="mono">beam.wide</td><td class="v">1500:0, 7200:1.00–1.20, 1300:1.40–1.80</td><td>機率 bp：倍率區間</td></tr>
+<tr><td class="mono">beam.focused</td><td class="v">2250:0, 6050:1.00–1.20, 1330:1.50–2.00, 370:2.50–3.00</td><td></td></tr>
+<tr><td class="mono">beam.needle</td><td class="v">4500:0, 2700:1.00–1.20, 1850:1.80–2.20, 870:2.60–3.40, 80:8.00–10.00</td><td></td></tr>
+<tr><td class="mono">special.lumBonusBp</td><td class="v">400</td><td>特別款光度 +4%</td></tr>
+<tr><td class="mono">spire.earlyWalletCap</td><td class="v">3（48h）</td><td>早期限購</td></tr>
+</table>
+
+<h2 style="break-before:page"><span class="num">附錄 B</span>名詞對照</h2>
+<table>
+<tr><th>中文</th><th>English</th><th>說明</th></tr>
+<tr><td>潛光遠征</td><td>Lightdive Expedition</td><td>遊戲名稱，NFT 代號 RVDIV</td></tr>
+<tr><td>光塔</td><td>Beacon Spire</td><td>大型 NFT，Lv.1–5</td></tr>
+<tr><td>共鳴稜鏡</td><td>Resonance Prism</td><td>中型 NFT，光束：廣域／聚焦／針芒</td></tr>
+<tr><td>探索者</td><td>Seeker</td><td>小型 NFT，7 層肖像</td></tr>
+<tr><td>光度／總光度</td><td>Luminance / Total Luminance</td><td>產能數值（內部：共鳴力）</td></tr>
+<tr><td>光塵</td><td>Lightdust</td><td>每次潛光帶回的點數</td></tr>
+<tr><td>核光池</td><td>Core Light Pool</td><td>遊戲獎勵池（本文件新增名稱，待文案組確認）</td></tr>
+<tr><td>紀元</td><td>Epoch</td><td>每日結算單位</td></tr>
+<tr><td>光衰</td><td>Light Decay</td><td>提領手續費（本文件新增名稱，待文案組確認）</td></tr>
+<tr><td>光源座標</td><td>Light Coordinate</td><td>潛光目的地</td></tr>
+<tr><td>異相</td><td>Anomaly</td><td>每日屬性輪替事件</td></tr>
+<tr><td>同頻</td><td>Attuned</td><td>探索者與座標屬性相同</td></tr>
+<tr><td>歸航</td><td>Homecoming</td><td>航程用完、NFT 燒毀</td></tr>
+<tr><td>訊號守護者</td><td>Signal-Keeper</td><td>觀測站守夜人、引導 NPC</td></tr>
+</table>
+</section>
+
+</body>
+</html>
