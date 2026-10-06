@@ -28,7 +28,7 @@ python3 charts.py                # needs matplotlib and Noto Sans TC TTFs in ./f
 
 ## Re-rendering the PDF
 
-`source/render.js` prints `whitepaper.html` with Playwright's Chromium. It expects the chart PNGs next to the HTML and Noto Sans TC TTFs in `source/fonts/` (not committed; download from Google Fonts).
+`source/render.js` prints `whitepaper.html` with Playwright's Chromium. Set `CHROMIUM_PATH` to use a specific Chromium build. It expects the chart PNGs next to the HTML and Noto Sans TC TTFs in `source/fonts/` (not committed; download from Google Fonts).
 
 ```sh
 cd docs/lightdive/source
