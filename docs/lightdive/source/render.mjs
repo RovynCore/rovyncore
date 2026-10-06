@@ -1,4 +1,11 @@
-const { chromium } = require('playwright');
+// Playwright is not a project dependency: load it like CommonJS so a global install found through
+// NODE_PATH works (e.g. NODE_PATH=$(npm root -g)).
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const { chromium } = createRequire(import.meta.url)('playwright');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const p = await b.newPage();
