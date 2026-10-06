@@ -2,28 +2,28 @@
   "site": "https://www.rovyncore.com",
   "worker": "rovyncore-production",
   "latestDocumentedProductionRelease": {
-    "name": "Visitor-review fixes: X feed notice, whitelist opening date in RVYN hero, development log entry",
+    "name": "Site-wide redesign on one design system; updates page shows the development log only",
     "date": "2026-10-06",
-    "workerVersion": "d8ed76b2-ed1d-407e-9a9b-2fc60e3e9ee4",
-    "history": "releases/production/release-2026-10-05-24.md",
+    "workerVersion": "b3cc2dc9-f54c-4cf2-a1e4-28ade069c677",
+    "history": "releases/production/release-2026-10-05-25.md",
     "releasedBy": "Claude Code (website handover from Codex)",
     "baseGitCommit": "1c473f6a83def91bd4f84a13de9298f7d61be9a3",
-    "sourceManifest": "releases/production/snapshots/release-2026-10-05-24.json",
-    "sourceManifestSha256": "3B5641225794916D0940B4993AE94BF0C89A78BE910286E53AC35C362D7A11FC",
-    "sourceFileCount": 314,
-    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-23.json",
-    "changedFileCountFromPreReleaseManifest": 3,
+    "sourceManifest": "releases/production/snapshots/release-2026-10-05-25.json",
+    "sourceManifestSha256": "667F3B3E73D9FF34B72B90C632BA385D82AB86100310833B318123A960BA6CE4",
+    "sourceFileCount": 321,
+    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-24.json",
+    "changedFileCountFromPreReleaseManifest": 24,
     "previousRelease": {
-      "name": "Human verification (Turnstile) enabled for uploads, reports and whitelist registration",
+      "name": "Visitor-review fixes: X feed notice, whitelist opening date in RVYN hero, development log entry",
       "date": "2026-10-06",
-      "workerVersion": "83dea873-196f-4112-834e-dab64d4ae691",
-      "history": "releases/production/release-2026-10-05-23.md"
+      "workerVersion": "d8ed76b2-ed1d-407e-9a9b-2fc60e3e9ee4",
+      "history": "releases/production/release-2026-10-05-24.md"
     },
-    "builtWorkerSha256": "DDEF3332A666F8B4256954CADF5239CEF5A8E98C477659188072B8C774C11C68",
+    "builtWorkerSha256": "DDDED020245CF2715CB164B70B9B97B43813A09908F1E28E737873FA0DEDEA23",
     "builtWorkerHashArtifact": "Wrangler dry-run bundled production-worker.js",
-    "builtApplicationSha256": "E43B47D19C5DB9222EF6E6EE343452DE279E1212D67E6FACF7B96ABF4BFCAC38",
+    "builtApplicationSha256": "AB2C48BA87DFED7C785C60C5C0F3CF7798DD93147608BC33861C06928855296E",
     "builtApplicationHashArtifact": "dist/server/index.js",
-    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot."
+    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged)."
   },
   "productionObservedAt": "2026-10-04",
   "observedLiveBehavior": {

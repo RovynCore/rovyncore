@@ -1,17 +1,10 @@
 "use client";
-import {
-  useLanguage,
-} from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { useCallback, useState, useEffect } from "react";
-import {
-  createPublicClient,
-  http,
-  encodeFunctionData,
-  formatEther,
-  type Hex,
-} from "viem";
-import { ArrowUpRight, Check, Copy, Orbit } from "lucide-react";
+import { createPublicClient, http, encodeFunctionData, formatEther, type Hex } from "viem";
+import { ArrowRight, ArrowUpRight, Check, Info, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 import Link from "@/components/site-link";
 import { usePlatform } from "@/components/platform-context";
 import { message, api } from "@/components/platform-provider";
@@ -22,12 +15,8 @@ import rvynV4Artifacts from "@/packages/contracts/v4/artifacts/contracts.json";
 import rvynV5Artifacts from "@/packages/contracts/v5/artifacts/contracts.json";
 import rvynV6Artifacts from "@/packages/contracts/v6/artifacts/contracts.json";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
-import Image from "next/image";
-import { RetainedRvynTokenomics } from "@/components/visual/rvyn-canonical";
-import { useScrollReveal } from "@/components/scroll-reveal";
-import { RvynEligibilityFlow } from "@/components/rvyn-eligibility-flow";
-import { PresaleTerms } from "@/components/presale-terms";
-import { HeroHud, TelemetryRail } from "@/components/hero-hud";
+import { Address, Countdown, formatUtc8, Head, type Copy4 } from "@/components/rv/ui";
+import { AllocationBar } from "@/components/rv/allocation";
 
 type OfficialRvynRecord = {
   asset: { chainId: number; network: string; contractAddress: string; recordStatus: string; url: string };
@@ -106,11 +95,83 @@ const rvynPageCopy = {
   allocationCaveat: { en: "Token allocations and presale terms are planning figures unless confirmed by the currently configured onchain contract. Purchases are enabled only when the live contract, published whitelist root, and public sale stage all agree. Locks and unsold-token treatment follow the deployed contract, not this description alone.", "zh-Hant": "除非由目前設定的鏈上合約確認，代幣配置與預售條件均屬規劃值。只有鏈上合約、已發布白名單根值與公開銷售階段彼此一致時，才會開放購買。鎖倉與未售 Token 處理以實際部署合約為準，不能只依賴本頁說明。", "zh-Hans": "除非由当前配置的链上合约确认，代币配置与预售条件均属规划值。只有链上合约、已发布白名单根值与公开销售阶段一致时，才会开放购买。锁仓与未售 Token 处理以实际部署合约为准，不能只依赖本页说明。", ko: "현재 설정된 온체인 계약으로 확인되지 않는 한 토큰 배분과 프리세일 조건은 계획값입니다. 온체인 계약, 게시된 허용 목록 루트, 공개 판매 단계가 모두 일치할 때만 구매가 열립니다. 잠금과 미판매 토큰 처리는 이 설명만이 아니라 실제 배포된 계약을 따릅니다." },
 } as const;
 
+const q = (en: string, zhHant: string, zhHans: string, ko: string): Copy4 => ({ en, "zh-Hant": zhHant, "zh-Hans": zhHans, ko });
+const R = {
+  heroTitle: q("The core of a world in the making.", "一個正在成形的世界的核心。", "一个正在成形的世界的核心。", "만들어지고 있는 세계의 중심."),
+  joinNow: q("Register now", "立即登記", "立即登记", "지금 신청"),
+  supply: q("Total supply", "總供應量", "总供应量", "총 공급량"),
+  price: q("Presale price", "預售單價", "预售单价", "프리세일 가격"),
+  cap: q("Per-wallet cap", "單錢包上限", "单钱包上限", "지갑당 한도"),
+  stage: q("Stage", "階段", "阶段", "단계"),
+  checking: q("Checking…", "確認中…", "确认中…", "확인 중…"),
+  presaleOpen: q("Presale open", "預售開放中", "预售开放中", "프리세일 진행 중"),
+  presaleClosed: q("Presale closed", "預售已結束", "预售已结束", "프리세일 종료"),
+  regOpen: q("Registration open", "登記開放中", "登记开放中", "신청 가능"),
+  opens: q("Opens", "開放", "开放", "시작"),
+  preparing: q("Preparing", "準備中", "准备中", "준비 중"),
+  scheduled: q("Scheduled", "已排程", "已排程", "예정"),
+  ended: q("Registration ended", "登記已截止", "登记已截止", "신청 마감"),
+  notOpen: q("Not open", "尚未開放", "尚未开放", "미개시"),
+  now: q("Now", "目前", "当前", "현재"),
+  pathEyebrow: q("How it works", "流程", "流程", "진행 방식"),
+  pathTitle: q("Five steps from registration to RVYN in your wallet.", "從登記到 RVYN 入帳，共五步。", "从登记到 RVYN 入账，共五步。", "신청부터 지갑에 RVYN이 들어오기까지 다섯 단계."),
+  pathLead: q("Each step is enforced by the sale contract or shown live on this page.", "每一步都由預售合約執行，或在本頁即時顯示。", "每一步都由预售合约执行，或在本页实时显示。", "각 단계는 판매 계약이 집행하거나 이 페이지에 실시간으로 표시됩니다."),
+  s1: q("Register", "登記", "登记", "신청"),
+  s1m: q("Dates are announced on this page.", "日期會公布在本頁。", "日期会公布在本页。", "일정은 이 페이지에 공개됩니다."),
+  s2: q("Review and onchain list", "審核並上鏈名單", "审核并上链名单", "검토 및 온체인 목록"),
+  s2m: q("Approved wallets are published onchain before the sale opens.", "核准的錢包會在開售前發布到鏈上。", "核准的钱包会在开售前发布到链上。", "승인된 지갑은 판매 전에 온체인에 게시됩니다."),
+  s3: q("Presale (14 days)", "預售（14 天）", "预售（14 天）", "프리세일 (14일)"),
+  s3m: q("0.0001 ETH per RVYN, up to 0.25 ETH per wallet.", "每枚 0.0001 ETH，每個錢包最多 0.25 ETH。", "每枚 0.0001 ETH，每个钱包最多 0.25 ETH。", "RVYN당 0.0001 ETH, 지갑당 최대 0.25 ETH."),
+  s4: q("Settlement", "結算", "结算", "정산"),
+  s4m: q("The pool is built and its LP locked. Anyone can settle 7 days after close.", "建立交易池並鎖定 LP。結束滿 7 天後任何人都能結算。", "建立交易池并锁定 LP。结束满 7 天后任何人都能结算。", "풀을 만들고 LP를 잠급니다. 종료 7일 후 누구나 정산할 수 있습니다."),
+  s5: q("Claim RVYN", "領取 RVYN", "领取 RVYN", "RVYN 클레임"),
+  s5m: q("Claim the RVYN you paid for on this page.", "在本頁領取你購買的 RVYN。", "在本页领取你购买的 RVYN。", "구매한 RVYN을 이 페이지에서 클레임합니다."),
+  wlEyebrow: q("Step 1 · Whitelist", "第 1 步 · 白名單", "第 1 步 · 白名单", "1단계 · 화이트리스트"),
+  w1: q("Connect your wallet", "連接錢包", "连接钱包", "지갑 연결"),
+  w1b: q("Use your own EVM wallet. We never ask for a seed phrase.", "使用你自己的 EVM 錢包。我們不會索取助記詞。", "使用你自己的 EVM 钱包。我们不会索取助记词。", "본인의 EVM 지갑을 사용하세요. 시드 문구는 절대 요구하지 않습니다."),
+  w2: q("Sign a login message", "簽署登入訊息", "签署登录消息", "로그인 메시지 서명"),
+  w2b: q("It is not a transaction: no gas, no token approval, no payment.", "這不是交易：不花 gas、不授權代幣、不付款。", "这不是交易：不花 gas、不授权代币、不付款。", "거래가 아닙니다. 가스, 토큰 승인, 결제가 없습니다."),
+  w3: q("Wait for review", "等待審核", "等待审核", "검토 대기"),
+  w3b: q("Eligibility starts only after the approved list is published onchain.", "核准的名單發布上鏈後，才具備購買資格。", "核准的名单发布上链后，才具备购买资格。", "승인 목록이 온체인에 게시된 뒤에야 자격이 생깁니다."),
+  scam: q("We will never DM you first or ask you to send funds to an address in a reply. Only use rovyncore.com.", "我們不會主動私訊你，也不會要你把資金轉到留言裡的地址。請只使用 rovyncore.com。", "我们不会主动私信你，也不会要你把资金转到留言里的地址。请只使用 rovyncore.com。", "먼저 DM을 보내거나 댓글 속 주소로 송금을 요청하지 않습니다. rovyncore.com만 이용하세요."),
+  psEyebrow: q("Step 3 · Presale", "第 3 步 · 預售", "第 3 步 · 预售", "3단계 · 프리세일"),
+  psLead: q("Terms fixed in the deployed V6 sale contract.", "以下條件寫死在已部署的 V6 預售合約中。", "以下条件写死在已部署的 V6 预售合约中。", "배포된 V6 판매 계약에 고정된 조건입니다."),
+  hardCap: q("Total cap", "總上限", "总上限", "전체 한도"),
+  length: q("Sale window", "銷售期", "销售期", "판매 기간"),
+  lengthV: q("14 days once opened", "開售後 14 天", "开售后 14 天", "시작 후 14일"),
+  delivery: q("Delivery", "交付", "交付", "지급"),
+  deliveryV: q("Claim after settlement", "結算後領取", "结算后领取", "정산 후 클레임"),
+  refund: q("Refund", "退款", "退款", "환불"),
+  refundV: q("None", "無", "无", "없음"),
+  saleContract: q("Sale contract (V6)", "預售合約（V6）", "预售合约（V6）", "판매 계약 (V6)"),
+  buyTitle: q("Buy RVYN", "購買 RVYN", "购买 RVYN", "RVYN 구매"),
+  amountHint: q("Whole tokens, up to 2,500 RVYN per wallet in total.", "以整數枚計，每個錢包累計最多 2,500 RVYN。", "以整数枚计，每个钱包累计最多 2,500 RVYN。", "정수 단위, 지갑당 누적 최대 2,500 RVYN."),
+  tkEyebrow: q("Token", "代幣", "代币", "토큰"),
+  network: q("Network", "網路", "网络", "네트워크"),
+  tax: q("Buy / sell tax", "買賣稅", "买卖税", "매매 수수료"),
+  taxV: q("None in the token contract", "代幣合約沒有", "代币合约没有", "토큰 계약에 없음"),
+  explorer: q("View on explorer", "在區塊瀏覽器查看", "在区块浏览器查看", "탐색기에서 보기"),
+  transparency: q("Transparency", "公開透明", "公开透明", "투명성"),
+  alloc: q("Allocation caps", "配置上限", "配置上限", "배분 상한"),
+  faqTitle: q("Questions people ask", "常見問題", "常见问题", "자주 묻는 질문"),
+  risk: q("RVYN can lose all of its value. The contracts have not been independently audited. Nothing here is financial advice.", "RVYN 的價值可能歸零。合約未經獨立審計。本頁內容不構成投資建議。", "RVYN 的价值可能归零。合约未经独立审计。本页内容不构成投资建议。", "RVYN은 가치를 모두 잃을 수 있습니다. 계약은 독립 감사를 받지 않았습니다. 이 내용은 투자 조언이 아닙니다."),
+  terms: q("Read the terms & risks", "閱讀條款與風險", "阅读条款与风险", "약관·위험 읽기"),
+  faq: [
+    [q("What is the whitelist?", "白名單是什麼？", "白名单是什么？", "화이트리스트란?"), q("Registering puts your wallet up for review. Once approved wallets are published onchain, those wallets may buy in the presale. It is not an NFT and not a token allocation.", "登記會讓你的錢包進入審核。核准的錢包發布上鏈後，才能在預售中購買。它不是 NFT，也不是代幣配額。", "登记会让你的钱包进入审核。核准的钱包发布上链后，才能在预售中购买。它不是 NFT，也不是代币配额。", "신청하면 지갑이 검토 대상이 됩니다. 승인된 지갑이 온체인에 게시되면 프리세일에서 구매할 수 있습니다. NFT도 토큰 배정도 아닙니다.")],
+    [q("Does registering cost anything?", "登記要花錢嗎？", "登记要花钱吗？", "신청에 비용이 드나요?"), q("No. You only sign a login message: no transaction, no gas, no token approval.", "不用。你只需簽署一段登入訊息：沒有交易、不花 gas、不授權代幣。", "不用。你只需签署一段登录消息：没有交易、不花 gas、不授权代币。", "아니요. 로그인 메시지에만 서명합니다. 거래, 가스, 토큰 승인이 없습니다.")],
+    [q("When is the presale?", "什麼時候預售？", "什么时候预售？", "프리세일은 언제인가요?"), q("No date has been set. It will be announced on this site and on our X account.", "尚未訂定日期，會公布在本站和我們的 X 帳號。", "尚未确定日期，会公布在本站和我们的 X 账号。", "일정은 정해지지 않았습니다. 이 사이트와 X 계정에 공지합니다.")],
+    [q("When do I receive RVYN?", "什麼時候會收到 RVYN？", "什么时候会收到 RVYN？", "RVYN은 언제 받나요?"), q("After the sale closes and is settled. You then claim it on this page. Nothing is delivered at the moment you pay.", "預售結束並完成結算後，在本頁領取。付款當下不會交付代幣。", "预售结束并完成结算后，在本页领取。付款当下不会交付代币。", "판매 종료와 정산 후 이 페이지에서 클레임합니다. 결제 시점에는 지급되지 않습니다.")],
+    [q("Can I get a refund?", "可以退款嗎？", "可以退款吗？", "환불받을 수 있나요?"), q("No. The sale contract has no refund function. Only take part with money you can afford to lose.", "不行。預售合約沒有退款功能。請只用你能承受損失的資金參與。", "不行。预售合约没有退款功能。请只用你能承受损失的资金参与。", "아니요. 판매 계약에는 환불 기능이 없습니다. 잃어도 되는 금액으로만 참여하세요.")],
+    [q("What happens to the ETH raised?", "募到的 ETH 去哪裡？", "募到的 ETH 去哪里？", "모금된 ETH는 어떻게 되나요?"), q("At settlement at least half of it (plus any forwarded launchpad revenue) goes into the RVYN/ETH pool at the sale price, and the pool's LP is locked for 24 months. The rest is operating funds, which the multisig can withdraw at most 25% every 30 days.", "結算時，至少一半（加上轉入的發射台收益）會依預售價放入 RVYN/ETH 交易池，池子的 LP 鎖倉 24 個月。其餘為營運資金，多簽每 30 天最多提領 25%。", "结算时，至少一半（加上转入的发射台收益）会按预售价放入 RVYN/ETH 交易池，池子的 LP 锁仓 24 个月。其余为运营资金，多签每 30 天最多提取 25%。", "정산 시 최소 절반(전달된 런치패드 수익 포함)이 판매 가격으로 RVYN/ETH 풀에 들어가고 LP는 24개월 잠깁니다. 나머지는 운영 자금이며 멀티시그가 30일마다 최대 25%까지 인출할 수 있습니다.")],
+    [q("Has the contract been audited?", "合約有審計嗎？", "合约有审计吗？", "계약은 감사를 받았나요?"), q("No independent audit. The source is verified on the explorer and the contracts were tested by the developers, but bugs may exist.", "沒有獨立審計。原始碼已在區塊瀏覽器驗證，並經開發者測試，但仍可能存在漏洞。", "没有独立审计。源码已在区块浏览器验证，并经开发者测试，但仍可能存在漏洞。", "독립 감사는 없습니다. 소스는 탐색기에서 검증되었고 개발자가 테스트했지만 버그가 있을 수 있습니다.")],
+    [q("What is RVYN used for?", "RVYN 有什麼用途？", "RVYN 有什么用途？", "RVYN은 어디에 쓰이나요?"), q("It is planned as the core currency of our first game, which is in development. No in-game use is live yet.", "規劃為我們第一款遊戲的核心貨幣，遊戲開發中，目前還沒有遊戲內用途。", "规划为我们第一款游戏的核心货币，游戏开发中，目前还没有游戏内用途。", "개발 중인 첫 게임의 핵심 화폐로 계획되어 있습니다. 아직 게임 내 용도는 없습니다.")],
+  ] as Array<[Copy4, Copy4]>,
+};
+
 export default function RovynCore() {
   const { tr, locale } = useLanguage();
 
   const { config, transact, account, connect } = usePlatform();
-  const [buyRef, buyClassName, buyStyle] = useScrollReveal<HTMLElement>({ delay: 40 });
   const [amount, setAmount] = useState("1000");
   const [sale, setSale] = useState<{
     kind: "legacy" | "presale";
@@ -345,137 +406,192 @@ export default function RovynCore() {
   const verifiedV5 = config.chainId === 4663
     && officialTokenAddress?.toLowerCase() === RVYN_MODEL.contractMainnet
     && (!config.sale || (config.presaleVersion === 6 || (config.presaleVersion === 5 && ["0x3cb9443f4726155817106a0fe115b26e9ad14b5f", "0x6496fc99ba4d5904e6c99488a9a9f477605146ac"].includes(config.sale.toLowerCase()))));
-  const plannedLabel = {
-    en: "PLANNED · NOT LIVE",
-    "zh-Hant": "規劃值・尚未生效",
-    "zh-Hans": "规划值・尚未生效",
-    ko: "계획값 · 아직 미적용",
-  }[locale];
+  const t = (c: Copy4) => c[locale];
+  const reg = saleDesk?.registrationStatus;
+  const opensAt = saleDesk?.registrationOpensAt ?? null;
+  const closesAt = saleDesk?.registrationClosesAt ?? null;
+  // Where the visitor is on the path: 0 registration, 1 list published, 2 presale, 3 settlement, 4 claim.
+  const stage = saleDesk?.purchasesOpen ? 2 : saleDesk?.phase === "sale_closed" ? (sale?.state === 3n ? 4 : 3) : saleDesk?.allowlistEnforcedOnchain ? 1 : 0;
+  const statusLine = !saleDesk ? rvynPageCopy.registrationUnavailable[locale]
+    : reg === "scheduled" ? rvynPageCopy.registrationScheduled[locale]
+    : saleDesk.registryOpen ? rvynPageCopy.registrationOpen[locale]
+    : reg === "closed" ? rvynPageCopy.registrationExpired[locale]
+    : rvynPageCopy.registrationClosed[locale];
+  const steps: Array<[Copy4, Copy4]> = [
+    [R.s1, opensAt && closesAt ? { en: `${formatUtc8(opensAt, "en", false)} – ${formatUtc8(closesAt, "en", false)} (UTC+8)`, "zh-Hant": `${formatUtc8(opensAt, "zh-Hant", false)} – ${formatUtc8(closesAt, "zh-Hant", false)}（UTC+8）`, "zh-Hans": `${formatUtc8(opensAt, "zh-Hans", false)} – ${formatUtc8(closesAt, "zh-Hans", false)}（UTC+8）`, ko: `${formatUtc8(opensAt, "ko", false)} – ${formatUtc8(closesAt, "ko", false)} (UTC+8)` } : R.s1m],
+    [R.s2, R.s2m], [R.s3, R.s3m], [R.s4, R.s4m], [R.s5, R.s5m],
+  ];
   return (
-    <main className="rvyn-page">
-      <section className="genesis-hero content-motion-zone">
-        <div className="hero-core-scene" aria-hidden="true"><Image className="core-backdrop" src="/genesis-core.webp" alt="" width={1000} height={1000} priority unoptimized /></div>
-        <div className="hero-copy">
-          <span className="tag">{tr("ROVYN CORE / $RVYN")}</span>
-          <h1>{tr("每個偉大的起點，")}<br />{tr("都曾只是")}<span>{tr("一個想法。")}</span></h1>
-          <p>{tr("RovynCore 是我們寫下的第一行。")}<br />{rvynPageCopy.heroGame[locale]}</p>
-          <div className="rvyn-hero-actions"><a className="rvyn-hero-action rvyn-hero-action--primary" href="#allowlist"><span>{rvynPageCopy.heroRegister[locale]}</span><ArrowUpRight size={18} /></a><a className="rvyn-hero-action rvyn-hero-action--secondary" href="#buy"><span>{rvynPageCopy.heroPresale[locale]}</span><ArrowUpRight size={18} /></a></div>
-          <span className="hero-note">{tr("已由 ROVYN CORE 平台發行")}</span>
-        </div>
-        <HeroHud />
-        <TelemetryRail label="RVYN" cells={[
-          { key: "net", label: { en: "NETWORK", "zh-Hant": "網路", "zh-Hans": "网络", ko: "네트워크" }, value: "Robinhood Chain · 4663" },
-          { key: "supply", label: { en: "SUPPLY", "zh-Hant": "總量", "zh-Hans": "总量", ko: "총 공급량" }, value: "10,000,000 RVYN" },
-          { key: "stage", label: { en: "STAGE", "zh-Hant": "階段", "zh-Hans": "阶段", ko: "단계" }, value: !saleDesk ? { en: "Checking", "zh-Hant": "確認中", "zh-Hans": "确认中", ko: "확인 중" } : saleDesk.purchasesOpen ? { en: "Presale open", "zh-Hant": "預售開放中", "zh-Hans": "预售开放中", ko: "프리세일 진행 중" } : saleDesk.registryOpen ? { en: "Whitelist open", "zh-Hant": "白名單登記中", "zh-Hans": "白名单登记中", ko: "화이트리스트 신청 중" } : saleDesk.phase === "sale_closed" ? { en: "Presale closed", "zh-Hant": "預售已結束", "zh-Hans": "预售已结束", ko: "프리세일 종료" } : { en: "Preparing", "zh-Hant": "準備中", "zh-Hans": "准备中", ko: "준비 중" }, live: Boolean(saleDesk?.purchasesOpen || saleDesk?.registryOpen) },
-          { key: "reg", label: { en: "WHITELIST", "zh-Hant": "白名單", "zh-Hans": "白名单", ko: "화이트리스트" }, value: saleDesk?.registryOpen ? { en: "Registration open", "zh-Hant": "登記開放", "zh-Hans": "登记开放", ko: "신청 가능" } : saleDesk?.registrationStatus === "scheduled" && saleDesk.registrationOpensAt ? (() => {
-            // Fixed UTC+8 like the dates in the whitelist section, so every visitor reads the same day.
-            const day = (l: string) => new Date(saleDesk.registrationOpensAt! * 1000).toLocaleDateString(l, { month: "short", day: "numeric", timeZone: "Etc/GMT-8" });
-            return { en: `Opens ${day("en")}`, "zh-Hant": `${day("zh-Hant")} 開放`, "zh-Hans": `${day("zh-Hans")} 开放`, ko: `${day("ko")} 시작` };
-          })() : { en: "Registration closed", "zh-Hant": "登記未開放", "zh-Hans": "登记未开放", ko: "신청 불가" } },
-        ]} />
-        <div className="rvyn-hero-contract">
-          <span>{tr("合約")}</span>
-          <code><span>{contractAddress.slice(0, 22)}</span><wbr /><span>{contractAddress.slice(22)}</span></code>
-          <button type="button" className="rvyn-hero-contract__copy" aria-label={rvynPageCopy.copyContract[locale]} title={rvynPageCopy.copyContract[locale]} onClick={() => { void navigator.clipboard.writeText(contractAddress).then(() => toast.success(rvynPageCopy.copied[locale])).catch((cause) => toast.error(message(cause))); }}>
-            <Copy size={16} aria-hidden="true" />
-          </button>
-        </div>
-      </section>
-      <section className="rvyn-allowlist workspace" id="allowlist" aria-labelledby="rvyn-allowlist-title">
-        <div className="rvyn-allowlist__copy">
-          <span className="eyebrow">RVYN / WHITELIST</span>
-          <h2 id="rvyn-allowlist-title">{rvynPageCopy.checkAllowlist[locale]}</h2>
-          <p>{saleDesk?.purchasesOpen ? rvynPageCopy.eligibilityOpen[locale] : rvynPageCopy.eligibility[locale]}</p>
-          <RvynEligibilityFlow locale={locale} />
-        </div>
-        <div className="rvyn-allowlist__form panel">
-          <p className={`rvyn-sale-status${saleDesk?.registryOpen ? " rvyn-sale-status--open" : ""}`} role="status">{!saleDesk ? rvynPageCopy.registrationUnavailable[locale] : saleDesk.registrationStatus === "scheduled" ? rvynPageCopy.registrationScheduled[locale] : saleDesk.registryOpen ? rvynPageCopy.registrationOpen[locale] : saleDesk.registrationStatus === "closed" ? rvynPageCopy.registrationExpired[locale] : rvynPageCopy.registrationClosed[locale]}</p>
-          {saleDesk?.registrationOpensAt && saleDesk.registrationClosesAt && <p className="side-note">{rvynPageCopy.registrationOpens[locale]}: {new Date(saleDesk.registrationOpensAt * 1000).toLocaleString(locale, { timeZone: "Etc/GMT-8" })} · {rvynPageCopy.registrationCloses[locale]}: {new Date(saleDesk.registrationClosesAt * 1000).toLocaleString(locale, { timeZone: "Etc/GMT-8" })} (UTC+8)</p>}
-          <div className="rvyn-allowlist__step rvyn-allowlist__step--register" id="allowlist-register">
-            <div className="rvyn-allowlist__step-heading">
-              <span className="rvyn-allowlist__step-index" aria-hidden="true">01</span>
-              <div>
-                <h3>{rvynPageCopy.registerHeading[locale]}</h3>
-                <p>{rvynPageCopy.registerDescription[locale]}</p>
-              </div>
+    <main>
+      <section className="rv-pagehead">
+        <div className="rv-container rv-pagehead__inner">
+          <div className="rv-pagehead__copy">
+            <span className="rv-eyebrow">$RVYN · Robinhood Chain</span>
+            <h1 className="rv-h1">RVYN<span className="rv-accent">.</span> {t(R.heroTitle)}</h1>
+            <p className="rv-lead">{rvynPageCopy.positioning[locale]}</p>
+            <div className="rv-row">
+              <a className="rv-btn rv-btn--primary" href="#whitelist">{saleDesk?.registryOpen ? t(R.joinNow) : rvynPageCopy.heroRegister[locale]}<ArrowRight aria-hidden="true" /></a>
+              <a className="rv-btn rv-btn--secondary" href="#presale">{rvynPageCopy.heroPresale[locale]}</a>
             </div>
-            <button type="button" className="primary full-width" disabled={!saleDesk?.registryOpen || checkBusy} onClick={() => void registerAllowlist()}>
-              {checkBusy ? tr("處理中…") : saleDesk?.registryOpen ? rvynPageCopy.register[locale] : rvynPageCopy.registerUnavailable[locale]}
-            </button>
+            <Address value={contractAddress} locale={locale} href={`https://robinhoodchain.blockscout.com/token/${contractAddress}`} />
           </div>
-          <div className="rvyn-allowlist__step rvyn-allowlist__step--check">
-            <div className="rvyn-allowlist__step-heading">
-              <span className="rvyn-allowlist__step-index" aria-hidden="true">02</span>
-              <div>
-                <h3>{rvynPageCopy.checkHeading[locale]}</h3>
-                <p>{rvynPageCopy.checkDescription[locale]}</p>
-              </div>
-            </div>
-            <label className="block" htmlFor="rvyn-allowlist-address">{rvynPageCopy.walletAddress[locale]}</label>
-            <div className="rvyn-allowlist__controls"><input id="rvyn-allowlist-address" value={checkAddress} onChange={(event) => { setCheckAddress(event.target.value); setCheckResult(null); }} placeholder="0x…" spellCheck={false} autoComplete="off" /><button type="button" className="secondary" disabled={checkBusy || !/^0x[a-fA-F0-9]{40}$/.test(checkAddress.trim())} onClick={() => void checkAllowlist()}>{checkBusy ? tr("處理中…") : rvynPageCopy.check[locale]}</button></div>
-            {checkResult && <p role="status" className="rvyn-allowlist__result">{checkResult.result === "listed" ? <Check size={17} /> : null}{checkResult.result === "listed" ? saleDesk?.purchasesOpen ? rvynPageCopy.listedOpen[locale] : rvynPageCopy.listed[locale] : checkResult.result === "not_listed" ? rvynPageCopy.notListed[locale] : checkResult.result === "pending" ? rvynPageCopy.pending[locale] : checkResult.result === "approved" ? rvynPageCopy.approved[locale] : rvynPageCopy.preparing[locale]}</p>}
+          <div className="rv-hero__art rv-pagehead__art"><Image src="/rv-core.webp" alt="" width={600} height={600} priority unoptimized /></div>
+        </div>
+        <div className="rv-container" style={{ marginTop: 40 }}>
+          <div className="rv-strip" style={{ ["--n" as string]: 4 }}>
+            <div><span className="rv-stat__label">{t(R.supply)}</span><span className="rv-stat__value rv-num">10,000,000</span></div>
+            <div><span className="rv-stat__label">{t(R.price)}</span><span className="rv-stat__value rv-num">{RVYN_MODEL.priceEth} ETH</span></div>
+            <div><span className="rv-stat__label">{t(R.cap)}</span><span className="rv-stat__value rv-num">{RVYN_MODEL.walletCapEth} ETH</span></div>
+            <div><span className="rv-stat__label">{t(R.stage)}</span><span className={`rv-pill${saleDesk?.registryOpen || saleDesk?.purchasesOpen ? " rv-pill--live" : reg === "scheduled" ? " rv-pill--warn" : ""}`}>{!saleDesk ? t(R.checking) : saleDesk.purchasesOpen ? t(R.presaleOpen) : saleDesk.registryOpen ? t(R.regOpen) : reg === "scheduled" && opensAt ? `${t(R.opens)} ${formatUtc8(opensAt, locale, false)}` : saleDesk.phase === "sale_closed" ? t(R.presaleClosed) : t(R.preparing)}</span></div>
           </div>
         </div>
       </section>
-      <section
-        ref={buyRef}
-        className={`buy-section workspace ${buyClassName}`}
-        style={buyStyle}
-        id="buy"
-      >
-        <div>
-          <div className="eyebrow">{tr("ONE TOKEN. THE FIRST CHAPTER.")}</div>
-          <h2>{record?.identity.name || "RovynCore"} <span className="green">${record?.identity.symbol || "RVYN"}</span></h2>
-          <p className="description">
-            {rvynPageCopy.positioning[locale]}
-          </p>
-          <p className="muted">{rvynPageCopy.brandStory[locale]}</p>
-          <div className="links">
-            <a href="https://robinhoodchain.blockscout.com/token/0x545a1ff27596de2f31480df39aa9548f363fc361" target="_blank" rel="noreferrer">{{ en: "Token on explorer", "zh-Hant": "在瀏覽器查看代幣", "zh-Hans": "在浏览器查看代币", ko: "탐색기에서 토큰 보기" }[locale]} ↗</a>
-            <Link href="/transparency">{{ en: "Transparency", "zh-Hant": "公開透明", "zh-Hans": "公开透明", ko: "투명성" }[locale]} ↗</Link>
-            {config.socialX && <a href={config.socialX} target="_blank" rel="noreferrer">X ↗</a>}
-            {config.socialTelegram && <a href={config.socialTelegram} target="_blank" rel="noreferrer">{tr("Telegram")} ↗</a>}
+
+      <section className="rv-section--tight">
+        <div className="rv-container">
+          <Head eyebrow={t(R.pathEyebrow)} title={t(R.pathTitle)} lead={t(R.pathLead)} />
+          <ol className="rv-steps" style={{ ["--n" as string]: 5 }}>
+            {steps.map(([title, meta], i) => (
+              <li key={title.en} className={`rv-step${i < stage ? " is-done" : i === stage ? " is-current" : ""}`}>
+                <span className="rv-step__label">{String(i + 1).padStart(2, "0")}{i === stage ? ` · ${t(R.now)}` : ""}</span>
+                <span className="rv-step__title">{t(title)}</span>
+                <span className="rv-step__meta">{t(meta)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="rv-section rv-section--line" id="whitelist" aria-labelledby="rv-whitelist-title">
+        <div className="rv-container rv-split">
+          <div className="rv-stack" style={{ ["--gap" as string]: "20px" }}>
+            <Head eyebrow={t(R.wlEyebrow)} title={rvynPageCopy.checkAllowlist[locale]} id="rv-whitelist-title" lead={saleDesk?.purchasesOpen ? rvynPageCopy.eligibilityOpen[locale] : rvynPageCopy.eligibility[locale]} />
+            <ol className="rv-numbered">
+              <li><b>{t(R.w1)}</b><span>{t(R.w1b)}</span></li>
+              <li><b>{t(R.w2)}</b><span>{t(R.w2b)}</span></li>
+              <li><b>{t(R.w3)}</b><span>{t(R.w3b)}</span></li>
+            </ol>
+            <div className="rv-notice rv-notice--risk"><ShieldAlert aria-hidden="true" /><span>{t(R.scam)}</span></div>
+          </div>
+          <div className="rv-card rv-card--accent rv-stack" style={{ ["--gap" as string]: "22px" }}>
+            <div className="rv-stack" style={{ ["--gap" as string]: "10px" }}>
+              <span className={`rv-pill${saleDesk?.registryOpen ? " rv-pill--live" : reg === "scheduled" ? " rv-pill--warn" : ""}`} style={{ justifySelf: "start" }}>{saleDesk?.registryOpen ? t(R.regOpen) : reg === "scheduled" ? t(R.scheduled) : reg === "closed" ? t(R.ended) : t(R.notOpen)}</span>
+              <p className="rv-small" role="status">{statusLine}</p>
+              {reg === "scheduled" && opensAt ? <Countdown to={opensAt} locale={locale} /> : null}
+              {opensAt && closesAt ? <p className="rv-caption">{rvynPageCopy.registrationOpens[locale]} {formatUtc8(opensAt, locale)} · {rvynPageCopy.registrationCloses[locale]} {formatUtc8(closesAt, locale)} (UTC+8)</p> : null}
+            </div>
+            <div className="rv-stack" style={{ ["--gap" as string]: "10px" }}>
+              <h3 className="rv-h3">{rvynPageCopy.registerHeading[locale]}</h3>
+              <p className="rv-small">{rvynPageCopy.registerDescription[locale]}</p>
+              <button type="button" className="rv-btn rv-btn--primary rv-btn--block" disabled={!saleDesk?.registryOpen || checkBusy} onClick={() => void registerAllowlist()}>
+                {checkBusy ? tr("處理中…") : saleDesk?.registryOpen ? rvynPageCopy.register[locale] : rvynPageCopy.registerUnavailable[locale]}
+              </button>
+            </div>
+            <div className="rv-stack" style={{ ["--gap" as string]: "10px", paddingTop: 20, borderTop: "1px solid var(--rv-line)" }}>
+              <h3 className="rv-h3">{rvynPageCopy.checkHeading[locale]}</h3>
+              <div className="rv-field">
+                <label htmlFor="rvyn-allowlist-address">{rvynPageCopy.walletAddress[locale]}</label>
+                <div className="rv-input-row">
+                  <input id="rvyn-allowlist-address" className="rv-input" value={checkAddress} onChange={(event) => { setCheckAddress(event.target.value); setCheckResult(null); }} placeholder="0x…" spellCheck={false} autoComplete="off" />
+                  <button type="button" className="rv-btn rv-btn--secondary" disabled={checkBusy || !/^0x[a-fA-F0-9]{40}$/.test(checkAddress.trim())} onClick={() => void checkAllowlist()}>{checkBusy ? tr("處理中…") : rvynPageCopy.check[locale]}</button>
+                </div>
+              </div>
+              {checkResult && <div className={`rv-notice${checkResult.result === "listed" ? " rv-notice--ok" : ""}`} role="status">{checkResult.result === "listed" ? <Check aria-hidden="true" /> : <Info aria-hidden="true" />}<span>{checkResult.result === "listed" ? saleDesk?.purchasesOpen ? rvynPageCopy.listedOpen[locale] : rvynPageCopy.listed[locale] : checkResult.result === "not_listed" ? rvynPageCopy.notListed[locale] : checkResult.result === "pending" ? rvynPageCopy.pending[locale] : checkResult.result === "approved" ? rvynPageCopy.approved[locale] : rvynPageCopy.preparing[locale]}</span></div>}
+            </div>
           </div>
         </div>
-        <div className="panel presale-panel content-motion-zone">
-          <Orbit className="green" />
-          <h3>{rvynPageCopy.saleHeading[locale]}</h3>
-          <p className={`rvyn-sale-status rvyn-sale-status--${saleState}`}><span key={saleStateCopy}>{saleStateCopy}</span></p>
-          {canPurchase && sale ? <>
-            <p className="muted top-gap">{tr("固定價格 · 從已核准的 RVYN 庫存交付")}</p>
-            <label className="top-gap block">
-              {tr("購買數量（RVYN）")}
-              <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            </label>
-            <dl className="receipt">
-              <dt>{tr("每枚價格")}</dt><dd>{formatEther(sale.price)} ETH</dd>
-              <dt>{tr("付款")}</dt><dd>{valid ? formatEther(qty * sale.price) : "—"} ETH</dd>
-              <dt>{tr("可購買庫存")}</dt><dd>{Number(formatEther(sale.inventory)).toLocaleString(locale)}</dd>
+      </section>
+
+      <section className="rv-section rv-section--line" id="presale">
+        <div className="rv-container rv-split">
+          <div className="rv-stack" style={{ ["--gap" as string]: "20px" }}>
+            <Head eyebrow={t(R.psEyebrow)} title={rvynPageCopy.saleHeading[locale]} lead={t(R.psLead)} />
+            <dl className="rv-kv">
+              <div><dt>{verifiedV5 ? rvynPageCopy.verifiedAllocation[locale] : rvynPageCopy.planAllocation[locale]}</dt><dd className="rv-num">{Number(RVYN_MODEL.presaleTokens).toLocaleString(locale)} RVYN</dd></div>
+              <div><dt>{verifiedV5 ? rvynPageCopy.verifiedPrice[locale] : rvynPageCopy.planPrice[locale]}</dt><dd className="rv-num">{RVYN_MODEL.priceEth} ETH</dd></div>
+              <div><dt>{verifiedV5 ? rvynPageCopy.verifiedWalletCap[locale] : rvynPageCopy.planWalletCap[locale]}</dt><dd className="rv-num">{RVYN_MODEL.walletCapTokens.toLocaleString(locale)} RVYN</dd></div>
+              <div><dt>{t(R.hardCap)}</dt><dd className="rv-num">100 ETH</dd></div>
+              <div><dt>{t(R.length)}</dt><dd>{t(R.lengthV)}</dd></div>
+              <div><dt>{t(R.delivery)}</dt><dd>{t(R.deliveryV)}</dd></div>
+              <div><dt>{t(R.refund)}</dt><dd>{t(R.refundV)}</dd></div>
             </dl>
-            {error && <p className="error">{error}</p>}
-            <button className="primary full-width" disabled={busy || !valid || qty * 10n ** 18n > sale.inventory} onClick={() => void buy()}>
-              {busy ? tr("處理中…") : tr("連接錢包並購買")}
-            </button>
-          </> : <div className="rvyn-presale-plan">
-            <button className="primary full-width" disabled aria-disabled="true">{rvynPageCopy.purchasesNotOpen[locale]}</button>
-            <p className="side-note">{!saleDesk ? rvynPageCopy.phaseUnavailable[locale] : verifiedV5 ? rvynPageCopy.verifiedDisclaimer[locale] : rvynPageCopy.planDisclaimer[locale]}</p>
-            <PresaleTerms title={verifiedV5 ? rvynPageCopy.verifiedTerms[locale] : rvynPageCopy.plannedTerms[locale]} badge={verifiedV5 ? rvynPageCopy.verifiedLabel[locale] : plannedLabel}><dl className="receipt">
-              <dt>{verifiedV5 ? rvynPageCopy.verifiedAllocation[locale] : rvynPageCopy.planAllocation[locale]}</dt><dd>{Number(RVYN_MODEL.presaleTokens).toLocaleString(locale)} RVYN</dd>
-              <dt>{verifiedV5 ? rvynPageCopy.verifiedPrice[locale] : rvynPageCopy.planPrice[locale]}</dt><dd>{RVYN_MODEL.priceEth} ETH</dd>
-              <dt>{verifiedV5 ? rvynPageCopy.verifiedWalletCap[locale] : rvynPageCopy.planWalletCap[locale]}</dt><dd>{RVYN_MODEL.walletCapTokens.toLocaleString(locale)} RVYN</dd>
-            </dl></PresaleTerms>
-          </div>}
-          {config.presaleVersion !== 5 && isPresale && sale?.state === (isV6 ? 3n : 2n) && (
-            <button className="secondary full-width top-gap" disabled={busy} onClick={() => void claim()}>{tr("領取已購買的 RVYN")}</button>
-          )}
-          {config.presaleVersion !== 5 && !isV6 && isPresale && sale?.state === 3n && (
-            <button className="secondary full-width top-gap" disabled={busy} onClick={() => void refund()}>{rvynPageCopy.refund[locale]}</button>
-          )}
-          {canPurchase ? <p className="side-note">{tr("Gas 另計。購買不代表獲得公司股份、分潤或保證報酬。")}</p> : null}
-          {canPurchase && isV6 ? <p className="side-note">{tr("購買時不會立即收到 RVYN；預售結束並結算後，請回到本頁領取。沒有退款。")}</p> : null}
+            {config.sale ? <div className="rv-stack" style={{ ["--gap" as string]: "8px" }}><span className="rv-stat__label">{t(R.saleContract)}</span><Address value={config.sale} locale={locale} href={`https://robinhoodchain.blockscout.com/address/${config.sale}`} /></div> : null}
+          </div>
+          <div className="rv-card rv-stack" style={{ ["--gap" as string]: "18px" }}>
+            <div className="rv-row rv-row--between">
+              <h3 className="rv-h3">{t(R.buyTitle)}</h3>
+              <span className={`rv-pill${canPurchase ? " rv-pill--live" : ""}`}>{saleStateCopy}</span>
+            </div>
+            {canPurchase && sale ? <>
+              <div className="rv-field">
+                <label htmlFor="rvyn-amount">{tr("購買數量（RVYN）")}</label>
+                <input id="rvyn-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                <span className="rv-hint">{t(R.amountHint)}</span>
+              </div>
+              <dl className="rv-receipt">
+                <div><dt>{tr("每枚價格")}</dt><dd>{formatEther(sale.price)} ETH</dd></div>
+                <div><dt>{tr("付款")}</dt><dd>{valid ? formatEther(qty * sale.price) : "—"} ETH</dd></div>
+                <div><dt>{tr("可購買庫存")}</dt><dd>{Number(formatEther(sale.inventory)).toLocaleString(locale)}</dd></div>
+              </dl>
+              {error && <p className="rv-error">{error}</p>}
+              <button type="button" className="rv-btn rv-btn--primary rv-btn--block" disabled={busy || !valid || qty * 10n ** 18n > sale.inventory} onClick={() => void buy()}>
+                {busy ? tr("處理中…") : tr("連接錢包並購買")}
+              </button>
+              {isV6 ? <p className="rv-caption">{tr("購買時不會立即收到 RVYN；預售結束並結算後，請回到本頁領取。沒有退款。")}</p> : null}
+              <p className="rv-caption">{tr("Gas 另計。購買不代表獲得公司股份、分潤或保證報酬。")}</p>
+            </> : <>
+              <button type="button" className="rv-btn rv-btn--primary rv-btn--block" disabled aria-disabled="true">{rvynPageCopy.purchasesNotOpen[locale]}</button>
+              <p className="rv-caption">{!saleDesk ? rvynPageCopy.phaseUnavailable[locale] : verifiedV5 ? rvynPageCopy.verifiedDisclaimer[locale] : rvynPageCopy.planDisclaimer[locale]}</p>
+            </>}
+            {config.presaleVersion !== 5 && isPresale && sale?.state === (isV6 ? 3n : 2n) && (
+              <button type="button" className="rv-btn rv-btn--secondary rv-btn--block" disabled={busy} onClick={() => void claim()}>{tr("領取已購買的 RVYN")}</button>
+            )}
+            {config.presaleVersion !== 5 && !isV6 && isPresale && sale?.state === 3n && (
+              <button type="button" className="rv-btn rv-btn--secondary rv-btn--block" disabled={busy} onClick={() => void refund()}>{rvynPageCopy.refund[locale]}</button>
+            )}
+          </div>
         </div>
       </section>
-      <RetainedRvynTokenomics locale={locale} contractV5={verifiedV5} translate={tr} />
+
+      <section className="rv-section rv-section--line" id="token">
+        <div className="rv-container rv-split rv-split--wide-right">
+          <div className="rv-stack" style={{ ["--gap" as string]: "20px" }}>
+            <Head eyebrow={t(R.tkEyebrow)} title={`${record?.identity.name || "RovynCore"} $${record?.identity.symbol || "RVYN"}`} lead={rvynPageCopy.brandStory[locale]} />
+            <dl className="rv-kv">
+              <div><dt>{t(R.network)}</dt><dd>Robinhood Chain · 4663</dd></div>
+              <div><dt>{t(R.supply)}</dt><dd className="rv-num">10,000,000</dd></div>
+              <div><dt>{rvynPageCopy.decimals[locale]}</dt><dd className="rv-num">18</dd></div>
+              <div><dt>{t(R.tax)}</dt><dd>{t(R.taxV)}</dd></div>
+            </dl>
+            <div className="rv-row">
+              <a className="rv-btn rv-btn--secondary rv-btn--sm" href={`https://robinhoodchain.blockscout.com/token/${contractAddress}`} target="_blank" rel="noreferrer">{t(R.explorer)}<ArrowUpRight aria-hidden="true" /></a>
+              <Link className="rv-btn rv-btn--secondary rv-btn--sm" href={`/assets/robinhood/${contractAddress}`}>{rvynPageCopy.record[locale]}</Link>
+              <Link className="rv-btn rv-btn--secondary rv-btn--sm" href="/transparency">{t(R.transparency)}</Link>
+            </div>
+          </div>
+          <div className="rv-card rv-card--accent">
+            <div className="rv-row rv-row--between" style={{ marginBottom: 22 }}>
+              <h3 className="rv-h3">{t(R.alloc)}</h3>
+              <span className="rv-num rv-accent">10,000,000</span>
+            </div>
+            <AllocationBar locale={locale} />
+            <p className="rv-caption" style={{ marginTop: 18 }}>{rvynPageCopy.allocationCaveat[locale]}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container--narrow">
+          <Head eyebrow="FAQ" title={t(R.faqTitle)} />
+          {R.faq.map(([q, a]) => (
+            <details className="rv-details" key={q.en}>
+              <summary>{t(q)}</summary>
+              <p className="rv-body">{t(a)}</p>
+            </details>
+          ))}
+          <div className="rv-notice rv-notice--risk" style={{ marginTop: 32 }}><ShieldAlert aria-hidden="true" /><span>{t(R.risk)} <Link className="rv-link" href="/legal">{t(R.terms)}</Link></span></div>
+        </div>
+      </section>
     </main>
   );
 }

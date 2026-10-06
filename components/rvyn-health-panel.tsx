@@ -197,12 +197,12 @@ export function RvynHealthPanel() {
   const stateLabel = (state: SaleStateName | null) => (state ? t(copy.state[state]) : null);
 
   return (
-    <section className="game-principles rvyn-health" aria-labelledby="rvyn-health-title" aria-busy={busy}>
-      <div className="game-principles__head">
-        <span className="game-chapter__kicker">{t(copy.kicker)}</span>
-        <h2 id="rvyn-health-title">{t(copy.title)}</h2>
+    <section className="rvyn-health" aria-labelledby="rvyn-health-title" aria-busy={busy}>
+      <div className="rv-head" style={{ marginBottom: 0 }}>
+        <span className="rv-eyebrow">{t(copy.kicker)}</span>
+        <h2 className="rv-h2" id="rvyn-health-title">{t(copy.title)}</h2>
       </div>
-      <p className="transparency-body">{t(copy.lead)}</p>
+      <p className="rv-lead">{t(copy.lead)}</p>
       <div className="rvyn-health__bar-row">
         <span className="rvyn-health__meta" aria-live="polite">
           {view?.block ? t(copy.block).replace("{n}", Number(view.block.number).toLocaleString(NUMBER_LOCALE[locale])).replace("{time}", utc(view.block.timestamp)) : busy ? t(copy.loading) : ""}

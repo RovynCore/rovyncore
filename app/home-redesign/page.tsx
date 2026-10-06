@@ -1,185 +1,252 @@
 "use client";
 
-import { ArrowDown, ArrowRight, ArrowUpRight, Orbit, Rocket, ShieldCheck } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, Coins, Gamepad2, Layers, Lock, ShieldCheck, Users } from "lucide-react";
 import Link from "@/components/site-link";
 import { useLanguage } from "@/components/language-provider";
-import { api } from "@/components/platform-provider";
-import { HomeFeatured, HomeRoadmap } from "@/components/home-content";
-import { HomeHeroMedia } from "@/components/home-hero-media";
-import { ConstellationStory } from "@/components/constellation-story";
-import { SectorTag } from "@/components/sector-tag";
-import { PresaleConsole } from "@/components/presale-console";
-import { HeroHud, TelemetryRail } from "@/components/hero-hud";
-import { HeroParallax } from "@/components/hero-parallax";
-import type { Locale } from "@/lib/translations";
+import { Address, Countdown, formatUtc8, Head, useSaleStatus, type Copy4 } from "@/components/rv/ui";
+import { RVYN_MODEL } from "@/lib/rvyn-model";
+import { AllocationBar } from "@/components/rv/allocation";
 
-type Copy = Record<Locale, string>;
-const c = (locale: Locale, value: Copy) => value[locale];
+const T = {
+  heroEyebrow: { en: "Robinhood Chain · First game in development", "zh-Hant": "Robinhood Chain · 第一款遊戲開發中", "zh-Hans": "Robinhood Chain · 第一款游戏开发中", ko: "Robinhood Chain · 첫 게임 개발 중" },
+  heroA: { en: "A world in the making.", "zh-Hant": "一個正在成形的世界。", "zh-Hans": "一个正在成形的世界。", ko: "만들어지고 있는 세계." },
+  heroB: { en: "RVYN at its core.", "zh-Hant": "RVYN 是它的核心。", "zh-Hans": "RVYN 是它的核心。", ko: "그 중심에 RVYN." },
+  heroLead: { en: "ROVYN CORE is building a game world on Robinhood Chain, with RVYN as its planned core currency. We build in public: contracts are verified and every step is on record.", "zh-Hant": "ROVYN CORE 正在 Robinhood Chain 上打造一個遊戲世界，RVYN 規劃為它的核心貨幣。我們公開建置：合約公開驗證，每一步都有紀錄。", "zh-Hans": "ROVYN CORE 正在 Robinhood Chain 上打造一个游戏世界，RVYN 规划为它的核心货币。我们公开建置：合约公开验证，每一步都有记录。", ko: "ROVYN CORE는 Robinhood Chain에서 게임 세계를 만들고 있으며 RVYN은 그 핵심 화폐로 계획되어 있습니다. 공개적으로 만듭니다. 계약은 검증되어 있고 모든 단계가 기록됩니다." },
+  join: { en: "Join the whitelist", "zh-Hant": "登記白名單", "zh-Hans": "登记白名单", ko: "화이트리스트 신청" },
+  opensOn: { en: "Whitelist opens", "zh-Hant": "白名單開放", "zh-Hans": "白名单开放", ko: "화이트리스트 시작" },
+  viewRvyn: { en: "Explore RVYN", "zh-Hant": "認識 RVYN", "zh-Hans": "认识 RVYN", ko: "RVYN 알아보기" },
+  aboutGame: { en: "About the game", "zh-Hant": "關於遊戲", "zh-Hans": "关于游戏", ko: "게임 소개" },
+  whitelist: { en: "Whitelist", "zh-Hant": "白名單", "zh-Hans": "白名单", ko: "화이트리스트" },
+  presale: { en: "Presale", "zh-Hant": "預售", "zh-Hans": "预售", ko: "프리세일" },
+  game: { en: "Game", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
+  open: { en: "Open now", "zh-Hant": "開放中", "zh-Hans": "开放中", ko: "진행 중" },
+  scheduled: { en: "Scheduled", "zh-Hant": "已排程", "zh-Hans": "已排程", ko: "예정" },
+  closed: { en: "Closed", "zh-Hant": "已截止", "zh-Hans": "已截止", ko: "마감" },
+  preparing: { en: "Preparing", "zh-Hant": "準備中", "zh-Hans": "准备中", ko: "준비 중" },
+  checking: { en: "Checking…", "zh-Hant": "確認中…", "zh-Hans": "确认中…", ko: "확인 중…" },
+  unavailable: { en: "Status unavailable", "zh-Hant": "暫時無法讀取", "zh-Hans": "暂时无法读取", ko: "확인 불가" },
+  notOpen: { en: "Not open", "zh-Hant": "尚未開放", "zh-Hans": "尚未开放", ko: "미개시" },
+  noDate: { en: "No date set yet", "zh-Hant": "尚未訂定日期", "zh-Hans": "尚未确定日期", ko: "일정 미정" },
+  inDev: { en: "In development", "zh-Hant": "開發中", "zh-Hans": "开发中", ko: "개발 중" },
+  firstLook: { en: "First look coming to this site", "zh-Hant": "首次公開將發布在本站", "zh-Hans": "首次公开将发布在本站", ko: "첫 공개는 이 사이트에서" },
+  closesOn: { en: "Closes", "zh-Hant": "截止", "zh-Hans": "截止", ko: "마감" },
+  whatEyebrow: { en: "What we are building", "zh-Hant": "我們在做什麼", "zh-Hans": "我们在做什么", ko: "우리가 만드는 것" },
+  whatTitle: { en: "One brand. A game, its currency, and the tools around it.", "zh-Hant": "一個品牌：一款遊戲、它的貨幣，以及周邊工具。", "zh-Hans": "一个品牌：一款游戏、它的货币，以及周边工具。", ko: "하나의 브랜드. 게임, 그 화폐, 그리고 주변 도구." },
+  gameTitle: { en: "The game", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
+  gameBody: { en: "Our first game is in development. Gameplay and how RVYN is used in it will be published here once they are confirmed.", "zh-Hant": "第一款遊戲開發中。玩法與 RVYN 在遊戲中的用途，確定後會在這裡公布。", "zh-Hans": "第一款游戏开发中。玩法与 RVYN 在游戏中的用途，确定后会在这里公布。", ko: "첫 게임을 개발 중입니다. 게임 방식과 RVYN의 쓰임은 확정되면 이곳에 공개합니다." },
+  rvynTitle: { en: "RVYN", "zh-Hant": "RVYN", "zh-Hans": "RVYN", ko: "RVYN" },
+  rvynBody: { en: "A fixed supply of 10,000,000 tokens, planned as the game's core currency. No staking, profit-sharing or promised returns.", "zh-Hant": "固定供應 10,000,000 枚，規劃為遊戲的核心貨幣。沒有 staking、分潤或收益承諾。", "zh-Hans": "固定供应 10,000,000 枚，规划为游戏的核心货币。没有 staking、分润或收益承诺。", ko: "고정 공급 10,000,000개, 게임의 핵심 화폐로 계획. 스테이킹, 수익 배분, 수익 약속 없음." },
+  toolsTitle: { en: "Tools, already live", "zh-Hant": "已上線的工具", "zh-Hans": "已上线的工具", ko: "이미 운영 중인 도구" },
+  toolsBody: { en: "A launchpad for fixed-supply tokens and a public Onchain Record for every launch. They are how we work in the open.", "zh-Hant": "固定供應代幣的發射台，以及每次發射都有的公開鏈上紀錄。這是我們公開運作的方式。", "zh-Hans": "固定供应代币的发射台，以及每次发射都有的公开链上记录。这是我们公开运作的方式。", ko: "고정 공급 토큰 런치패드와 모든 발행의 공개 온체인 기록. 우리가 공개적으로 일하는 방식입니다." },
+  more: { en: "Learn more", "zh-Hant": "了解更多", "zh-Hans": "了解更多", ko: "더 알아보기" },
+  rvynEyebrow: { en: "RVYN at a glance", "zh-Hant": "RVYN 一覽", "zh-Hans": "RVYN 一览", ko: "RVYN 한눈에" },
+  rvynHeadTitle: { en: "Fixed supply. Rules written in the contract.", "zh-Hant": "固定供應，規則寫在合約裡。", "zh-Hans": "固定供应，规则写在合约里。", ko: "고정 공급. 규칙은 계약에." },
+  supply: { en: "Total supply", "zh-Hant": "總供應量", "zh-Hans": "总供应量", ko: "총 공급량" },
+  price: { en: "Presale price", "zh-Hant": "預售單價", "zh-Hans": "预售单价", ko: "프리세일 가격" },
+  cap: { en: "Per-wallet cap", "zh-Hant": "單錢包上限", "zh-Hans": "单钱包上限", ko: "지갑당 한도" },
+  delivery: { en: "Delivery", "zh-Hant": "交付方式", "zh-Hans": "交付方式", ko: "지급 방식" },
+  deliveryValue: { en: "Claim after settlement", "zh-Hant": "結算後領取", "zh-Hans": "结算后领取", ko: "정산 후 클레임" },
+  contract: { en: "Token contract", "zh-Hant": "代幣合約", "zh-Hans": "代币合约", ko: "토큰 계약" },
+  allocTitle: { en: "Allocation caps", "zh-Hant": "配置上限", "zh-Hans": "配置上限", ko: "배분 상한" },
+  allocNote: { en: "Caps defined in the sale contract, not a record of tokens sold. Unsold presale tokens are burned.", "zh-Hant": "合約定義的上限，不代表已售出。未售出的預售代幣會銷毀。", "zh-Hans": "合约定义的上限，不代表已售出。未售出的预售代币会销毁。", ko: "판매 계약에 정의된 상한이며 판매 기록이 아닙니다. 미판매 프리세일 토큰은 소각됩니다." },
+  fullDetails: { en: "Full RVYN details", "zh-Hant": "完整 RVYN 資訊", "zh-Hans": "完整 RVYN 信息", ko: "RVYN 자세히" },
+  trustEyebrow: { en: "Check, don't trust", "zh-Hant": "請自己查證", "zh-Hans": "请自己查证", ko: "직접 확인하세요" },
+  trustTitle: { en: "Everything that matters can be checked onchain.", "zh-Hant": "重要的事，都能在鏈上查證。", "zh-Hans": "重要的事，都能在链上查证。", ko: "중요한 것은 모두 온체인에서 확인할 수 있습니다." },
+  t1: { en: "Verified source", "zh-Hant": "原始碼已驗證", "zh-Hans": "源码已验证", ko: "소스 검증" },
+  t1b: { en: "The RVYN token, the presale contract and the launch platform are source-verified on the explorer.", "zh-Hant": "RVYN 代幣、預售合約與發射平台的原始碼都已在區塊瀏覽器驗證。", "zh-Hans": "RVYN 代币、预售合约与发射平台的源码都已在区块浏览器验证。", ko: "RVYN 토큰, 프리세일 계약, 런치 플랫폼 모두 탐색기에서 소스 검증되었습니다." },
+  t2: { en: "Multisig sponsor", "zh-Hant": "多簽發起人", "zh-Hans": "多签发起人", ko: "멀티시그 스폰서" },
+  t2b: { en: "The presale is controlled by a Safe that needs 2 of 3 signers. No single key can move it.", "zh-Hant": "預售由 Safe 多簽控制，需 3 位簽署人中的 2 位同意，沒有單一金鑰能動用。", "zh-Hans": "预售由 Safe 多签控制，需 3 位签署人中的 2 位同意，没有单一密钥能动用。", ko: "프리세일은 3명 중 2명의 서명이 필요한 Safe가 관리합니다. 단일 키로 움직일 수 없습니다." },
+  t3: { en: "Launch rules in code", "zh-Hant": "發射規則寫進合約", "zh-Hans": "发射规则写进合约", ko: "코드에 담긴 출시 규칙" },
+  t3b: { en: "Buyers claim after settlement, the pool gets at least half the raise, LP is locked for 24 months, and anyone can settle 7 days after close.", "zh-Hant": "結算後才領取、池子至少放入募資的一半、LP 鎖倉 24 個月、結束滿 7 天後任何人都能結算。", "zh-Hans": "结算后才领取、池子至少放入募资的一半、LP 锁仓 24 个月、结束满 7 天后任何人都能结算。", ko: "정산 후 클레임, 풀에는 모금액의 절반 이상, LP 24개월 잠금, 종료 7일 후 누구나 정산 가능." },
+  t4: { en: "Honest about limits", "zh-Hant": "誠實說明限制", "zh-Hans": "诚实说明限制", ko: "한계를 솔직하게" },
+  t4b: { en: "The contracts have not been independently audited. We say so everywhere it matters.", "zh-Hant": "合約未經獨立審計，我們在每個重要的地方都會說明。", "zh-Hans": "合约未经独立审计，我们在每个重要的地方都会说明。", ko: "계약은 독립 감사를 받지 않았습니다. 중요한 곳마다 그렇게 밝힙니다." },
+  seeTransparency: { en: "Open the transparency page", "zh-Hant": "查看公開透明頁", "zh-Hans": "查看公开透明页", ko: "투명성 페이지 보기" },
+  roadEyebrow: { en: "Roadmap", "zh-Hant": "路線圖", "zh-Hans": "路线图", ko: "로드맵" },
+  roadTitle: { en: "Where we are, and what comes next.", "zh-Hant": "我們在哪裡，接下來做什麼。", "zh-Hans": "我们在哪里，接下来做什么。", ko: "지금 어디에 있고, 다음은 무엇인지." },
+  done: { en: "Done", "zh-Hant": "已完成", "zh-Hans": "已完成", ko: "완료" },
+  next: { en: "Next", "zh-Hant": "接下來", "zh-Hans": "接下来", ko: "다음" },
+  later: { en: "Later", "zh-Hant": "之後", "zh-Hans": "之后", ko: "이후" },
+  d1: { en: "RVYN token live on Robinhood Chain", "zh-Hant": "RVYN 代幣已在 Robinhood Chain 上線", "zh-Hans": "RVYN 代币已在 Robinhood Chain 上线", ko: "RVYN 토큰 Robinhood Chain 출시" },
+  d2: { en: "Launchpad and Onchain Records", "zh-Hant": "發射台與鏈上紀錄", "zh-Hans": "发射台与链上记录", ko: "런치패드와 온체인 기록" },
+  d3: { en: "Presale contract V6, source-verified", "zh-Hant": "預售合約 V6，原始碼已驗證", "zh-Hans": "预售合约 V6，源码已验证", ko: "프리세일 계약 V6, 소스 검증" },
+  d4: { en: "Safe multisig and live transparency page", "zh-Hant": "Safe 多簽與即時透明頁", "zh-Hans": "Safe 多签与实时透明页", ko: "Safe 멀티시그와 실시간 투명성 페이지" },
+  n1: { en: "Whitelist registration", "zh-Hant": "白名單登記", "zh-Hans": "白名单登记", ko: "화이트리스트 신청" },
+  n2: { en: "Presale (date to be announced)", "zh-Hant": "預售（日期待公布）", "zh-Hans": "预售（日期待公布）", ko: "프리세일 (일정 미정)" },
+  n3: { en: "First look at the game", "zh-Hant": "遊戲首次公開", "zh-Hans": "游戏首次公开", ko: "게임 첫 공개" },
+  l1: { en: "The first game goes live", "zh-Hant": "第一款遊戲上線", "zh-Hans": "第一款游戏上线", ko: "첫 게임 출시" },
+  l2: { en: "RVYN used inside the game", "zh-Hant": "RVYN 在遊戲中使用", "zh-Hans": "RVYN 在游戏中使用", ko: "게임 안에서 RVYN 사용" },
+  l3: { en: "The world grows, stage by stage", "zh-Hant": "世界逐步擴展", "zh-Hans": "世界逐步扩展", ko: "세계를 단계적으로 확장" },
+  roadNote: { en: "Items under Next and Later are plans, not commitments or dates.", "zh-Hant": "「接下來」與「之後」是規劃，不是承諾或日期。", "zh-Hans": "“接下来”与“之后”是规划，不是承诺或日期。", ko: "'다음'과 '이후'는 계획이며 약속이나 일정이 아닙니다." },
+  storyEyebrow: { en: "Why ROVYN CORE", "zh-Hant": "為什麼是 ROVYN CORE", "zh-Hans": "为什么是 ROVYN CORE", ko: "왜 ROVYN CORE인가" },
+  story: { en: "Every world starts as a small signal. Ours is RVYN: a fixed supply, a public origin, and a game being built around it, one verifiable step at a time.", "zh-Hant": "每個世界都從一道微弱的訊號開始。我們的訊號是 RVYN：固定的供應量、公開的起點，以及圍繞它一步步、可被驗證地打造的遊戲。", "zh-Hans": "每个世界都从一道微弱的信号开始。我们的信号是 RVYN：固定的供应量、公开的起点，以及围绕它一步步、可被验证地打造的游戏。", ko: "모든 세계는 작은 신호에서 시작합니다. 우리의 신호는 RVYN입니다. 고정된 공급, 공개된 출발점, 그리고 그 위에 한 걸음씩 검증 가능하게 만들어지는 게임." },
+  ctaTitle: { en: "Follow the build.", "zh-Hant": "追蹤建置過程。", "zh-Hans": "追踪建置过程。", ko: "만드는 과정을 지켜보세요." },
+  ctaBody: { en: "Updates land on X first. Whitelist registration happens only on this site, with a wallet signature.", "zh-Hant": "最新消息會先發在 X。白名單登記只在本站進行，使用錢包簽名。", "zh-Hans": "最新消息会先发在 X。白名单登记只在本站进行，使用钱包签名。", ko: "소식은 X에 먼저 올라옵니다. 화이트리스트 신청은 이 사이트에서 지갑 서명으로만 진행됩니다." },
+  follow: { en: "Follow on X", "zh-Hant": "在 X 追蹤", "zh-Hans": "在 X 关注", ko: "X 팔로우" },
+  risk: { en: "Unaudited · No sale date set · Not financial advice", "zh-Hant": "未經獨立審計 · 尚未訂定預售日期 · 非投資建議", "zh-Hans": "未经独立审计 · 尚未确定预售日期 · 非投资建议", ko: "독립 감사 미실시 · 판매 일정 없음 · 투자 조언 아님" },
+} satisfies Record<string, Copy4>;
 
-type HomeSaleStatus = {
-  phase: "allowlist_prep" | "allowlist_open" | "sale_open" | "sale_closed";
-  purchasesOpen: boolean;
-  registryOpen: boolean;
-  registrationStatus: "disabled" | "scheduled" | "open" | "closed";
-};
-
-const copy = {
-  chooseSignal: { en: "Choose a signal to explore its story", "zh-Hant": "選擇一道訊號，探索它的故事", "zh-Hans": "选择一道信号，探索它的故事", ko: "신호를 선택해 이야기를 살펴보세요" },
-  headlineFirst: { en: "A world in the making.", "zh-Hant": "一個世界，正在成形。", "zh-Hans": "一个世界，正在成形。", ko: "만들어지고 있는 세계." },
-  headlineSecond: { en: "RVYN at its core.", "zh-Hant": "RVYN 為核心。", "zh-Hans": "RVYN 为核心。", ko: "그 중심에 RVYN." },
-  heroLead: { en: "We're building our first game on Robinhood Chain, with RVYN at the heart of its economy. Our launchpad and public onchain records are already live.", "zh-Hant": "我們正在 Robinhood Chain 上打造第一款遊戲，RVYN 將是它經濟的核心。發射台與公開鏈上紀錄已經上線。", "zh-Hans": "我们正在 Robinhood Chain 上打造第一款游戏，RVYN 将是它经济的核心。发射台与公开链上记录已经上线。", ko: "우리는 Robinhood Chain에서 RVYN을 경제의 중심에 둔 첫 게임을 만들고 있습니다. 런치패드와 공개 온체인 기록은 이미 운영 중입니다." },
-  secStatus: { en: "LAUNCH STATUS", "zh-Hant": "發射狀態", "zh-Hans": "发射状态", ko: "런치 상태" },
-  secOrigin: { en: "ORIGIN", "zh-Hant": "起源", "zh-Hans": "起源", ko: "기원" },
-  secRecords: { en: "ONCHAIN RECORDS", "zh-Hant": "鏈上紀錄", "zh-Hans": "链上记录", ko: "온체인 기록" },
-  secRoadmap: { en: "ROADMAP", "zh-Hant": "路線圖", "zh-Hans": "路线图", ko: "로드맵" },
-  secLaunch: { en: "BEGIN", "zh-Hant": "開始", "zh-Hans": "开始", ko: "시작" },
-  telNet: { en: "NETWORK", "zh-Hant": "網路", "zh-Hans": "网络", ko: "네트워크" },
-  telSupply: { en: "SUPPLY", "zh-Hant": "總量", "zh-Hans": "总量", ko: "총 공급량" },
-  telStage: { en: "STAGE", "zh-Hant": "階段", "zh-Hans": "阶段", ko: "단계" },
-  telGame: { en: "GAME", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
-  specChain: { en: "CHAIN 4663", "zh-Hant": "CHAIN 4663", "zh-Hans": "CHAIN 4663", ko: "CHAIN 4663" },
-  specSupply: { en: "10,000,000 RVYN", "zh-Hant": "10,000,000 RVYN", "zh-Hans": "10,000,000 RVYN", ko: "10,000,000 RVYN" },
-  specGame: { en: "FIRST GAME · IN DEVELOPMENT", "zh-Hant": "第一款遊戲 · 開發中", "zh-Hans": "第一款游戏 · 开发中", ko: "첫 게임 · 개발 중" },
-  explore: { en: "View onchain records", "zh-Hant": "查看鏈上紀錄", "zh-Hans": "查看链上记录", ko: "온체인 기록 보기" },
-  create: { en: "Start a launch", "zh-Hant": "開始發行", "zh-Hans": "开始发行", ko: "발행 시작하기" },
-  joinWhitelist: { en: "Join whitelist", "zh-Hant": "加入白名單", "zh-Hans": "加入白名单", ko: "화이트리스트 등록" },
-  checkWhitelist: { en: "View whitelist status", "zh-Hant": "查看白名單狀態", "zh-Hans": "查看白名单状态", ko: "화이트리스트 상태 보기" },
-  onchainRecord: { en: "Onchain Record", "zh-Hant": "鏈上紀錄", "zh-Hans": "链上记录", ko: "온체인 기록" },
-  onchainRecords: { en: "Onchain records", "zh-Hant": "鏈上紀錄", "zh-Hans": "链上记录", ko: "온체인 기록" },
-  buttonStatusOpen: { en: "Open", "zh-Hant": "開放中", "zh-Hans": "开放中", ko: "신청 중" },
-  buttonStatusSoon: { en: "Soon", "zh-Hant": "即將開放", "zh-Hans": "即将开放", ko: "오픈 예정" },
-  buttonStatusClosed: { en: "Closed", "zh-Hant": "已關閉", "zh-Hans": "已关闭", ko: "종료" },
-  buttonStatusPreparing: { en: "Preparing", "zh-Hant": "準備中", "zh-Hans": "准备中", ko: "준비 중" },
-  buttonStatusChecking: { en: "Checking", "zh-Hant": "確認中", "zh-Hans": "确认中", ko: "확인 중" },
-  buttonStatusUnavailable: { en: "Unavailable", "zh-Hant": "暫時無法確認", "zh-Hans": "暂时无法确认", ko: "확인 불가" },
-  whitelistOpen: { en: "Whitelist open", "zh-Hant": "白名單登記開放中", "zh-Hans": "白名单登记开放中", ko: "화이트리스트 신청 중" },
-  whitelistPreparing: { en: "Whitelist preparing", "zh-Hant": "白名單準備中", "zh-Hans": "白名单准备中", ko: "화이트리스트 준비 중" },
-  whitelistScheduled: { en: "Whitelist opens soon", "zh-Hant": "白名單即將開放", "zh-Hans": "白名单即将开放", ko: "화이트리스트 신청 예정" },
-  whitelistClosed: { en: "Whitelist closed", "zh-Hant": "白名單登記已關閉", "zh-Hans": "白名单登记已关闭", ko: "화이트리스트 신청 종료" },
-  presaleOpen: { en: "Presale open", "zh-Hant": "預售開放中", "zh-Hans": "预售开放中", ko: "프리세일 진행 중" },
-  presaleClosed: { en: "Presale closed", "zh-Hant": "預售已結束", "zh-Hans": "预售已结束", ko: "프리세일 종료" },
-  presaleChecking: { en: "Presale status checking", "zh-Hant": "預售狀態確認中", "zh-Hans": "预售状态确认中", ko: "프리세일 상태 확인 중" },
-  statusChecking: { en: "Checking availability", "zh-Hant": "正在確認開放狀態", "zh-Hans": "正在确认开放状态", ko: "참여 가능 여부 확인 중" },
-  statusUnavailable: { en: "Status temporarily unavailable", "zh-Hant": "狀態暫時無法讀取", "zh-Hans": "状态暂时无法读取", ko: "상태를 일시적으로 확인할 수 없음" },
-  network: { en: "LIVE ON ROBINHOOD CHAIN", "zh-Hant": "部署於 Robinhood Chain", "zh-Hans": "部署于 Robinhood Chain", ko: "Robinhood Chain에서 운영" },
-  chapter: { en: "THE FIRST SIGNAL", "zh-Hant": "故事，從第一道訊號開始", "zh-Hans": "故事，从第一道信号开始", ko: "첫 번째 신호에서 시작되는 이야기" },
-  processTitle: { en: "A signal becomes a world.", "zh-Hant": "一束訊號，\n聚成一個星系。", "zh-Hans": "一束信号，\n聚成一个星系。", ko: "하나의 신호가 세계가 되다." },
-  processLead: { en: "In blockchain’s endless night sky, every creator carries a signal not yet seen. ROVYN CORE is our imagined core: a place where those signals can find an orbit and begin to connect. The first light is RVYN.", "zh-Hant": "在區塊鏈無邊的夜空裡，每位創作者都帶著一道尚未被看見的訊號。ROVYN CORE，是我們想像中的核心——讓訊號找到軌道，讓彼此開始連結。第一道光，叫作 RVYN。", "zh-Hans": "在区块链无边的夜空里，每位创作者都带着一道尚未被看见的信号。ROVYN CORE，是我们想象中的核心——让信号找到轨道，让彼此开始连接。第一道光，叫作 RVYN。", ko: "끝없는 블록체인의 밤하늘에서 크리에이터는 아직 보이지 않는 신호를 품고 있습니다. ROVYN CORE는 그 신호가 궤도를 찾고 서로 이어지는 중심이 되기를 상상합니다. 그 첫 번째 빛의 이름은 RVYN입니다." },
-  stageOne: { en: "A signal in the dark", "zh-Hant": "夜色裡，出現一道訊號", "zh-Hans": "夜色里，出现一道信号", ko: "어둠 속에 나타난 신호" },
-  stageOneBody: { en: "ROVYN CORE begins in the space between an idea and its first believer. A small signal asks to be noticed—not louder than the universe, just clear enough for the right people to find.", "zh-Hant": "ROVYN CORE 的故事，從一個想法與第一個相信它的人之間開始。微弱的訊號不必蓋過整片宇宙，只要清楚到能被正在尋找的人看見。", "zh-Hans": "ROVYN CORE 的故事，从一个想法与第一个相信它的人之间开始。微弱的信号不必盖过整片宇宙，只要清楚到能被正在寻找的人看见。", ko: "ROVYN CORE의 이야기는 아이디어와 그것을 처음 믿어준 사람 사이에서 시작됩니다. 작은 신호가 우주보다 더 클 필요는 없습니다. 찾고 있던 사람이 알아볼 만큼 선명하면 됩니다." },
-  stageTwo: { en: "An orbit takes shape", "zh-Hant": "每個想法，找到自己的軌道", "zh-Hans": "每个想法，找到自己的轨道", ko: "각자의 궤도를 찾아서" },
-  stageTwoBody: { en: "A signal becomes stronger when it has a place to travel. ROVYN CORE is that first orbit: a home for creators to give an idea a name, a shape and a public point in the onchain sky.", "zh-Hant": "訊號有了可以前進的軌道，才不會一閃即逝。ROVYN CORE 想成為那條起始軌道，讓創作者為想法取名、塑形，並在鏈上留下公開座標。", "zh-Hans": "信号有了可以前进的轨道，才不会一闪即逝。ROVYN CORE 想成为那条起始轨道，让创作者为想法取名、塑形，并在链上留下公开坐标。", ko: "신호가 나아갈 궤도를 얻으면 한순간에 사라지지 않습니다. ROVYN CORE는 크리에이터가 아이디어에 이름과 형태를 부여하고 온체인 하늘에 공개 좌표를 남기는 첫 궤도가 되고자 합니다." },
-  stageThree: { en: "RVYN, the first light", "zh-Hant": "RVYN，第一道光", "zh-Hans": "RVYN，第一道光", ko: "첫 번째 빛, RVYN" },
-  stageThreeBody: { en: "Our first brand token carries the ROVYN CORE name into the open. RVYN is the opening chapter made visible—a marker of where this constellation begins, and a story still being written.", "zh-Hant": "作為 ROVYN CORE 的首個品牌 Token，RVYN 把這個名字帶進公開的鏈上世界。它是看得見的第一章，標記星系從何處開始；而後續篇章，仍在書寫。", "zh-Hans": "作为 ROVYN CORE 的首个品牌 Token，RVYN 把这个名字带进公开的链上世界。它是看得见的第一章，标记星系从何处开始；而后续篇章，仍在书写。", ko: "ROVYN CORE의 첫 브랜드 토큰인 RVYN은 이 이름을 열린 온체인 세계로 가져갑니다. 눈에 보이는 첫 장이자 이 별자리가 시작된 곳을 표시하는 표식이며, 이야기는 계속 쓰이고 있습니다." },
-  stageFour: { en: "The constellation grows", "zh-Hant": "下一道光，還在路上", "zh-Hans": "下一道光，还在路上", ko: "다음 빛은 아직 오는 중" },
-  stageFourBody: { en: "One light can point the way; many can redraw the sky. We imagine a growing constellation of creator-led projects, each with its own orbit, its own people and a reason to keep moving forward.", "zh-Hant": "一道光能指引方向，更多光芒則能重新描繪夜空。我們想像一片持續延展的星系：每個創作者項目都有自己的軌道、同行的人，以及繼續前進的理由。", "zh-Hans": "一道光能指引方向，更多光芒则能重新描绘夜空。我们想象一片持续延展的星系：每个创作者项目都有自己的轨道、同行的人，以及继续前进的理由。", ko: "하나의 빛은 길을 가리키고, 더 많은 빛은 밤하늘을 새로 그립니다. 각자의 궤도와 사람들, 계속 나아갈 이유를 가진 크리에이터 프로젝트가 모여 별자리를 키워가는 모습을 상상합니다." },
-  finalTitle: { en: "Your next idea starts here.", "zh-Hant": "下一個想法，從這裡開始。", "zh-Hans": "下一个想法，从这里开始。", ko: "다음 아이디어, 여기서 시작하세요." },
-  finalText: { en: "Explore what’s already onchain—or bring your own idea to the launchpad.", "zh-Hant": "看看有哪些想法已經上鏈，或帶著你的點子走進發射台。", "zh-Hans": "看看有哪些想法已经上链，或带着你的点子走进发射台。", ko: "이미 온체인에 올라온 아이디어를 살펴보거나, 내 아이디어를 런치패드로 가져오세요." },
-  walletSignal: { en: "WALLET-CONTROLLED", "zh-Hant": "錢包由你掌握", "zh-Hans": "钱包由你掌握", ko: "지갑은 직접 관리" },
-  creatorSignal: { en: "CREATOR-FIRST TOOLS", "zh-Hant": "以創作者為先", "zh-Hans": "以创作者为先", ko: "크리에이터 우선" },
-  publicSignal: { en: "PUBLIC ONCHAIN RECORD", "zh-Hant": "公開鏈上紀錄", "zh-Hans": "公开链上记录", ko: "공개 온체인 기록" },
-  scrollExplore: { en: "SCROLL TO EXPLORE", "zh-Hant": "向下探索更多", "zh-Hans": "向下探索更多", ko: "아래로 내려 더 둘러보기" },
-  readNext: { en: "CONTINUE DOWN", "zh-Hant": "繼續往下探索", "zh-Hans": "继续向下探索", ko: "아래로 계속 탐색" },
-} satisfies Record<string, Copy>;
-
-function NextSection({ href, locale, label = copy.readNext }: { href: string; locale: Locale; label?: Copy }) {
-  return <a className="reboot-next" href={href}><ArrowDown aria-hidden="true" /><span>{c(locale, label)}</span></a>;
-}
-
-export default function HomeRedesign() {
+export default function Home() {
   const { locale } = useLanguage();
-  const img = "/genesis-core.webp";
-  const [saleStatus, setSaleStatus] = useState<HomeSaleStatus | null>(null);
-  const [statusUnavailable, setStatusUnavailable] = useState(false);
-  useEffect(() => {
-    let active = true;
-    const refreshStatus = async () => {
-      try {
-        const status = await api<HomeSaleStatus>("rvyn/status");
-        if (!active) return;
-        setSaleStatus(status);
-        setStatusUnavailable(false);
-      } catch {
-        if (!active) return;
-        setSaleStatus(null);
-        setStatusUnavailable(true);
-      }
-    };
-    void refreshStatus();
-    const timer = window.setInterval(() => void refreshStatus(), 30000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, []);
-  const presaleOpen = saleStatus?.purchasesOpen === true;
-  const whitelistOpen = !presaleOpen && saleStatus?.registryOpen === true;
-  const saleStatusText = presaleOpen ? copy.presaleOpen
-    : whitelistOpen ? copy.whitelistOpen
-    : statusUnavailable ? copy.statusUnavailable
-    : !saleStatus ? copy.statusChecking
-    : saleStatus.phase === "sale_closed" ? copy.presaleClosed
-    : saleStatus.phase === "sale_open" ? copy.presaleChecking
-    : saleStatus.registrationStatus === "scheduled" ? copy.whitelistScheduled
-    : saleStatus.registrationStatus === "closed" ? copy.whitelistClosed
-    : copy.whitelistPreparing;
-  const stageTone = presaleOpen || whitelistOpen ? "open" : saleStatus || statusUnavailable ? "closed" : "checking";
-  const whitelistAction = whitelistOpen ? copy.joinWhitelist : copy.checkWhitelist;
+  const t = (c: Copy4) => c[locale];
+  const { status, failed } = useSaleStatus();
+  const reg = status?.registrationStatus;
+  const opensAt = status?.registrationOpensAt ?? null;
+  const closesAt = status?.registrationClosesAt ?? null;
+  const registryOpen = Boolean(status?.registryOpen);
+
+  const primary = registryOpen
+    ? { href: "/rvyn#whitelist", label: t(T.join) }
+    : reg === "scheduled" && opensAt
+      ? { href: "/rvyn#whitelist", label: `${t(T.opensOn)} · ${formatUtc8(opensAt, locale, false)}` }
+      : { href: "/rvyn", label: t(T.viewRvyn) };
+
+  const whitelistState = failed && !status ? t(T.unavailable) : !status ? t(T.checking)
+    : registryOpen ? t(T.open) : reg === "scheduled" ? t(T.scheduled) : reg === "closed" ? t(T.closed) : t(T.preparing);
+  const presaleState = !status ? (failed ? t(T.unavailable) : t(T.checking)) : status.purchasesOpen ? t(T.open) : status.phase === "sale_closed" ? t(T.closed) : t(T.notOpen);
+
   return (
-    <main className="home-reboot" lang={locale}>
-      <section className="reboot-hero" aria-labelledby="reboot-title">
-        <HomeHeroMedia />
-        <HeroHud />
-        <HeroParallax />
-        <div className="reboot-hero__copy">
-          <div className="reboot-hero__eyebrow"><span className="reboot-network-pill"><Image src="/robinhood-chain-feather-avatar.jpg" alt="" width={19} height={19} />{c(locale, copy.network)}</span><span className="reboot-release"><i />{c(locale, saleStatusText)}</span></div>
-          <h1 className="reboot-hero__headline" id="reboot-title"><span>{c(locale, copy.headlineFirst)}</span><em>{c(locale, copy.headlineSecond)}</em></h1>
-          <p className="reboot-hero__lead">{c(locale, copy.heroLead)}</p>
-          <div className="reboot-actions reboot-actions--hero">
-            <Link href="/rvyn#allowlist" className="reboot-button reboot-hero__whitelist"><span className="reboot-button__status"><i />{stageTone === "open" ? c(locale, copy.buttonStatusOpen) : stageTone === "checking" ? c(locale, copy.buttonStatusChecking) : c(locale, copy.buttonStatusPreparing)}</span><span className="reboot-button__content"><ShieldCheck className="home-cta-mark" /><span className="reboot-button__label">{c(locale, whitelistAction)}</span></span><ArrowRight className="home-cta-arrow" /></Link>
-            <Link href="/launchpad" className="reboot-button reboot-hero__secondary reboot-hero__secondary--launch"><span className="reboot-button__content"><Rocket className="home-cta-mark" /><span className="reboot-button__label">{c(locale, copy.create)}</span></span><ArrowRight className="home-cta-arrow" /></Link>
-            <Link href="/onchain-record" className="reboot-button reboot-hero__secondary reboot-hero__secondary--record"><span className="reboot-button__content"><Orbit className="home-cta-mark" /><span className="reboot-button__label">{c(locale, copy.onchainRecords)}</span></span><ArrowRight className="home-cta-arrow" /></Link>
+    <main>
+      <section className="rv-hero">
+        <div className="rv-hero__grid" aria-hidden="true" />
+        <div className="rv-hero__glow" aria-hidden="true" />
+        <div className="rv-container">
+          <div className="rv-hero__inner">
+            <div className="rv-hero__copy">
+              <span className="rv-eyebrow">{t(T.heroEyebrow)}</span>
+              <h1 className="rv-display">{t(T.heroA)}<br /><span className="rv-accent">{t(T.heroB)}</span></h1>
+              <p className="rv-lead">{t(T.heroLead)}</p>
+              <div className="rv-row">
+                <Link className="rv-btn rv-btn--primary rv-btn--lg" href={primary.href}>{primary.label}<ArrowRight aria-hidden="true" /></Link>
+                <Link className="rv-btn rv-btn--secondary rv-btn--lg" href="/game">{t(T.aboutGame)}</Link>
+              </div>
+            </div>
+            <div className="rv-hero__art"><Image src="/rv-core.webp" alt="" width={900} height={900} priority unoptimized /></div>
+          </div>
+          <div className="rv-strip rv-reveal" style={{ marginTop: "-8px", marginBottom: "clamp(40px, 6vw, 72px)" }}>
+            <div>
+              <span className="rv-stat__label">{t(T.whitelist)}</span>
+              <span className={`rv-pill${registryOpen ? " rv-pill--live" : reg === "scheduled" ? " rv-pill--warn" : ""}`}>{whitelistState}</span>
+              {reg === "scheduled" && opensAt ? <Countdown to={opensAt} locale={locale} /> : null}
+              {opensAt && closesAt ? <span className="rv-caption">{formatUtc8(opensAt, locale)} – {formatUtc8(closesAt, locale)} (UTC+8)</span> : null}
+            </div>
+            <div>
+              <span className="rv-stat__label">{t(T.presale)}</span>
+              <span className={`rv-pill${status?.purchasesOpen ? " rv-pill--live" : ""}`}>{presaleState}</span>
+              <span className="rv-caption">{status?.purchasesOpen ? "" : t(T.noDate)}</span>
+            </div>
+            <div>
+              <span className="rv-stat__label">{t(T.game)}</span>
+              <span className="rv-pill rv-pill--ok">{t(T.inDev)}</span>
+              <span className="rv-caption">{t(T.firstLook)}</span>
+            </div>
           </div>
         </div>
-        <TelemetryRail label="ROVYN CORE" cells={[
-          { key: "net", label: copy.telNet, value: "Robinhood Chain · 4663" },
-          { key: "supply", label: copy.telSupply, value: "10,000,000 RVYN" },
-          { key: "stage", label: copy.telStage, value: saleStatusText, live: stageTone === "open" },
-          { key: "game", label: copy.telGame, value: copy.specGame },
-        ]} />
-        <a className="reboot-scroll" href="#reboot-flow" aria-label={c(locale, copy.scrollExplore)}><ArrowDown size={30} /></a>
       </section>
-      <SectorTag n="01" label={copy.secStatus} aside="LIVE" />
-      <PresaleConsole variant="home" />
-      <SectorTag n="02" label={copy.secOrigin} aside="SIGNAL" />
-      <ConstellationStory selectionHint={c(locale, copy.chooseSignal)} eyebrow={c(locale, copy.chapter)} title={c(locale, copy.processTitle)} lead={c(locale, copy.processLead)} nextLabel={c(locale, copy.scrollExplore)} steps={[
-        { n: "01", title: c(locale, copy.stageOne), body: c(locale, copy.stageOneBody) },
-        { n: "02", title: c(locale, copy.stageTwo), body: c(locale, copy.stageTwoBody) },
-        { n: "03", title: c(locale, copy.stageThree), body: c(locale, copy.stageThreeBody) },
-        { n: "04", title: c(locale, copy.stageFour), body: c(locale, copy.stageFourBody) },
-      ]} />
 
-      <SectorTag n="03" label={copy.secRecords} aside="4663" />
-      <div className="reboot-featured" id="reboot-launches"><HomeFeatured /><NextSection href="#reboot-roadmap" locale={locale} /><span className="reboot-divider-signal" aria-hidden="true" /></div>
-
-      <SectorTag n="04" label={copy.secRoadmap} aside="NEXT" />
-      <div className="reboot-roadmap" id="reboot-roadmap">
-        <HomeRoadmap />
-        <div className="reboot-roadmap-separator reboot-roadmap-separator--end">
-          <a className="reboot-roadmap-separator__arrow" href="#reboot-final" aria-label={c(locale, copy.readNext)}><ArrowDown aria-hidden="true" /></a>
-          <span aria-hidden="true" />
+      <section className="rv-section rv-section--line">
+        <div className="rv-container">
+          <Head eyebrow={t(T.whatEyebrow)} title={t(T.whatTitle)} />
+          <div className="rv-grid rv-grid--3">
+            {([
+              [Gamepad2, T.gameTitle, T.gameBody, "/game"],
+              [Coins, T.rvynTitle, T.rvynBody, "/rvyn"],
+              [Layers, T.toolsTitle, T.toolsBody, "/launchpad"],
+            ] as const).map(([Icon, title, body, href]) => (
+              <Link key={href} href={href} className="rv-card rv-card--link rv-reveal">
+                <span className="rv-card__icon"><Icon aria-hidden="true" /></span>
+                <h3 className="rv-h3">{t(title)}</h3>
+                <p className="rv-small" style={{ margin: "8px 0 18px" }}>{t(body)}</p>
+                <span className="rv-small rv-accent" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{t(T.more)} <ArrowRight size={15} aria-hidden="true" /></span>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <SectorTag n="05" label={copy.secLaunch} aside="GO" />
-      <section className="reboot-final" id="reboot-final">
-        <Image className="reboot-final__crystal" src={img} alt="" width={900} height={900} loading="lazy" unoptimized />
-        <div className="reboot-final__flare" aria-hidden="true" />
-        <span className="reboot-kicker">ROVYN CORE / ONCHAIN STUDIO</span>
-        <h2>{c(locale, copy.finalTitle)}</h2>
-        <p>{c(locale, copy.finalText)}</p>
-        <div className="reboot-actions">
-          <Link href="/onchain-record" className="reboot-button reboot-button--lime">{c(locale, copy.explore)} <ArrowUpRight size={16} /></Link>
-          <Link href="/launchpad" className="reboot-button reboot-button--glass">{c(locale, copy.create)} <ArrowRight size={16} /></Link>
+      <section className="rv-section rv-section--line">
+        <div className="rv-container rv-split rv-split--wide-right">
+          <div className="rv-stack rv-sticky" style={{ ["--gap" as string]: "22px" }}>
+            <Head eyebrow={t(T.rvynEyebrow)} title={t(T.rvynHeadTitle)} />
+            <dl className="rv-kv">
+              <div><dt>{t(T.supply)}</dt><dd className="rv-num">10,000,000 RVYN</dd></div>
+              <div><dt>{t(T.price)}</dt><dd className="rv-num">{RVYN_MODEL.priceEth} ETH</dd></div>
+              <div><dt>{t(T.cap)}</dt><dd className="rv-num">{RVYN_MODEL.walletCapEth} ETH · {RVYN_MODEL.walletCapTokens.toLocaleString(locale)} RVYN</dd></div>
+              <div><dt>{t(T.delivery)}</dt><dd>{t(T.deliveryValue)}</dd></div>
+            </dl>
+            <div className="rv-stack" style={{ ["--gap" as string]: "8px" }}>
+              <span className="rv-stat__label">{t(T.contract)}</span>
+              <Address value={RVYN_MODEL.contractMainnet} locale={locale} />
+            </div>
+            <div><Link className="rv-btn rv-btn--secondary" href="/rvyn">{t(T.fullDetails)}<ArrowRight aria-hidden="true" /></Link></div>
+          </div>
+          <div className="rv-card rv-card--accent rv-reveal">
+            <div className="rv-row rv-row--between" style={{ marginBottom: 22 }}>
+              <h3 className="rv-h3">{t(T.allocTitle)}</h3>
+              <span className="rv-num rv-accent">10,000,000</span>
+            </div>
+            <AllocationBar locale={locale} />
+            <p className="rv-caption" style={{ marginTop: 18 }}>{t(T.allocNote)}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container">
+          <Head eyebrow={t(T.trustEyebrow)} title={t(T.trustTitle)} action={<Link className="rv-btn rv-btn--secondary" href="/transparency">{t(T.seeTransparency)}<ArrowUpRight aria-hidden="true" /></Link>} />
+          <div className="rv-grid rv-grid--4">
+            {([[BadgeCheck, T.t1, T.t1b], [Users, T.t2, T.t2b], [Lock, T.t3, T.t3b], [ShieldCheck, T.t4, T.t4b]] as const).map(([Icon, title, body], i) => (
+              <div key={i} className="rv-card rv-reveal">
+                <span className="rv-card__icon"><Icon aria-hidden="true" /></span>
+                <h3 className="rv-h3" style={{ fontSize: 17 }}>{t(title)}</h3>
+                <p className="rv-small" style={{ marginTop: 8 }}>{t(body)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container">
+          <Head eyebrow={t(T.roadEyebrow)} title={t(T.roadTitle)} />
+          <div className="rv-grid rv-grid--3">
+            {([
+              [T.done, [T.d1, T.d2, T.d3, T.d4], "rv-pill--ok"],
+              [T.next, [T.n1, T.n2, T.n3], "rv-pill--live"],
+              [T.later, [T.l1, T.l2, T.l3], ""],
+            ] as const).map(([label, items, tone]) => (
+              <div key={label.en} className="rv-card rv-reveal">
+                <span className={`rv-pill ${tone}`}>{t(label)}</span>
+                <ol className="rv-numbered" style={{ marginTop: 18 }}>
+                  {items.map((item) => (
+                    <li key={item.en}><b>{t(item)}</b>{item === T.n1 && opensAt && closesAt ? <span>{formatUtc8(opensAt, locale, false)} – {formatUtc8(closesAt, locale, false)} (UTC+8)</span> : null}</li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
+          <p className="rv-caption" style={{ marginTop: 18 }}>{t(T.roadNote)}</p>
+        </div>
+      </section>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container--narrow" style={{ textAlign: "center", display: "grid", gap: 20, justifyItems: "center" }}>
+          <span className="rv-eyebrow">{t(T.storyEyebrow)}</span>
+          <p className="rv-h2" style={{ fontWeight: 560 }}>{t(T.story)}</p>
+        </div>
+      </section>
+
+      <section className="rv-section--tight" style={{ paddingTop: 0 }}>
+        <div className="rv-container">
+          <div className="rv-cta rv-reveal">
+            <h2 className="rv-h1">{t(T.ctaTitle)}</h2>
+            <p className="rv-lead">{t(T.ctaBody)}</p>
+            <div className="rv-row" style={{ justifyContent: "center" }}>
+              <a className="rv-btn rv-btn--primary rv-btn--lg" href="https://x.com/RovynCORE" target="_blank" rel="noreferrer">{t(T.follow)}<ArrowUpRight aria-hidden="true" /></a>
+              <Link className="rv-btn rv-btn--secondary rv-btn--lg" href={primary.href}>{primary.label}</Link>
+            </div>
+            <p className="rv-caption">{t(T.risk)}</p>
+          </div>
         </div>
       </section>
     </main>

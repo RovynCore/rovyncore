@@ -1,22 +1,10 @@
 import type { Metadata } from "next";
-import "./globals.css";
-import "./retained-visuals.css";
-import "./interaction-polish.css";
-import "./visual-refinement.css";
-import "./all-page-polish.css";
-import "./x-updates.css";
-import "./content-motion.css";
-import "./workflow-motion.css";
-import "./typography.css";
-import "./atelier.css";
-import "./console-theme.css";
+import "./rv.css";
 import { PlatformProvider } from "@/components/platform-provider";
-import { AtelierEffects } from "@/components/atelier-effects";
 import { AgentTools } from "@/components/agent-tools";
 import { LanguageProvider } from "@/components/language-provider";
-import { SiteMotion } from "@/components/site-motion";
 import { IntroSplash } from "@/components/intro-splash";
-import { SmoothScroll } from "@/components/smooth-scroll";
+import { RevealObserver } from "@/components/rv/ui";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.rovyncore.com"),
@@ -74,10 +62,9 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="antialiased">
         <script
-          dangerouslySetInnerHTML={{ __html: "(function(){try{var d=document.documentElement;if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('rc-intro')){d.classList.add('intro-on');setTimeout(function(){d.classList.remove('intro-on')},6000)}}catch(e){}})();" }}
+          dangerouslySetInnerHTML={{ __html: "(function(){try{var d=document.documentElement;if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!localStorage.getItem('rv-intro')){d.classList.add('intro-on');setTimeout(function(){d.classList.remove('intro-on')},4500)}}catch(e){}})();" }}
         />
         <IntroSplash />
-        <SmoothScroll />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -92,8 +79,7 @@ export default function RootLayout({
         <LanguageProvider>
           <PlatformProvider>
             <AgentTools />
-            <SiteMotion />
-            <AtelierEffects />
+            <RevealObserver />
             {children}
           </PlatformProvider>
         </LanguageProvider>

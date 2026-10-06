@@ -1,0 +1,12 @@
+/* The admin workspace keeps the previous stylesheet stack; public pages use app/rv.css only. */
+@import "./legacy/globals.legacy.css";
+@import "../retained-visuals.css";
+@import "../interaction-polish.css";
+@import "../visual-refinement.css";
+@import "../all-page-polish.css";
+@import "../x-updates.css";
+@import "../content-motion.css";
+@import "../workflow-motion.css";
+@import "../typography.css";
+@import "../atelier.css";
+@import "../console-theme.css";

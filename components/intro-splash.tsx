@@ -19,7 +19,7 @@ export function IntroSplash() {
     const finish = () => {
       if (finished) return;
       finished = true;
-      try { sessionStorage.setItem("rc-intro", "1"); } catch { /* ignore */ }
+      try { localStorage.setItem("rv-intro", "1"); } catch { /* ignore */ }
       root.classList.remove("intro-on");
       root.classList.add("intro-done");
       window.removeEventListener("keydown", finish);

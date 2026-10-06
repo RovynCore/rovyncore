@@ -1,12 +1,10 @@
 "use client";
 
-import { ReadingNav, MotionDisclosure } from "@/components/workflow-motion";
+import { MotionDisclosure } from "@/components/workflow-motion";
 import Link from "@/components/site-link";
 import { useLanguage } from "@/components/language-provider";
-import { XProfileFeed } from "@/components/x-profile-feed";
-import { INITIAL_X_UPDATES, type XUpdate } from "@/lib/x-updates";
 import type { Locale } from "@/lib/translations";
-import { ArrowUpRight, CalendarDays, History, Radio, ExternalLink } from "lucide-react";
+import { ArrowUpRight, CalendarDays } from "lucide-react";
 
 type ReleaseNote = {
   date: string;
@@ -29,15 +27,6 @@ const pageCopy: Record<Locale, {
   records: string;
   launchpad: string;
   releaseCount: string;
-  flashSection: string;
-  flashTitle: string;
-  flashIntro: string;
-  flashStatus: string;
-  flashFallback: string;
-  flashUnavailable: string;
-  flashNotice: string;
-  flashPrivacyLink: string;
-  flashProfile: string;
   logSection: string;
   logTitle: string;
   logIntro: string;
@@ -45,7 +34,7 @@ const pageCopy: Record<Locale, {
   en: {
     eyebrow: "ROVYN CORE / LATEST INFORMATION",
     title: "Latest information.",
-    intro: "Official updates from X, alongside a concise record of product releases and improvements.",
+    intro: "A concise record of every product release and meaningful change. For day-to-day news, follow @RovynCORE on X.",
     dateLabel: "PUBLISHED",
     versionLabel: "WEB VERSION",
     latest: "LATEST UPDATE",
@@ -54,23 +43,14 @@ const pageCopy: Record<Locale, {
     records: "Explore onchain records",
     launchpad: "Open launchpad",
     releaseCount: "releases",
-    flashSection: "01 / FLASH UPDATES",
-    flashTitle: "From our official X account.",
-    flashIntro: "Collected public posts from @RovynCore. Read them here, or open the original post for images, video and replies.",
-    flashStatus: "OFFICIAL X PROFILE",
-    flashFallback: "View public posts by @RovynCORE on X.",
-    flashUnavailable: "The latest collection could not be refreshed. You can still read the available posts or visit our X account.",
-    flashNotice: "These are saved copies of selected official posts. Automatic syncing is currently paused, so newer posts appear on our X account first. You can read the saved text without an X login.",
-    flashPrivacyLink: "X privacy policy",
-    flashProfile: "Open @RovynCORE on X",
-    logSection: "02 / PRODUCT RELEASES",
+    logSection: "PRODUCT RELEASES",
     logTitle: "Development log",
     logIntro: "One concise entry per day, combining that day’s meaningful product and website updates.",
   },
   "zh-Hant": {
     eyebrow: "ROVYN CORE / 最新資訊",
     title: "最新資訊",
-    intro: "集中查看 X 官方快訊，以及產品正式發布與功能調整紀錄。",
+    intro: "每一次正式發布與重要調整的精簡紀錄。日常消息請追蹤 X 上的 @RovynCORE。",
     dateLabel: "發布日期",
     versionLabel: "網站版本",
     latest: "最新更新",
@@ -79,23 +59,14 @@ const pageCopy: Record<Locale, {
     records: "查看鏈上紀錄",
     launchpad: "前往發射台",
     releaseCount: "則更新",
-    flashSection: "01 / 快訊更新",
-    flashTitle: "官方 X 最新貼文",
-    flashIntro: "這裡收錄 @RovynCore 的公開貼文。可直接閱讀文字，或開啟原文查看圖片、影片與留言。",
-    flashStatus: "官方 X 帳號",
-    flashFallback: "前往 X 查看 @RovynCORE 的公開貼文。",
-    flashUnavailable: "目前無法更新貼文列表。你仍可閱讀已載入的內容，或前往官方 X 帳號。",
-    flashNotice: "這裡是已儲存的官方貼文副本。自動同步目前暫停，較新的貼文會先出現在我們的 X 帳號。不需登入 X 即可閱讀已儲存的文字。",
-    flashPrivacyLink: "X 隱私政策",
-    flashProfile: "在 X 開啟 @RovynCORE",
-    logSection: "02 / 產品更新",
+    logSection: "產品更新",
     logTitle: "開發日誌",
     logIntro: "每天一則精簡紀錄，將當日重要的產品與網站調整合併整理。",
   },
   "zh-Hans": {
     eyebrow: "ROVYN CORE / 最新信息",
     title: "最新信息",
-    intro: "集中查看 X 官方快讯，以及产品正式发布与功能调整记录。",
+    intro: "每一次正式发布与重要调整的简明记录。日常消息请关注 X 上的 @RovynCORE。",
     dateLabel: "发布日期",
     versionLabel: "网站版本",
     latest: "最新更新",
@@ -104,23 +75,14 @@ const pageCopy: Record<Locale, {
     records: "查看链上记录",
     launchpad: "前往发行平台",
     releaseCount: "条更新",
-    flashSection: "01 / 快讯更新",
-    flashTitle: "官方 X 最新帖子",
-    flashIntro: "这里收录 @RovynCore 的公开帖子。可直接阅读文字，或打开原文查看图片、视频与评论。",
-    flashStatus: "官方 X 账号",
-    flashFallback: "前往 X 查看 @RovynCORE 的公开帖子。",
-    flashUnavailable: "目前无法更新帖子列表。你仍可阅读已加载的内容，或前往官方 X 账号。",
-    flashNotice: "这里是已保存的官方帖子副本。自动同步目前暂停，较新的帖子会先出现在我们的 X 账号。无需登录 X 即可阅读已保存的文字。",
-    flashPrivacyLink: "X 隐私政策",
-    flashProfile: "在 X 打开 @RovynCORE",
-    logSection: "02 / 产品更新",
+    logSection: "产品更新",
     logTitle: "开发日志",
     logIntro: "每天一条简明记录，合并整理当天重要的产品与网站调整。",
   },
   ko: {
     eyebrow: "ROVYN CORE / 최신 정보",
     title: "최신 정보",
-    intro: "X 공식 소식과 제품 배포 및 주요 변경 기록을 한곳에서 확인하세요.",
+    intro: "모든 제품 배포와 주요 변경의 간결한 기록입니다. 일상 소식은 X의 @RovynCORE를 팔로우하세요.",
     dateLabel: "게시일",
     versionLabel: "웹 버전",
     latest: "최신 업데이트",
@@ -129,16 +91,7 @@ const pageCopy: Record<Locale, {
     records: "온체인 기록 보기",
     launchpad: "런치패드 열기",
     releaseCount: "개 업데이트",
-    flashSection: "01 / 실시간 소식",
-    flashTitle: "공식 X 계정의 새 게시물",
-    flashIntro: "@RovynCore의 공개 게시물을 모았습니다. 본문은 여기서 읽고 이미지, 동영상, 댓글은 원문에서 확인하세요.",
-    flashStatus: "공식 X 프로필",
-    flashFallback: "X에서 @RovynCORE의 공개 게시물을 확인하세요.",
-    flashUnavailable: "최신 목록을 새로고침할 수 없습니다. 표시된 게시물을 읽거나 공식 X 계정을 방문하세요.",
-    flashNotice: "선별한 공식 게시물의 저장본입니다. 자동 동기화는 현재 중지되어 있어 최신 게시물은 X 계정에 먼저 올라옵니다. X 로그인 없이 저장된 본문을 읽을 수 있습니다.",
-    flashPrivacyLink: "X 개인정보 처리방침",
-    flashProfile: "X에서 @RovynCORE 열기",
-    logSection: "02 / 제품 업데이트",
+    logSection: "제품 업데이트",
     logTitle: "개발 기록",
     logIntro: "하루에 한 개의 간결한 항목으로 그날의 주요 제품 및 웹사이트 변경을 정리합니다.",
   },
@@ -150,7 +103,7 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
     {
       date: "Oct 6, 2026",
       isoDate: "2026-10-06",
-      version: "2026.10.06-01",
+      version: "2026.10.06-02",
       title: "RVYN presale V6, live onchain facts and a public record badge",
       summary: "The presale contract was redesigned and deployed as V6, the site gained live onchain figures and an embeddable record badge, and whitelist registration is scheduled.",
       changes: [
@@ -159,7 +112,8 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
         "Added a Transparency page with live onchain figures (supply, holders, sale state), the Safe 2-of-3 multisig that sponsors the sale, and public source code on GitHub.",
         "Added an embeddable Onchain Record badge for every asset record.",
         "Whitelist registration is scheduled for Oct 9 to Oct 19 (UTC+8) and opens automatically; registration now uses human verification. A listing is not a token allocation.",
-        "Terms updated to version 0.5 for V6, and an outdated allocation image was replaced with the correct caps."
+        "Terms updated to version 0.5 for V6, and an outdated allocation image was replaced with the correct caps.",
+        "The whole site was redesigned around one simpler visual system with clearer pages for RVYN and the game; the launchpad and records now sit under Tools. The intro plays only on a first visit, and saved X posts no longer appear on this page. Every feature is still available."
       ]
     },
     {
@@ -277,7 +231,7 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
     {
       date: "2026 年 10 月 6 日",
       isoDate: "2026-10-06",
-      version: "2026.10.06-01",
+      version: "2026.10.06-02",
       title: "RVYN 預售 V6、即時鏈上資料與公開紀錄徽章",
       summary: "預售合約重新設計並部署為 V6，網站新增即時鏈上數據與可嵌入的紀錄徽章，白名單登記已排程。",
       changes: [
@@ -286,7 +240,8 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
         "新增透明頁，顯示即時鏈上數據（供應量、持有分布、預售狀態）、擔任預售發起人的 Safe 3 取 2 多簽，以及 GitHub 公開原始碼。",
         "每個資產紀錄新增可嵌入的 Onchain Record 徽章。",
         "白名單登記排程於 10 月 9 日至 10 月 19 日（UTC+8），時間到自動開放；登記現在加入人機驗證。列入名單不代表代幣配額。",
-        "條款更新至 0.5 版以配合 V6，並將過時的配置圖換成正確的上限。"
+        "條款更新至 0.5 版以配合 V6，並將過時的配置圖換成正確的上限。",
+        "全站改版為一套更簡潔一致的設計，RVYN 與遊戲頁更清楚；發射台與鏈上紀錄移到「工具」選單。開場動畫只在第一次造訪時播放，本頁不再顯示 X 貼文副本。所有功能都仍保留。"
       ]
     },
     {
@@ -404,7 +359,7 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
     {
       date: "2026 年 10 月 6 日",
       isoDate: "2026-10-06",
-      version: "2026.10.06-01",
+      version: "2026.10.06-02",
       title: "RVYN 预售 V6、实时链上数据与公开记录徽章",
       summary: "预售合约重新设计并部署为 V6，网站新增实时链上数据与可嵌入的记录徽章，白名单登记已排程。",
       changes: [
@@ -413,7 +368,8 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
         "新增透明页，显示实时链上数据（供应量、持有分布、预售状态）、担任预售发起人的 Safe 3 取 2 多签，以及 GitHub 公开源码。",
         "每个资产记录新增可嵌入的 Onchain Record 徽章。",
         "白名单登记排程于 10 月 9 日至 10 月 19 日（UTC+8），时间到自动开放；登记现在加入人机验证。列入名单不代表代币配额。",
-        "条款更新至 0.5 版以配合 V6，并将过时的配置图换成正确的上限。"
+        "条款更新至 0.5 版以配合 V6，并将过时的配置图换成正确的上限。",
+        "全站改版为一套更简洁一致的设计，RVYN 与游戏页更清楚；发射台与链上记录移到“工具”菜单。开场动画只在第一次访问时播放，本页不再显示 X 帖子副本。所有功能都仍保留。"
       ]
     },
     {
@@ -531,7 +487,7 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
     {
       date: "2026년 10월 6일",
       isoDate: "2026-10-06",
-      version: "2026.10.06-01",
+      version: "2026.10.06-02",
       title: "RVYN 프리세일 V6, 실시간 온체인 정보, 공개 기록 배지",
       summary: "프리세일 계약을 재설계해 V6로 배포했고, 실시간 온체인 수치와 삽입형 기록 배지를 추가했으며 화이트리스트 신청 일정을 잡았습니다.",
       changes: [
@@ -540,7 +496,8 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
         "투명성 페이지를 추가했습니다. 실시간 온체인 수치(공급량, 보유 분포, 판매 상태), 판매를 후원하는 Safe 3 중 2 멀티시그, GitHub 공개 소스 코드를 볼 수 있습니다.",
         "모든 자산 기록에 삽입 가능한 Onchain Record 배지를 추가했습니다.",
         "화이트리스트 신청은 10월 9일부터 10월 19일(UTC+8)까지로 예약되어 자동으로 열리며 이제 사람 확인을 사용합니다. 목록 등재는 토큰 배정이 아닙니다.",
-        "V6에 맞춰 약관을 0.5 버전으로 갱신하고 오래된 배분 이미지를 올바른 상한으로 교체했습니다."
+        "V6에 맞춰 약관을 0.5 버전으로 갱신하고 오래된 배분 이미지를 올바른 상한으로 교체했습니다.",
+        "사이트 전체를 더 간결하고 일관된 디자인으로 바꾸고 RVYN과 게임 페이지를 더 명확하게 했습니다. 런치패드와 온체인 기록은 도구 메뉴로 옮겼습니다. 인트로는 첫 방문에만 재생되며 이 페이지에는 더 이상 X 게시물 사본이 표시되지 않습니다. 모든 기능은 그대로 제공됩니다."
       ]
     },
     {
@@ -656,97 +613,62 @@ const releaseNotes: Record<Locale, ReleaseNote[]> = {
   ],
 };
 
-export default function DevelopmentLogPage({ initialPosts = INITIAL_X_UPDATES, initialReadFailed = false }: { initialPosts?: XUpdate[]; initialReadFailed?: boolean }) {
+export default function DevelopmentLogPage() {
   const { locale } = useLanguage();
   const text = pageCopy[locale];
   const notes = releaseNotes[locale];
 
   return (
-    <main className="workspace development-log latest-info">
-      <header className="development-log__header">
-        <span className="eyebrow">{text.eyebrow}</span>
-        <div className="development-log__headline">
-          <div>
-            <h1>{text.title}</h1>
-            <p>{text.intro}</p>
+    <main>
+      <section className="rv-pagehead">
+        <div className="rv-container rv-pagehead__inner">
+          <div className="rv-pagehead__copy">
+            <span className="rv-eyebrow">{text.eyebrow}</span>
+            <h1 className="rv-h1">{text.title}</h1>
+            <p className="rv-lead">{text.intro}</p>
           </div>
-          <div className="development-log__edition" aria-label={`${notes.length} ${text.releaseCount}`}>
-            <History size={17} aria-hidden="true" />
-            <span>{String(notes.length).padStart(2, "0")}</span>
-            <small>{locale === "en" ? "UPDATES" : text.releaseCount.toLocaleUpperCase(locale)}</small>
+          <div className="rv-pagehead__side">
+            <span className="rv-stat__label">{text.releaseCount}</span>
+            <span className="rv-stat__value rv-num">{String(notes.length).padStart(2, "0")}</span>
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="latest-info__sections">
-        <ReadingNav className="latest-info__jump-links" label={text.title}>
-          <a href="#latest-info-flash-title">{text.flashSection}</a>
-          <a href="#latest-info-log-title">{text.logSection}</a>
-        </ReadingNav>
-        <section className="latest-info__section latest-info__flash" aria-labelledby="latest-info-flash-title">
-          <div className="latest-info__section-heading">
-            <div>
-              <span className="eyebrow">{text.flashSection}</span>
-              <h2 id="latest-info-flash-title">{text.flashTitle}</h2>
-              <p>{text.flashIntro}</p>
+      <section className="rv-section--tight" style={{ paddingTop: 0 }}>
+        <div className="rv-container"><div style={{ maxWidth: 820 }}>
+          <section className="rv-stack" style={{ ["--gap" as string]: "16px" }} aria-labelledby="latest-info-log-title">
+            <div className="rv-head" style={{ marginBottom: 8 }}>
+              <span className="rv-eyebrow">{text.logSection}</span>
+              <h2 className="rv-h2" id="latest-info-log-title">{text.logTitle}</h2>
+              <p className="rv-small">{text.logIntro} {text.versionRule}</p>
             </div>
-            <a className="latest-info__profile-link" href="https://x.com/RovynCORE" target="_blank" rel="noreferrer">
-              <ExternalLink size={15} aria-hidden="true" />{text.flashProfile}
-            </a>
-          </div>
-          <div className="latest-info__flash-card">
-            <div className="latest-info__flash-card-heading">
-              <span className="latest-info__x-mark" aria-hidden="true">𝕏</span>
-              <span className="latest-info__account"><strong>ROVYN CORE</strong><small>@RovynCORE</small></span>
-              <span className="latest-info__live"><Radio size={13} aria-hidden="true" />{text.flashStatus}</span>
-            </div>
-            <XProfileFeed initialPosts={initialPosts} initialReadFailed={initialReadFailed} fallback={text.flashFallback} unavailable={text.flashUnavailable} notice={text.flashNotice} />
-          </div>
-        </section>
-
-        <section className="latest-info__section latest-info__releases" aria-labelledby="latest-info-log-title">
-          <div className="latest-info__section-heading">
-            <div>
-              <span className="eyebrow">{text.logSection}</span>
-              <h2 id="latest-info-log-title">{text.logTitle}</h2>
-              <p>{text.logIntro}</p>
-            </div>
-            <p className="development-log__version-rule">{text.versionRule}</p>
-          </div>
-          <div className="development-log__feed release-timeline" aria-label={text.logTitle}>
             {notes.map((release, index) => (
-              <article
-                className={`panel development-log__release${index === 0 ? " is-latest" : ""}`}
-                key={release.version}
-                aria-labelledby={`release-${release.version}`}
-              >
-                <div className="development-log__release-meta">
-                  <span className="development-log__meta-label"><CalendarDays size={13} aria-hidden="true" />{text.dateLabel}</span>
-                  <time dateTime={release.isoDate}>{release.date}</time>
-                  <span className="development-log__meta-label">{text.versionLabel}</span>
-                  <code>{release.version}</code>
+              <article className={`rv-card${index === 0 ? " rv-card--accent" : ""} rv-stack`} style={{ ["--gap" as string]: "10px" }} key={release.version} aria-labelledby={`release-${release.version}`}>
+                <div className="rv-row" style={{ ["--gap" as string]: "10px" }}>
+                  <span className="rv-caption" style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><CalendarDays size={13} aria-hidden="true" /><time dateTime={release.isoDate}>{release.date}</time></span>
+                  <code className="rv-caption">{release.version}</code>
+                  {index === 0 ? <span className="rv-pill rv-pill--live">{text.latest}</span> : null}
                 </div>
-                <div className="development-log__release-content">
-                  {index === 0 ? <span className="development-log__latest">{text.latest}</span> : null}
-                  <h3 id={`release-${release.version}`}>{release.title}</h3>
-                  <p>{release.summary}</p>
-                  <MotionDisclosure defaultOpen={index === 0} title={{ en: "What changed", "zh-Hant": "查看更新內容", "zh-Hans": "查看更新内容", ko: "변경 내용 보기" }[locale]}>
-                    <ol>{release.changes.map((change) => <li key={change}>{change}</li>)}</ol>
-                  </MotionDisclosure>
-                </div>
+                <h3 className="rv-h3" id={`release-${release.version}`}>{release.title}</h3>
+                <p className="rv-small">{release.summary}</p>
+                <MotionDisclosure defaultOpen={index === 0} title={{ en: "What changed", "zh-Hant": "查看更新內容", "zh-Hans": "查看更新内容", ko: "변경 내용 보기" }[locale]}>
+                  <ul className="rv-stack" style={{ ["--gap" as string]: "8px", margin: "4px 0 6px", paddingLeft: 18 }}>{release.changes.map((change) => <li className="rv-small" key={change}>{change}</li>)}</ul>
+                </MotionDisclosure>
               </article>
             ))}
-          </div>
-        </section>
-      </div>
+          </section>
+        </div></div>
+      </section>
 
-      <footer className="development-log__footer">
-        <p>{text.footer}</p>
-        <div className="development-log__links">
-          <Link className="secondary" href="/onchain-record">{text.records}<ArrowUpRight size={16} /></Link>
-          <Link className="secondary" href="/launchpad">{text.launchpad}<ArrowUpRight size={16} /></Link>
+      <section className="rv-section--tight">
+        <div className="rv-container rv-row rv-row--between">
+          <p className="rv-caption" style={{ maxWidth: 640 }}>{text.footer}</p>
+          <div className="rv-row">
+            <Link className="rv-btn rv-btn--secondary rv-btn--sm" href="/onchain-record">{text.records}<ArrowUpRight aria-hidden="true" /></Link>
+            <Link className="rv-btn rv-btn--secondary rv-btn--sm" href="/launchpad">{text.launchpad}<ArrowUpRight aria-hidden="true" /></Link>
+          </div>
         </div>
-      </footer>
+      </section>
     </main>
   );
 }

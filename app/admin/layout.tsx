@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
+import "./legacy.css";
 
-export const metadata: Metadata = {
-  title: "Admin Workspace",
-  description: "Wallet-authenticated administration. Not indexed.",
-  robots: { index: false, follow: false, noarchive: true },
-};
-
-export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

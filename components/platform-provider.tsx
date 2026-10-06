@@ -3,7 +3,6 @@ import {
   useLanguage,
   translateRuntime as tr,
 } from "@/components/language-provider";
-import { LanguagePicker } from "@/components/language-provider";
 import { HumanVerification, humanProof } from "./human-verification";
 import {
   useState,
@@ -11,9 +10,8 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import Link from "@/components/site-link";
 import { useWallet } from "@/hooks/use-wallet";
-import { usePathname } from "next/navigation";
+
 import {
   createPublicClient,
   createWalletClient,
@@ -24,14 +22,11 @@ import {
 } from "viem";
 import Image from "next/image";
 import {
-  Orbit,
   Wallet,
   ExternalLink,
   LogOut,
   CheckCircle2,
   LoaderCircle,
-  Menu,
-  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -52,7 +47,7 @@ import {
   type WalletBrand,
   type WalletChoice,
 } from "@/lib/wallet-choice";
-import { SiteMarquee } from "@/components/site-marquee";
+import { SiteHeader, SiteFooter } from "@/components/rv/shell";
 import { PlatformContext, type Transaction } from "@/components/platform-context";
 
 export async function api<T = unknown>(path: string, body?: unknown): Promise<T> {
@@ -102,16 +97,6 @@ export function message(error: unknown) {
   return source;
 }
 type Config = PlatformConfig & { chainStatus?: string };
-
-const footerCopy = {
-  tagline: { en: "A world in the making, with RVYN at its core. Launchpad and onchain records live on Robinhood Chain.", "zh-Hant": "一個正在成形的世界，以 RVYN 為核心。發射台與鏈上紀錄已在 Robinhood Chain 上線。", "zh-Hans": "一个正在成形的世界，以 RVYN 为核心。发射台与链上记录已在 Robinhood Chain 上线。", ko: "RVYN을 중심에 둔, 만들어지고 있는 세계. 런치패드와 온체인 기록은 Robinhood Chain에서 운영 중입니다." },
-  game: { en: "Game", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
-  soon: { en: "Soon", "zh-Hant": "即將", "zh-Hans": "即将", ko: "예정" },
-  footerNav: { en: "Footer", "zh-Hant": "頁尾導覽", "zh-Hans": "页脚导航", ko: "푸터 메뉴" },
-  explore: { en: "Explore", "zh-Hant": "探索", "zh-Hans": "探索", ko: "둘러보기" },
-  information: { en: "Information", "zh-Hant": "資訊", "zh-Hans": "信息", ko: "정보" },
-  independent: { en: "Independent project · not affiliated with Robinhood Markets", "zh-Hant": "獨立營運 · 與 Robinhood Markets 無隸屬關係", "zh-Hans": "独立运营 · 与 Robinhood Markets 无隶属关系", ko: "독립 프로젝트 · Robinhood Markets와 무관" },
-} as const;
 
 function WalletLogo({
   brand,
@@ -222,7 +207,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     | null
   >(null);
   const [busy, setBusy] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [txState, setTxState] = useState<{
     status: string;
     hash?: Hex;
@@ -230,51 +214,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const transactionLock = useRef(false);
   const hasLoadedConfig = useRef(false);
-  const pathname = usePathname();
-  const isHome = pathname === "/" || pathname === "/home-redesign";
-  const topbarRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const topbar = topbarRef.current;
-    const header = headerRef.current;
-    if (!topbar || !header) return;
-    const root = document.documentElement;
-    const measure = () => {
-      root.style.setProperty("--site-topbar-height", `${topbar.getBoundingClientRect().height}px`);
-      root.style.setProperty("--site-header-height", `${header.getBoundingClientRect().height}px`);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(topbar);
-    observer.observe(header);
-    return () => {
-      observer.disconnect();
-      root.style.removeProperty("--site-topbar-height");
-      root.style.removeProperty("--site-header-height");
-    };
-  }, []);
-  const mobileNavButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setMobileNavOpen(false);
-      mobileNavButton.current?.focus();
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Element && !event.target.closest(".header")) setMobileNavOpen(false);
-    };
-    const desktop = window.matchMedia("(min-width: 951px)");
-    const onResize = () => { if (desktop.matches) setMobileNavOpen(false); };
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown);
-    desktop.addEventListener("change", onResize);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown);
-      desktop.removeEventListener("change", onResize);
-    };
-  }, [mobileNavOpen]);
   async function refresh(options?: { silent?: boolean }) {
     try {
       setConfig(await api<Config>("config"));
@@ -444,128 +383,26 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     <PlatformContext.Provider
       value={{ config, ready, account, refresh, connect, transact, admin }}
     >
-      <div ref={topbarRef} className="site-topbar">
-      <SiteMarquee />
-      <header ref={headerRef} className={`header${mobileNavOpen ? " is-mobile-nav-open" : ""}`}>
-        <Link className="brand" href="/">
-          <Orbit />
-          {config.brand.toUpperCase()}
-        </Link>
-        <nav id="primary-navigation" aria-label={tr("主要導覽")} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileNavOpen(false); }}>
-          <Link className={isHome ? "active" : ""} aria-current={isHome ? "page" : undefined} href="/">
-            {tr("首頁")}
-          </Link>
-          <Link
-            className={`nav-game${pathname === "/game" ? " active" : ""}`}
-            aria-current={pathname === "/game" ? "page" : undefined}
-            href="/game"
-          >
-            {footerCopy.game[locale]}<span className="nav-badge">{footerCopy.soon[locale]}</span>
-          </Link>
-          <Link
-            className={pathname === "/launchpad" ? "active" : ""}
-            aria-current={pathname === "/launchpad" ? "page" : undefined}
-            href="/launchpad"
-          >
-            {tr("Launchpad")}
-          </Link>
-          <Link
-            className={pathname === "/onchain-record" || pathname.startsWith("/assets/") ? "active" : ""}
-            aria-current={pathname === "/onchain-record" || pathname.startsWith("/assets/") ? "page" : undefined}
-            href="/onchain-record"
-          >
-            {tr("Onchain Record")}
-          </Link>
-          <Link
-            className={pathname === "/rvyn" ? "active" : ""}
-            aria-current={pathname === "/rvyn" ? "page" : undefined}
-            href="/rvyn"
-          >
-            RVYN
-          </Link>
-          <div className="mobile-nav-language"><LanguagePicker /></div>
-        </nav>
-        <LanguagePicker />
-        <button
-          type="button"
-          className="wallet"
-          onClick={handleWalletButton}
-          disabled={walletSession.busy}
-        >
-          <Wallet size={16} />{" "}
-          {walletSession.busy ? tr("請在錢包確認簽署") : account ? shortAddress(account) : tr("連接錢包")}
-        </button>
-        <button
-          type="button"
-          className="mobile-nav-toggle"
-          ref={mobileNavButton}
-          aria-label={mobileNavOpen ? tr("關閉導覽") : tr("開啟導覽")}
-          aria-expanded={mobileNavOpen}
-          aria-controls="primary-navigation"
-          onClick={() => setMobileNavOpen((open) => !open)}
-        >
-          {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
-      </header>
-      </div>
+      <SiteHeader
+        walletBusy={walletSession.busy}
+        onWallet={handleWalletButton}
+        walletLabel={walletSession.busy ? tr("請在錢包確認簽署") : account ? shortAddress(account) : tr("連接錢包")}
+      />
       {config.maintenance && (
-        <div className="notice">
+        <div className="rv-banner">
           {tr("平台維護中，瀏覽與資產查詢仍可使用。")}
         </div>
       )}
       {!ready && showLoadingNotice && (
-        <div className="platform-loading" role="status">
-          {tr("正在載入平台設定…")}{" "}
-          <button onClick={() => void refresh()}>{tr("重新載入")}</button>
+        <div className="rv-banner" role="status">
+          {tr("正在載入平台設定…")}
+          <button type="button" onClick={() => void refresh()}>{tr("重新載入")}</button>
         </div>
       )}
       {children}
-      <footer className="site-footer atelier-footer">
-        <div className="atelier-footer__bar">
-          <span className="atelier-footer__tag">SEC·END</span>
-          <i aria-hidden="true" />
-          <button type="button" className="atelier-footer__top-link" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            ↑ {{ en: "Back to top", "zh-Hant": "回到頂端", "zh-Hans": "回到顶部", ko: "맨 위로" }[locale]}
-          </button>
-        </div>
-        <div className="atelier-footer__top">
-          <div className="atelier-footer__brand">
-            <Link className="brand" href="/">
-              <Image src="/favicon.svg" alt="" aria-hidden="true" width={30} height={30} className="footer-brand-logo" />
-              ROVYN CORE
-            </Link>
-            <p>{footerCopy.tagline[locale]}</p>
-          </div>
-          <nav className="atelier-footer__columns" aria-label={footerCopy.footerNav[locale]}>
-            <div>
-              <h2>{footerCopy.explore[locale]}</h2>
-              <Link href="/">{tr("首頁")}</Link>
-              <Link href="/game">{footerCopy.game[locale]}</Link>
-              <Link href="/launchpad">{tr("Launchpad")}</Link>
-              <Link href="/onchain-record">{tr("Onchain Record")}</Link>
-              <Link href="/rvyn">RVYN</Link>
-            </div>
-            <div>
-              <h2>{footerCopy.information[locale]}</h2>
-              <Link className="footer-development-log" href="/latest-info">
-                {{ en: "Latest information", "zh-Hant": "最新資訊", "zh-Hans": "最新信息", ko: "최신 정보" }[locale]}
-              </Link>
-              <Link href="/transparency">{{ en: "Transparency", "zh-Hant": "公開透明", "zh-Hans": "公开透明", ko: "투명성" }[locale]}</Link>
-              <Link href="/legal">{tr("條款與風險")}</Link>
-              <a href="https://github.com/RovynCore/rovyncore" target="_blank" rel="noreferrer">GitHub ↗</a>
-              <a href="https://x.com/RovynCORE" target="_blank" rel="noreferrer">X ↗</a>
-            </div>
-          </nav>
-        </div>
-        <div className="atelier-footer__wordmark" aria-hidden="true">ROVYN CORE</div>
-        <div className="atelier-footer__base">
-          <small className="site-footer__copyright">© 2026 ROVYN CORE</small>
-          <span>Robinhood Chain · 4663</span>
-          <span>{footerCopy.independent[locale]}</span>
-        </div>
-      </footer>
+      <SiteFooter />
       <Dialog open={walletOpen} onOpenChange={setWalletOpen}>
-        <DialogContent className="wallet-dialog" data-lenis-prevent>
+        <DialogContent className="rv-dialog wallet-dialog" data-lenis-prevent>
           <DialogTitle>
             {account ? tr("你的錢包") : tr("連接你的錢包")}
           </DialogTitle>
@@ -573,17 +410,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
             {tr("使用 EVM 瀏覽器錢包。平台不會要求私鑰或助記詞。")}
           </DialogDescription>
           {walletSession.status && <p role="status">{tr(walletSession.status)}</p>}
-          {walletSession.error && <p role="alert" style={{color:"#ffb4ab"}}>{tr(walletSession.error)}</p>}
+          {walletSession.error && <p role="alert" className="rv-error">{tr(walletSession.error)}</p>}
           {account ? (
             <>
-              <code className="address">{account}</code>
-              <p className="muted">
+              <code className="rv-mono" style={{ overflowWrap: "anywhere" }}>{account}</code>
+              <p className="rv-small">
                 {chain === config.chainId
                   ? CHAINS[config.chainId].name
                   : tr("錢包目前在其他網路")}
               </p>
               <button
-                className="secondary"
+                className="rv-btn rv-btn--secondary"
                 disabled={walletSession.busy}
                 onClick={() =>
                   ensureNetwork().catch((e) => toast.error(message(e)))
@@ -593,7 +430,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
                 {CHAINS[config.chainId].name}
               </button>
               <button
-                className="secondary"
+                className="rv-btn rv-btn--secondary"
                 disabled={walletSession.busy}
                 onClick={() => void walletSession.disconnect().catch(e => toast.error(message(e)))}
               >
@@ -671,7 +508,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
                 </div>
               ) : null}
               <button
-                className="primary"
+                className="rv-btn rv-btn--primary"
                 disabled={walletSession.busy || !walletSession.selected}
                 onClick={() => connect().catch((e) => toast.error(message(e)))}
               >
@@ -699,7 +536,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
           if (!v) cancel();
         }}
       >
-        <DialogContent showCloseButton={!busy}>
+        <DialogContent className="rv-dialog" showCloseButton={!busy}>
           <DialogTitle>
             {pending?.title}
             {tr("· 確認交易")}
@@ -709,30 +546,17 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
           </DialogDescription>
           {pending && (
             <>
-              <dl className="receipt">
-                <dt>{tr("網路")}</dt>
-                <dd>{CHAINS[config.chainId].name}</dd>
-                <dt>{tr("付款金額")}</dt>
-                <dd>{formatEther(pending.value)} ETH</dd>
-                <dt>{tr("Gas 估計")}</dt>
-                <dd>
-                  ~{" "}
-                  {Number(
-                    formatEther(pending.gas * pending.gasPrice),
-                  ).toPrecision(3)}{" "}
-                  ETH
-                </dd>
-                <dt>{tr("合約")}</dt>
-                <dd className="address">{pending.to || tr("部署新合約")}</dd>
+              <dl className="rv-receipt">
+                <div><dt>{tr("網路")}</dt><dd>{CHAINS[config.chainId].name}</dd></div>
+                <div><dt>{tr("付款金額")}</dt><dd>{formatEther(pending.value)} ETH</dd></div>
+                <div><dt>{tr("Gas 估計")}</dt><dd>~ {Number(formatEther(pending.gas * pending.gasPrice)).toPrecision(3)} ETH</dd></div>
+                <div><dt>{tr("合約")}</dt><dd>{pending.to || tr("部署新合約")}</dd></div>
                 {pending.details?.map(([k, v]) => (
-                  <div className="dl-row" key={k}>
-                    <dt>{k}</dt>
-                    <dd>{v}</dd>
-                  </div>
+                  <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
                 ))}
               </dl>
               <button
-                className="primary"
+                className="rv-btn rv-btn--primary"
                 disabled={busy}
                 onClick={() => void submit()}
               >
@@ -750,7 +574,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
         </DialogContent>
       </Dialog>
       {txState && (
-        <aside className="transaction-status" role="status">
+        <aside className="rv-txstatus" role="status">
           <button
             aria-label={tr("關閉交易狀態")}
             onClick={() => setTxState(null)}

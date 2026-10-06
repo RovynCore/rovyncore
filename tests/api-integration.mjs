@@ -506,17 +506,17 @@ try {
       200,
     );
   });
-  await check("official X collection is rendered without an external browser widget", async () => {
+  await check("official X collection stays in the API but is not shown on the updates page", async () => {
     const result = await call("x-updates");
     assert.equal(result.status, 200);
     assert.equal(result.data.posts[0].id, "2105584118692200907");
     assert.match(result.data.posts[0].text, /What if a game token/);
     const html = await (await fetch(base + "/latest-info")).text();
-    assert.match(html, /What if a game token/);
+    assert.match(html, /Development log|開發日誌|开发日志|개발 기록/);
+    assert.ok(!html.includes("What if a game token"));
     assert.ok(!html.includes("platform.twitter.com/widgets.js"));
     sql(["--command", "INSERT INTO settings(key,value) VALUES('official:x-updates','[]')"]);
     assert.deepEqual((await call("x-updates")).data.posts, []);
-    assert.ok(!(await (await fetch(base + "/latest-info")).text()).includes("What if a game token"));
     sql(["--command", "DELETE FROM settings WHERE key='official:x-updates'"]);
   });
   await check("X imports and removals require a fresh administrator signature", async () => {
@@ -539,6 +539,8 @@ try {
     };
     const request = await signed("x-update-import", { url: "https://x.com/RovynCore/status/2105584118692200907?s=20" });
     const imported = await call("admin", request);
+    // The import reads X's public oEmbed service; when X itself is unreachable the rest of this check cannot run.
+    if (imported.status === 502 && imported.data?.code === "temporarily_unreachable") { console.log("SKIP signed X import: X oEmbed unreachable"); return; }
     assert.equal(imported.status, 200, JSON.stringify(imported.data));
     assert.equal(imported.data.posts.length, 1);
     assert.match(imported.data.posts[0].text, /What if a game token/);
@@ -551,10 +553,9 @@ try {
     const removed = await call("admin", await signed("x-update-remove", { id: "2105584118692200907" }));
     assert.equal(removed.status, 200);
     assert.deepEqual((await call("x-updates")).data.posts, []);
-    assert.ok(!(await (await fetch(base + "/latest-info")).text()).includes("What if a game token"));
     const restored = await call("admin", await signed("x-update-import", { url: "https://x.com/RovynCore/status/2105584118692200907" }));
     assert.equal(restored.status, 200);
-    assert.match(await (await fetch(base + "/latest-info")).text(), /What if a game token/);
+    assert.equal((await call("x-updates")).data.posts.length, 1);
   });
   await check("anonymous admin settings denied", async () => {
     assert.equal(

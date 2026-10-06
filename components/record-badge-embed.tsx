@@ -47,10 +47,10 @@ export function RecordBadgeEmbed({ address, status }: Props) {
   };
 
   return (
-    <section className="record-panel record-badge-embed" aria-labelledby="record-badge-title">
-      <span className="eyebrow">{t(copy.eyebrow)}</span>
+    <section className="rv-card rv-stack record-badge-embed" aria-labelledby="record-badge-title">
+      <span className="rv-eyebrow">{t(copy.eyebrow)}</span>
       <h2 id="record-badge-title">{t(copy.title)}</h2>
-      <p className="record-muted">{t(copy.body)}</p>
+      <p className="rv-caption">{t(copy.body)}</p>
       {/* eslint-disable-next-line @next/next/no-img-element -- the badge is a tiny SVG served by our own route */}
       <img src={`/badge/${address.toLowerCase()}.svg`} width={360} height={96} alt={t(copy.alt)} />
       <div className="record-badge-embed__tabs" role="group" aria-label={t(copy.label)}>

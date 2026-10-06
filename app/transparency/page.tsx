@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { Address } from "@/components/rv/ui";
 import Link from "@/components/site-link";
 import { useLanguage } from "@/components/language-provider";
 import { RvynHealthPanel } from "@/components/rvyn-health-panel";
@@ -9,14 +10,17 @@ import type { Locale } from "@/lib/translations";
 type Copy = Record<Locale, string>;
 
 const EXPLORER = "https://robinhoodchain.blockscout.com";
-// Last checked against the chain: block 80,630,130 (2026-10-05). Facts here are read from the contracts, not promises.
-const CHECKED = "2026-10-05";
+// Addresses and roles below were last reviewed against the chain on this date; the health panel reads live.
+const CHECKED = "2026-10-06";
 
 const copy = {
   kicker: { en: "TRANSPARENCY", "zh-Hant": "公開透明", "zh-Hans": "公开透明", ko: "투명성" },
   title: { en: "Everything we run onchain, in one place.", "zh-Hant": "我們在鏈上運行的一切，都在這裡。", "zh-Hans": "我们在链上运行的一切，都在这里。", ko: "온체인에서 운영하는 모든 것을 한곳에." },
   lead: { en: "Addresses, who controls them, and what is and isn't verified. Don't trust this page: open the explorer links and check.", "zh-Hant": "地址、由誰控制、哪些已驗證、哪些尚未。不必相信這一頁——點開區塊瀏覽器自己核對。", "zh-Hans": "地址、由谁控制、哪些已验证、哪些尚未。不必相信这一页——点开区块浏览器自己核对。", ko: "주소, 관리 주체, 검증된 것과 아닌 것. 이 페이지를 믿지 말고 탐색기 링크로 직접 확인하세요." },
-  checked: { en: `Last checked ${CHECKED} on Robinhood Chain (chain ID 4663).`, "zh-Hant": `最後核對：${CHECKED}，Robinhood Chain（鏈 ID 4663）。`, "zh-Hans": `最后核对：${CHECKED}，Robinhood Chain（链 ID 4663）。`, ko: `최종 확인: ${CHECKED}, Robinhood Chain (체인 ID 4663).` },
+  checked: { en: `Addresses and roles reviewed ${CHECKED} on Robinhood Chain (chain ID 4663). The live figures below are read from the chain when you open this page.`, "zh-Hant": `地址與角色最後核對：${CHECKED}，Robinhood Chain（鏈 ID 4663）。下方即時數據在你開啟本頁時直接讀取鏈上。`, "zh-Hans": `地址与角色最后核对：${CHECKED}，Robinhood Chain（链 ID 4663）。下方实时数据在你打开本页时直接读取链上。`, ko: `주소와 역할 최종 확인: ${CHECKED}, Robinhood Chain (체인 ID 4663). 아래 실시간 수치는 페이지를 열 때 체인에서 직접 읽습니다.` },
+  colName: { en: "Contract or wallet", "zh-Hant": "合約或錢包", "zh-Hans": "合约或钱包", ko: "컨트랙트 또는 지갑" },
+  colAddress: { en: "Address", "zh-Hant": "地址", "zh-Hans": "地址", ko: "주소" },
+  colStatus: { en: "Status", "zh-Hant": "狀態", "zh-Hans": "状态", ko: "상태" },
   contractsTitle: { en: "Contracts and wallets", "zh-Hant": "合約與錢包", "zh-Hans": "合约与钱包", ko: "컨트랙트와 지갑" },
   open: { en: "Open in explorer", "zh-Hant": "在瀏覽器查看", "zh-Hans": "在浏览器查看", ko: "탐색기에서 보기" },
   verifiedYes: { en: "Source verified on Blockscout", "zh-Hant": "原始碼已在 Blockscout 驗證", "zh-Hans": "源码已在 Blockscout 验证", ko: "Blockscout에서 소스 검증됨" },
@@ -61,57 +65,62 @@ export default function TransparencyPage() {
   const { locale } = useLanguage();
   const t = (value: Copy) => value[locale];
   return (
-    <main className="game-page transparency-page" lang={locale}>
-      <section className="game-chapter transparency-head" aria-labelledby="transparency-title">
-        <div className="game-chapter__copy">
-          <span className="game-chapter__kicker">{t(copy.kicker)}</span>
-          <h1 id="transparency-title">{t(copy.title)}</h1>
-          <p>{t(copy.lead)}</p>
-          <p className="transparency-checked">{t(copy.checked)}</p>
+    <main>
+      <section className="rv-pagehead">
+        <div className="rv-container rv-pagehead__copy">
+          <span className="rv-eyebrow">{t(copy.kicker)}</span>
+          <h1 className="rv-h1" id="transparency-title">{t(copy.title)}</h1>
+          <p className="rv-lead">{t(copy.lead)}</p>
+          <p className="rv-caption">{t(copy.checked)}</p>
         </div>
       </section>
-      <section className="game-principles" aria-labelledby="transparency-contracts">
-        <div className="game-principles__head">
-          <span className="game-chapter__kicker">{t(copy.contractsTitle)}</span>
-          <h2 id="transparency-contracts">{t(copy.contractsTitle)}</h2>
+
+      <section className="rv-section--tight" style={{ paddingTop: 0 }} aria-labelledby="transparency-contracts">
+        <div className="rv-container">
+          <div className="rv-head"><span className="rv-eyebrow">01</span><h2 className="rv-h2" id="transparency-contracts">{t(copy.contractsTitle)}</h2></div>
+          <div className="rv-table-wrap">
+            <table className="rv-table">
+              <thead><tr><th>{t(copy.colName)}</th><th>{t(copy.colAddress)}</th><th>{t(copy.colStatus)}</th></tr></thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.address}>
+                    <td data-label={t(copy.colName)} style={{ maxWidth: 460 }}><strong>{t(row.name)}</strong><p className="rv-small" style={{ marginTop: 6 }}>{t(row.note)}</p></td>
+                    <td data-label={t(copy.colAddress)} style={{ minWidth: 0 }}><Address value={row.address} locale={locale} href={`${EXPLORER}/${row.kind}/${row.address}`} /></td>
+                    <td data-label={t(copy.colStatus)}><span className={`rv-pill${row.verified === null ? " rv-pill--warn" : " rv-pill--ok"}`} style={{ whiteSpace: "normal", height: "auto", padding: "5px 11px", lineHeight: 1.35 }}>{row.verified === null ? t(copy.eoa) : row.verified === "safe" ? t(copy.safeStatus) : t(copy.verifiedYes)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <ul className="transparency-list">
-          {rows.map((row) => (
-            <li className="game-principles__card transparency-card" key={row.address}>
-              <h3>{t(row.name)}</h3>
-              <p>{t(row.note)}</p>
-              <code className="transparency-address">{row.address}</code>
-              <p className="transparency-status">
-                {row.verified === null ? t(copy.eoa) : row.verified === "safe" ? t(copy.safeStatus) : t(copy.verifiedYes)}
-              </p>
-              <a href={`${EXPLORER}/${row.kind}/${row.address}`} target="_blank" rel="noreferrer">{t(copy.open)} <ArrowUpRight size={15} aria-hidden="true" /></a>
-            </li>
-          ))}
-        </ul>
       </section>
-      <RvynHealthPanel />
-      <section className="game-principles" aria-labelledby="transparency-audit">
-        <div className="game-principles__head">
-          <span className="game-chapter__kicker">{t(copy.auditTitle)}</span>
-          <h2 id="transparency-audit">{t(copy.auditTitle)}</h2>
-        </div>
-        <p className="transparency-body">{t(copy.auditBody)}</p>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container"><RvynHealthPanel /></div>
       </section>
-      <section className="game-principles" aria-labelledby="transparency-how">
-        <div className="game-principles__head">
-          <span className="game-chapter__kicker">{t(copy.howTitle)}</span>
-          <h2 id="transparency-how">{t(copy.howTitle)}</h2>
+
+      <section className="rv-section rv-section--line">
+        <div className="rv-container rv-grid rv-grid--2">
+          <div className="rv-card rv-stack" style={{ ["--gap" as string]: "14px" }} aria-labelledby="transparency-audit">
+            <span className="rv-eyebrow">02</span>
+            <h2 className="rv-h3" id="transparency-audit">{t(copy.auditTitle)}</h2>
+            <div className="rv-notice rv-notice--risk"><ShieldAlert aria-hidden="true" /><span>{t(copy.auditBody)}</span></div>
+          </div>
+          <div className="rv-card rv-stack" style={{ ["--gap" as string]: "14px" }} aria-labelledby="transparency-how">
+            <span className="rv-eyebrow">03</span>
+            <h2 className="rv-h3" id="transparency-how">{t(copy.howTitle)}</h2>
+            <ol className="rv-numbered">
+              <li><span>{t(copy.how1)}</span></li>
+              <li><span>{t(copy.how2)}</span></li>
+              <li><span>{t(copy.how3)}</span></li>
+            </ol>
+            <p className="rv-caption">{t(copy.report)}</p>
+          </div>
         </div>
-        <ol className="transparency-steps">
-          <li>{t(copy.how1)}</li>
-          <li>{t(copy.how2)}</li>
-          <li>{t(copy.how3)}</li>
-        </ol>
-        <p className="transparency-body">{t(copy.report)}</p>
-        <div className="game-principles__links">
-          <a href="https://github.com/RovynCore/rovyncore" target="_blank" rel="noreferrer">{t(copy.source)} <ArrowUpRight size={15} aria-hidden="true" /></a>
-          <Link href="/legal">{t(copy.legal)} <ArrowUpRight size={15} aria-hidden="true" /></Link>
-          <Link href="/rvyn">RVYN <ArrowUpRight size={15} aria-hidden="true" /></Link>
+        <div className="rv-container rv-row" style={{ marginTop: 24 }}>
+          <a className="rv-btn rv-btn--secondary rv-btn--sm" href="https://github.com/RovynCore/rovyncore" target="_blank" rel="noreferrer">{t(copy.source)} <ArrowUpRight aria-hidden="true" /></a>
+          <Link className="rv-btn rv-btn--secondary rv-btn--sm" href="/legal">{t(copy.legal)}</Link>
+          <Link className="rv-btn rv-btn--secondary rv-btn--sm" href="/rvyn">RVYN</Link>
         </div>
       </section>
     </main>
