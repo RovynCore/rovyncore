@@ -9,6 +9,7 @@ Design documents for the first RovynCore game.
 | `simulation/sim.py` | Economy simulator (365 days, three scenarios). Parameters at the top mirror Appendix A of the whitepaper. |
 | `simulation/sweep.py` | Parameter sweeps used while choosing the v1.0 values. |
 | `simulation/charts.py` | Renders the simulation charts used in chapter 8. |
+| `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities) for the art team. |
 
 The contracts that implement this design live in `packages/contracts/lightdive/`.
 
