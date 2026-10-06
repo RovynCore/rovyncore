@@ -15,6 +15,8 @@ const A = {
   notDeployed: c("Not deployed. Run npm run lightdive:deploy first.", "尚未部署。請先執行 npm run lightdive:deploy。", "尚未部署。请先执行 npm run lightdive:deploy。", "배포 전입니다. 먼저 npm run lightdive:deploy를 실행하세요."),
   owner: c("Contract owner", "合約擁有者", "合约拥有者", "컨트랙트 소유자"),
   you: c("Connected wallet", "目前錢包", "当前钱包", "연결된 지갑"),
+  accept: c("Accept ownership of all contracts", "接受所有合約的管理權", "接受所有合约的管理权", "모든 컨트랙트 소유권 수락"),
+  acceptNote: c("Ownership was transferred to this wallet and is waiting for acceptance.", "管理權已轉給這個錢包，等待你接受。", "管理权已转给这个钱包，等待你接受。", "소유권이 이 지갑으로 이전되어 수락을 기다리고 있습니다."),
   notOwner: c("Read-only: the connected wallet is not the owner.", "唯讀：目前錢包不是合約擁有者。", "只读：当前钱包不是合约拥有者。", "읽기 전용: 연결된 지갑이 소유자가 아닙니다."),
   contracts: c("Contracts", "合約地址", "合约地址", "컨트랙트"),
   pool: c("Core Light Pool", "核光池", "核光池", "코어빛 풀"),
@@ -59,6 +61,7 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
   const client = useMemo(() => createPublicClient({ chain: GAME_CHAIN, transport: http(GAME_RPC) }), []);
   const [o, setO] = useState<Overview | null>(null);
   const [owner, setOwner] = useState<Address | null>(null);
+  const [pending, setPending] = useState<{ address: Address; abi: Abi; pendingOwner: Address }[]>([]);
   const [operator, setOperator] = useState<Address | null>(null);
   const [ahead, setAhead] = useState(0);
   const [unrevealed, setUnrevealed] = useState(0);
@@ -74,6 +77,14 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
         client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "operator" }),
       ]);
       setOwner(own as Address);
+      const owned = [
+        [k.config, ABI.LightdiveConfig], [k.nft, ABI.LightdiveNFT], [k.beacon, ABI.RandomnessBeacon],
+        [k.pool, ABI.CoreLightPool], [k.minter, ABI.LightdiveMinter], [k.expedition, ABI.Expedition],
+      ] as const;
+      const pendingOwners = await Promise.all(owned.map(([address, abi]) =>
+        client.readContract({ address, abi, functionName: "pendingOwner" }) as Promise<Address>));
+      setPending(owned.map(([address, abi], i) => ({ address, abi, pendingOwner: pendingOwners[i] }))
+        .filter((x) => x.pendingOwner !== "0x0000000000000000000000000000000000000000"));
       setOperator(op as Address);
       const future = await Promise.all(Array.from({ length: 48 }, (_, i) =>
         client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "hasCommitment", args: [ov.hour + BigInt(i + 1)] })));
@@ -127,6 +138,13 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
         <span>{t(A.you)} <b>{platform.account ?? "—"}</b></span>
         {!isOwner && <span className="ld-dim">{t(A.notOwner)}</span>}
       </section>
+      {pending.length > 0 && (
+        <section className="ld-bar">
+          <span>{t(A.acceptNote)} <b>{pending[0].pendingOwner}</b> ({pending.length})</span>
+          <button type="button" className="ld-btn" disabled={busy || !platform.account || pending[0].pendingOwner.toLowerCase() !== platform.account.toLowerCase()}
+            onClick={() => void (async () => { for (const p of pending) await send(p.address, p.abi, "acceptOwnership"); })()}>{t(A.accept)}</button>
+        </section>
+      )}
 
       {o && (
         <div className="ld-grid3">

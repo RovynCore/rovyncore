@@ -1,11 +1,11 @@
 {
   "chainId": 46630,
-  "deploymentBlock": 0,
-  "rvyn": null,
-  "config": null,
-  "nft": null,
-  "beacon": null,
-  "pool": null,
-  "minter": null,
-  "expedition": null
+  "deploymentBlock": 130017649,
+  "rvyn": "0x0e161fc11cc50de25411bfb0141b32f7419a55ae",
+  "config": "0xb296df1e0bf288f2c5748b99ac2acb3139a2b206",
+  "nft": "0x8ee6f186c762ed9ca0ea25194d4f7719285b577d",
+  "beacon": "0x34215d740324fb8a8440314c895fed252f3bcf7e",
+  "pool": "0xdcc1688bab3209a2038494fb571ec27f3e566d48",
+  "minter": "0x342a55a8e5cf3eccc65f5199cc79be6d9dbfd319",
+  "expedition": "0xf07f4d41b2372e15b6f148893e2242ac95091cc4"
 }
