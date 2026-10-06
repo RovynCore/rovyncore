@@ -2,28 +2,28 @@
   "site": "https://www.rovyncore.com",
   "worker": "rovyncore-production",
   "latestDocumentedProductionRelease": {
-    "name": "X post fetching removed (endpoint, admin import/remove, scheduled sync, code and tests)",
+    "name": "Lightdive testnet game (PR #1) on /game/lightdive and /admin/lightdive",
     "date": "2026-10-07",
-    "workerVersion": "07ece9c8-189d-4995-bbc7-151300a2c20d",
-    "history": "releases/production/release-2026-10-05-26.md",
+    "workerVersion": "58f1538a-c99a-4fe7-9d0a-f3ce65ca2068",
+    "history": "releases/production/release-2026-10-05-27.md",
     "releasedBy": "Claude Code (website handover from Codex)",
     "baseGitCommit": "1c473f6a83def91bd4f84a13de9298f7d61be9a3",
-    "sourceManifest": "releases/production/snapshots/release-2026-10-05-26.json",
-    "sourceManifestSha256": "D483A0A0938AC908061F31F4C96A5B8FC999BE8D75E782FB7388AB63E9F127BB",
-    "sourceFileCount": 310,
-    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-25.json",
-    "changedFileCountFromPreReleaseManifest": 18,
+    "sourceManifest": "releases/production/snapshots/release-2026-10-05-27.json",
+    "sourceManifestSha256": "9B5411825400B905F49728198B1603EFD20E5EDC22649F3F23FC7546889B7CBB",
+    "sourceFileCount": 331,
+    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-26.json",
+    "changedFileCountFromPreReleaseManifest": 25,
     "previousRelease": {
-      "name": "Site-wide redesign on one design system; updates page shows the development log only",
-      "date": "2026-10-06",
-      "workerVersion": "b3cc2dc9-f54c-4cf2-a1e4-28ade069c677",
-      "history": "releases/production/release-2026-10-05-25.md"
+      "name": "X post fetching removed (endpoint, admin import/remove, scheduled sync, code and tests)",
+      "date": "2026-10-07",
+      "workerVersion": "07ece9c8-189d-4995-bbc7-151300a2c20d",
+      "history": "releases/production/release-2026-10-05-26.md"
     },
-    "builtWorkerSha256": "F27AFCEC2C5D87C97D02EFBEF03070D3186143F0D2BDD083210A001159A65805",
+    "builtWorkerSha256": "80FAA1C2928FF8E64454CE3B72AE26221BA1EC9198C7D8394B76775833EA76E3",
     "builtWorkerHashArtifact": "Wrangler dry-run bundled production-worker.js",
-    "builtApplicationSha256": "B92AE0F656523CB0BD50369F5170C9550E735B3B66D9FF1F2B3598B10B0E8AE2",
+    "builtApplicationSha256": "8721F4D30F9C1C8D31E5975B2C126202662AA942F5A2CE645D1CF28BEF91B005",
     "builtApplicationHashArtifact": "dist/server/index.js",
-    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged). 2026-10-07 release 26: X fetching removed entirely (/api/x-updates 404, no admin import, no scheduled handler, X_AUTO_SYNC dropped); stale official:x-* settings rows left in D1."
+    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged). 2026-10-07 release 26: X fetching removed entirely (/api/x-updates 404, no admin import, no scheduled handler, X_AUTO_SYNC dropped); stale official:x-* settings rows left in D1. 2026-10-07 release 27: Lightdive testnet game merged from PR #1 (noindex /game/lightdive, /admin/lightdive); testnet ownership acceptance pending."
   },
   "productionObservedAt": "2026-10-04",
   "observedLiveBehavior": {

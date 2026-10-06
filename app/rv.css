@@ -586,3 +586,6 @@ html.intro-on body { overflow: hidden; }
 /* single-column grids must not grow past their container (long addresses ellipsize instead) */
 .rv-stack, .rv-pagehead__copy { grid-template-columns: minmax(0, 1fr); }
 .rv-address > a { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Lightdive (components/lightdive/lightdive.css) was written against the old console tokens; map them onto this palette. */
+.ld { --c-text: var(--rv-text); --c-dim: var(--rv-text-2); --c-lime: var(--rv-lime); --c-line: var(--rv-line); --c-line-2: var(--rv-line-2); --c-mono: var(--rv-mono); }
