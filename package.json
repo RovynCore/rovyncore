@@ -22,6 +22,8 @@
     "test:presale:v6": "node scripts/compile-contracts-v6.mjs && node --experimental-strip-types --test tests/presale-v6.test.mjs",
     "contracts:compile:lightdive": "node scripts/compile-contracts-lightdive.mjs",
     "test:lightdive": "node scripts/compile-contracts-lightdive.mjs && node --test tests/lightdive.test.mjs",
+    "lightdive:deploy": "node --experimental-strip-types scripts/lightdive-deploy.mjs",
+    "lightdive:operator": "node --experimental-strip-types scripts/lightdive-operator.mjs",
     "test:contracts": "node --test tests/contracts.test.mjs",
     "test:validation": "node --experimental-strip-types --test tests/validation.test.ts",
     "test:health": "node --experimental-strip-types --test tests/rvyn-health.test.ts",

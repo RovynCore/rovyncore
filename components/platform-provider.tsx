@@ -442,7 +442,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   };
   return (
     <PlatformContext.Provider
-      value={{ config, ready, account, refresh, connect, transact, admin }}
+      value={{ config, ready, account, refresh, connect, transact, admin, walletProvider: provider, switchWalletChain: walletSession.switchChain }}
     >
       <div ref={topbarRef} className="site-topbar">
       <SiteMarquee />

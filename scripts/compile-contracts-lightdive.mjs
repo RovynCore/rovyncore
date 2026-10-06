@@ -54,4 +54,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, "contracts.json"), JSON.stringify(artifacts));
 fs.writeFileSync(path.join(outputDir, "standard-input.json"), JSON.stringify(input, null, 2));
 fs.writeFileSync(path.join(outputDir, "compiler.json"), JSON.stringify({ version: solc.version(), settings: input.settings }, null, 2));
+// ABIs only, committed, so the site can talk to a deployment without the git-ignored build output.
+const abis = Object.fromEntries(NAMES.map((name) => [name, artifacts[name].abi]));
+fs.writeFileSync("packages/web3/lightdive-abi.json", `${JSON.stringify(abis, null, 1)}\n`);
 console.log(`Lightdive compiled with solc ${solc.version()}.`);

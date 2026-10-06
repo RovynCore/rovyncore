@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { Address, Hex } from "viem";
+import type { Address, Chain, EIP1193Provider, Hex } from "viem";
 import type { PlatformConfig } from "@/packages/web3/config";
 
 export type Transaction = {
@@ -23,6 +23,9 @@ export type PlatformContextValue = {
   connect: () => Promise<Address>;
   transact: (tx: Transaction) => Promise<Hex>;
   admin: <T = unknown>(action: string, payload: unknown) => Promise<T>;
+  /** The selected browser wallet, for pages that sign on another chain than the platform's (e.g. the Lightdive testnet). */
+  walletProvider: () => EIP1193Provider;
+  switchWalletChain: (chain: Chain) => Promise<void>;
 };
 
 export const PlatformContext = createContext<PlatformContextValue | null>(null);
