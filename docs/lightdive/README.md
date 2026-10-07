@@ -10,6 +10,8 @@ Design documents for the first RovynCore game.
 | `simulation/sweep.py` | Parameter sweeps used while choosing the v1.0 values. |
 | `simulation/charts.py` | Renders the simulation charts used in chapter 8. |
 | `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities) for the art team. |
+| `Lightdive-Art-Direction-v1.0.pdf` | Detailed brief for every non-NFT art asset (star chart, observatory, Signal-Keeper poses and glow layers, icons, card back, wordmark, share images): story, gameplay use, composition, layers, prompts and acceptance checks. |
+| `source/art-direction.html` | Source of the art brief PDF; reference art in `source/ref/`. |
 | `WORKLOG.md` | Work log: what was decided, built and deployed, and what is still open. |
 
 The contracts that implement this design live in `packages/contracts/lightdive/`.
@@ -30,7 +32,7 @@ python3 charts.py                # needs matplotlib and Noto Sans TC TTFs in ./f
 
 ## Re-rendering the PDF
 
-`source/render.mjs` prints `whitepaper.html` with Playwright's Chromium. Set `CHROMIUM_PATH` to use a specific Chromium build. It expects the chart PNGs next to the HTML and Noto Sans TC TTFs in `source/fonts/` (not committed; download from Google Fonts).
+`source/render.mjs` prints `whitepaper.html` (or another page passed as the second argument, e.g. `art-direction.html`) with Playwright's Chromium. Set `CHROMIUM_PATH` to use a specific Chromium build. It expects the chart PNGs next to the HTML and Noto Sans TC TTFs in `source/fonts/` (not committed; download from Google Fonts).
 
 ```sh
 cd docs/lightdive/source

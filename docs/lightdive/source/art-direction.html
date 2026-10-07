@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Lightdive 介面與場景美術需求書</title>
+<style>
+:root {
+  --ink: #111511; --ink2: #4a4f47; --muted: #80857c; --line: #dfe3d8;
+  --paper: #ffffff; --tint: #f4f7ee; --lime: #c9ff55; --limeDark: #4f7a00;
+  --night: #0b0c0e; --warn: #a14a00; --warnBg: #fff4e8;
+}
+@page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+@page cover { margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font-family: "Noto Sans CJK TC", "Noto Sans CJK JP", sans-serif; font-size: 9.8pt; line-height: 1.68; }
+.cover { page: cover; height: 297mm; width: 210mm; background: var(--night); color: #f2f5ee; position: relative; overflow: hidden; break-after: page; }
+.cover .art { position: absolute; left: 0; right: 0; top: 0; height: 120mm; background: url("ref/signal-keeper-keyart.webp") right center/cover no-repeat; }
+.cover .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,12,14,0) 55%, rgba(11,12,14,1) 100%); }
+.cover .inner { position: absolute; left: 20mm; right: 20mm; top: 128mm; }
+.cover .kicker { color: var(--lime); letter-spacing: .25em; font-size: 9pt; font-weight: 700; }
+.cover h1 { font-size: 30pt; line-height: 1.18; margin: 6mm 0 3mm; font-weight: 900; }
+.cover h1 small { display: block; font-size: 15pt; font-weight: 500; color: #cfd6c6; margin-top: 3mm; }
+.cover .sub { font-size: 11pt; color: #cfd6c6; max-width: 150mm; }
+.cover .meta { position: absolute; left: 20mm; right: 20mm; bottom: 20mm; font-size: 9pt; color: #aab3a0; border-top: 1px solid #2c3428; padding-top: 5mm; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 10mm; }
+.cover .meta b { color: #f2f5ee; font-weight: 500; }
+h2 { font-size: 17pt; font-weight: 900; margin: 0 0 4mm; padding-top: 1mm; break-after: avoid; }
+h2 .num { color: var(--limeDark); margin-right: 3mm; }
+h3 { font-size: 12pt; font-weight: 700; margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-size: 10.3pt; font-weight: 700; margin: 4mm 0 1mm; break-after: avoid; }
+section.chap { break-before: page; }
+p { margin: 0 0 2.6mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.8pt; line-height: 1.55; }
+tr { break-inside: avoid; }
+th { text-align: left; font-weight: 700; background: var(--tint); border-bottom: 1.4px solid var(--ink); padding: 1.2mm 2mm; }
+td { border-bottom: 1px solid var(--line); padding: 1.1mm 2mm; vertical-align: top; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.k { white-space: nowrap; font-weight: 700; }
+.lead { font-size: 10.6pt; color: var(--ink2); }
+.box { border: 1px solid var(--line); background: var(--tint); border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 3mm 0 4mm; break-inside: avoid; }
+.box.key { border-left: 4px solid var(--limeDark); }
+.box.warn { background: var(--warnBg); border-color: #f1d2b2; border-left: 4px solid var(--warn); }
+.box h4 { margin-top: 0; }
+.box p:last-child, .box ul:last-child { margin-bottom: 0; }
+code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+.prompt { font-family: "DejaVu Sans Mono", monospace; font-size: 7.9pt; background: #10140f; color: #e8f5d0; border-radius: 2.5mm; padding: 3mm 4mm; margin: 2mm 0 4mm; white-space: pre-wrap; line-height: 1.55; break-inside: avoid; }
+.prompt .lbl { color: var(--lime); font-weight: 700; display: block; margin-bottom: 1mm; font-family: "Noto Sans CJK TC", sans-serif; }
+.figure { margin: 3mm 0 5mm; break-inside: avoid; }
+.figure img { width: 100%; display: block; border-radius: 2mm; }
+.figure svg { width: 100%; display: block; }
+.figure .cap { font-size: 8.3pt; color: var(--ink2); margin-top: 1.5mm; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+.card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3mm 3.5mm; break-inside: avoid; font-size: 8.8pt; line-height: 1.6; }
+.card .t { font-weight: 700; font-size: 10pt; margin-bottom: 1mm; }
+.card .s { color: var(--muted); font-size: 8pt; letter-spacing: .05em; }
+.toc { columns: 2; column-gap: 10mm; font-size: 9.8pt; }
+.toc div { break-inside: avoid; padding: 1mm 0; border-bottom: 1px dotted var(--line); }
+.toc span { color: var(--limeDark); font-weight: 700; margin-right: 2mm; }
+.small { font-size: 8.3pt; color: var(--ink2); }
+.sw { display: inline-block; width: 3.4mm; height: 3.4mm; border-radius: .8mm; vertical-align: -0.5mm; margin-right: 1.5mm; border: 1px solid rgba(0,0,0,.25); }
+.spec { display: grid; grid-template-columns: 30mm 1fr; border-top: 1.4px solid var(--ink); margin: 2mm 0 4mm; font-size: 8.8pt; break-inside: avoid; }
+.spec div { padding: 1.1mm 2mm; border-bottom: 1px solid var(--line); }
+.spec div:nth-child(odd) { background: var(--tint); font-weight: 700; }
+.asset-head { background: var(--night); color: #eef3e6; border-radius: 3mm; padding: 4mm 5mm; margin: 0 0 4mm; break-inside: avoid; }
+.asset-head .id { color: var(--lime); font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; letter-spacing: .1em; }
+.asset-head .nm { font-size: 16pt; font-weight: 900; margin: 1mm 0; }
+.asset-head .one { color: #c3cbb8; font-size: 9.6pt; }
+.asset-head .pri { float: right; border: 1px solid var(--lime); color: var(--lime); border-radius: 2mm; padding: .3mm 2.4mm; font-size: 8.4pt; font-weight: 700; }
+.check li { list-style: none; position: relative; }
+.check li::before { content: "□"; position: absolute; left: -5mm; color: var(--limeDark); }
+.tag { display: inline-block; font-size: 7.5pt; font-weight: 700; padding: .2mm 2mm; border-radius: 2mm; vertical-align: 1px; margin-left: 1.5mm; background: var(--warnBg); color: var(--warn); border: 1px solid #f1d2b2; }
+.avoid { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ COVER -->
+<div class="cover">
+  <div class="art"></div>
+  <div class="inner">
+    <div class="kicker">ROVYNCORE · LIGHTDIVE · ART DIRECTION</div>
+    <h1>介面與場景美術需求書<small>Lightdive 潛光遠征：NFT 以外的全部美術素材</small></h1>
+    <div class="sub">每一張圖在故事裡是什麼、在遊戲裡什麼時候出現、玩家看到時應該有什麼感覺，以及它要怎麼畫、怎麼分層、怎麼交付、怎麼驗收。</div>
+  </div>
+  <div class="meta">
+    <div>版本 <b>v1.0</b></div><div>日期 <b>2026-10-07</b></div>
+    <div>依據 <b>白皮書 v1.0、ART-ASSETS.md</b></div><div>對象 <b>美術、概念設計、生圖操作</b></div>
+    <div>範圍 <b>9 項素材，29 個交付單位</b></div><div>不含 <b>探索者、光塔、稜鏡（NFT 圖）</b></div>
+  </div>
+</div>
+
+<!-- ============================================================ TOC -->
+<section>
+<h2>目錄</h2>
+<div class="toc">
+  <div><span>00</span>怎麼使用這份文件</div>
+  <div><span>01</span>素材總表與優先順序</div>
+  <div><span>02</span>美術總綱：世界、光、色彩、材質</div>
+  <div><span>03</span>共通技術規格與交付方式</div>
+  <div><span>04</span>A1 星圖背景</div>
+  <div><span>05</span>A2 觀測站主場景</div>
+  <div><span>06</span>A3 Signal-Keeper 立繪</div>
+  <div><span>07</span>A4 立繪發光層與分件</div>
+  <div><span>08</span>A5 六種屬性圖示</div>
+  <div><span>09</span>A6 光源座標圖示</div>
+  <div><span>10</span>A7 卡背</div>
+  <div><span>11</span>A8 標題字標</div>
+  <div><span>12</span>A9 分享圖</div>
+  <div><span>13</span>驗收流程與生成紀錄</div>
+  <div><span>14</span>待決事項</div>
+  <div><span>附錄</span>角色設定提示詞、負面提示詞、色碼速查</div>
+</div>
+
+<h3>00 怎麼使用這份文件</h3>
+<p class="lead">這份文件是 <code>docs/lightdive/ART-ASSETS.md</code> 第 4、5 節（Signal-Keeper、介面素材）的詳細版。NFT 圖（探索者、光塔、稜鏡）仍以 ART-ASSETS.md 第 1–3 節為準。</p>
+<p>每一項素材都用同一個結構寫：</p>
+<table>
+  <tr><th style="width:30mm">段落</th><th>回答的問題</th></tr>
+  <tr><td class="k">敘事</td><td>這張圖在 Lightdive 的世界裡是什麼東西、為什麼存在。</td></tr>
+  <tr><td class="k">遊戲中的位置</td><td>玩家在哪個畫面、什麼時刻看到它；它要幫玩家做什麼判斷或感受什麼情緒。</td></tr>
+  <tr><td class="k">構圖與內容</td><td>畫面裡每一個元素、位置、比例，以及哪些區域必須留給介面。</td></tr>
+  <tr><td class="k">光與色</td><td>光從哪裡來、什麼顏色、多亮；哪些地方不能太亮。</td></tr>
+  <tr><td class="k">分層與規格</td><td>尺寸、格式、圖層拆法、檔名。拆層是為了讓程式能做動態效果，不是形式要求。</td></tr>
+  <tr><td class="k">程式會做什麼</td><td>交付後程式會在上面加什麼動態，讓你知道哪些部分不用畫、哪些部分必須分開。</td></tr>
+  <tr><td class="k">禁止事項</td><td>這一項特有的地雷，加上第 02 章的全域禁止清單。</td></tr>
+  <tr><td class="k">提示詞</td><td>建議的生圖提示詞（英文）。只是起點，請依工具調整，並把最後實際用的版本記錄下來。</td></tr>
+  <tr><td class="k">驗收清單</td><td>交付前自己逐項打勾；開發端放進遊戲後也會用同一份清單檢查。</td></tr>
+</table>
+<div class="box key">
+  <h4>一個原則：分工</h4>
+  <p>你負責「只有畫得出來才有的東西」：氛圍、材質、角色、場景。程式負責「會動、會變、會跟數字連動的東西」：介面框線、數字、光橋、粒子、閃爍、稀有度光效、按鈕。所以這份文件常常會要求「這裡留空」「這裡不要畫光暈」「這部分拆成獨立圖層」。這些要求的目的，是讓同一張圖在遊戲裡能活起來。</p>
+</div>
+</section>
+
+<!-- ============================================================ 01 -->
+<section class="chap">
+<h2><span class="num">01</span>素材總表與優先順序</h2>
+<table>
+  <tr><th>ID</th><th>素材</th><th>主要用在</th><th class="n">數量</th><th>主尺寸</th><th>優先</th></tr>
+  <tr><td class="k">A1</td><td>星圖背景</td><td>星圖畫面（選擇光源座標）、潛光動畫</td><td class="n">1</td><td>4096×4096，3 層</td><td>P1</td></tr>
+  <tr><td class="k">A2</td><td>觀測站主場景</td><td>首頁（觀測站）、等待揭曉畫面</td><td class="n">2</td><td>3840×2160＋直式 2160×3840，5 層</td><td>P1</td></tr>
+  <tr><td class="k">A3</td><td>Signal-Keeper 立繪</td><td>新手引導、每日公告、潛光結果、賽季公告</td><td class="n">5＋1</td><td>1024×1536</td><td>P2</td></tr>
+  <tr><td class="k">A4</td><td>立繪發光層與分件</td><td>讓立繪的核心、眼睛、軌道會動</td><td class="n">（併入 A3）</td><td>同 A3</td><td>P2</td></tr>
+  <tr><td class="k">A5</td><td>六種屬性圖示</td><td>探索者卡、座標標記、同頻圖鑑、異相公告</td><td class="n">6</td><td>SVG（96 格網）</td><td>P1</td></tr>
+  <tr><td class="k">A6</td><td>光源座標圖示</td><td>星圖上的座標標記、深度選擇</td><td class="n">7</td><td>SVG（96 格網）</td><td>P2</td></tr>
+  <tr><td class="k">A7</td><td>卡背</td><td>鑄造揭曉（翻牌前）、等待隨機數</td><td class="n">4</td><td>1024×1366</td><td>P1</td></tr>
+  <tr><td class="k">A8</td><td>標題字標</td><td>遊戲首頁、載入畫面、分享圖、社群</td><td class="n">2</td><td>向量（SVG／AI）</td><td>P2</td></tr>
+  <tr><td class="k">A9</td><td>分享圖</td><td>X 貼文、網站連結預覽、結果分享底圖</td><td class="n">2</td><td>1200×630（母檔 2400×1260）</td><td>P3</td></tr>
+</table>
+<p class="small">數量以「一個完整的素材單位」計算（例如 A1 的三個圖層合起來算 1 個）：A1 1、A2 2（橫式、直式）、A3 5、A5 6、A6 7（6 個深度＋發射台光點）、A7 4（卡背底圖＋3 個種類紋章）、A8 2（橫式、直式）、A9 2，合計 29 個。A3 的「＋1」是建議加做的引導姿勢 P6。A4 是 A3 每個姿勢的分層要求，不另計數量。</p>
+
+<h3>優先順序的意思</h3>
+<table>
+  <tr><th style="width:16mm">等級</th><th>什麼時候要</th><th>為什麼</th></tr>
+  <tr><td class="k">P1</td><td>測試網公開試玩之前</td><td>沒有它們，遊戲的主要畫面（觀測站、星圖、鑄造揭曉）只能用佔位圖。屬性圖示會出現在每一張探索者卡上，缺了會讓整個收藏系統看起來未完成。</td></tr>
+  <tr><td class="k">P2</td><td>公測期間陸續到位</td><td>Signal-Keeper 是遊戲的臉，但第一版可以先用現有概念圖裁切代替；座標圖示可先用幾何佔位。</td></tr>
+  <tr><td class="k">P3</td><td>主網第一季開賣前</td><td>分享圖主要用在宣傳和上線活動。</td></tr>
+</table>
+
+<div class="box key">
+  <h4>素材到位的方式</h4>
+  <p>遊戲會用一份素材清單載入所有圖片，缺圖時自動顯示佔位圖。所以素材可以一批一批交，不需要全部畫完才交；每交一批，開發端會在 1–2 天內放進測試網，並回傳桌機和手機的實機截圖給你確認。</p>
+</div>
+</section>
+
+<!-- ============================================================ 02 -->
+<section class="chap">
+<h2><span class="num">02</span>美術總綱：世界、光、色彩、材質</h2>
+
+<h3>2.1 這個世界的一句話</h3>
+<div class="box key">
+  <p><b>在一片幾乎全黑的深空裡，光是唯一有價值的東西。</b></p>
+  <p>星系中心的 ROVYN CORE 發出第一道光（核光 RVYN），碎成千萬片沉進深空。觀測者在核心周圍建起光源觀測站、立起光塔，用共鳴稜鏡把晶核的光折成光橋，讓探索者順著光橋潛進深空，把光帶回來。這就是「潛光」。</p>
+  <p class="small">「潛進深空，把第一道光帶回來。」Dive deep. Bring the First Light home.</p>
+</div>
+<p>所有美術判斷都可以回到這句話：<b>黑暗是預設值，光是獎勵</b>。畫面越暗、光越少，光出現時就越珍貴。這也正好對應遊戲的核心循環：玩家每天把探索者送進黑暗，等待他們帶光回來。</p>
+
+<h3>2.2 視覺關鍵字</h3>
+<div class="grid3">
+  <div class="card"><div class="t">深空寂靜</div>大面積的黑與深炭灰，留白多。不是熱鬧的太空歌劇，而是安靜、遙遠、有點孤獨的觀測。</div>
+  <div class="card"><div class="t">古老與精密並存</div>光塔是分體古石巨碑；守夜人的面具有裂紋；但晶核、終端、軌道是精密的。像一座運轉了很久的天文台。</div>
+  <div class="card"><div class="t">光是訊號</div>光不是爆炸、不是火焰。它是穩定、細、銳利的線與點：軌道、瞄準環、光橋、刻度。</div>
+</div>
+
+<h3>2.3 光的語言</h3>
+<p>這個遊戲裡，光的顏色和形狀都有意義。請在所有素材裡遵守，玩家會在不知不覺中學會這套語言。</p>
+<table>
+  <tr><th style="width:36mm">光</th><th>意義</th><th>用在哪裡</th></tr>
+  <tr><td><span class="sw" style="background:#c9ff55"></span><b>核光萊姆</b></td><td>核光 RVYN 本身：價值、收穫、系統的「生命」。</td><td>胸口核心、眼睛、光橋、軌道、成功結果。<b>它是全遊戲唯一的品牌光色</b>，其他光色都只能當配角。</td></tr>
+  <tr><td><span class="sw" style="background:#f4f6ee"></span><b>白熱</b></td><td>強度的極限：核光濃到發白。</td><td>只用在核光萊姆的最亮中心點，以及「核光回響」等最高等級的結果。</td></tr>
+  <tr><td><span class="sw" style="background:#7de6ff"></span><b>六種屬性色</b></td><td>光源的種類（曦光、霧光、晶光、熾光、雷光、淵光）。</td><td>只出現在屬性圖示、座標標記、探索者光紋。<b>不可以用在場景主光</b>，否則會和核光萊姆搶。</td></tr>
+  <tr><td><span class="sw" style="background:#3a3d40"></span><b>熄滅</b></td><td>訊號中斷、航程結束。</td><td>光橋中斷、立繪「低頭」姿勢、已歸航的探索者。不是血紅、不是警報，只是光暗下去。</td></tr>
+</table>
+
+<h3>2.4 形狀語言</h3>
+<table>
+  <tr><th style="width:36mm">形狀</th><th>代表</th><th>例子</th></tr>
+  <tr><td><b>圓與同心環</b></td><td>觀測、訊號、核心</td><td>胸口瞄準環、星圖深度環、終端的 ((O)) 符號、軌道</td></tr>
+  <tr><td><b>細長橢圓軌道</b></td><td>穩定、守護、連結</td><td>Signal-Keeper 的軌道環、光橋的弧線</td></tr>
+  <tr><td><b>垂直與分體</b></td><td>光塔、基地、時間</td><td>石碑、脊椎狀的分節板、刻度</td></tr>
+  <tr><td><b>三角與折射</b></td><td>稜鏡、選擇、風險</td><td>稜鏡座的三爪、光束的分岔</td></tr>
+  <tr><td><b>裂紋</b></td><td>古老、經歷、光從縫裡透出</td><td>面具裂紋、卡背接縫、石碑裂隙</td></tr>
+</table>
+
+<h3>2.5 色彩規範</h3>
+<table>
+  <tr><th>名稱</th><th>色碼</th><th>用途</th><th>面積比例</th></tr>
+  <tr><td><span class="sw" style="background:#07090a"></span>深空黑 Void</td><td><code>#07090A</code></td><td>最深的背景、深淵</td><td rowspan="3">約 75–85%</td></tr>
+  <tr><td><span class="sw" style="background:#0b0c0e"></span>夜炭 Night</td><td><code>#0B0C0E</code></td><td>一般背景、介面底色（網站現有色）</td></tr>
+  <tr><td><span class="sw" style="background:#2b2d30"></span>炭灰 Charcoal</td><td><code>#2B2D30</code></td><td>布料、機械暗部、結構</td></tr>
+  <tr><td><span class="sw" style="background:#6b6e68"></span>石灰 Stone</td><td><code>#6B6E68</code></td><td>古石結構的亮面（中間調）</td><td>約 8–15%</td></tr>
+  <tr><td><span class="sw" style="background:#d8d6ce"></span>骨白 Bone</td><td><code>#D8D6CE</code></td><td>面具、高光、少量點綴</td><td>約 2–5%</td></tr>
+  <tr><td><span class="sw" style="background:#c9ff55"></span>核光萊姆 Core Lime</td><td><code>#C9FF55</code></td><td>品牌光色（網站主色，ART-ASSETS 已統一）</td><td>約 2–5%</td></tr>
+  <tr><td><span class="sw" style="background:#4f7a00"></span>深萊姆 Deep Lime</td><td><code>#4F7A00</code></td><td>萊姆光的暗部、反光、淺色底上的萊姆文字</td><td>少量</td></tr>
+</table>
+<p class="small">比例是整個畫面的參考值，不是每張圖都要精準符合。重點是：萊姆光一旦超過畫面的 10%，就不再珍貴。</p>
+
+<h4>六種屬性色（建議值）</h4>
+<table>
+  <tr><th>屬性</th><th>建議色碼</th><th>意象</th></tr>
+  <tr><td><span class="sw" style="background:#ffd27a"></span>曦光</td><td><code>#FFD27A</code></td><td>黎明、初生、溫暖的第一道光</td></tr>
+  <tr><td><span class="sw" style="background:#a9c4c2"></span>霧光</td><td><code>#A9C4C2</code></td><td>被雲霧包住的光，柔和、隱約、看不清輪廓</td></tr>
+  <tr><td><span class="sw" style="background:#7de6ff"></span>晶光</td><td><code>#7DE6FF</code></td><td>結晶、折射、銳利的幾何</td></tr>
+  <tr><td><span class="sw" style="background:#ff7a45"></span>熾光</td><td><code>#FF7A45</code></td><td>灼熱、恆星表面、餘燼</td></tr>
+  <tr><td><span class="sw" style="background:#b28cff"></span>雷光</td><td><code>#B28CFF</code></td><td>瞬間、放電、分岔</td></tr>
+  <tr><td><span class="sw" style="background:#5b6cff"></span>淵光</td><td><code>#5B6CFF</code></td><td>深處的冷光，在黑暗裡幾乎看不見</td></tr>
+</table>
+<div class="box warn">
+  <h4>需要先對齊</h4>
+  <p>屬性的外觀以文案行銷組《NFT 世界觀與故事 v3》第 3 節的 B 層光紋為準，該文件不在 repo 裡。上表是本文件提出的建議值，請先和 v3 及探索者 B 層的實際出圖比對，確定後兩邊統一使用。每個色碼都已確認在夜炭底色 <code>#0B0C0E</code> 上清楚可辨。</p>
+</div>
+
+<h3>2.6 材質</h3>
+<table>
+  <tr><th style="width:30mm">材質</th><th>描述</th><th>出現在</th></tr>
+  <tr><td><b>厚重織布</b></td><td>炭黑色粗紡羊毛，看得到織紋，邊緣略為磨損起毛，吸光、不反光。</td><td>Signal-Keeper 的兜帽與大衣</td></tr>
+  <tr><td><b>陶瓷金屬</b></td><td>骨白、霧面、細微的髮絲裂紋和使用痕跡，裂縫裡是黑色。像古老的禮器，不像塑膠。</td><td>面具</td></tr>
+  <tr><td><b>黑色機械</b></td><td>分節、啞光黑金屬加少量光澤邊緣，關節處有細縫。</td><td>手套、胸口脊椎板、終端外殼、軌道球</td></tr>
+  <tr><td><b>古石</b></td><td>深灰玄武岩或片岩，風化、分層、有裂隙；表面刻有細線刻度。</td><td>觀測站結構、光塔（與 NFT 一致）</td></tr>
+  <tr><td><b>晶體</b></td><td>半透明，內部有光，邊緣銳利。</td><td>晶核、胸口核心的鏡片、稜鏡</td></tr>
+</table>
+
+<h3>2.7 全域禁止清單</h3>
+<p>以下規則適用於本文件所有素材（沿用 ART-ASSETS.md 與白皮書第 3.2 節的文案規則）：</p>
+<div class="grid2">
+  <div class="card"><div class="t">不能出現在圖裡</div>
+    <ul>
+      <li>任何文字、字母、數字、Logo、浮水印、星級符號（字標 A8 除外）</li>
+      <li>骷髏、墓碑、血跡、屍體、死亡意象（探索者用完叫「歸航」，不是死亡）</li>
+      <li>礦鎬、鏟子、礦燈、安全帽、礦車等挖礦造型（文案禁用「挖礦」）</li>
+      <li>武器感太重的造型：槍、刀劍、砲管</li>
+      <li>金幣、鈔票、上漲箭頭等「賺錢」意象（白皮書第 12 章：不能暗示報酬）</li>
+    </ul></div>
+  <div class="card"><div class="t">不能借用的東西</div>
+    <ul>
+      <li>CryptoMines 或其他遊戲的名稱、美術、構圖（白皮書第 2 章）</li>
+      <li>可辨識的現有 IP 角色造型（例如知名電影的戴兜帽角色）</li>
+      <li>真實人物的臉</li>
+      <li>未取得商用授權的素材、字型、筆刷</li>
+    </ul></div>
+</div>
+</section>
+
+<!-- ============================================================ 03 -->
+<section class="chap">
+<h2><span class="num">03</span>共通技術規格與交付方式</h2>
+
+<h3>3.1 檔案格式</h3>
+<table>
+  <tr><th style="width:34mm">項目</th><th>規定</th></tr>
+  <tr><td class="k">色彩空間</td><td>sRGB（IEC61966-2.1），8 bit／通道。不要用 Display P3、CMYK 或 16 bit 交付。</td></tr>
+  <tr><td class="k">點陣圖</td><td>PNG-24，透明素材要帶 Alpha 通道。<b>不要先壓成 JPG 或 WebP</b>，壓縮由開發端統一處理。</td></tr>
+  <tr><td class="k">分層母檔</td><td>PSD（或 Krita／Procreate 匯出的 PSD），圖層命名用本文件指定的名稱。</td></tr>
+  <tr><td class="k">向量</td><td>SVG 1.1，所有文字轉外框，不使用濾鏡、遮色片、內嵌點陣圖。附原始 AI 或 Figma 檔。</td></tr>
+  <tr><td class="k">解析度</td><td>依各項規格；母檔一律用本文件寫的最大尺寸，不要先縮小。</td></tr>
+  <tr><td class="k">發光（Bloom）</td><td><b>除非該項另有說明，不要把大範圍的光暈畫死在圖裡。</b>光暈由程式即時加上，才能隨事件變亮變暗。發光體本身要亮、邊緣要清楚。</td></tr>
+  <tr><td class="k">透明邊緣</td><td>去背時邊緣不能殘留背景色（特別是綠色光暈外的灰邊或白邊）。做法見第 3.4 節。</td></tr>
+</table>
+
+<h3>3.2 檔名與資料夾</h3>
+<p>沿用 ART-ASSETS.md 的命名精神：<code>{類型}_{名稱}_{層或變體}.{副檔名}</code>，全部小寫、英文、底線分隔。</p>
+<div class="prompt"><span class="lbl">交付資料夾結構</span>lightdive-art/
+  A1_starchart/      ui_starchart_L1_far.png  ui_starchart_L2_nebula.png  ui_starchart_L2_nebula_gray.png
+                     ui_starchart_L3_dust.png  ui_starchart_master.psd  log.csv
+  A2_observatory/    ui_observatory_wide_L1_sky.png … _L5_lights.png  ui_observatory_tall_L1_sky.png …
+  A3_keeper/         npc_keeper_p1_idle_body.png  npc_keeper_p1_idle_glow.png  npc_keeper_p1_idle_orbit_back.png …
+  A5_attributes/     icon_attr_dawn.svg  icon_attr_mist.svg  icon_attr_crystal.svg …
+  A6_coordinates/    icon_depth_1.svg … icon_depth_6.svg  icon_coord_launchpad.svg
+  A7_cardback/       ui_cardback_base.png  ui_cardback_seams.png  ui_cardback_emblem_spire.png …
+  A8_wordmark/       logo_lightdive_horizontal.svg  logo_lightdive_stacked.svg  logo_lightdive_sub_zh-hant.svg …
+  A9_share/          share_default.png  share_plate.png
+  CREDITS.csv        （全部素材的生成紀錄總表，格式見第 13 章）</div>
+
+<h3>3.3 畫面比例與安全區</h3>
+<p>Lightdive 是網頁遊戲，同一張背景要在桌機橫螢幕（16:9 到 21:9）和手機直螢幕（9:16 到 9:19.5）都好看。背景類素材（A1、A2）的做法是：</p>
+<ul>
+  <li><b>主要內容放在「安全區」</b>：任何比例裁切都看得到的範圍。各項的安全區畫在該章的示意圖裡。</li>
+  <li><b>安全區外要「可以被裁掉」</b>：放延伸的天空、結構、霧氣，不放關鍵物件。</li>
+  <li><b>介面區域要夠暗</b>：介面文字會壓在背景上。標示為介面區的地方，平均亮度要低於 10%（HSL 的 L 值），並且不能有高對比的細節，否則文字讀不清楚。</li>
+</ul>
+
+<h3>3.4 透明素材的做法</h3>
+<ol>
+  <li>生圖時用<b>純中性灰底</b>（<code>#808080</code>）或純黑底，不要用場景背景。</li>
+  <li>去背後，用「去除邊緣色」（Photoshop：圖層 → 修邊 → 移除黑色／白色邊緣）處理邊緣。</li>
+  <li>發光部分（萊姆光）不要和本體一起去背：放到獨立的發光層，用黑底交付即可，程式會用「相加」模式疊上去。詳見 A4。</li>
+  <li>交付前，把成品放在三種底色上檢查：<code>#0B0C0E</code>（遊戲底色）、<code>#808080</code>、<code>#FFFFFF</code>。三種底色都不能看到灰邊或殘影。</li>
+</ol>
+
+<h3>3.5 關於生圖工具</h3>
+<div class="box warn">
+  <h4>哪些項目適合生圖，哪些不適合</h4>
+  <p><b>適合</b>：A1 星圖背景、A2 觀測站場景、A3 立繪、A7 卡背底圖。生圖之後通常還需要修圖、補細節、統一色調和拆層，請預留時間。</p>
+  <p><b>不適合</b>：A5、A6 圖示和 A8 字標。生圖工具做不出精準、可縮放、筆畫一致的向量圖示和文字，這幾項請由設計師用向量工具繪製（Figma、Illustrator、Inkscape 皆可）。生圖可以拿來找靈感。</p>
+  <p><b>授權</b>：依 ART-ASSETS.md，生圖工具必須允許商用，並保留每張圖的生成紀錄（工具、版本、日期、提示詞、種子）。格式見第 13 章。</p>
+</div>
+</section>
+
+<!-- ============================================================ A1 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P1</span><div class="id">A1 · UI_STARCHART</div><div class="nm">星圖背景</div><div class="one">觀測站望出去的深空地圖。玩家在這裡選擇今天要潛向哪個光源座標。</div></div>
+
+<h3>敘事</h3>
+<p>核光碎片沉進了星系深處。觀測者用星圖記錄每一個光源的位置與深度：離核心越近越淺、越亮、越安全；越往外越深、越暗，但那裡的光源更罕見。星圖的中心就是光源觀測站和它背後的 ROVYN CORE。</p>
+<p>星圖也是發射台的延伸：白皮書第 4.3 節寫到「每一次在發射台上的發行，星圖上就會多出一個光點」。所以這張圖要讓人感覺<b>還有很多空位會被點亮</b>，是一個會成長的宇宙。</p>
+
+<h3>遊戲中的位置</h3>
+<table>
+  <tr><th style="width:36mm">時刻</th><th>玩家看到什麼</th><th>這張圖要幫玩家</th></tr>
+  <tr><td>選擇座標</td><td>整張星圖縮小到可見全貌，程式在上面畫出六層深度環、座標標記（A6）和屬性色（A5）。</td><td>一眼看出「越外圈越深」，並理解自己的隊伍能到哪一層（未達光度門檻的環會被程式調暗）。</td></tr>
+  <tr><td>放大查看某一層</td><td>畫面放大到某個深度環，可以拖曳平移。</td><td>每一層看起來不同，讓「往深處走」有探索感。</td></tr>
+  <tr><td>潛光出發</td><td>程式從中心畫出一道萊姆光橋，延伸到選定的座標，鏡頭跟著光橋移動。</td><td>中心要夠亮、夠有份量，光橋才有「從核心出發」的感覺。</td></tr>
+  <tr><td>異相公告（每日 00:00 UTC）</td><td>部分座標的屬性改變，程式讓星雲局部變色、閃爍。</td><td>星雲要能被程式染色（所以需要灰階星雲層，見下方）。</td></tr>
+</table>
+
+<h3>構圖與內容</h3>
+<div class="figure">
+<svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="280" height="280" fill="#0b0c0e"/>
+  <g fill="none" stroke="#c9ff55" stroke-opacity=".75">
+    <circle cx="150" cy="150" r="20.5"/><circle cx="150" cy="150" r="38.3"/><circle cx="150" cy="150" r="58.8"/>
+    <circle cx="150" cy="150" r="80.6"/><circle cx="150" cy="150" r="103.9"/><circle cx="150" cy="150" r="129.9"/>
+  </g>
+  <circle cx="150" cy="150" r="7" fill="#c9ff55"/>
+  <g fill="#c9ff55" font-size="9" text-anchor="middle">
+    <text x="150" y="133">I</text><text x="150" y="116">II</text><text x="150" y="97">III</text>
+    <text x="150" y="75">IV</text><text x="150" y="52">V</text><text x="150" y="28">VI</text>
+  </g>
+  <rect x="94" y="10" width="112" height="280" fill="none" stroke="#fff" stroke-dasharray="4 3" stroke-opacity=".6"/>
+  <g font-size="10" fill="#111511">
+    <text x="305" y="30" font-weight="700">4096 × 4096 正方形母檔</text>
+    <text x="305" y="48">● 中心 (2048, 2048)：觀測站與 ROVYN CORE</text>
+    <text x="305" y="66">○ 六個深度環由程式畫線，美術只做「漸變」</text>
+    <text x="305" y="84">　 I 淺層　 半徑 0–280 px</text>
+    <text x="305" y="100">　 II　　　 280–520 px</text>
+    <text x="305" y="116">　 III　　　520–800 px</text>
+    <text x="305" y="132">　 IV　　　800–1100 px</text>
+    <text x="305" y="148">　 V　　　 1100–1420 px</text>
+    <text x="305" y="164">　 VI 深淵　1420–1780 px（到角落）</text>
+    <text x="305" y="186">┆ 白色虛線：手機直式畫面的可見寬度</text>
+    <text x="305" y="202">　（中央約 1640 px 寬，畫面會上下平移）</text>
+    <text x="305" y="224">環的半徑是程式的參數，美術的漸變</text>
+    <text x="305" y="240">只要大致落在對應範圍，不必精準。</text>
+  </g>
+</svg>
+<div class="cap">圖 A1-1　星圖的構圖示意。綠色環線由程式繪製，不要畫進圖裡；美術只需要讓每個範圍的「氣氛」不同。</div>
+</div>
+
+<h4>六個深度的氣氛</h4>
+<p>從中心往外，畫面要有連續的變化：<b>越往外越暗、越冷、越稀疏，但偶爾出現的光點越亮、越純</b>。這是遊戲平衡的視覺化：深層需要更高的總光度才能前往（白皮書第 4.3 節），回報略高。</p>
+<table>
+  <tr><th style="width:18mm">深度</th><th style="width:28mm">光度門檻</th><th>氣氛</th><th>星點密度</th></tr>
+  <tr><td class="k">I 淺層</td><td>0（任何隊伍）</td><td>核心的萊姆餘暉最濃，帶一點暖白霧氣。安全、熟悉，像港口。</td><td>最密，但多為小而暗的星點</td></tr>
+  <tr><td class="k">II</td><td>120</td><td>萊姆光退成淡淡的綠灰霧，開始出現細小的星雲紋理。</td><td>密</td></tr>
+  <tr><td class="k">III</td><td>220</td><td>中性的深灰藍，星雲有明確的層次和縫隙。</td><td>中等</td></tr>
+  <tr><td class="k">IV</td><td>380</td><td>冷色，星雲變成薄紗狀的絲帶，背景接近純黑。</td><td>稀</td></tr>
+  <tr><td class="k">V</td><td>600</td><td>大片的黑，只有幾道冷藍色的遠方星雲。偶爾有一顆特別亮的孤星。</td><td>很稀，但有 3–5 顆明亮孤星</td></tr>
+  <tr><td class="k">VI 深淵</td><td>850（曜核級隊伍）</td><td>幾乎全黑。極微弱的深靛色（淵光）在邊緣流動。看久了才會發現遠處有東西在發光。</td><td>極稀；2–3 處極亮、極小的純白光點</td></tr>
+</table>
+
+<h4>其他內容要求</h4>
+<ul>
+  <li><b>中心</b>：一個小而強烈的萊姆色光源（ROVYN CORE），周圍有一圈極細的結構剪影（觀測站的環形建築），不要畫得太具體，它在星圖縮小時只有幾十個像素。核心本身不要畫光暈，程式會加。</li>
+  <li><b>不要畫任何座標標記、線條、刻度、文字</b>。所有標記都是程式畫的，因為每天的異相和發射台的新代幣都會改變它們。</li>
+  <li><b>留出「空位」</b>：每一層都要有幾處看起來適合放光點、但目前是空的區域（一小團稍亮的星雲、一個安靜的空隙）。程式會在這些地方放發射台代幣的光點。</li>
+  <li><b>方向感</b>：星雲可以有一個大致的旋轉方向（像星系的旋臂），讓星圖不像隨機雜訊，而像一個真實的結構。</li>
+</ul>
+
+<h3>分層與規格</h3>
+<div class="spec">
+  <div>尺寸</div><div>4096×4096 px，中心為 (2048, 2048)</div>
+  <div>L1 遠景星空</div><div><code>ui_starchart_L1_far.png</code>：不透明。純黑底加遠方細小星點，不含星雲。最慢的視差層。</div>
+  <div>L2 星雲</div><div><code>ui_starchart_L2_nebula.png</code>：透明背景，彩色星雲本體。<br><code>ui_starchart_L2_nebula_gray.png</code>：同一張星雲的灰階亮度版（透明背景），供程式在異相時重新染色。</div>
+  <div>L3 近景塵埃</div><div><code>ui_starchart_L3_dust.png</code>：透明背景，少量較大、略模糊的塵埃和亮星，放在最前面，移動最快，做出景深。數量少，覆蓋面積低於 10%。</div>
+  <div>母檔</div><div><code>ui_starchart_master.psd</code>，含上述三層。</div>
+  <div>無縫</div><div>不需要無縫拼接；VI 層延伸到畫布四角，四角要自然融入純黑。</div>
+</div>
+
+<h3>程式會做什麼</h3>
+<ul>
+  <li>畫六個深度環、座標標記、屬性色、光橋、鏡頭縮放和平移。</li>
+  <li>三層以不同速度移動，做出視差景深；星點緩慢閃爍。</li>
+  <li>未達光度門檻的深度環：降低亮度與飽和度，並加上一層薄霧。</li>
+  <li>異相：用灰階星雲層在指定區域染上屬性色，持續數秒後淡出。</li>
+</ul>
+
+<h3>提示詞</h3>
+<div class="prompt"><span class="lbl">建議提示詞（L2 星雲，可分區生成後拼接）</span>top-down astronomical chart of a dark galaxy, seen from directly above, concentric structure,
+a tiny intense lime-green light source at the exact center (#C9FF55), faint lime-green haze
+around the center fading outward into neutral grey-blue nebula, then cold thin nebula ribbons,
+then near-total black at the edges with faint deep indigo glow, subtle spiral arm direction,
+sparse stars becoming rarer toward the edges, a few isolated very bright pure white stars in
+the outer region, quiet, vast, lonely, scientific star map aesthetic, ultra detailed, 8k,
+no text, no grid lines, no markers, no planets, no spaceships, square composition</div>
+<div class="prompt"><span class="lbl">負面提示詞</span>text, letters, numbers, labels, grid, HUD, UI, circles drawn, planets, spaceship, sun flare,
+lens flare, rainbow colors, purple-pink cliché nebula, oversaturated, cartoon, watermark</div>
+<p class="small">生圖工具通常無法一次產生 4096 正方形且結構正確的星圖。建議先生成 2048 的整體構圖，再分區放大（upscale／outpaint）補細節，最後在 PSD 裡依第 2 點的深度分區調整明暗。</p>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>中心的萊姆光源在縮成 300 px 寬時仍然清楚可見，且是全圖最亮的萊姆色區域。</li>
+  <li>從中心到邊緣看得出六段氣氛的漸進：越外越暗、越冷、越稀疏。</li>
+  <li>VI 深淵的區域幾乎全黑，但有 2–3 個值得注意的光點。</li>
+  <li>沒有任何文字、標記、格線、星球、太空船。</li>
+  <li>灰階星雲層和彩色星雲層的形狀完全一致（同一張圖去色）。</li>
+  <li>L3 塵埃層覆蓋面積低於 10%，不會擋住座標標記。</li>
+  <li>放在手機直式畫面裡（中央約 1640 px 寬），中心和 I–III 層仍完整可見。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A2 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P1</span><div class="id">A2 · UI_OBSERVATORY</div><div class="nm">觀測站主場景</div><div class="one">玩家每天打開遊戲時第一眼看到的地方：光源觀測站的內部。</div></div>
+
+<h3>敘事</h3>
+<p>光源觀測站建在 ROVYN CORE 的外圍，是觀測者和探索者出發的地方。它是一座古老而仍在運轉的設施：古石結構、精密的觀測儀器、從巨大圓形觀測窗透進來的核光。Signal-Keeper 在這裡守夜，接收深空的訊號，每天 00:00 UTC 公布新的光源座標和異相。</p>
+<p>這裡是玩家的「家」。它要讓人感覺：<b>安靜、可靠、有人在守著，而窗外是無邊的深空。</b>每天回來這裡，就是遊戲的每日循環（白皮書第 4.1 節）。</p>
+
+<h3>遊戲中的位置</h3>
+<table>
+  <tr><th style="width:36mm">時刻</th><th>畫面</th><th>這張圖要做到</th></tr>
+  <tr><td>每日首次進入</td><td>場景全畫面，Signal-Keeper（A3）站在左前方說話，上方是當日紀元、核光池等資訊，下方是隊伍卡和「出發潛光」按鈕。</td><td>提供氛圍和深度，不搶介面的注意力。</td></tr>
+  <tr><td>潛光出發</td><td>光橋從右側的「出發平台」射出，穿過觀測窗，消失在深空中。</td><td>出發平台的位置要明確（見錨點），光橋的路徑上不能有遮擋。</td></tr>
+  <tr><td>等待揭曉（最多約 1 小時）</td><td>場景保持顯示，觀測窗裡可以看到遠方的光橋仍在延伸，倒數計時。</td><td>這是玩家停留最久的畫面，要耐看。</td></tr>
+  <tr><td>結果揭曉</td><td>光從觀測窗湧回來，場景短暫被照亮（程式加光）。</td><td>場景的亮部要分層（L5），程式才能讓它「被點亮」。</td></tr>
+</table>
+
+<h3>構圖與內容</h3>
+<div class="figure">
+<svg viewBox="0 0 520 330" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="384" height="216" fill="#0b0c0e"/>
+  <rect x="10" y="10" width="384" height="16" fill="#c9ff55" fill-opacity=".18"/>
+  <rect x="10" y="176" width="384" height="50" fill="#c9ff55" fill-opacity=".18"/>
+  <circle cx="214" cy="96" r="58" fill="none" stroke="#c9ff55" stroke-width="2"/>
+  <circle cx="214" cy="96" r="10" fill="#c9ff55"/>
+  <rect x="34" y="60" width="96" height="140" fill="none" stroke="#fff" stroke-opacity=".8" stroke-dasharray="3 2"/>
+  <circle cx="326" cy="150" r="5" fill="#ff7a45"/>
+  <path d="M326 150 Q 270 110 230 100" fill="none" stroke="#ff7a45" stroke-dasharray="3 2"/>
+  <rect x="153" y="10" width="122" height="216" fill="none" stroke="#7de6ff" stroke-dasharray="5 3"/>
+  <g font-size="8" fill="#e8f0dc">
+    <text x="16" y="21">上方 HUD（0–160 px）</text>
+    <text x="16" y="190">下方介面（1600–2160 px）：隊伍卡、按鈕</text>
+    <text x="40" y="74">Signal-Keeper</text><text x="40" y="84">站位（留空）</text>
+    <text x="190" y="166">觀測窗</text>
+    <text x="300" y="166">出發平台錨點</text>
+  </g>
+  <g font-size="10" fill="#111511">
+    <text x="16" y="248" font-weight="700">橫式母檔 3840 × 2160</text>
+    <text x="16" y="264">■ 綠色：介面區（平均亮度 &lt; 10%）　□ 白色虛線：Signal-Keeper 站位，畫面要留空地</text>
+    <text x="16" y="280">◯ 觀測窗中心約 (2140, 960)，直徑約 1150 px　● 橘點：出發平台錨點約 (3260, 1500)</text>
+    <text x="16" y="296">┆ 藍色虛線：手機直式裁切窗（中央 1215 px 寬）。另需交付直式母檔 2160 × 3840。</text>
+    <text x="16" y="312">座標是建議值，可依構圖調整，交付時在 log 裡寫明最終座標即可。</text>
+  </g>
+</svg>
+<div class="cap">圖 A2-1　橫式主場景的版面配置。所有色塊與線條只是示意，不要畫進圖裡。</div>
+</div>
+
+<h4>畫面元素（由遠到近）</h4>
+<table>
+  <tr><th style="width:26mm">元素</th><th>描述</th></tr>
+  <tr><td class="k">深空</td><td>觀測窗外是深空，與星圖（A1）的 I–II 層氣氛一致：核心的萊姆餘暉加上淡淡星雲。</td></tr>
+  <tr><td class="k">ROVYN CORE</td><td>從觀測窗看出去，遠方有一顆極亮的萊姆色核心，部分被窗框或結構遮住，不要完整露出（保留神秘感）。它是整個場景的主光源。</td></tr>
+  <tr><td class="k">觀測窗</td><td>一個巨大的圓形開口（直徑約為畫面高度的一半），框是分段的古石和金屬，內緣有一圈刻度。概念主視覺裡 Signal-Keeper 身後的環形結構可以當參考。</td></tr>
+  <tr><td class="k">觀測站結構</td><td>中景兩側是古石柱、拱、階梯，表面有細線刻度與嵌入的萊姆色指示燈（細、小、稀疏）。建築要有尺度感：人只有柱子的五分之一高。</td></tr>
+  <tr><td class="k">出發平台</td><td>右側中景一個略高的圓形平台，中央有晶核座。光橋從這裡射出（程式畫），所以平台要朝向觀測窗，且平台到觀測窗之間沒有遮擋物。</td></tr>
+  <tr><td class="k">前景</td><td>地面是深色的石板，左前方留出空地給 Signal-Keeper 站立（他是獨立的圖，會疊上去）。前景可以有一台觀測儀器或星圖桌的局部，邊緣被裁出畫面，增加景深。</td></tr>
+</table>
+
+<h3>光與色</h3>
+<ul>
+  <li><b>主光</b>：來自觀測窗後的 ROVYN CORE，萊姆偏白，從畫面中央偏上照向觀眾。所以建築和地面的<b>邊緣光是萊姆色</b>，正面大多在陰影裡。</li>
+  <li><b>補光</b>：極弱的冷灰藍環境光，讓暗部看得出形狀，但不能把暗部打亮。</li>
+  <li><b>和立繪一致</b>：Signal-Keeper（A3）會站在左前方。他的邊緣光必須和這個場景同方向：<b>右後方來的萊姆輪廓光，左前方極弱的冷色補光</b>。這一點兩邊都要遵守，否則角色會像貼上去的。</li>
+  <li><b>介面區要暗</b>：上方 160 px 和下方 560 px 是介面區，平均亮度低於 10%，可以是天花板陰影和地面暗部。</li>
+</ul>
+
+<h3>分層與規格</h3>
+<div class="spec">
+  <div>尺寸</div><div>橫式 3840×2160；直式 2160×3840（另外構圖，不是橫式裁切）</div>
+  <div>L1 天空</div><div><code>ui_observatory_{wide|tall}_L1_sky.png</code>：深空與星雲（不透明），不含核心。</div>
+  <div>L2 核心</div><div><code>…_L2_core.png</code>：透明背景，ROVYN CORE 本體（無光暈）。程式會讓它緩慢呼吸。</div>
+  <div>L3 結構</div><div><code>…_L3_structure.png</code>：透明背景，觀測窗、石柱、拱、出發平台。</div>
+  <div>L4 前景</div><div><code>…_L4_foreground.png</code>：透明背景，地面、前景儀器。移動最多，做出景深。</div>
+  <div>L5 燈光</div><div><code>…_L5_lights.png</code>：黑底，只有結構上的萊姆指示燈、刻度發光、平台晶核。程式用相加模式疊加，揭曉時讓它們一起變亮。</div>
+  <div>錨點</div><div>在 log 裡寫明：觀測窗中心與半徑、出發平台中心、Signal-Keeper 腳底線（地面高度）的像素座標。</div>
+</div>
+
+<h4>直式版本的構圖</h4>
+<p>手機直式不是把橫式裁窄。直式版本要重新安排：觀測窗在上半部（中心約在高度 35%），Signal-Keeper 站位在左下（他在手機上會縮小成對話框頭像，所以站位可以較小），出發平台在右下，下方 40% 是介面區。</p>
+
+<h3>程式會做什麼</h3>
+<ul>
+  <li>五層視差：滑鼠移動或手機傾斜時，各層以不同幅度位移。</li>
+  <li>核心呼吸發光；指示燈隨機微閃。</li>
+  <li>光橋：從出發平台錨點射出，經過觀測窗中心，延伸到深空。</li>
+  <li>揭曉時：L5 燈光層整體變亮，並依結果加上不同顏色的光（例如核光回響時全場白熱）。</li>
+  <li>光橋中斷時：L5 燈光層短暫熄滅再慢慢恢復。</li>
+</ul>
+
+<h3>提示詞</h3>
+<div class="prompt"><span class="lbl">建議提示詞（橫式）</span>interior of an ancient deep-space observatory at the edge of a galaxy core, a colossal circular
+observation window in the center made of segmented weathered dark basalt and black metal with
+fine engraved measurement ticks along its inner rim, through the window a distant intensely
+bright lime-green core light (#C9FF55) partly hidden behind the frame, faint lime haze and stars,
+tall dark stone pillars and arches on both sides with tiny sparse lime indicator lights, a raised
+circular launch platform with a crystal socket on the right facing the window, dark stone floor,
+empty open floor space on the left foreground, strong lime rim light from the window, deep shadows,
+quiet, sacred, vast scale, cinematic wide shot, eye level, ultra detailed, 8k</div>
+<div class="prompt"><span class="lbl">負面提示詞</span>people, characters, text, signs, screens with UI, logo, bright interior lighting, warm orange light,
+spaceship cockpit, neon city, cyberpunk clutter, cables everywhere, mining equipment, weapons,
+fisheye, tilted horizon, oversaturated, cartoon, watermark</div>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>主光來自觀測窗方向，萊姆色是場景唯一的主要光色。</li>
+  <li>上方 160 px、下方 560 px 的介面區平均亮度低於 10%，白色文字疊上去清楚可讀。</li>
+  <li>左前方的 Signal-Keeper 站位是空的，地面高度明確。</li>
+  <li>出發平台到觀測窗之間沒有遮擋，光橋路徑清楚。</li>
+  <li>直式版本是重新構圖，觀測窗、站位、平台都在直式畫面內。</li>
+  <li>L5 燈光層只有發光體，黑底，與 L3 結構層的位置完全對齊。</li>
+  <li>沒有人物、文字、螢幕介面、挖礦設備。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A3 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P2</span><div class="id">A3 · NPC_KEEPER</div><div class="nm">Signal-Keeper 立繪</div><div class="one">訊號守護者：觀測站的守夜人，遊戲的臉。五種姿勢對應遊戲裡最重要的五種時刻。</div></div>
+
+<div class="figure">
+  <img src="ref/signal-keeper-turnaround.webp" alt="">
+  <div class="cap">圖 A3-1　現有概念設計（四視圖）。立繪的造型、比例、配色以這張為準。</div>
+</div>
+
+<h3>敘事</h3>
+<p>Signal-Keeper 是光源觀測站的守夜人（白皮書第 3.3 節）。他接收深空傳來的訊號、校對星圖，每天公布新的光源座標與異相。他從不離開觀測站，是唯一一直在那裡的人。他不是商人、不是導師，而是<b>值得信任的見證者</b>：他看著每一位探索者出發，也看著他們歸航。</p>
+<table>
+  <tr><th style="width:24mm">元素</th><th>設定（白皮書第 3.3 節）</th><th>在立繪裡的作用</th></tr>
+  <tr><td class="k">MASK 面具</td><td>過濾核光的觀測面罩，和探索者頭盔同一系譜。</td><td>他沒有臉，所以情緒只能靠<b>頭部角度、核心亮度、軌道球狀態</b>表達。</td></tr>
+  <tr><td class="k">CORE 核心</td><td>胸口嵌著一片晶核，所以聽得見深空的光。</td><td>情緒的主要指標：平靜時穩定、興奮時強烈、中斷時閃爍變暗。</td></tr>
+  <tr><td class="k">ORBIT 軌道</td><td>三顆軌道球是他的信標，用來穩住光橋。</td><td>光橋的狀態直接反映在軌道上：穩定、排成一列、散開、掉落。</td></tr>
+  <tr><td class="k">SIGNAL 訊號</td><td>終端上顯示每天的光源座標與異相。</td><td>終端是他和玩家溝通的工具；螢幕內容由程式顯示（四種語言）。</td></tr>
+</table>
+<p>定案：Signal-Keeper 是 NPC，<b>不做成可交易 NFT</b>（白皮書第 14.1 節第 14 項）。所以他的立繪不受 NFT 的稀有度、圖層系統限制。</p>
+
+<h3>角色固定特徵（每一張都必須一致）</h3>
+<div class="grid2">
+  <div class="figure" style="margin:0"><img src="ref/signal-keeper-details.webp" alt=""><div class="cap">圖 A3-2　細節參考：MASK、CORE、ORBIT、SIGNAL。</div></div>
+  <div>
+    <table>
+      <tr><th>部位</th><th>固定特徵</th></tr>
+      <tr><td class="k">兜帽</td><td>深、尖頂、厚重炭黑織布，帽緣在面具周圍形成深黑的陰影框。</td></tr>
+      <tr><td class="k">面具</td><td>骨白陶瓷金屬、髮絲裂紋。額頭到下巴一條黑色縱帶；黑色 V 形眉帶在眉心交會；眉心一顆圓形萊姆眼；兩頰黑色側板；下顎分節通氣格柵。<b>沒有嘴、沒有第二隻眼睛。</b></td></tr>
+      <tr><td class="k">胸口核心</td><td>圓形瞄準鏡片：同心環＋十字刻度，嵌在一條垂直分節的黑色脊椎板上。</td></tr>
+      <tr><td class="k">大衣</td><td>長版炭黑風衣，寬翻領，腰帶，下襬到小腿。</td></tr>
+      <tr><td class="k">手</td><td>黑色分節機械手套，每指三節，指尖略尖。</td></tr>
+      <tr><td class="k">軌道</td><td>兩條極細的萊姆光環，傾斜環繞上身；環上共<b>三顆</b>亮黑色軌道球，每顆有一個萊姆小光點。</td></tr>
+      <tr><td class="k">終端</td><td>深色堅固的平板，四角有護角。<b>螢幕留空</b>（只有微弱的萊姆底光），((O)) 符號移到外殼背面或邊框刻印。</td></tr>
+    </table>
+  </div>
+</div>
+<div class="box warn">
+  <h4>和概念圖不同的兩處（請確認）</h4>
+  <p><b>軌道球數量</b>：概念圖畫了四顆（每條環兩顆），白皮書寫「三顆軌道球」。立繪建議統一為三顆（上環兩顆、下環一顆），或請文案組把白皮書改成四顆。兩邊必須一致。</p>
+  <p><b>終端螢幕上的 SIGNAL 字樣</b>：遊戲有四種語言，螢幕上的字由程式顯示才能翻譯，所以立繪的螢幕要留空。這也符合全域「圖裡不放文字」的規則。主視覺宣傳圖可以保留 SIGNAL 字樣。</p>
+</div>
+
+<h3>五個姿勢（加一個建議加做）</h3>
+<p>五個姿勢的檔名、用途沿用 ART-ASSETS.md 第 4 節，這裡補上每一個姿勢的完整演出要求。</p>
+
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P1 · npc_keeper_p1_idle</div><div class="t">站立待機</div>
+  <p><b>用途</b>：預設姿勢。觀測站首頁、等待揭曉、普通成功、探索者歸航、一般提示。這是玩家看到最多次的一張，必須最耐看。</p>
+  <p><b>身體</b>：正面微側（向畫面右轉約 15°），重心穩定，雙手在腰前輕握終端，終端螢幕朝下約 30°。頭部正對前方，略微低頭 5°，像在聆聽。</p>
+  <p><b>軌道</b>：三顆球平均分布在兩條環上，環傾斜角度和概念圖相同。<b>核心</b>：中等亮度。<b>眼睛</b>：中等亮度。</p>
+  <p><b>情緒</b>：安靜、專注、可靠。「我在這裡，訊號正常。」</p>
+</div>
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P2 · npc_keeper_p2_signal</div><div class="t">手指終端（公布訊號）</div>
+  <p><b>用途</b>：每日 00:00 UTC 紀元開始、公布光源座標與異相、潛光出發確認、新手引導中解釋規則。</p>
+  <p><b>身體</b>：左手把終端舉到胸前、螢幕朝向觀眾（約正面偏右 20°），右手食指觸碰螢幕。頭部轉向終端，然後「看」向觀眾（面具朝向介於終端與觀眾之間）。</p>
+  <p><b>軌道</b>：三顆球在上環上<b>排成一直線</b>，像在對準訊號；下環保持。<b>核心</b>：中高亮度。<b>終端螢幕</b>：亮（留空，程式會顯示座標與異相）。</p>
+  <p><b>情緒</b>：正式、清楚、宣告。「今天的星圖是這樣的。」</p>
+  <p class="small">螢幕區域在畫面上要夠大（至少 260×190 px），四角清楚可見，程式會把文字以透視方式貼上。請在 log 裡提供螢幕四個角的像素座標。</p>
+</div>
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P3 · npc_keeper_p3_bright</div><div class="t">軌道球亮起（光橋穩定、收穫）</div>
+  <p><b>用途</b>：明亮收穫、罕見光焰（白皮書第 4.4 節的成功結果）。</p>
+  <p><b>身體</b>：頭部抬起約 15°，面具望向畫面右上方的深空（光橋返回的方向）。右手微微舉起，掌心朝上，像在迎接；左手持終端放低。</p>
+  <p><b>軌道</b>：三顆球都亮起萊姆光（球本身從黑色轉為帶光的黑晶），軌道環變亮、變粗一點。<b>核心</b>：高亮度。</p>
+  <p><b>情緒</b>：喜悅但克制。他不歡呼，只是抬頭看著光回來。「他們把光帶回來了。」</p>
+</div>
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P4 · npc_keeper_p4_dim</div><div class="t">低頭、軌道球變暗（光橋中斷）</div>
+  <p><b>用途</b>：光橋中斷（倍率 0 的結果）、網路或交易錯誤、隨機種子延遲。</p>
+  <p><b>身體</b>：頭部低下約 25°，肩膀微微下沉。雙手垂放，終端在身側，螢幕朝下。</p>
+  <p><b>軌道</b>：環線出現斷口（約環的四分之一斷開），一顆球偏離軌道、略往下掉，另兩顆失去光點。<b>核心</b>：低亮度。<b>眼睛</b>：低亮度但沒有熄滅。</p>
+  <p><b>情緒</b>：惋惜、沉著。<b>不是失敗、不是死亡、不是悲劇。</b>這是遊戲裡常見的結果（廣域 15%、針芒 45% 的機率），玩家明天還會再出發。「訊號斷了。下一次。」</p>
+</div>
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P5 · npc_keeper_p5_resonance</div><div class="t">張開手、胸口核心強光（核光回響、賽季公告）</div>
+  <p><b>用途</b>：核光回響（針芒光束 0.8%、8–10 倍，全遊戲最稀有的時刻）、賽季開始公告、重大消息。也可作為第一季主視覺的素材。</p>
+  <p><b>身體</b>：雙臂向兩側張開約 45°，手掌朝前，終端浮在身前或掛在腰側。頭部微微後仰。兜帽被核心的光照亮內側，大衣下襬向後揚起，像被光的壓力推動。</p>
+  <p><b>軌道</b>：環的半徑擴大約 1.4 倍，三顆球亮成白熱。<b>核心</b>：最大亮度，中心白熱、外圈萊姆。<b>眼睛</b>：最大亮度。</p>
+  <p><b>情緒</b>：敬畏、莊嚴。這是整個遊戲最戲劇化的一張。「核心在回應。」</p>
+</div>
+<div class="card" style="margin-bottom:3mm">
+  <div class="s">P6 · npc_keeper_p6_guide（建議加做）</div><div class="t">側身引導</div>
+  <p><b>用途</b>：新手引導。Signal-Keeper 站在畫面左側，需要「指向」右側的介面元件（例如「出發潛光」按鈕、星圖的某一層）。P2 的手指的是自己的終端，無法引導玩家看別處。</p>
+  <p><b>身體</b>：身體轉向畫面右側約 40°，右臂向右前方伸出，手掌張開、掌心朝右前（引導，不是指控）。頭部轉向伸手的方向。</p>
+  <p><b>軌道</b>：一顆球沿手臂方向飄出，像在為玩家照路。</p>
+</div>
+
+<h4>遊戲事件與姿勢對照</h4>
+<table>
+  <tr><th>遊戲事件</th><th>姿勢</th><th>程式加的效果</th></tr>
+  <tr><td>首次進入、新手引導</td><td>P1 → P6</td><td>逐句對話、指向的介面元件發光</td></tr>
+  <tr><td>每日紀元開始、異相公告</td><td>P2</td><td>螢幕顯示座標、異相屬性圖示</td></tr>
+  <tr><td>潛光出發</td><td>P2</td><td>光橋射出</td></tr>
+  <tr><td>等待揭曉</td><td>P1</td><td>軌道球緩慢運轉、核心規律呼吸</td></tr>
+  <tr><td>普通成功（1.0–1.2 倍）</td><td>P1</td><td>核心亮一下</td></tr>
+  <tr><td>明亮收穫</td><td>P3</td><td>軌道球亮起、粒子</td></tr>
+  <tr><td>罕見光焰</td><td>P3</td><td>更強的光、場景燈光層全亮</td></tr>
+  <tr><td>光橋中斷</td><td>P4</td><td>燈光閃爍後變暗</td></tr>
+  <tr><td>核光回響</td><td>P5</td><td>全畫面白熱、慢動作、專屬音效</td></tr>
+  <tr><td>探索者歸航（航程用完）</td><td>P1</td><td>核心緩慢變暗再恢復，名字刻上星圖名冊</td></tr>
+  <tr><td>賽季開始</td><td>P5</td><td>全畫面演出</td></tr>
+  <tr><td>錯誤、延遲</td><td>P4</td><td>輕微版本，不閃爍</td></tr>
+</table>
+
+<h3>畫布與對齊</h3>
+<div class="figure">
+<svg viewBox="0 0 520 290" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="170" height="255" fill="#2b2d30"/>
+  <g stroke="#c9ff55" stroke-dasharray="3 2">
+    <line x1="10" y1="26" x2="180" y2="26"/><line x1="10" y1="58" x2="180" y2="58"/>
+    <line x1="10" y1="125" x2="180" y2="125"/><line x1="95" y1="10" x2="95" y2="265"/>
+  </g>
+  <rect x="31" y="10" width="128" height="128" fill="none" stroke="#fff" stroke-opacity=".9"/>
+  <rect x="53" y="18" width="84" height="84" fill="none" stroke="#7de6ff"/>
+  <g font-size="10" fill="#111511">
+    <text x="196" y="22" font-weight="700">1024 × 1536，透明背景，所有姿勢共用</text>
+    <text x="196" y="40">— 頭頂（兜帽尖）：y = 96</text>
+    <text x="196" y="56">— 面具眼睛：y = 290 ± 20</text>
+    <text x="196" y="72">— 胸口核心中心：y = 690 ± 30</text>
+    <text x="196" y="88">┆ 身體中軸：x = 512（P6 可偏左至 420）</text>
+    <text x="196" y="104">□ 白框：對話框裁切 768 × 768（頂部置中）</text>
+    <text x="196" y="120">□ 藍框：頭像裁切 512 × 512（以面具為中心）</text>
+    <text x="196" y="136">下緣：裁在大腿中段，所有姿勢相同</text>
+    <text x="196" y="158">比例固定：頭頂到下緣的人物高度相同，</text>
+    <text x="196" y="174">只有 P5 的手臂和軌道可以超出到畫布邊緣。</text>
+    <text x="196" y="196">切換姿勢時，程式直接交叉淡入淡出，</text>
+    <text x="196" y="212">所以眼睛、核心的高度必須在容許範圍內，</text>
+    <text x="196" y="228">否則切換時會看到角色「跳」一下。</text>
+  </g>
+</svg>
+<div class="cap">圖 A3-3　立繪畫布的對齊規則。綠色虛線為固定的高度參考線。</div>
+</div>
+
+<h3>光與色</h3>
+<ul>
+  <li>與觀測站場景（A2）一致：<b>右後方萊姆輪廓光、左前方極弱冷色補光</b>，主體大部分在半陰影中。</li>
+  <li>面具是畫面中最亮的「非發光」物體，但不能過曝：骨白，不是純白，最亮處約 <code>#E6E4DC</code>。</li>
+  <li>五個姿勢的打光方向相同，只有核心、眼睛、軌道的亮度隨姿勢改變（這部分放在 A4 發光層）。</li>
+</ul>
+
+<h3>規格</h3>
+<div class="spec">
+  <div>尺寸</div><div>1024×1536，PNG-24 透明背景；另附 2048×3072 母檔（PSD）</div>
+  <div>每個姿勢的檔案</div><div>本體 <code>_body.png</code>、發光層 <code>_glow.png</code>、軌道後半 <code>_orbit_back.png</code>、軌道前半 <code>_orbit_front.png</code>（詳見 A4）</div>
+  <div>log 需註明</div><div>眼睛中心、核心中心、終端螢幕四角（P2 必填）的像素座標</div>
+</div>
+
+<h3>提示詞</h3>
+<p>每一張都要貼上附錄 A 的<b>角色設定段落</b>，再加上該姿勢的描述。以 P2 為例：</p>
+<div class="prompt"><span class="lbl">P2 姿勢段落（接在角色設定段落後面）</span>pose: three-quarter view turned slightly to the right, holding the tablet up at chest height
+with the left hand, the blank glowing screen facing the viewer, right index finger touching the
+screen, mask turned between the tablet and the viewer, the three orbit orbs aligned in a straight
+line on the upper ring as if locking onto a signal, chest core moderately bright,
+framing: from top of hood to mid-thigh, centered, plain flat neutral grey background (#808080),
+rim light from back right in lime green, very faint cool fill light from front left</div>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>和四視圖的造型一致：面具的縱帶、V 形眉帶、單眼、兩頰側板、下顎格柵都在，沒有多出嘴或眼睛。</li>
+  <li>軌道球數量為三顆（或已與白皮書統一的數量）。</li>
+  <li>終端螢幕留空，沒有任何文字或符號。</li>
+  <li>機械手每指三節、五根手指，沒有變形或多指。</li>
+  <li>六張的眼睛高度、核心高度、人物比例都在容許範圍內，疊在一起切換不會跳動。</li>
+  <li>打光方向與觀測站場景一致。</li>
+  <li>P4 看起來是「訊號中斷」，不是死亡或悲劇。</li>
+  <li>去背乾淨，在 <code>#0B0C0E</code>、<code>#808080</code>、<code>#FFFFFF</code> 上都沒有灰邊。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A4 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P2</span><div class="id">A4 · NPC_KEEPER_LAYERS</div><div class="nm">立繪發光層與分件</div><div class="one">讓 2D 立繪活起來的關鍵：把會發光、會動的部分拆出來。</div></div>
+
+<h3>為什麼要拆</h3>
+<p>Signal-Keeper 沒有臉，他的「表情」全部來自光：核心的亮度、眼睛的閃動、軌道球的運轉。如果光被畫死在圖裡，立繪就只能是一張靜止的圖。拆成獨立圖層後，程式可以：</p>
+<ul>
+  <li>讓核心規律地呼吸（平靜時慢、緊張時快）</li>
+  <li>讓眼睛偶爾閃一下，像在眨眼或接收訊號</li>
+  <li>讓軌道球沿著軌道緩慢運轉，並正確地從身體後方繞到前方</li>
+  <li>在揭曉時把光推到最亮，在光橋中斷時讓光閃爍熄滅</li>
+</ul>
+<p>這是遊戲裡最有效的「精緻感」來源，成本卻只是多拆幾個圖層。</p>
+
+<h3>每個姿勢要交付的四個檔案</h3>
+<table>
+  <tr><th style="width:42mm">檔案</th><th>內容</th><th>重點</th></tr>
+  <tr><td><code>_body.png</code></td><td>角色本體，<b>所有發光部位處於「關燈」狀態</b>：核心是暗色玻璃、眼睛是暗色鏡片、終端螢幕是黑的。不含軌道環和軌道球。</td><td>透明背景。關燈狀態要畫出玻璃、鏡片的質感，這樣光淡出時看起來是「熄滅」，不是「消失」。</td></tr>
+  <tr><td><code>_glow.png</code></td><td>只有發光：核心的同心環與十字刻度、眼睛、終端螢幕的底光，以及這些光投在附近布料和面具上的反光。</td><td><b>純黑底</b>（不透明）。程式用相加模式疊加，黑色等於不發光。發光體邊緣要清楚，<b>不要畫大範圍光暈</b>。</td></tr>
+  <tr><td><code>_orbit_back.png</code></td><td>軌道環被身體擋住的那一半（在身體後方的弧線）。</td><td>透明背景。疊在本體下面。</td></tr>
+  <tr><td><code>_orbit_front.png</code></td><td>軌道環在身體前方的那一半，加上三顆軌道球（每顆球單獨一個圖層，放在 PSD 裡）。</td><td>透明背景。疊在本體上面。PSD 裡每顆球獨立，程式會沿著環的橢圓重新擺放它們。</td></tr>
+</table>
+
+<div class="figure">
+<svg viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <g font-size="10">
+    <rect x="10" y="20" width="110" height="34" rx="4" fill="#f4f7ee" stroke="#111511"/><text x="65" y="41" text-anchor="middle">① orbit_back</text>
+    <rect x="135" y="20" width="110" height="34" rx="4" fill="#2b2d30"/><text x="190" y="41" text-anchor="middle" fill="#fff">② body（關燈）</text>
+    <rect x="260" y="20" width="110" height="34" rx="4" fill="#000"/><text x="315" y="41" text-anchor="middle" fill="#c9ff55">③ glow（相加）</text>
+    <rect x="385" y="20" width="125" height="34" rx="4" fill="#f4f7ee" stroke="#111511"/><text x="447" y="41" text-anchor="middle">④ orbit_front＋球</text>
+    <text x="10" y="80" fill="#111511">由下到上的疊放順序。程式另外加上：bloom 光暈、粒子、亮度動畫、軌道球運轉。</text>
+    <text x="10" y="98" fill="#4a4f47">在 PSD 裡依此順序命名圖層：orbit_back / body / glow / orbit_front / orb_1 / orb_2 / orb_3</text>
+  </g>
+</svg>
+<div class="cap">圖 A4-1　立繪的圖層堆疊。</div>
+</div>
+
+<h3>發光層的畫法</h3>
+<ul>
+  <li><b>顏色</b>：核心外圈與刻度用核光萊姆 <code>#C9FF55</code>；核心正中心可以接近白色 <code>#F4F6EE</code>。眼睛同理。</li>
+  <li><b>亮度代表最大值</b>：發光層畫的是該姿勢「最亮」的狀態，程式只會把它調暗，不會調得更亮。P5 的發光層會比 P1 亮、範圍大。</li>
+  <li><b>反光</b>：核心照在胸前布料、翻領內側、手套上的萊姆反光要畫進發光層，不要畫進本體。這樣核心熄滅時，反光也會一起消失，看起來才真實。</li>
+  <li><b>對齊</b>：發光層和本體必須像素級對齊（從同一個 PSD 匯出）。</li>
+</ul>
+
+<h3>軌道的畫法</h3>
+<ul>
+  <li>軌道環的線寬約 3–4 px（在 1024 寬的畫布上），萊姆色，線本身清楚，不畫光暈。</li>
+  <li>前後兩半在身體邊緣的接縫要自然，疊起來是一條完整的環。</li>
+  <li>P4 的環有斷口；P5 的環比較大。每個姿勢的軌道都要獨立繪製。</li>
+  <li>軌道球：亮黑色、圓、有清楚的高光，每顆球上一個萊姆色小光點。P3、P5 的球是發光狀態，請另外在發光層畫出球的光點。</li>
+</ul>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>每個姿勢四個檔案齊全，尺寸相同，疊起來完全對齊。</li>
+  <li>本體圖中所有發光部位都是關燈狀態，但看得出玻璃或鏡片的質感。</li>
+  <li>發光層是純黑底，沒有大範圍光暈，相加疊上後與原設計的亮度一致。</li>
+  <li>軌道前後兩半疊起來是完整的環，接縫看不出來。</li>
+  <li>PSD 中三顆球各自獨立成圖層。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A5 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P1</span><div class="id">A5 · ICON_ATTR</div><div class="nm">六種屬性圖示</div><div class="one">曦光、霧光、晶光、熾光、雷光、淵光。玩家用它們搭配隊伍、追蹤同頻、收集圖鑑。</div></div>
+
+<h3>敘事</h3>
+<p>核光碎裂後沉入深空，在不同的環境裡變成六種不同性質的光源（白皮書第 4.5 節）。每一個光源座標都有一種屬性；每位探索者身後的光紋（NFT 的 B 層）也帶有一種屬性。當探索者潛向與自己屬性相同的座標，就會「同頻」。</p>
+
+<h3>遊戲中的位置</h3>
+<table>
+  <tr><th style="width:36mm">位置</th><th>顯示尺寸</th><th>玩家要做的判斷</th></tr>
+  <tr><td>探索者卡（收藏、編隊）</td><td>24–32 px</td><td>這位探索者是什麼屬性。</td></tr>
+  <tr><td>星圖座標標記</td><td>16–24 px（縮小時）、48 px（放大時）</td><td>這個座標是什麼屬性、和我的探索者同不同頻。</td></tr>
+  <tr><td>異相公告（Signal-Keeper 終端上）</td><td>48–64 px</td><td>今天哪些座標的屬性變了。</td></tr>
+  <tr><td>同頻圖鑑（6 屬性 × 6 深度）</td><td>64–96 px</td><td>我收集了哪些組合。</td></tr>
+  <tr><td>鑄造揭曉</td><td>96–128 px</td><td>剛抽到的探索者是什麼屬性。</td></tr>
+</table>
+<div class="box key">
+  <h4>最重要的要求：16 px 也要分得出來</h4>
+  <p>在星圖縮小時，屬性圖示可能只有 16 px。六個圖示的<b>外輪廓</b>必須彼此明顯不同，不能只靠顏色區分（約 8% 的男性有色覺辨識困難，而且異相時程式會改變顏色）。請先用純黑剪影檢查：六個剪影縮到 16 px 放在一起，每個都要能一眼認出。</p>
+</div>
+
+<h3>六個屬性的造型方向</h3>
+<p class="small">造型必須與探索者 B 層光紋（v3 第 3 節）一致；以下是當 v3 沒有規定時的建議方向。</p>
+<table>
+  <tr><th style="width:18mm">屬性</th><th style="width:24mm">英文檔名</th><th>意象</th><th>造型建議（外輪廓）</th></tr>
+  <tr><td class="k"><span class="sw" style="background:#ffd27a"></span>曦光</td><td><code>dawn</code></td><td>黎明、初生、溫暖</td><td>半圓（地平線上升起的光）加上三到五道短放射線。下緣是平的。</td></tr>
+  <tr><td class="k"><span class="sw" style="background:#a9c4c2"></span>霧光</td><td><code>mist</code></td><td>被包覆、隱約、柔和</td><td>三條水平、略帶波浪的層疊弧線，中間一個被遮住一半的小圓。外輪廓寬而扁。</td></tr>
+  <tr><td class="k"><span class="sw" style="background:#7de6ff"></span>晶光</td><td><code>crystal</code></td><td>結晶、折射、銳利</td><td>直立的六角或菱形晶體，內部一條折射線。外輪廓是唯一的尖銳多邊形。</td></tr>
+  <tr><td class="k"><span class="sw" style="background:#ff7a45"></span>熾光</td><td><code>blaze</code></td><td>灼熱、恆星、餘燼</td><td>一個實心圓，外圍一圈不規則、向上偏的熱焰輪廓。避免畫成「火」的卡通造型。</td></tr>
+  <tr><td class="k"><span class="sw" style="background:#b28cff"></span>雷光</td><td><code>thunder</code></td><td>瞬間、放電、分岔</td><td>一條斜向、有兩個分岔的折線光（像放電的路徑），而不是常見的閃電符號。</td></tr>
+  <tr><td class="k"><span class="sw" style="background:#5b6cff"></span>淵光</td><td><code>abyss</code></td><td>深處、冷、隱藏</td><td>一個空心的同心環（外粗內細），中心一個極小的點：深井往下看到的一點光。</td></tr>
+</table>
+
+<h3>繪製規格</h3>
+<div class="figure">
+<svg viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <g transform="translate(10,10)">
+    <rect width="144" height="144" fill="#f4f7ee" stroke="#111511"/>
+    <g stroke="#dfe3d8"><path d="M18 0V144M36 0V144M54 0V144M72 0V144M90 0V144M108 0V144M126 0V144M0 18H144M0 36H144M0 54H144M0 72H144M0 90H144M0 108H144M0 126H144"/></g>
+    <rect x="12" y="12" width="120" height="120" fill="none" stroke="#a14a00" stroke-dasharray="3 2"/>
+    <circle cx="72" cy="72" r="60" fill="none" stroke="#4f7a00"/>
+    <rect x="18" y="18" width="108" height="108" fill="none" stroke="#4f7a00" stroke-dasharray="1 2"/>
+  </g>
+  <g font-size="10" fill="#111511">
+    <text x="172" y="24" font-weight="700">96 × 96 格網（圖中放大 1.5 倍）</text>
+    <text x="172" y="42">橘色虛線：安全邊界，四周各留 8 px（內容在 80 × 80 內）</text>
+    <text x="172" y="58">綠色圓：圓形圖示的最大直徑 80 px</text>
+    <text x="172" y="74">綠色點線：方形圖示的最大邊長 72 px（視覺上與圓等重）</text>
+    <text x="172" y="96">線寬：主要線條 6 px，細節線條 4 px（96 格網上）</text>
+    <text x="172" y="112">端點：圓頭；轉角：圓角半徑 2 px（晶光的尖角除外）</text>
+    <text x="172" y="128">顏色：單色。SVG 填色用 currentColor，</text>
+    <text x="172" y="144">　　　顏色由程式依屬性色和狀態（同頻、未解鎖）套上。</text>
+  </g>
+</svg>
+<div class="cap">圖 A5-1　圖示格網。A5 與 A6 共用此格網。</div>
+</div>
+<div class="spec">
+  <div>交付</div><div>6 個 SVG：<code>icon_attr_{dawn|mist|crystal|blaze|thunder|abyss}.svg</code>，viewBox 為 <code>0 0 96 96</code></div>
+  <div>結構</div><div>每個 SVG 盡量合併成一個 path；所有線條轉為外框（不使用 stroke），填色 <code>currentColor</code></div>
+  <div>附件</div><div>一張總覽 PNG：六個圖示分別在 16、24、32、64 px 下的樣子，放在 <code>#0B0C0E</code> 底上</div>
+  <div>風格</div><div>與網站現有的線性圖示（lucide 風格）重量一致，但更有「光」的感覺：允許實心的光點</div>
+</div>
+
+<h3>程式會做什麼</h3>
+<ul>
+  <li>依屬性套上屬性色；未收集的組合在圖鑑裡顯示為暗灰。</li>
+  <li>同頻時：圖示外加一圈萊姆光環，並播放短暫的脈衝。</li>
+  <li>異相時：圖示從舊屬性變形淡入新屬性。</li>
+</ul>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>六個純黑剪影縮到 16 px 時，每一個都能一眼分辨。</li>
+  <li>造型與探索者 B 層光紋的實際出圖一致（請把 B 層樣圖附在總覽 PNG 旁）。</li>
+  <li>所有 SVG 的 viewBox 相同、線寬一致、內容在安全邊界內。</li>
+  <li>填色為 currentColor，在 Chrome 中改變父元素顏色時圖示會跟著變。</li>
+  <li>沒有文字、數字、星級符號。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A6 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P2</span><div class="id">A6 · ICON_DEPTH</div><div class="nm">光源座標圖示</div><div class="one">星圖上的座標標記：六種深度，加上一個發射台光點。</div></div>
+
+<h3>敘事</h3>
+<p>光源座標是潛光的目的地（白皮書第 4.3 節）。座標分成六個深度，越深需要越高的總光度才能前往。每個在 RovynCore 發射台發行的代幣，也會在星圖上生成一個以它命名的光源座標：<b>發射台和遊戲是同一個宇宙</b>。</p>
+
+<h3>遊戲中的位置</h3>
+<ul>
+  <li><b>星圖</b>：每個座標一個標記，大小 20–48 px（依縮放）。標記中心疊上屬性圖示（A5）或屬性色點。</li>
+  <li><b>出發確認</b>：選定座標後，畫面顯示該深度的大圖示（96–128 px）、光度門檻和屬性。</li>
+  <li><b>同頻圖鑑</b>：6 × 6 表格的欄標題。</li>
+</ul>
+
+<h3>造型方向：深度的遞進</h3>
+<p>六個圖示是同一個系列，視覺上要「越深越複雜、越神秘」，讓玩家不看數字也能感覺到遞進。建議以「同心結構的層數」表現深度：</p>
+<table>
+  <tr><th style="width:18mm">深度</th><th style="width:22mm">檔名</th><th>造型建議</th></tr>
+  <tr><td class="k">I 淺層</td><td><code>depth_1</code></td><td>一個簡單的圓環，中心空，最輕的視覺重量。</td></tr>
+  <tr><td class="k">II</td><td><code>depth_2</code></td><td>圓環＋內側一個實心小圓。</td></tr>
+  <tr><td class="k">III</td><td><code>depth_3</code></td><td>兩個同心圓環＋實心小圓；外環上一個缺口（指向光橋的方向）。</td></tr>
+  <tr><td class="k">IV</td><td><code>depth_4</code></td><td>三層結構，外環加上四個短刻度（類似胸口核心的瞄準刻度）。</td></tr>
+  <tr><td class="k">V</td><td><code>depth_5</code></td><td>四層結構，外環刻度增加到八個，內圈開始出現旋轉的弧段。</td></tr>
+  <tr><td class="k">VI 深淵</td><td><code>depth_6</code></td><td>反轉：外面是粗實的環，裡面是深黑的空洞，正中心一個極小的亮點。整個系列裡唯一「往內看」的圖示，和淵光的意象呼應但不能相同（兩者會同時出現）。</td></tr>
+  <tr><td class="k">發射台光點</td><td><code>coord_launchpad</code></td><td>與六個深度不同系：一個菱形或四芒星的光點，帶一道向上的細線（像剛被點亮、從下方升起）。它代表「別的世界的光」，要能一眼和遊戲本身的座標區分。</td></tr>
+</table>
+<p><b>不要</b>在圖示裡放羅馬數字或任何數字，深度數字由介面另外顯示（四種語言的格式不同）。</p>
+
+<h3>規格</h3>
+<div class="spec">
+  <div>格網</div><div>與 A5 相同：96×96，安全邊界 8 px</div>
+  <div>中心留空</div><div>深度 I–V 的中心要留出直徑 28 px 的空間，程式會在這裡疊屬性色點或屬性圖示</div>
+  <div>交付</div><div>7 個 SVG，currentColor 單色；一張總覽 PNG（20、32、48、96 px）</div>
+</div>
+
+<h3>程式會做什麼</h3>
+<ul>
+  <li>光度未達門檻的深度：圖示變暗並加上鎖定狀態（程式畫）。</li>
+  <li>選中時：外環緩慢旋轉，並畫出從觀測站延伸過來的光橋預覽線。</li>
+  <li>發射台光點：滑鼠移上去時顯示代幣名稱（白皮書：只有名稱和外觀，不影響數值）。</li>
+</ul>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>六個深度看得出由淺到深的遞進，VI 深淵明顯是「終點」。</li>
+  <li>深度 VI 和屬性「淵光」並排時不會混淆。</li>
+  <li>發射台光點和六個深度一眼可分。</li>
+  <li>I–V 中心留空 28 px，疊上 A5 的屬性圖示後不擁擠。</li>
+  <li>20 px 時仍然可辨。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A7 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P1</span><div class="id">A7 · UI_CARDBACK</div><div class="nm">卡背</div><div class="one">鑄造揭曉前的那一面。玩家付出 RVYN 之後，盯著它等結果。</div></div>
+
+<h3>敘事</h3>
+<p>鑄造是兩個步驟（白皮書第 6.4 節）：玩家先申請，等隨機數來源回覆後才揭曉。在這段等待裡，卡片是一道<b>「尚未解析的訊號」</b>：觀測站已經接收到某個東西，但還看不清它是什麼。卡背就是這道訊號的封印。</p>
+
+<h3>遊戲中的位置：揭曉演出</h3>
+<p>這是遊戲裡最重要的兩個情緒高點之一（另一個是潛光揭曉）。演出流程如下，卡背要為每一步提供素材：</p>
+<table>
+  <tr><th style="width:24mm">階段</th><th>畫面</th><th>卡背需要</th></tr>
+  <tr><td class="k">① 申請</td><td>卡背從畫面下方升起，種類紋章亮起（光塔、稜鏡或探索者）。</td><td>中央紋章區、三種種類紋章（分開的圖層）。</td></tr>
+  <tr><td class="k">② 等待隨機數</td><td>卡背緩慢呼吸，邊緣的刻度一格一格點亮（進度）。可能等幾分鐘。</td><td>邊緣有可以「點亮」的刻度環。</td></tr>
+  <tr><td class="k">③ 預兆</td><td>揭曉前約 1.5 秒，光從卡背的接縫透出來，顏色和強度依稀有度不同（微光暗、曜核強且有稜彩）。這是「好像抽到好東西了」的興奮時刻。</td><td><b>接縫層</b>：卡背上的裂縫或分割線，程式從這裡透出光。</td></tr>
+  <tr><td class="k">④ 翻開</td><td>卡片翻轉，露出 NFT 圖。</td><td>（NFT 圖，不在本文件範圍）</td></tr>
+</table>
+
+<h3>構圖與內容</h3>
+<div class="figure">
+<svg viewBox="0 0 520 230" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="150" height="200" rx="6" fill="#0b0c0e"/>
+  <rect x="17" y="17" width="136" height="186" rx="4" fill="none" stroke="#a14a00" stroke-dasharray="3 2"/>
+  <circle cx="85" cy="110" r="34" fill="none" stroke="#c9ff55"/>
+  <circle cx="85" cy="110" r="46" fill="none" stroke="#c9ff55" stroke-dasharray="2 4"/>
+  <path d="M85 30 L85 64 M85 156 L85 190 M30 110 L39 110 M131 110 L140 110" stroke="#7de6ff"/>
+  <g font-size="10" fill="#111511">
+    <text x="178" y="24" font-weight="700">1024 × 1366（與 NFT 圖相同，翻牌時尺寸無縫）</text>
+    <text x="178" y="42">橘色虛線：外緣 48 px 由程式畫稀有度框，請勿放細節</text>
+    <text x="178" y="58">綠色實線：中央紋章區，直徑約 460 px，中心 (512, 683)</text>
+    <text x="178" y="74">綠色點線：進度刻度環，直徑約 620 px，等分 36 格</text>
+    <text x="178" y="90">藍線：主要接縫（光會從這裡透出），由紋章向上下延伸，</text>
+    <text x="178" y="106">　　　加上數條次要裂縫，像古石或陶瓷的分割線</text>
+    <text x="178" y="128">上下對稱，左右對稱（程式翻轉、旋轉都不會出錯）</text>
+    <text x="178" y="150">材質：與面具、光塔同系的古石／陶瓷，炭黑為主，</text>
+    <text x="178" y="166">　　　表面有細線刻度與極淡的星圖紋路</text>
+    <text x="178" y="188">中央紋章區在底圖裡是空的凹槽，</text>
+    <text x="178" y="204">　　　種類紋章另外交付，由程式放入</text>
+  </g>
+</svg>
+<div class="cap">圖 A7-1　卡背版面。所有標線都只是示意。</div>
+</div>
+
+<h4>三種種類紋章</h4>
+<table>
+  <tr><th style="width:24mm">檔名</th><th>種類</th><th>紋章造型</th></tr>
+  <tr><td><code>emblem_spire</code></td><td>光塔</td><td>垂直、分體的石碑剪影，頂端一顆晶核。</td></tr>
+  <tr><td><code>emblem_prism</code></td><td>共鳴稜鏡</td><td>三角形稜鏡，一道光從一邊射入、從另一邊分成三道射出（對應廣域、聚焦、針芒三種光束）。</td></tr>
+  <tr><td><code>emblem_seeker</code></td><td>探索者</td><td>探索者頭盔的正面剪影（與 v3 探索者 F 層頭盔同系譜），或一個沿光橋向下潛的人形剪影。</td></tr>
+</table>
+<p>紋章是「刻在石上、內部發光」的質感：凹刻的線條，線條內是萊姆光（發光部分另外拆成發光層）。</p>
+
+<h3>分層與規格</h3>
+<div class="spec">
+  <div>尺寸</div><div>1024×1366，PSD 母檔 2048×2732</div>
+  <div>底圖</div><div><code>ui_cardback_base.png</code>：不透明，卡背本體（含空的紋章凹槽、未點亮的刻度環）</div>
+  <div>接縫層</div><div><code>ui_cardback_seams.png</code>：黑底白線，只有接縫和裂縫的形狀（白色＝光會透出的地方，線寬 2–6 px，有粗細變化）。程式依稀有度上色。</div>
+  <div>刻度層</div><div><code>ui_cardback_ticks.png</code>：黑底，36 格刻度的發光形狀。程式逐格點亮。</div>
+  <div>紋章</div><div><code>ui_cardback_emblem_{spire|prism|seeker}.png</code>（透明背景，460×460）＋各自的 <code>_glow.png</code>（黑底發光層）</div>
+  <div>圓角</div><div>四角圓角半徑 40 px（與 NFT 卡框一致）；圓角外透明</div>
+</div>
+
+<h3>預兆光的稀有度規則（程式端，供參考）</h3>
+<table>
+  <tr><th>稀有度</th><th>從接縫透出的光</th></tr>
+  <tr><td>微光</td><td>微弱的骨白色，只有主要接縫。</td></tr>
+  <tr><td>輝脈</td><td>萊姆色，主要接縫。</td></tr>
+  <tr><td>澄晶</td><td>明亮萊姆，主要與次要接縫都亮，卡片輕微震動。</td></tr>
+  <tr><td>稜光</td><td>萊姆，邊緣出現稜彩色散。</td></tr>
+  <tr><td>曜核</td><td>白熱中心加全稜彩，所有接縫爆亮，背景場景同步變暗。</td></tr>
+</table>
+<p class="small">接縫的設計直接影響這個演出有多好看：主要接縫要有明確的「裂開方向」，次要裂縫要多到曜核全亮時壯觀，但在底圖裡要細到幾乎看不見。</p>
+
+<h3>提示詞</h3>
+<div class="prompt"><span class="lbl">建議提示詞（底圖）</span>the back of a mystical collectible card, perfectly symmetrical, made of dark charcoal ancient stone
+and matte ceramic, fine engraved concentric measurement rings and faint star chart lines,
+an empty recessed circular socket in the exact center, a ring of 36 small unlit engraved ticks
+around it, very thin hairline cracks radiating vertically from the center, subtle wear, no light,
+no glow, front view, flat lighting, ultra detailed texture, 8k, portrait 3:4</div>
+<div class="prompt"><span class="lbl">負面提示詞</span>text, letters, numbers, logo, playing card suits, gold ornament, baroque, fantasy runes, skull,
+coins, bright light, glow, perspective, tilted, asymmetrical, watermark</div>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>上下、左右對稱；中央紋章凹槽是空的。</li>
+  <li>外緣 48 px 內沒有重要細節。</li>
+  <li>接縫層和底圖的裂縫位置完全對齊。</li>
+  <li>在不發光的狀態下，卡背看起來沉靜、厚重，不是空白。</li>
+  <li>三個紋章在 120 px 寬時仍可一眼分辨種類。</li>
+  <li>沒有文字、數字、金幣、撲克牌花色等意象。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A8 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P2</span><div class="id">A8 · LOGO_LIGHTDIVE</div><div class="nm">標題字標</div><div class="one">「Lightdive 潛光遠征」的正式字標。</div></div>
+
+<h3>敘事</h3>
+<p>Lightdive 的意思就是遊戲的核心動作：<b>潛進黑暗，把光帶回來</b>。字標要在一眼之內傳達「光」與「下潛」兩個意象，並和 RovynCore 品牌（萊姆光、深色、精密）同一家族，但有自己的個性。</p>
+
+<h3>使用場景</h3>
+<table>
+  <tr><th>場景</th><th>尺寸</th><th>底色</th></tr>
+  <tr><td>遊戲首頁、載入畫面</td><td>寬 600–900 px</td><td>深色場景</td></tr>
+  <tr><td>分享圖、社群貼文</td><td>寬 400–700 px</td><td>深色</td></tr>
+  <tr><td>網站導覽列、頁尾</td><td>高 20–28 px</td><td>深色或淺色</td></tr>
+  <tr><td>白皮書、文件封面</td><td>不定</td><td>白色</td></tr>
+</table>
+
+<h3>內容與版本</h3>
+<ul>
+  <li><b>主字標</b>：英文「LIGHTDIVE」。它是全球共通的名稱，不翻譯。</li>
+  <li><b>副標</b>：在地化名稱，<b>獨立成可替換的圖層</b>，因為遊戲有四種語言：
+    <ul>
+      <li>繁體中文：潛光遠征</li>
+      <li>簡體中文：潜光远征</li>
+      <li>韓文：待文案組確認（白皮書第 14.2 節第 7 項，需母語者確認）</li>
+      <li>英文：Expedition（或不加副標，由文案組決定）</li>
+    </ul></li>
+  <li><b>兩種排版</b>：橫式（主字標與副標左右或上下並排，寬高比約 4:1）、直式堆疊（約 1.6:1）。</li>
+</ul>
+
+<h3>造型方向</h3>
+<ul>
+  <li><b>字體</b>：幾何、偏窄、科技感的無襯線字，大寫。可以用商用授權字型改造，或完全自繪。<b>字型授權必須允許商標用途</b>，並在 log 裡記錄字型名稱與授權。</li>
+  <li><b>下潛的意象</b>：建議在一個字母上做一個細節，例如「I」的點變成一顆萊姆光點，或「V」的底部延伸出一道向下的細光線，像光橋往深處延伸。只做一處，不要每個字母都加裝飾。</li>
+  <li><b>顏色</b>：主字標用骨白 <code>#D8D6CE</code> 或純白，只有那一處光點或光線用核光萊姆。</li>
+  <li><b>和副標的關係</b>：中文副標的字重比英文輕一級，字距加大，放在主字標下方或右側。</li>
+</ul>
+
+<h3>規格</h3>
+<div class="spec">
+  <div>交付</div><div><code>logo_lightdive_horizontal.svg</code>、<code>logo_lightdive_stacked.svg</code>（主字標）；<code>logo_lightdive_sub_{zh-hant|zh-hans|ko|en}.svg</code>（副標，各自獨立）</div>
+  <div>色彩版本</div><div>每個檔案內含三個版本（或分開交付）：深底版（骨白＋萊姆）、淺底版（墨黑 <code>#111511</code>＋深萊姆 <code>#4F7A00</code>）、單色版</div>
+  <div>留白</div><div>字標四周最小留白＝字母「I」的高度的一半</div>
+  <div>最小尺寸</div><div>橫式主字標寬度不小於 120 px；小於此尺寸改用單色版、去掉光點細節</div>
+  <div>動態（程式）</div><div>首頁載入時，光點或光線從上往下「潛入」再亮起；SVG 中請把該光點獨立為一個帶 id 的 path（<code>id="dive-light"</code>）</div>
+</div>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>在 120 px 寬時仍清楚可讀。</li>
+  <li>深底、淺底、單色三種版本齊全。</li>
+  <li>副標可以替換成四種語言而不影響主字標的位置。</li>
+  <li>字型授權允許商標使用，已記錄在 log。</li>
+  <li>與 RovynCore 網站現有的字標放在一起不衝突。</li>
+</ul>
+</section>
+
+<!-- ============================================================ A9 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">P3</span><div class="id">A9 · SHARE</div><div class="nm">分享圖</div><div class="one">在 X、Telegram、Discord 等地方貼出遊戲連結時顯示的預覽圖，以及結果分享的底圖。</div></div>
+
+<h3>敘事與目的</h3>
+<p>這是大多數人第一次接觸 Lightdive 的地方：朋友貼出的一個連結。它要在社群動態裡被一眼停下來看，並傳達「這是一個關於深空、光和探索的遊戲」。</p>
+<div class="box warn">
+  <h4>合規提醒</h4>
+  <p>白皮書第 12 章：宣傳只談遊戲與收藏，不寫報酬率、不暗示「穩賺」。分享圖不能出現金幣、上漲圖表、「賺取」「收益」等意象或字樣。</p>
+</div>
+
+<h3>兩個交付檔</h3>
+<table>
+  <tr><th style="width:36mm">檔案</th><th>用途</th><th>內容</th></tr>
+  <tr><td><code>share_default.png</code></td><td>遊戲頁面的固定預覽圖（Open Graph、X Card）</td><td>完整成品：主視覺＋字標（A8）。這是唯一一張允許包含字標的點陣圖。</td></tr>
+  <tr><td><code>share_plate.png</code></td><td>結果分享的底圖：玩家抽到曜核、或觸發核光回響時可以一鍵分享</td><td>只有背景氛圍，<b>不含字標和文字</b>。程式會在上面合成 NFT 圖、結果名稱、字標（依玩家語言）。</td></tr>
+</table>
+
+<h3>構圖</h3>
+<div class="figure">
+<svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="300" height="157" fill="#0b0c0e"/>
+  <rect x="81" y="10" width="157" height="157" fill="none" stroke="#7de6ff" stroke-dasharray="4 3"/>
+  <rect x="25" y="25" width="270" height="127" fill="none" stroke="#a14a00" stroke-dasharray="3 2"/>
+  <circle cx="160" cy="88" r="30" fill="none" stroke="#c9ff55"/>
+  <g font-size="10" fill="#111511">
+    <text x="326" y="24" font-weight="700">1200 × 630（母檔 2400 × 1260）</text>
+    <text x="326" y="42">藍色虛線：中央 630 × 630 正方形安全區</text>
+    <text x="326" y="58">　部分平台會裁成正方形縮圖，</text>
+    <text x="326" y="74">　主體與字標都要在這個範圍內</text>
+    <text x="326" y="94">橘色虛線：四周 60 px 邊界，不放重要內容</text>
+    <text x="326" y="114">綠色圓：主體（Signal-Keeper 或核心光）</text>
+    <text x="326" y="134">share_plate：中央正方形區域要夠暗，</text>
+    <text x="326" y="150">　程式會在那裡放 NFT 卡片圖</text>
+  </g>
+</svg>
+<div class="cap">圖 A9-1　分享圖版面。</div>
+</div>
+<h4>share_default 建議內容</h4>
+<ul>
+  <li>Signal-Keeper P5 姿勢（張開手、核心強光）的上半身，置於中央偏左，背景是觀測窗與深空，核心的光照亮畫面中央。</li>
+  <li>字標 A8 置於右側或下方，在正方形安全區內。</li>
+  <li>可以直接使用 A2、A3 的素材合成，確保風格一致。</li>
+</ul>
+<h4>share_plate 建議內容</h4>
+<ul>
+  <li>觀測窗與深空的背景，中央一圈萊姆光暈（像卡片剛從光裡浮現）。</li>
+  <li>中央 630×630 區域平均亮度低於 15%，放卡片後不會被背景吃掉。</li>
+</ul>
+
+<h3>驗收清單</h3>
+<ul class="check">
+  <li>在 X 的動態牆上（約 500 px 寬）一眼看得出主體和字標。</li>
+  <li>裁成正方形時主體和字標仍完整。</li>
+  <li>share_plate 沒有任何文字，中央區域夠暗。</li>
+  <li>沒有金幣、圖表、報酬相關的意象或文字。</li>
+</ul>
+</section>
+
+<!-- ============================================================ 13 -->
+<section class="chap">
+<h2><span class="num">13</span>驗收流程與生成紀錄</h2>
+
+<h3>13.1 驗收流程</h3>
+<ol>
+  <li><b>自我檢查</b>：交付前用該項的驗收清單逐項打勾。</li>
+  <li><b>交付</b>：依第 3.2 節的資料夾結構，連同 log 一起交付。</li>
+  <li><b>實機放入</b>：開發端在 1–2 天內把素材放進測試網版本，產出桌機（1920×1080）、手機（390×844）的實機截圖或錄影。</li>
+  <li><b>回饋</b>：開發端依同一份驗收清單回報，並附上截圖標註問題位置。只有在「技術上無法使用」時才要求重做（例如分層不對齊、安全區被佔用）；風格判斷以美術負責人的決定為準。</li>
+  <li><b>定版</b>：素材定版後放進 repo（<code>public/</code> 下的遊戲素材目錄），母檔另外保存。</li>
+</ol>
+
+<h3>13.2 生成紀錄（必填）</h3>
+<p>依 ART-ASSETS.md 的授權規則，每一張用生圖工具產生的素材都要有紀錄。每個資料夾放一個 <code>log.csv</code>，所有資料夾的紀錄彙整成根目錄的 <code>CREDITS.csv</code>。</p>
+<table>
+  <tr><th style="width:30mm">欄位</th><th>內容</th><th>範例</th></tr>
+  <tr><td><code>asset_id</code></td><td>素材 ID 與檔名</td><td>A3 / npc_keeper_p2_signal_body.png</td></tr>
+  <tr><td><code>tool</code></td><td>工具名稱與版本</td><td>（工具名稱）v6.1</td></tr>
+  <tr><td><code>license</code></td><td>授權方案，以及是否允許商用</td><td>Pro 方案，允許商用</td></tr>
+  <tr><td><code>date</code></td><td>生成日期（UTC）</td><td>2026-10-12</td></tr>
+  <tr><td><code>prompt</code></td><td>實際使用的完整提示詞</td><td>…</td></tr>
+  <tr><td><code>negative</code></td><td>負面提示詞</td><td>…</td></tr>
+  <tr><td><code>seed</code></td><td>種子或生成 ID（工具有提供時）</td><td>…</td></tr>
+  <tr><td><code>inputs</code></td><td>參考圖或輸入圖的檔名</td><td>ref/signal-keeper-turnaround.webp</td></tr>
+  <tr><td><code>edits</code></td><td>後製內容（修圖、拆層、合成）與操作者</td><td>修手指、拆發光層（王小明）</td></tr>
+  <tr><td><code>anchors</code></td><td>需要的錨點座標（A2、A3）</td><td>eye=512,292; core=512,688</td></tr>
+  <tr><td><code>fonts</code></td><td>使用的字型與授權（A8、A9）</td><td>…</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 14 -->
+<section class="chap">
+<h2><span class="num">14</span>待決事項</h2>
+<p>以下事項需要在開始繪製相關素材之前決定。</p>
+<table>
+  <tr><th>#</th><th>事項</th><th>影響</th><th>建議</th><th>決定者</th></tr>
+  <tr><td class="n">1</td><td>六種屬性的色碼與造型</td><td>A5、A1 異相、探索者 B 層</td><td>以 v3 第 3 節為準；若 v3 未定義，採用本文件第 2.5、A5 章的建議</td><td>美術負責人＋文案組</td></tr>
+  <tr><td class="n">2</td><td>軌道球數量（三顆或四顆）</td><td>A3、A4、主視覺、白皮書</td><td>三顆，與白皮書一致</td><td>美術負責人</td></tr>
+  <tr><td class="n">3</td><td>終端螢幕上的 SIGNAL 字樣</td><td>A3</td><td>遊戲內立繪螢幕留空；宣傳主視覺可保留</td><td>美術負責人</td></tr>
+  <tr><td class="n">4</td><td>字標的韓文與英文副標</td><td>A8</td><td>韓文待母語者確認；英文可不加副標</td><td>文案組</td></tr>
+  <tr><td class="n">5</td><td>是否加做 P6 引導姿勢</td><td>A3、新手引導體驗</td><td>加做；新手引導需要「指向介面」的動作</td><td>老闆</td></tr>
+  <tr><td class="n">6</td><td>生圖工具與授權方案</td><td>全部</td><td>選定一個允許商用的方案並全程使用同一個工具，風格才會一致</td><td>老闆</td></tr>
+</table>
+
+<div class="box key">
+  <h4>交付後開發端會做的事</h4>
+  <p>每一批素材到位後，開發端會：放進遊戲並加上本文件「程式會做什麼」所描述的動態效果；回傳實機截圖；把定版素材登記到遊戲的素材清單；並同步更新 ART-ASSETS.md 的完成狀態。</p>
+</div>
+</section>
+
+<!-- ============================================================ APPENDIX -->
+<section class="chap">
+<h2><span class="num">附錄</span>提示詞與色碼速查</h2>
+
+<h3>A. Signal-Keeper 角色設定段落</h3>
+<p>生成任何 Signal-Keeper 圖時，都把這一段放在提示詞最前面，<b>一個字都不要改</b>，再接姿勢段落。這是讓五個姿勢看起來是同一個角色的最有效方法。如果工具支援角色參考圖，請同時附上四視圖（<code>ref/signal-keeper-turnaround.webp</code>）。</p>
+<div class="prompt"><span class="lbl">角色設定段落（固定）</span>Signal-Keeper, the night watchman of a deep-space light observatory, a tall slender humanoid
+figure with no visible skin, wearing a deep pointed hood and a long charcoal-black heavy wool trench
+coat with wide lapels and a belt, coarse visible weave, slightly frayed edges,
+face fully covered by a bone-white matte ceramic-metal mask with fine hairline cracks: a black vertical
+strip from forehead to chin, a black V-shaped brow band meeting at the center, a single round glowing
+lime-green (#C9FF55) eye lens at the center of the brow, dark side cheek panels, a segmented black jaw
+vent grille, no mouth, no other eyes,
+a circular reticle lens embedded in the chest, concentric rings and crosshair ticks glowing lime green,
+mounted on a vertical segmented black spine plate,
+black segmented mechanical gloves with three-jointed fingers,
+two very thin glowing lime-green orbit rings tilted around the upper body with exactly three small
+glossy black orbs, each with a tiny lime light dot,
+a dark rugged tablet with corner bumpers and a blank softly glowing screen,
+cinematic dark science fiction, quiet and solemn, highly detailed, sharp focus</div>
+
+<h3>B. 共通負面提示詞</h3>
+<div class="prompt"><span class="lbl">所有素材共用（各項另有補充）</span>text, letters, words, numbers, logo, watermark, signature, star rating symbols,
+skull, tombstone, blood, corpse, pickaxe, shovel, mining helmet, headlamp, mine cart,
+gun, sword, cannon, coins, money, rising chart,
+cartoon, chibi, anime, low resolution, jpeg artifacts, blurry, oversaturated, rainbow colors,
+extra fingers, deformed hands, extra eyes, human face, visible mouth</div>
+
+<h3>C. 色碼速查</h3>
+<table>
+  <tr><th>名稱</th><th>色碼</th><th>名稱</th><th>色碼</th></tr>
+  <tr><td><span class="sw" style="background:#07090a"></span>深空黑</td><td><code>#07090A</code></td><td><span class="sw" style="background:#ffd27a"></span>曦光</td><td><code>#FFD27A</code></td></tr>
+  <tr><td><span class="sw" style="background:#0b0c0e"></span>夜炭</td><td><code>#0B0C0E</code></td><td><span class="sw" style="background:#a9c4c2"></span>霧光</td><td><code>#A9C4C2</code></td></tr>
+  <tr><td><span class="sw" style="background:#2b2d30"></span>炭灰</td><td><code>#2B2D30</code></td><td><span class="sw" style="background:#7de6ff"></span>晶光</td><td><code>#7DE6FF</code></td></tr>
+  <tr><td><span class="sw" style="background:#6b6e68"></span>石灰</td><td><code>#6B6E68</code></td><td><span class="sw" style="background:#ff7a45"></span>熾光</td><td><code>#FF7A45</code></td></tr>
+  <tr><td><span class="sw" style="background:#d8d6ce"></span>骨白</td><td><code>#D8D6CE</code></td><td><span class="sw" style="background:#b28cff"></span>雷光</td><td><code>#B28CFF</code></td></tr>
+  <tr><td><span class="sw" style="background:#c9ff55"></span>核光萊姆</td><td><code>#C9FF55</code></td><td><span class="sw" style="background:#5b6cff"></span>淵光</td><td><code>#5B6CFF</code></td></tr>
+  <tr><td><span class="sw" style="background:#4f7a00"></span>深萊姆</td><td><code>#4F7A00</code></td><td><span class="sw" style="background:#f4f6ee"></span>白熱</td><td><code>#F4F6EE</code></td></tr>
+</table>
+
+<h3>D. 參考圖</h3>
+<div class="grid2">
+  <div class="figure" style="margin:0"><img src="ref/signal-keeper-portrait.webp" alt=""><div class="cap">Signal-Keeper 肖像（構圖與打光參考）</div></div>
+  <div>
+    <div class="figure" style="margin:0 0 3mm"><img src="ref/signal-keeper-keyart.webp" alt=""><div class="cap">第一季主視覺：ROVYNCORE / THE FIRST LIGHT。右側環形結構與綠色城市可作為 A2 觀測窗的參考。</div></div>
+    <p class="small">所有參考圖位於 <code>docs/lightdive/source/ref/</code>。</p>
+  </div>
+</div>
+</section>
+
+</body>
+</html>
