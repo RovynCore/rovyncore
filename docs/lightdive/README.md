@@ -50,12 +50,19 @@ Everything below runs from a maintainer's own terminal. Private keys are read fr
    DEPLOYER_PRIVATE_KEY=0x... OPERATOR_ADDRESS=0x... npm run lightdive:deploy
    ```
    Without `RVYN_ADDRESS` a test token `tRVYN` is deployed and 1,000,000 of it seeds the Core Light Pool. The script writes the addresses to `packages/web3/lightdive.json`; commit that file to point the site at the deployment. Mainnet is refused on purpose.
-3. **Run the randomness operator** continuously (cron every 10 minutes, or `--watch`):
-   ```sh
-   OPERATOR_PRIVATE_KEY=0x... LIGHTDIVE_SEED_SECRET=0x<64 random hex> npm run lightdive:operator -- --watch
-   ```
-   Mints and dives are refused in any hour without a commitment, so the game pauses whenever the operator stops. Keep `LIGHTDIVE_SEED_SECRET` private.
-4. **Open the spire sale** from `/admin/lightdive` with the deployer wallet (the contract owner). Seekers and prisms can be minted as soon as the operator has committed the current hour.
+3. **Run the randomness operator.** Time is cut into one-minute slots with one hash chain per UTC day. The operator commits today and the next two days, and each minute reveals the finished slot that a mint or dive waits for (mints resolve in about a minute, dives five minutes after departure). Mints and dives are refused in slots whose day has no commitment, so the game pauses if the operator stops for two days.
+   - Primary: the Cloudflare Worker in `workers/lightdive-operator`, every minute:
+     ```sh
+     npx wrangler deploy -c workers/lightdive-operator/wrangler.jsonc
+     npx wrangler secret put OPERATOR_PRIVATE_KEY -c workers/lightdive-operator/wrangler.jsonc
+     npx wrangler secret put LIGHTDIVE_SEED_SECRET -c workers/lightdive-operator/wrangler.jsonc
+     ```
+     The Worker bundles `packages/web3/lightdive.json`, so redeploy it after every contract deployment.
+   - Backup: `.github/workflows/lightdive-operator.yml` every five minutes on `main` (repository secrets `LIGHTDIVE_OPERATOR_PRIVATE_KEY`, `LIGHTDIVE_SEED_SECRET`).
+   - Local: `OPERATOR_PRIVATE_KEY=0x... LIGHTDIVE_SEED_SECRET=0x<64 random hex> npm run lightdive:operator -- --watch`
+
+   Keep `LIGHTDIVE_SEED_SECRET` private: anyone holding it can predict results.
+4. **Open the spire sale** from `/admin/lightdive` with the deployer wallet (the contract owner). Seekers and prisms can be minted as soon as the operator has committed the current day.
 5. **Play** at `/game/lightdive` (not linked from the site and not indexed).
 
 For local development, point reads at a local chain by adding `"rpcUrl": "http://127.0.0.1:8545"` to `packages/web3/lightdive.json` (do not commit it).

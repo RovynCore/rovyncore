@@ -279,7 +279,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <tr><th style="width:16%">時間</th><th>發生什麼</th></tr>
 <tr><td>每日 00:00 UTC</td><td>新的一天（<b>紀元 Epoch</b>）開始。Signal-Keeper 公布當日的光源座標與<b>異相</b>（哪些座標的屬性改變）。前一天的 RVYN 分配結算完成，可以領取。</td></tr>
 <tr><td>當天任何時間</td><td>每座光塔可以<b>出發潛光一次</b>：選一個光源座標（必須達到該深度的總光度門檻），送出交易。</td></tr>
-<tr><td>出發後約 1 小時內</td><td>系統公開該小時的隨機種子，潛光結果揭曉：成功、明亮收穫、罕見光焰，或光橋中斷。帶回的<b>光塵</b>立即顯示。</td></tr>
+<tr><td>出發後約 5 分鐘</td><td>系統公開出發 5 分鐘後那一分鐘的隨機種子，潛光結果揭曉：成功、明亮收穫、罕見光焰，或光橋中斷。帶回的<b>光塵</b>立即顯示。</td></tr>
 <tr><td>當天結束</td><td>當天所有光塵加總，核光池當日釋出量按比例換成 RVYN，記入玩家帳上。</td></tr>
 </table>
 
@@ -429,14 +429,14 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <div class="flow">
   <div class="step"><b>① 申請鑄造</b>玩家付 RVYN，合約記下申請與當時區塊</div>
   <div class="arrow">→</div>
-  <div class="step"><b>② 隨機數</b>等待隨機數來源回覆（VRF，或營運方事先承諾的種子）</div>
+  <div class="step"><b>② 隨機數</b>等待申請當下那一分鐘的種子揭露（約 1 分鐘）</div>
   <div class="arrow">→</div>
   <div class="step hl"><b>③ 揭曉</b>用隨機數從牌組抽稀有度、光束、光度與外觀</div>
   <div class="arrow">→</div>
   <div class="step"><b>④ 發送 NFT</b>NFT 鑄造到玩家錢包，牌組剩餘數量更新</div>
 </div>
 <p><b>為什麼要兩步驟：</b>如果在同一筆交易裡直接用區塊資料當隨機數，懂技術的人可以先模擬結果，只在抽到好卡時才送出交易。分成「申請」和「揭曉」兩步，申請時沒有人知道結果。</p>
-<p><b>隨機數來源：</b>首選鏈上 VRF 服務（例如 Chainlink VRF 或 Pyth Entropy），由開發組在寫合約前確認 Robinhood Chain 是否支援 <span class="tag dec">待辦</span>。如果沒有，改用「承諾－揭露」：營運方事先把一批種子的雜湊值公布在鏈上，之後才揭露種子，再和玩家申請時的區塊資料混合。任何人都可以事後驗證營運方沒有改種子。</p>
+<p><b>隨機數來源：</b>首選鏈上 VRF 服務（例如 Chainlink VRF 或 Pyth Entropy）。2026-10-12 查證：Chainlink VRF v2.5 的支援網路清單與 Pyth Entropy 的部署清單都沒有 Robinhood Chain，所以目前採用「承諾－揭露」，VRF 上線後替換（見第 14.1 節第 17 項）。時間切成 1 分鐘一格；營運方每天事先在鏈上公布一條雜湊鏈的終點值，每一分鐘的種子都是這條鏈上的一個值，揭露時合約只要把它雜湊回已知的值就能驗證，再和玩家申請時的區塊資料混合。任何人都可以事後驗證營運方沒有改種子。</p>
 </section>
 
 <!-- ============ 7. 經濟 ============ -->
@@ -551,7 +551,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <tr><td><b>LightdiveMinter</b></td><td>收 RVYN、分流費用、首抽折扣、管理牌組、檢查流通上限、兩步驟鑄造</td><td class="mono">requestMint(kind, qty)<br>fulfill(requestId, rand)<br>deckRemaining(kind)<br>firstMintUsed(wallet, kind)</td></tr>
 <tr><td><b>Expedition</b></td><td>組隊（保管 NFT）、出發潛光、計算光塵、記帳、提領</td><td class="mono">equip(spire, prism, seekers[])<br>unequip(spire)<br>dive(spire, coord)<br>settle(diveId)<br>claim()</td></tr>
 <tr><td><b>CoreLightPool</b></td><td>保管核光池 RVYN、計算每日釋出、接收回流；<b>沒有任何提領到外部地址的函式</b></td><td class="mono">openEpoch(day)<br>emissionOf(day)<br>fund(amount)</td></tr>
-<tr><td><b>RandomnessBeacon</b></td><td>提供鑄造和潛光的隨機數：VRF 轉接，或承諾－揭露</td><td class="mono">commit(hash)<br>reveal(hour, seed)</td></tr>
+<tr><td><b>RandomnessBeacon</b></td><td>提供鑄造和潛光的隨機數：VRF 轉接，或承諾－揭露</td><td class="mono">commit(day, anchor)<br>reveal(slot, seed)</td></tr>
 <tr><td><b>LightdiveConfig</b></td><td>所有可調參數集中一處，有上下限檢查，經時間鎖修改</td><td class="mono">setParam(key, value) [TIMELOCK]</td></tr>
 </table>
 
@@ -559,13 +559,13 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <div class="flow">
   <div class="step"><b>dive()</b>檢查擁有者、今天還沒潛、光度達門檻；記下 B、扣航程；當日 ΣB 增加</div>
   <div class="arrow">→</div>
-  <div class="step"><b>reveal()</b>該小時的隨機種子公開</div>
+  <div class="step"><b>reveal()</b>出發 5 分鐘後那一格的隨機種子公開</div>
   <div class="arrow">→</div>
   <div class="step hl"><b>settle()</b>任何人都能呼叫：算出光束倍率與光塵 L；航程為 0 的 NFT 燒毀</div>
   <div class="arrow">→</div>
   <div class="step"><b>claim()</b>當日結束後，R = E × L ÷ ΣB 記入帳上；扣光衰手續費後提領</div>
 </div>
-<p class="small">玩家打開網頁時，前端會自動幫他把已揭曉的潛光一起結算（批次 settle），玩家不需要自己操作。種子若超過 48 小時沒有揭露，該小時所有潛光一律以倍率 1.0 結算，營運方無法靠「不揭露」影響結果。</p>
+<p class="small">玩家打開網頁時，前端會自動幫他把已揭曉的潛光一起結算（批次 settle），玩家不需要自己操作。種子若超過 48 小時沒有揭露，用到那一格的潛光一律以倍率 1.0 結算，營運方無法靠「不揭露」影響結果。</p>
 
 <h3>9.3 權限設計</h3>
 <table>
@@ -604,7 +604,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <tr><td>鑄造頁</td><td>三種 NFT 的鑄造、牌組剩餘數量與目前機率即時顯示</td><td>app/game/mint</td></tr>
 <tr><td>事件索引</td><td>讀取合約事件，存成可查詢的資料，供畫面和排行榜使用</td><td>Worker＋D1</td></tr>
 <tr><td>Metadata 產生器</td><td>依鏈上屬性合成 7 層探索者肖像，產生 JSON 與圖片</td><td>Worker＋R2</td></tr>
-<tr><td>種子服務</td><td>每小時提交、揭露隨機種子（承諾－揭露方案時使用）</td><td>排程 Worker</td></tr>
+<tr><td>種子服務</td><td>每天預先承諾雜湊鏈；每分鐘檢查，只在有鑄造或潛光等待時揭露（承諾－揭露方案時使用）</td><td>排程 Worker（每分鐘）＋ GitHub 排程備援</td></tr>
 <tr><td>自動結算</td><td>玩家開頁時批次 settle，降低操作步驟</td><td>前端</td></tr>
 <tr><td>透明度頁</td><td>核光池、每日釋出、銷毀、金庫流向</td><td>/transparency</td></tr>
 </table>
@@ -623,7 +623,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
     <li>每季牌組剩餘數量（依稀有度、光束）</li>
   </ul>
   <ul>
-    <li>每小時隨機種子的承諾與揭露紀錄</li>
+    <li>每天雜湊鏈的承諾與每分鐘種子的揭露紀錄</li>
     <li>所有合約地址、驗證狀態、管理權限持有者</li>
     <li>參數變更的時間鎖排程</li>
   </ul>
@@ -716,12 +716,13 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <tr><td>14</td><td>Signal-Keeper</td><td>遊戲 NPC（觀測站守夜人、新手引導）、第一季主視覺；不做成 NFT</td></tr>
 <tr><td>15</td><td>新手優惠</td><td>每個錢包第一次鑄造三種 NFT，各 1 個享 9 折，由營運金庫吸收；光塔開賣 48 小時內每錢包最多 3 座</td></tr>
 <tr><td>16</td><td>特別款（2026-10-12）</td><td>移除光塔與稜鏡的特別款（空心塔、創世塔、回聲稜鏡、核心之淚）及其光度 +4%；牌組只依稀有度（稜鏡另依光束）抽選。曜核探索者的星紋保留</td></tr>
+<tr><td>17</td><td>隨機數（2026-10-12）</td><td>VRF 目前在 Robinhood Chain 不可用，暫用承諾－揭露；時間格由 1 小時縮短為 1 分鐘（鑄造約 1 分鐘揭曉），潛光結果在出發 5 分鐘後揭曉；VRF 上線後替換</td></tr>
 </table>
 
 <h3>14.2 上線前待辦</h3>
 <table>
 <tr><th style="width:5%">#</th><th style="width:28%">事項</th><th>負責</th></tr>
-<tr><td>1</td><td>查證 Robinhood Chain 的 VRF 支援</td><td>開發組</td></tr>
+<tr><td>1</td><td>查證 Robinhood Chain 的 VRF 支援（2026-10-12：尚未支援，主網前再確認一次；見第 14.1 節第 17 項）</td><td>開發組</td></tr>
 <tr><td>2</td><td>光塔、稜鏡燒毀時的名稱；「光橋中斷」「核光回響」航行日誌；「核光池」「光衰」命名確認</td><td>文案組</td></tr>
 <tr><td>3</td><td>美術素材（第 10 章最小集）</td><td>美術組</td></tr>
 <tr><td>4</td><td>法律意見：機率型商品、隨機倍率、地區限制、服務條款</td><td>老闆委託律師</td></tr>
@@ -741,7 +742,8 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
 <tr><td class="mono">pool.emissionRateBp</td><td class="v">100</td><td>每日釋出 1.00%（允許 20–150）</td></tr>
 <tr><td class="mono">pool.yieldCapPerPoint</td><td class="v">0.18 RVYN</td><td>每點基礎光塵的釋出上限</td></tr>
 <tr><td class="mono">epoch.length</td><td class="v">24h（UTC 00:00）</td><td>每日紀元</td></tr>
-<tr><td class="mono">reveal.interval</td><td class="v">1h</td><td>種子揭露頻率；48h 未揭露以倍率 1.0 結算</td></tr>
+<tr><td class="mono">reveal.interval</td><td class="v">1 min</td><td>隨機數時間格；鑄造用申請當下那一格，48h 未揭露以倍率 1.0 結算</td></tr>
+<tr><td class="mono">dive.delay</td><td class="v">5 min</td><td>潛光結果使用出發 5 分鐘後那一格的種子</td></tr>
 <tr><td class="mono">mint.price.spire / prism / seeker</td><td class="v">300 / 120 / 40</td><td>RVYN</td></tr>
 <tr><td class="mono">mint.split.pool / burn / treasury</td><td class="v">7000 / 1500 / 1500 bp</td><td>核光池比例不得低於 4000</td></tr>
 <tr><td class="mono">mint.firstDiscountBp</td><td class="v">1000</td><td>每錢包每種 NFT 首個 9 折，由金庫份額吸收</td></tr>

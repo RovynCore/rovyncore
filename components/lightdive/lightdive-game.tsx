@@ -152,7 +152,7 @@ function Game({ c, t }: { c: Contracts; t: (v: Copy) => string }) {
         <Stat label={t(T.pool)} value={overview ? fmt(overview.pool.balance, 0) : "—"} unit="RVYN" />
         <Stat label={t(T.todayRelease)} value={overview ? fmt(estRelease, 0) : "—"} unit="RVYN" />
         <Stat label={t(T.todayDust)} value={overview ? (Number(overview.todayPoints) / 10_000).toLocaleString(locale, { maximumFractionDigits: 0 }) : "—"} />
-        <Stat label={t(T.signal)} value={overview ? t(overview.hourScheduled ? T.signalOk : T.signalOff) : "—"} tone={overview && !overview.hourScheduled ? "warn" : undefined} />
+        <Stat label={t(T.signal)} value={overview ? t(overview.slotScheduled ? T.signalOk : T.signalOff) : "—"} tone={overview && !overview.slotScheduled ? "warn" : undefined} />
         <div className="ld-stat ld-stat--claim">
           <span>{t(T.credit)}</span>
           <strong>{player ? fmt(player.credit) : "—"} <small>RVYN</small></strong>
@@ -209,7 +209,7 @@ function MintTab({ c, t, overview, player, requests, busy, send }: {
           const total = price * BigInt(qty[kind]) - (discounted ? price * BigInt(overview.firstDiscountBp) / 10_000n : 0n);
           const needsApproval = !player || player.allowance < total;
           const capped = kind !== KIND.seeker;
-          const disabled = busy !== null || overview.paused.minter || !overview.hourScheduled || (kind === KIND.spire && !spireOpen);
+          const disabled = busy !== null || overview.paused.minter || !overview.slotScheduled || (kind === KIND.spire && !spireOpen);
           return (
             <article key={kind} className="ld-card">
               <header>
@@ -390,7 +390,7 @@ function TeamCard({ c, t, team, overview, busy, send }: {
       </p>
       {attuned && <p className="ld-attuned">#{String(attuned.id)} {t(T.attuned)}</p>}
       <div className="ld-actions">
-        <button type="button" className="ld-btn" disabled={doveToday || team.seekers.length === 0 || !reachable[depth] || busy !== null || !overview.hourScheduled || overview.paused.expedition}
+        <button type="button" className="ld-btn" disabled={doveToday || team.seekers.length === 0 || !reachable[depth] || busy !== null || !overview.diveScheduled || overview.paused.expedition}
           onClick={() => void send(`dive-${team.spire.id}`, c.expedition, ABI.Expedition, "dive", [team.spire.id, depth, coord.id])}>
           {team.seekers.length === 0 ? t(T.noSeekers) : doveToday ? t(T.doveToday) : t(T.dive)}
         </button>

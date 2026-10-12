@@ -1,0 +1,13 @@
+// Lightdive testnet randomness operator. Deploy from the repo root:
+//   npx wrangler deploy -c workers/lightdive-operator/wrangler.jsonc
+//   npx wrangler secret put OPERATOR_PRIVATE_KEY -c workers/lightdive-operator/wrangler.jsonc
+//   npx wrangler secret put LIGHTDIVE_SEED_SECRET -c workers/lightdive-operator/wrangler.jsonc
+{
+  "name": "lightdive-operator-testnet",
+  "main": "index.mjs",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "observability": { "enabled": true }
+}

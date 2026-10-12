@@ -1,13 +1,14 @@
 name: Lightdive randomness operator (testnet)
 
-# Keeps 48 hours of seed commitments ahead and reveals finished hours for the Lightdive testnet.
-# Mints and dives are refused in hours without a commitment, so this must keep running.
+# Backup for the Cloudflare Worker in workers/lightdive-operator, which runs every minute: commits the
+# daily hash chains ahead and reveals the one-minute slots that mints and dives wait for. Mints and
+# dives are refused in slots without a commitment, so at least one of the two must keep running.
 # Needs repository secrets LIGHTDIVE_OPERATOR_PRIVATE_KEY and LIGHTDIVE_SEED_SECRET (testnet only).
 # Scheduled workflows only run from the default branch.
 
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,6 +28,7 @@ jobs:
           sparse-checkout: |
             package.json
             scripts/lightdive-operator.mjs
+            scripts/lightdive-operator-core.mjs
             packages/web3
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4

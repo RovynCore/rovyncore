@@ -13,8 +13,9 @@ import {CoreLightPool} from "./CoreLightPool.sol";
 ///
 /// A team is one Beacon Spire, at most one Resonance Prism and 1..level Seekers, held by this
 /// contract while equipped. Each spire dives at most once per UTC day. A dive records its base
-/// points B = total luminance * depth coefficient. After the hour's randomness is revealed, the
-/// dive's beam draws an outcome and a multiplier m (average exactly 1.00), so the Lightdust brought
+/// points B = total luminance * depth coefficient. The dive uses the randomness of the slot
+/// DIVE_SLOTS after departure; once that is revealed (about five minutes later) the dive's beam
+/// draws an outcome and a multiplier m (average exactly 1.00), so the Lightdust brought
 /// back is L = B * m. After the day ends, the day's budget E is fixed by the pool, and the dive is
 /// worth E * L / sum(B of that day). Anyone can settle any dive; the reward is credited to the
 /// player who dove. Claims pay the credit minus the claim fee, which stays in the pool.
@@ -27,6 +28,7 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
     uint8 internal constant PRISM = 1;
     uint8 internal constant SEEKER = 2;
     uint8 internal constant FOCUSED = 1; // beam used when the prism mount is empty
+    uint64 public constant DIVE_SLOTS = 5; // the outcome comes from the slot this many minutes ahead
 
     struct Team {
         address owner;
@@ -37,7 +39,7 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
     struct Dive {
         address owner;
         uint32 day;
-        uint64 hour;
+        uint64 slot;
         uint8 beam;
         bool settled;
         uint256 points; // B, in luminance * coefBp
@@ -61,7 +63,7 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
     event Unequipped(uint256 indexed spire, address indexed owner);
     event Dived(
         uint256 indexed diveId, address indexed owner, uint256 indexed spire, uint8 depth, uint32 coordinate,
-        uint256 luminance, uint256 points, uint8 beam, uint32 day, uint64 hour
+        uint256 luminance, uint256 points, uint8 beam, uint32 day, uint64 slot
     );
     event Settled(uint256 indexed diveId, address indexed owner, uint8 tier, uint16 multX100, uint256 lightdust, uint256 reward, bool fallbackUsed);
     event Claimed(address indexed owner, uint256 gross, uint256 fee);
@@ -161,8 +163,8 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
         uint32 day = today();
         if (lastDiveDayPlusOne[spire] == day + 1) revert AlreadyDove();
         if (depth >= config.DEPTHS()) revert BadDepth();
-        uint64 hour = beacon.currentHour();
-        if (!beacon.hasCommitment(hour)) revert NoRandomnessScheduled();
+        uint64 slot = beacon.currentSlot() + DIVE_SLOTS;
+        if (!beacon.hasCommitment(slot)) revert NoRandomnessScheduled();
 
         uint256 lum = teamLuminance(spire);
         if (lum < config.depthMinLuminance(depth)) revert TooDim();
@@ -173,7 +175,7 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
         _dives.push(Dive({
             owner: msg.sender,
             day: day,
-            hour: hour,
+            slot: slot,
             beam: beam,
             settled: false,
             points: points,
@@ -183,12 +185,12 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
         dayPoints[day] += points;
         dayUnsettled[day] += 1;
         if (lastClaimAt[msg.sender] == 0) lastClaimAt[msg.sender] = uint64(block.timestamp);
-        emit Dived(id, msg.sender, spire, depth, coordinate, lum, points, beam, day, hour);
+        emit Dived(id, msg.sender, spire, depth, coordinate, lum, points, beam, day, slot);
 
         _spendVoyages(spire);
     }
 
-    /// @notice Settles dives whose hour randomness is ready and whose day is over.
+    /// @notice Settles dives whose slot randomness is ready and whose day is over.
     function settle(uint256[] calldata ids) external nonReentrant {
         for (uint256 i; i < ids.length; ++i) _settle(ids[i]);
     }
@@ -257,7 +259,7 @@ contract Expedition is Ownable2Step, Pausable, ReentrancyGuard {
         Dive storage d = _dives[id];
         if (d.settled) revert AlreadySettled();
         if (d.day >= today()) revert DayNotOver();
-        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(d.hour, d.entropy);
+        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(d.slot, d.entropy);
         if (!ready) revert NotReady();
 
         if (!pool.dayClosed(d.day)) pool.closeDay(d.day, dayPoints[d.day]);

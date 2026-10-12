@@ -85,7 +85,7 @@ export const T = {
   approve: c("Approve RVYN", "授權 RVYN", "授权 RVYN", "RVYN 승인"),
   saleClosed: c("Spire sale not open", "光塔尚未開賣", "光塔尚未开卖", "스파이어 판매 전"),
   requests: c("Your draws", "你的抽取", "你的抽取", "내 뽑기"),
-  waiting: c("Waiting for the hour's signal", "等待本小時訊號揭曉", "等待本小时信号揭晓", "이번 시간 신호 대기 중"),
+  waiting: c("Waiting for the signal (about a minute)", "等待訊號揭曉（約 1 分鐘）", "等待信号揭晓（约 1 分钟）", "신호 대기 중 (약 1분)"),
   reveal: c("Reveal", "揭曉", "揭晓", "공개"),
   revealed: c("Revealed", "已揭曉", "已揭晓", "공개됨"),
   equipTitle: c("Assemble a spire", "組成光塔", "组成光塔", "스파이어 편성"),

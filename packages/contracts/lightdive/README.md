@@ -6,7 +6,7 @@ Contracts for RovynCore: Lightdive. Design and parameters: `docs/lightdive/Light
 |---|---|
 | `LightdiveConfig` | Every tunable parameter with hard bounds. Beam tables must average exactly 1.00x and cap at 10x. |
 | `LightdiveNFT` | RVDIV collection (ERC-721 + ERC-2981). Onchain attributes, voyages, live supply per kind and the only-lowerable live cap. |
-| `RandomnessBeacon` | Hourly commit-reveal randomness. Unrevealed hours expire after 48h to a neutral result. |
+| `RandomnessBeacon` | One-minute commit-reveal randomness on one hash chain per UTC day (mints use the request minute, dives the minute five slots later). Unrevealed slots expire after 48h to a neutral result. Swap for a VRF once one runs on Robinhood Chain. |
 | `CoreLightPool` | Holds reward RVYN. Daily budget = min(1% of available, points x 0.18). No owner withdrawal. |
 | `LightdiveMinter` | Deck draws with exact rarity counts, two-step mint, first-mint discount, early spire limit, 70/15/15 split with burn. |
 | `Expedition` | Teams, one dive per spire per day, settlement by Lightdust share, claims with the decaying fee, homecoming burns. |

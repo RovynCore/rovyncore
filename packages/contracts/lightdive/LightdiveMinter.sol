@@ -20,7 +20,7 @@ interface IBurnableERC20 {
 /// when a deck is empty the next one opens with the same composition. The live odds are therefore
 /// `left / remaining` and can be read from `deckOf`.
 /// Minting is two-step: `requestMint` takes payment, `fulfill` (callable by anyone) draws the cards
-/// once the hour's randomness is revealed.
+/// once the request slot's randomness is revealed (about a minute later).
 /// @dev Candidate, unaudited.
 contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -43,7 +43,7 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
         address player;
         uint8 kind;
         uint16 qty;
-        uint64 hour;
+        uint64 slot;
         bool fulfilled;
         bytes32 entropy;
     }
@@ -73,7 +73,7 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
 
     event TreasurySet(address treasury);
     event SpireSaleOpened(uint256 start);
-    event MintRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 hour, uint256 paid, uint256 discount);
+    event MintRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 slot, uint256 paid, uint256 discount);
     event MintFulfilled(uint256 indexed requestId, bool fallbackUsed);
     event DeckOpened(uint8 indexed kind, uint32 number);
 
@@ -137,8 +137,8 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
     function requestMint(uint8 kind, uint16 qty) external whenNotPaused nonReentrant returns (uint256 id) {
         if (kind > SEEKER) revert BadKind();
         if (qty == 0 || qty > maxPerTx(kind)) revert BadQuantity();
-        uint64 hour = beacon.currentHour();
-        if (!beacon.hasCommitment(hour)) revert NoRandomnessScheduled();
+        uint64 slot = beacon.currentSlot();
+        if (!beacon.hasCommitment(slot)) revert NoRandomnessScheduled();
 
         if (kind == SPIRE) {
             if (spireSaleStart == 0 || block.timestamp < spireSaleStart) revert SaleClosed();
@@ -159,18 +159,18 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
             player: msg.sender,
             kind: kind,
             qty: qty,
-            hour: hour,
+            slot: slot,
             fulfilled: false,
             entropy: keccak256(abi.encode(blockhash(block.number - 1), msg.sender, id))
         }));
-        emit MintRequested(id, msg.sender, kind, qty, hour, total, discount);
+        emit MintRequested(id, msg.sender, kind, qty, slot, total, discount);
     }
 
     /// @notice Draws and mints the cards of a request. Anyone may call it once randomness is ready.
     function fulfill(uint256 id) external nonReentrant {
         Request storage req = _requests[id];
         if (req.fulfilled) revert AlreadyFulfilled();
-        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(req.hour, req.entropy);
+        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(req.slot, req.entropy);
         if (!ready) revert NotReady();
         req.fulfilled = true;
         pending[req.kind] -= req.qty;
