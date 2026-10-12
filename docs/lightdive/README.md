@@ -11,7 +11,7 @@ Design documents for the first RovynCore game.
 | `simulation/charts.py` | Renders the simulation charts used in chapter 8. |
 | `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities) for the art team. |
 | `Lightdive-Art-Direction-v1.0.pdf` | Detailed brief for every non-NFT art asset (star chart, observatory, Signal-Keeper poses and glow layers, icons, card back, wordmark, share images): story, gameplay use, composition, layers, prompts and acceptance checks. |
-| `Lightdive-NFT-Art-Direction-v2.0.pdf` | Proposal (pending sign-off) to redesign the spire and seeker NFT art: low-angle monumental spires with countable berths, five faceless seeker classes instead of the 7-layer portrait, and a five-signal rarity system. No contract change. Source: `source/nft-art-direction.html`. |
+| `Lightdive-NFT-Art-Direction-v2.1.pdf` | Proposal (pending sign-off) to redesign the spire and seeker NFT art: low-angle monumental spires with countable berths, five faceless seeker classes instead of the 7-layer portrait, and a five-signal rarity system. No contract change. Source: `source/nft-art-direction.html`. |
 | `source/art-direction.html` | Source of the art brief PDF; reference art in `source/ref/`. |
 | `WORKLOG.md` | Work log: what was decided, built and deployed, and what is still open. |
 
