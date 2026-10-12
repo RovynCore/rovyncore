@@ -8,8 +8,9 @@ name: Deploy Lightdive operator Worker (testnet)
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, claude/modest-allen-eexrhu] # TEMP: branch entry removed before merge
     paths:
+      - .github/workflows/lightdive-operator-deploy.yml
       - packages/web3/lightdive.json
       - packages/web3/lightdive-abi.json
       - scripts/lightdive-operator-core.mjs
