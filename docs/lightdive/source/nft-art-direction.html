@@ -124,7 +124,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
 
 <div class="box key">
   <h4>不需要改合約</h4>
-  <p>合約只在鏈上存 <code>rarity</code>、<code>trait</code>（光塔等級／稜鏡光束／探索者屬性）、<code>variant</code>（特別款或星紋）和 <code>dna</code>（64 位元的外觀種子）。圖片和 metadata 由網站在鏈外依這些值合成（<code>LightdiveNFT.sol</code> 第 13–32 行）。所以本文件的所有改變，都只影響鏈外的圖片合成程式，已部署的測試網合約不用動。</p>
+  <p>合約只在鏈上存 <code>rarity</code>、<code>trait</code>（光塔等級／稜鏡光束／探索者屬性）、<code>variant</code>（探索者的星紋；光塔和稜鏡已移除特別款）和 <code>dna</code>（64 位元的外觀種子）。圖片和 metadata 由網站在鏈外依這些值合成（<code>LightdiveNFT.sol</code> 第 13–32 行）。所以本文件的所有改變，都只影響鏈外的圖片合成程式，已部署的測試網合約不用動。</p>
 </div>
 </section>
 
@@ -251,7 +251,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
 
 <!-- ============================================================ 03 -->
 <section class="chap">
-<div class="asset-head"><span class="pri">7 張</span><div class="id">SPIRE · 光塔 BEACON SPIRE</div><div class="nm">光塔：仰望的巨構</div><div class="one">玩家的基地，整支隊伍的家。要讓人覺得「這東西大到看不到頂」。</div></div>
+<div class="asset-head"><span class="pri">5 張</span><div class="id">SPIRE · 光塔 BEACON SPIRE</div><div class="nm">光塔：仰望的巨構</div><div class="one">玩家的基地，整支隊伍的家。要讓人覺得「這東西大到看不到頂」。</div></div>
 
 <h3>3.1 敘事與功能</h3>
 <p>觀測者在 ROVYN CORE 周圍立起一座座光塔，用共鳴稜鏡把晶核的光折成光橋，讓探索者順著光橋潛進深空（白皮書第 3.1 節）。光塔是大型 NFT：等級 Lv.1–5 決定可以坐幾位探索者（席位 1–5 個），壽命 120 次航程，約四個月。它是玩家擁有最久、花最多錢（300 RVYN）的東西，<b>必須看起來值得</b>。</p>
@@ -313,7 +313,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
     <text x="345" y="118">　看得到兩個立面和泊位的弧形</text>
     <text x="345" y="134">● 地平線在畫面下方 10–20%</text>
     <text x="345" y="150">● 塔頂接近但不碰到上方 140 px</text>
-    <text x="345" y="166">● 七張圖的仰角方向、光向一致</text>
+    <text x="345" y="166">● 五張圖的仰角方向、光向一致</text>
   </g>
 </svg>
 <div class="cap">圖 3-2　側面示意：相機低、往上仰，讓塔的垂直線往上收斂。</div>
@@ -329,7 +329,7 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
   <tr><td class="k">細節的密度梯度</td><td>近處（塔基）細節最多：石塊的接縫、磨損、刻文；遠處（塔頂）細節變簡、變成剪影。這是真實大型建築的視覺特徵，也是生圖最容易做錯的地方（到處都一樣清楚）。</td></tr>
 </table>
 
-<h3>3.4 七張光塔的設計</h3>
+<h3>3.4 五張光塔的設計</h3>
 <p>等級在鑄造時決定、不能升級（白皮書第 4.2 節），所以每一個等級就是一張完整的插圖。等級之間要像「同一個建築傳統、不同的規模」。</p>
 <table>
   <tr><th style="width:18mm">等級</th><th style="width:16mm">稀有度</th><th>規模與造型</th><th style="width:30mm">晶核與光</th><th style="width:24mm">鏡頭</th></tr>
@@ -338,13 +338,11 @@ code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
   <tr><td class="k">Lv.3</td><td>澄晶</td><td>四段分體，中段環繞一圈石環，3 個泊位分布在石環上。塔基被前景岩石裁掉一部分。周圍出現小型附屬石碑。</td><td>晶核半透明可見內部結構，光從裂隙射出細光束</td><td>仰 22°</td></tr>
   <tr><td class="k">Lv.4</td><td>稜光</td><td>五段分體，上下段之間懸浮著碎石塊（像被光托住）。4 個泊位環繞，每個泊位有自己的小型拱門。塔身表面刻滿星圖紋路。塔頂穿入雲層或星雲。</td><td>晶核大而亮，邊緣有稜彩色散；懸浮碎石的邊緣被照亮</td><td>仰 26°，略傾斜 3°</td></tr>
   <tr><td class="k">Lv.5</td><td>曜核</td><td>大教堂尺度：主塔加上兩座較矮的副碑環繞，主塔分成六段以上，塔頂超出畫面上緣、被卡框蓋住（破框）。5 個泊位形成一個完整的光環。基座是巨大的階梯平台，尺度人物極小。</td><td>晶核白熱，周圍空氣扭曲；整張圖發光面積約 25–30%，但仍然沒有光柱</td><td>仰 30°，極廣角</td></tr>
-  <tr><td class="k">空心塔</td><td>曜核特別款</td><td>和 Lv.5 同規模，但塔身中央是空的：分體石塊圍成一個中空的框，晶核懸浮在中空處，看得到後面的星空。（白皮書：特別款光度 +4%）</td><td>晶核懸空，光從四面石框的內側反射</td><td>仰 30°</td></tr>
-  <tr><td class="k">創世塔</td><td>曜核特別款</td><td>最古老的塔，石材是黑曜岩般的深黑，表面的刻文是發光的萊姆色。塔基周圍是一圈已經倒下的更古老石碑殘跡，像「第一座」光塔。</td><td>刻文整片發光，晶核是一顆純白光點</td><td>仰 30°</td></tr>
-</table>
+    </table>
 
 <h3>3.5 光與背景</h3>
 <ul>
-  <li><b>主光</b>：來自畫面外上方的 ROVYN CORE（萊姆偏白），從塔的一側斜照，塔身一邊亮、一邊在陰影裡，形成強烈的立體感。七張圖的主光方向相同（建議從畫面右上方來）。</li>
+  <li><b>主光</b>：來自畫面外上方的 ROVYN CORE（萊姆偏白），從塔的一側斜照，塔身一邊亮、一邊在陰影裡，形成強烈的立體感。五張圖的主光方向相同（建議從畫面右上方來）。</li>
   <li><b>晶核的光</b>是第二光源，照亮泊位和近處的石面。</li>
   <li><b>背景</b>：深空與星雲，依稀有度升級（第 02 章訊號 ⑤）。Lv.1 是單純的暗色星空；Lv.5 背景有明顯的光源與光橋遠景。</li>
   <li><b>地面</b>：下方 300 px 是程式放資訊的區域，要畫成暗色的岩地、階梯陰影或雲海。</li>
@@ -374,9 +372,9 @@ skyscraper, sci-fi metal tower, neon, oversaturated, cartoon, people crowd, wate
   <li>稜鏡座是空的三爪托座；沒有光柱、光束射出。</li>
   <li>有尺度參考（極小的人物或門），塔看起來巨大，不像模型。</li>
   <li>塔頂比塔基淡、細節比塔基少（大氣透視）。</li>
-  <li>七張的主光方向、鏡頭方向一致，排在一起像同一個世界。</li>
+  <li>五張的主光方向、鏡頭方向一致，排在一起像同一個世界。</li>
   <li>下方 300 px 夠暗，可以放文字。</li>
-  <li>縮圖測試：七張縮到 128 px，能依規模排出等級。</li>
+  <li>縮圖測試：五張縮到 128 px，能依規模排出等級。</li>
 </ul>
 </section>
 
@@ -534,7 +532,7 @@ skyscraper, sci-fi metal tower, neon, oversaturated, cartoon, people crowd, wate
 <table>
   <tr><th style="width:8mm">#</th><th style="width:34mm">步驟</th><th>內容</th><th style="width:22mm">負責</th></tr>
   <tr><td class="n">1</td><td>設定稿</td><td>每個職階先做一張設定稿：正、側、背三視圖與部件說明，像 Signal-Keeper 的四視圖。之後所有出圖都附上設定稿當參考圖。</td><td>你</td></tr>
-  <tr><td class="n">2</td><td>構圖草模</td><td>依本文件的鏡頭規格，用簡單的幾何方塊排出構圖：相機位置、仰角、主體大小、地平線。光塔特別需要這一步，才能讓七張的透視一致。</td><td>開發端可做（Blender 灰模，只作構圖參考，不作為成品）</td></tr>
+  <tr><td class="n">2</td><td>構圖草模</td><td>依本文件的鏡頭規格，用簡單的幾何方塊排出構圖：相機位置、仰角、主體大小、地平線。光塔特別需要這一步，才能讓五張的透視一致。</td><td>開發端可做（Blender 灰模，只作構圖參考，不作為成品）</td></tr>
   <tr><td class="n">3</td><td>受控生成</td><td>用構圖草模的深度圖或線稿控制生成（多數工具稱為 ControlNet、結構參考或圖生圖），再加上設定稿當角色參考。不要只靠文字提示詞。</td><td>你</td></tr>
   <tr><td class="n">4</td><td>挑選</td><td>每張圖至少生 20–40 張候選，依第 02 章的五個訊號和驗收清單挑選。</td><td>你</td></tr>
   <tr><td class="n">5</td><td>修圖</td><td>補清楚的結構線、修正錯誤的部件（多出來的手指、不合理的接縫）、統一色調、加磨損與細節。<b>這一步是 AI 圖和專業圖的分水嶺</b>，不能省。</td><td>你</td></tr>
@@ -547,7 +545,7 @@ skyscraper, sci-fi metal tower, neon, oversaturated, cartoon, people crowd, wate
 <table>
   <tr><th style="width:8mm">#</th><th style="width:34mm">步驟</th><th>內容</th><th style="width:22mm">負責</th></tr>
   <tr><td class="n">1</td><td>取得模型</td><td>依設定稿取得高品質的 3D 模型：向 3D 美術委託、從素材商店購買可商用的科幻角色或裝甲套件再改造，或用 AI 圖轉 3D（例如 NVIDIA Trellis）產生後由美術清理。</td><td>你（或外包）</td></tr>
-  <tr><td class="n">2</td><td>統一燈光與鏡頭</td><td>建立一套固定的攝影棚：主光、輪廓光、背景色調、相機高度、仰角與焦距，全部參數化。17 張探索者和 7 張光塔都用同一套設定渲染，一致性由程式保證。</td><td>開發端（Blender 自動渲染）</td></tr>
+  <tr><td class="n">2</td><td>統一燈光與鏡頭</td><td>建立一套固定的攝影棚：主光、輪廓光、背景色調、相機高度、仰角與焦距，全部參數化。17 張探索者和 5 張光塔都用同一套設定渲染，一致性由程式保證。</td><td>開發端（Blender 自動渲染）</td></tr>
   <tr><td class="n">3</td><td>分層輸出</td><td>同一次渲染直接輸出角色、發光層、光紋遮罩，不需要手工拆層，而且像素完全對齊。</td><td>開發端</td></tr>
   <tr><td class="n">4</td><td>後製</td><td>調色、加景深與氛圍。</td><td>你＋開發端</td></tr>
 </table>
@@ -590,7 +588,7 @@ skyscraper, sci-fi metal tower, neon, oversaturated, cartoon, people crowd, wate
   <tr><td class="n">2</td><td>探索者是否從 7 層合成改為設計好的插圖（17 張）</td><td>採用；第二季再加開新插圖</td></tr>
   <tr><td class="n">3</td><td>五個職階的正式名稱（探光機、潛光員、晶甲衛、稜光行者、曜核之子是暫定）</td><td>交給文案組，四種語言一起定</td></tr>
   <tr><td class="n">4</td><td>光塔的主光方向（建議右上）與仰角範圍（15–30°）</td><td>採用建議值，先做 Lv.1 和 Lv.5 兩張確認兩端</td></tr>
-  <tr><td class="n">5</td><td>是否要開發端做構圖草模</td><td>光塔要做（七張透視一致很重要）；探索者視需要</td></tr>
+  <tr><td class="n">5</td><td>是否要開發端做構圖草模</td><td>光塔要做（五張透視一致很重要）；探索者視需要</td></tr>
 </table>
 
 <div class="box key">

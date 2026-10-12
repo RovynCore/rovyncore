@@ -122,7 +122,33 @@ PR：[RovynCore/rovyncore#1](https://github.com/RovynCore/rovyncore/pull/1)，�
 |---|---|
 | 移除 X 功能，讓 CI 變綠後合併 PR 並部署網站 | 老闆 |
 | 在 `/admin/lightdive` 接受 6 個合約的管理權 | 老闆 |
-| 美術素材（`ART-ASSETS.md`，最低約 97 張） | 美術組 |
+| 美術素材（`ART-ASSETS.md`，最低約 97 張；2026-10-12 移除特別款後為 93 張） | 美術組 |
 | 「光橋中斷」「核光回響」航行日誌、光塔與稜鏡燒毀時的名稱、韓文用語 | 文案組 |
 | 玩家變多後改用伺服器端索引（目前畫面直接讀鏈上紀錄） | 開發 |
 | 主網前：獨立審計、多簽＋時間鎖、隨機數來源複審、法律意見 | 老闆 |
+
+---
+
+## 2026-10-07 至 2026-10-12：美術文件、移除特別款
+
+分支 `claude/modest-allen-eexrhu`。
+
+### 1. 美術文件
+
+- `Lightdive-Art-Direction-v1.0.pdf`：NFT 以外的介面與場景美術需求（星圖、觀測站、Signal-Keeper 立繪與發光層、圖示、卡背、字標、分享圖）。
+- `Lightdive-NFT-Art-Direction-v2.1.pdf`（提案，待老闆確認）：光塔改為仰視構圖並規定功能部件；探索者從 7 層人像改為五個無臉職階、17 張插圖；稀有度辨識的六個訊號；依老闆提供的截圖拆解 CryptoMines 的美術。
+
+### 2. 移除光塔與稜鏡的特別款（老闆 2026-10-12 決定）
+
+- 理由：美術資源有限，特別款要額外出圖，維護成本高。
+- 合約：`LightdiveMinter` 移除 `Deck.specialLeft` 與 `SPECIAL_BONUS_BP`；光塔、稜鏡的 `variant` 一律為 0，光度只有基準值 ±10%。曜核探索者的星紋（`variant` 1–6）不變。
+- 前端：移除特別款名稱與標籤；`packages/web3/lightdive-abi.json` 重新產生。
+- 測試：新增「光塔與稜鏡沒有特別款」，`npm run test:lightdive` 9 項全數通過。
+- 文件：白皮書第 4.5、5.1、5.2、6.3、7.5、10、13 章與附錄 A 同步修改，決策紀錄新增第 16 項；ART-ASSETS 美術最低張數改為 93。
+
+### 3. 待辦
+
+| 事項 | 負責 |
+|---|---|
+| 測試網重新部署：`deckOf` 的回傳結構改變，網站已改用新的 ABI，在重新部署前測試網的牌組資訊會讀錯。步驟見 `README.md` 的 Testnet runbook（`npm run lightdive:deploy`），完成後提交新的 `packages/web3/lightdive.json`，並在 `/admin/lightdive` 重新接受管理權 | 老闆（需要私鑰） |
+| 確認 NFT 美術設計書 v2.1 第 08 章的決定 | 老闆 |
