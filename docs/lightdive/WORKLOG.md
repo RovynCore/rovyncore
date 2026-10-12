@@ -146,30 +146,39 @@ PR：[RovynCore/rovyncore#1](https://github.com/RovynCore/rovyncore/pull/1)，�
 - 測試：新增「光塔與稜鏡沒有特別款」，`npm run test:lightdive` 9 項全數通過。
 - 文件：白皮書第 4.5、5.1、5.2、6.3、7.5、10、13 章與附錄 A 同步修改，決策紀錄新增第 16 項；ART-ASSETS 美術最低張數改為 93。
 
-### 3. 測試網重新部署（2026-10-12）
+### 3. 隨機數改為 1 分鐘一格（老闆 2026-10-12 決定）
 
-部署區塊 133677672，地址記在 `packages/web3/lightdive.json`。舊的部署（區塊 130017649）停用，上面的測試 NFT 和 tRVYN 不轉移。
+- 查證：Chainlink VRF v2.5 的支援網路清單與 Pyth Entropy 的部署清單都沒有 Robinhood Chain，暫用承諾－揭露（白皮書決策第 17 項）。
+- `RandomnessBeacon`：1 分鐘一格，每個 UTC 日一條雜湊鏈；揭露某一格會同時確定當天更早的格。鑄造約 1 分鐘揭曉；潛光用出發 5 分鐘後那一格。
+- 營運：`workers/lightdive-operator`（Cloudflare Worker，每分鐘，只在有人等待時揭露），由 `.github/workflows/lightdive-operator-deploy.yml` 部署；`lightdive-operator.yml` 改為每 5 分鐘的備援。
+- 實測手續費：揭露約 59,000–77,000 gas，每日承諾約 70,000 gas，由營運錢包支付。
+- 測試：`npm run test:lightdive` 12 項全數通過（新增雜湊鏈與營運程式整合測試）。
+
+### 4. 測試網重新部署（2026-10-12，1 分鐘隨機數版本）
+
+部署區塊 133718641，地址記在 `packages/web3/lightdive.json`。之前的兩次部署（區塊 130017649、133677672）停用，上面的測試 NFT 和 tRVYN 不轉移。
 
 | 合約 | 地址 |
 |---|---|
-| tRVYN（測試幣） | `0xe6ef63215a44ae735e65b3974eb4bbabb447dbbd` |
-| LightdiveConfig | `0xdc80e05dcfd0c40403a9fed83564f9426527abe8` |
-| LightdiveNFT | `0x317cce0cd9ae0bd370edbd88e47d4bce7fb8464d` |
-| RandomnessBeacon | `0xc3109e96d1b91218ff13168a17898e4f659f3002` |
-| CoreLightPool | `0xe078cf9895852a537efd436334adf1c8cccd2701` |
-| LightdiveMinter | `0x530e48e0cc7fa8eabca2ff1162de624c787f9c13` |
-| Expedition | `0x5a8cb0ae722e56039014159df1a67b7c810bd9bd` |
+| tRVYN（測試幣） | `0xf9e518c1bc02d04530e0e54216914eca66840028` |
+| LightdiveConfig | `0x5005c27693d214dd47e03c820f2a850f672bb0e0` |
+| LightdiveNFT | `0x2ad6bc1bfa80558cda0b5fb657cf1532f95888a5` |
+| RandomnessBeacon | `0x329b9a0c0b2615ac98c4909f4345e373052946ef` |
+| CoreLightPool | `0x13be172f1cb96fcdf535b16700e34405a91df309` |
+| LightdiveMinter | `0x9f0b0a307ea91ba1b4a8555e656204027c7fbf6c` |
+| Expedition | `0xfd407d1539a5e2fafcc7a08cb577dacfbe95d550` |
 
 - 核光池已注入 1,000,000 tRVYN；光塔已開賣（開賣後 48 小時內每錢包最多 3 座）。
-- 營運金庫與版稅收款：`0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e`。
-- 其餘 9,000,000 tRVYN 與 6 個合約的管理權已轉向同一地址，**需在 `/admin/lightdive` 按「接受」才生效**。
-- 隨機數營運錢包沿用 `0xe36Da1C038F9b6B06688df7d60A6358586F06C90`，GitHub secrets 不用改。部署時沒有預先承諾隨機數（營運私鑰只在 GitHub secrets 裡），由營運排程補上。
-- 部署錢包 `0x985B3219D55737C65140cf0e948fBd0690636a62` 是在雲端工作環境產生的臨時測試網錢包，私鑰沒有保存，工作環境關閉後遺失；管理權已轉出，不影響控制權。
+- 實測：Cloudflare Worker 部署後約 11 分鐘排程生效，16:39–16:40 UTC 由營運錢包承諾當天與之後兩天；部署錢包鑄造 1 位探索者，申請後 98 秒揭曉並完成鑄造（微光、光度 33、無特別款）。這位探索者已轉給管理錢包。
+- 營運金庫與版稅收款：`0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e`。剩餘 8,999,964 tRVYN、6 個合約的管理權已轉向同一地址，**需在 `/admin/lightdive` 按「接受」才生效**；部署錢包剩餘的測試網 ETH 已退回。
+- 營運錢包沿用 `0xe36Da1C038F9b6B06688df7d60A6358586F06C90`。部署錢包 `0x985B3219D55737C65140cf0e948fBd0690636a62` 是臨時錢包，私鑰沒有保存。
 
-### 4. 待辦
+### 5. 待辦
 
 | 事項 | 負責 |
 |---|---|
 | 在 `/admin/lightdive` 接受 6 個合約的管理權 | 老闆 |
-| 合併本分支到 main 並發布網站：正式網站與每 15 分鐘的營運排程都讀 main 上的 `lightdive.json`，合併前網站仍指向舊部署 | 老闆 |
+| 合併 PR #2 到 main 並發布網站：正式網站讀 main 上的 `lightdive.json`，合併前網站仍指向舊部署 | 老闆 |
+| 營運錢包餘額不足時補充測試網 ETH（揭露與承諾由它支付） | 老闆 |
 | 確認 NFT 美術設計書 v2.1 第 08 章的決定 | 老闆 |
+| 主網前：確認 Robinhood Chain 是否已有 VRF，有的話替換 RandomnessBeacon | 開發 |
