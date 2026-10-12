@@ -1,0 +1,8 @@
+base               days 365  pool      450,702  rate 0.00581  active  1048   41.1s  ok
+boom               days 365  pool      434,063  rate 0.00659  active   957   58.8s  ok
+bust               days 365  pool      499,782  rate 0.00519  active  1351   39.6s  ok
+idle-market        days 365  pool      842,569  rate 0.00436  active  2709   63.0s  ok
+fail-tiny-pool     days 365  pool      123,592  rate 0.00638  active   273   17.1s  ok
+fail-surge         days 365  pool      442,251  rate 0.00589  active  1029   47.9s  ok
+fail-keeper-down   days 365  pool      353,820  rate 0.00717  active   685   37.1s  ok
+reports written to <repo>/tools/lightdive-econ/reports

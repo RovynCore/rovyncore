@@ -48,8 +48,28 @@ const copy = {
   how3: { en: "We never ask for private keys or recovery phrases, and we never DM you first. Official news: @RovynCORE on X.", "zh-Hant": "我們絕不索取私鑰或助記詞，也不會主動私訊你。官方消息：X 上的 @RovynCORE。", "zh-Hans": "我们绝不索取私钥或助记词，也不会主动私信你。官方消息：X 上的 @RovynCORE。", ko: "개인 키나 복구 문구는 절대 요청하지 않으며 먼저 DM을 보내지 않습니다. 공식 소식: X의 @RovynCORE." },
   report: { en: "Found a security issue? Email via the contact in /.well-known/security.txt or message @RovynCORE on X.", "zh-Hant": "發現安全問題？請見 /.well-known/security.txt，或在 X 私訊 @RovynCORE。", "zh-Hans": "发现安全问题？请见 /.well-known/security.txt，或在 X 私信 @RovynCORE。", ko: "보안 문제를 발견하셨나요? /.well-known/security.txt를 확인하거나 X에서 @RovynCORE에 메시지를 보내세요." },
   source: { en: "Source code on GitHub (MIT)", "zh-Hant": "GitHub 原始碼（MIT）", "zh-Hans": "GitHub 源码（MIT）", ko: "GitHub 소스 코드 (MIT)" },
+  supplyTitle: { en: "Lightdive v3 cards in play", "zh-Hant": "潛光遠征 v3 卡片數量", "zh-Hans": "潜光远征 v3 卡片数量", ko: "라이트다이브 v3 카드 수량" },
+  supplyBody: { en: "Each of the three Lightdive v3 card kinds has a cap on how many can exist at once: 3,000 spires, 6,000 prisms and 12,000 seekers. Docked and listed cards count; a place frees up only when a card comes home. Once the contracts are deployed, this table will read from the chain how many of each kind exist, how many are on teams and how many are listed on the market, so anyone can see how many places are held by cards nobody is using.", "zh-Hant": "潛光遠征 v3 的三種卡，同時存在的數量都有上限：光塔 3,000、稜鏡 6,000、探索者 12,000。停泊中和上架中的卡也算在內，卡歸航後名額才會空出。合約部署後，這張表會直接從鏈上讀取每種卡存在幾張、幾張在隊伍上、幾張在市集上架，讓所有人都看得到有多少名額被沒有在使用的卡佔著。", "zh-Hans": "潜光远征 v3 的三种卡，同时存在的数量都有上限：光塔 3,000、棱镜 6,000、探索者 12,000。停泊中和上架中的卡也算在内，卡归航后名额才会空出。合约部署后，这张表会直接从链上读取每种卡存在几张、几张在队伍上、几张在市集上架，让所有人都看得到有多少名额被没有在使用的卡占着。", ko: "라이트다이브 v3의 세 가지 카드는 동시에 존재할 수 있는 수량에 상한이 있습니다: 광탑 3,000, 프리즘 6,000, 탐색자 12,000. 정박 중이거나 등록된 카드도 포함되며, 카드가 귀항해야 자리가 비워집니다. 컨트랙트가 배포되면 이 표는 종류별로 존재하는 수, 팀에 있는 수, 마켓에 등록된 수를 체인에서 직접 읽어, 사용되지 않는 카드가 차지한 자리를 누구나 볼 수 있게 합니다." },
+  supplyKind: { en: "Card", "zh-Hant": "種類", "zh-Hans": "种类", ko: "종류" },
+  supplyCap: { en: "Cap", "zh-Hant": "上限", "zh-Hans": "上限", ko: "상한" },
+  supplyAlive: { en: "In existence", "zh-Hant": "存在", "zh-Hans": "存在", ko: "존재" },
+  supplyTeam: { en: "On teams", "zh-Hant": "在隊伍上", "zh-Hans": "在队伍上", ko: "팀에 배치" },
+  supplyListed: { en: "Listed", "zh-Hant": "市集上架", "zh-Hans": "市集上架", ko: "마켓 등록" },
+  supplyOther: { en: "Idle or docked", "zh-Hant": "閒置或停泊", "zh-Hans": "闲置或停泊", ko: "유휴 또는 정박" },
+  supplySpire: { en: "Spires", "zh-Hant": "光塔", "zh-Hans": "光塔", ko: "광탑" },
+  supplyPrism: { en: "Prisms", "zh-Hant": "稜鏡", "zh-Hans": "棱镜", ko: "프리즘" },
+  supplySeeker: { en: "Seekers", "zh-Hant": "探索者", "zh-Hans": "探索者", ko: "탐색자" },
+  supplyStatus: { en: "Lightdive v3 contracts are not deployed yet (unaudited). No figures until they are.", "zh-Hant": "潛光遠征 v3 合約尚未部署（未經審計），部署前沒有數字。", "zh-Hans": "潜光远征 v3 合约尚未部署（未经审计），部署前没有数字。", ko: "라이트다이브 v3 컨트랙트는 아직 배포되지 않았습니다(감사 미실시). 배포 전에는 수치가 없습니다." },
   legal: { en: "Legal notice", "zh-Hant": "法律聲明", "zh-Hans": "法律声明", ko: "법적 고지" },
 } satisfies Record<string, Copy>;
+
+// Lightdive v3 caps (LightdiveNFT3.maxAlive). `null` figures until the contracts are deployed; then alive comes from
+// LightdiveNFT3.alive(kind), listed from the market's escrow and on-teams from the Locked events.
+const supply = [
+  { name: copy.supplySpire, cap: 3000 },
+  { name: copy.supplyPrism, cap: 6000 },
+  { name: copy.supplySeeker, cap: 12000 },
+] as const;
 
 const rows = [
   { name: copy.rvynName, note: copy.rvynNote, address: "0x545a1ff27596de2f31480df39aa9548f363fc361", kind: "token", verified: true },
@@ -99,15 +119,40 @@ export default function TransparencyPage() {
         <div className="rv-container"><RvynHealthPanel /></div>
       </section>
 
+      <section className="rv-section rv-section--line" aria-labelledby="transparency-supply">
+        <div className="rv-container rv-stack" style={{ ["--gap" as string]: "16px" }}>
+          <div className="rv-head"><span className="rv-eyebrow">02</span><h2 className="rv-h2" id="transparency-supply">{t(copy.supplyTitle)}</h2></div>
+          <p className="rv-body" style={{ maxWidth: 820 }}>{t(copy.supplyBody)}</p>
+          <div className="rv-table-wrap">
+            <table className="rv-table">
+              <thead><tr><th>{t(copy.supplyKind)}</th><th>{t(copy.supplyCap)}</th><th>{t(copy.supplyAlive)}</th><th>{t(copy.supplyTeam)}</th><th>{t(copy.supplyListed)}</th><th>{t(copy.supplyOther)}</th></tr></thead>
+              <tbody>
+                {supply.map((row) => (
+                  <tr key={row.cap}>
+                    <td data-label={t(copy.supplyKind)}><strong>{t(row.name)}</strong></td>
+                    <td data-label={t(copy.supplyCap)}>{row.cap.toLocaleString("en-US")}</td>
+                    <td data-label={t(copy.supplyAlive)}>—</td>
+                    <td data-label={t(copy.supplyTeam)}>—</td>
+                    <td data-label={t(copy.supplyListed)}>—</td>
+                    <td data-label={t(copy.supplyOther)}>—</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <span className="rv-pill rv-pill--warn" style={{ whiteSpace: "normal", height: "auto", padding: "5px 11px", lineHeight: 1.35, justifySelf: "start" }}>{t(copy.supplyStatus)}</span>
+        </div>
+      </section>
+
       <section className="rv-section rv-section--line">
         <div className="rv-container rv-grid rv-grid--2">
           <div className="rv-card rv-stack" style={{ ["--gap" as string]: "14px" }} aria-labelledby="transparency-audit">
-            <span className="rv-eyebrow">02</span>
+            <span className="rv-eyebrow">03</span>
             <h2 className="rv-h3" id="transparency-audit">{t(copy.auditTitle)}</h2>
             <div className="rv-notice rv-notice--risk"><ShieldAlert aria-hidden="true" /><span>{t(copy.auditBody)}</span></div>
           </div>
           <div className="rv-card rv-stack" style={{ ["--gap" as string]: "14px" }} aria-labelledby="transparency-how">
-            <span className="rv-eyebrow">03</span>
+            <span className="rv-eyebrow">04</span>
             <h2 className="rv-h3" id="transparency-how">{t(copy.howTitle)}</h2>
             <ol className="rv-numbered">
               <li><span>{t(copy.how1)}</span></li>

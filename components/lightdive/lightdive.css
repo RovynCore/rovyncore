@@ -117,3 +117,17 @@
 .ld-sub .ld-table { margin-bottom: 10px; overflow-x: auto; display: block; }
 @media (max-width: 560px) { .ld-param { grid-template-columns: 1fr; } }
 .ld-actions input, .ld-actions select { width: auto; flex: 0 1 220px; }
+
+/* observatory announcements editor (admin) */
+.ld-announce__list { display: grid; gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
+.ld-announce__list li { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--c-line); border-radius: 12px; }
+.ld-announce__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; }
+.ld-announce input:not([type="checkbox"]), .ld-announce textarea, .ld-announce select { width: 100%; padding: 8px 10px; border: 1px solid var(--c-line-2); border-radius: 8px; background: rgba(0, 0, 0, 0.3); color: inherit; font: inherit; }
+.ld-announce__row select, .ld-announce__row input { width: auto; }
+.ld-announce details { display: grid; gap: 8px; }
+.ld-announce summary { cursor: pointer; color: var(--c-dim); font-size: 13px; }
+
+/* rules v3 return calculator (admin only) */
+.ld-calc select { height: 34px; padding: 0 8px; border: 1px solid var(--c-line); border-radius: 8px; background: rgba(0, 0, 0, 0.4); color: inherit; font: inherit; }
+.ld-calc input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: #c9ff55; }
+.ld-calc .ld-table { margin-top: 12px; }

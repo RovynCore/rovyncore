@@ -5,6 +5,8 @@ import { createPublicClient, createWalletClient, custom, formatEther, http, pars
 import { toast } from "sonner";
 import { useLanguage } from "@/components/language-provider";
 import { usePlatform } from "@/components/platform-context";
+import { AnnouncementsAdmin } from "./announcements-admin";
+import { RulesCalculator } from "./v3/calculator";
 import { ABI, CONTRACTS, ERC20_ABI, GAME_CHAIN, GAME_RPC, readOverview, type Contracts, type Overview } from "@/lib/lightdive";
 import { KIND_NAME, RARITY, type Copy } from "@/lib/lightdive-copy";
 import "./lightdive.css";
@@ -51,7 +53,7 @@ const A = {
 export function LightdiveAdmin() {
   const { locale } = useLanguage();
   const t = useCallback((v: Copy) => v[locale], [locale]);
-  if (!CONTRACTS) return <main className="ld"><h1 className="ld-admin-title">{t(A.title)}</h1><p className="ld-dim">{t(A.notDeployed)}</p></main>;
+  if (!CONTRACTS) return <main className="ld"><h1 className="ld-admin-title">{t(A.title)}</h1><p className="ld-dim">{t(A.notDeployed)}</p><RulesCalculator /></main>;
   return <Admin c={CONTRACTS} t={t} />;
 }
 
@@ -231,6 +233,9 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
           </div>
         </section>
       )}
+
+      <AnnouncementsAdmin />
+      <RulesCalculator />
 
       <section className="ld-sub">
         <h3>{t(A.contracts)}</h3>

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>潛光遠征 v3 美術需求清單（第 2 版）</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  :root { --ink: #1c2230; --muted: #5b6475; --line: #d8dde6; --accent: #4d7a12; --soft: #f4f7ef; }
+  body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: var(--ink); font-size: 9.6pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 21pt; margin: 0 0 4px; }
+  h2 { font-size: 13.5pt; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12px 0 6px; break-after: avoid; }
+  p { margin: 4px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 8.4pt; }
+  th, td { border: 1px solid var(--line); padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eef1f5; }
+  tr { break-inside: avoid; }
+  code { font-family: Consolas, monospace; font-size: 8.2pt; }
+  pre { font-family: Consolas, monospace; font-size: 8pt; background: #f6f7f9; border: 1px solid var(--line); border-radius: 5px; padding: 7px 9px; white-space: pre-wrap; margin: 6px 0 10px; break-inside: avoid; }
+  .kicker { color: var(--accent); font-weight: 700; letter-spacing: 2px; }
+  .sub { color: var(--muted); margin-bottom: 10px; }
+  .box { border: 1px solid var(--line); background: var(--soft); border-radius: 6px; padding: 8px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .box.warn { background: #fbf2ee; border-color: #e7c3b3; }
+  .p1, .p2, .p3 { color: #fff; border-radius: 3px; padding: 0 5px; font-weight: 700; font-size: 8pt; white-space: nowrap; }
+  .p1 { background: #4d7a12; } .p2 { background: #2c6db0; } .p3 { background: #7a8494; }
+  .sw { display: inline-block; width: 11px; height: 11px; border: 1px solid #9aa3b2; border-radius: 2px; vertical-align: -1px; margin-right: 3px; }
+  .small { font-size: 8.2pt; color: var(--muted); }
+  .page-break { break-before: page; }
+  ul, ol { margin: 4px 0 8px 18px; padding: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .two > div { break-inside: avoid; }
+  .ok { color: #2f6f1f; font-weight: 700; } .no { color: #a3471f; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="kicker">ROVYNCORE · LIGHTDIVE · ART</div>
+<h1>潛光遠征 v3 美術需求清單</h1>
+<div class="sub">第 2 版 · 2026-10-12 · 你只需要準備「完整的單張插圖」和「角色」；卡片外框、光環、屬性徽記由遊戲用程式畫。依據 v3 合約 LightdiveNFT3（未經審計、未部署）的卡片欄位、遊戲預覽的顯示尺寸、故事第一卷。</div>
+
+<h2>0. 一頁看懂</h2>
+<table>
+  <tr><th style="width:22%">項目</th><th style="width:9%">P1<br>測試網前</th><th style="width:9%">P2<br>主網前</th><th style="width:9%">P3<br>可選</th><th>內容</th></tr>
+  <tr><td>光塔（卡片主體）</td><td>5</td><td>5</td><td></td><td>5 種稀有度各 1 張；P2 每種再 1 個變體</td></tr>
+  <tr><td>共鳴稜鏡（卡片主體）</td><td>15</td><td></td><td></td><td>3 種光束 × 5 種稀有度</td></tr>
+  <tr><td>探索者（卡片主體）</td><td>6</td><td>24</td><td></td><td>P1：6 種光紋各 1 張（澄晶）；P2 補滿 6 × 5＝30 張</td></tr>
+  <tr><td>NPC：渡（市集）</td><td>2</td><td>2</td><td></td><td>P1 肖像＋頭像；P2 兩個姿勢</td></tr>
+  <tr><td>NPC：Rovyn（訊號守望者）</td><td></td><td>4</td><td></td><td>現有圖可用；P2 補四個姿勢</td></tr>
+  <tr><td>卡背</td><td>3</td><td></td><td></td><td>光塔、稜鏡、探索者各 1，召喚翻牌用</td></tr>
+  <tr><td>召喚頁橫幅</td><td>3</td><td></td><td></td><td>光塔、稜鏡、探索者各 1</td></tr>
+  <tr><td>分享底圖、網站預覽圖</td><td></td><td>2</td><td></td><td>1200×630 各 1</td></tr>
+  <tr><td>手繪外框、光環底、徽記</td><td></td><td></td><td>19</td><td>想把程式畫的換成手繪才需要（5＋5＋9）</td></tr>
+  <tr><td>星圖與星團背景</td><td></td><td></td><td>7</td><td>現在用 ESA/Hubble 照片（CC BY 4.0），想換原創才需要</td></tr>
+  <tr><td><b>合計</b></td><td><b>34</b></td><td><b>37</b></td><td><b>26</b></td><td>P1＋P2＝71 張</td></tr>
+</table>
+<div class="box">
+  <b>建議的順序：</b>
+  <ol style="margin-bottom:0">
+    <li><b>先做試做批（3 張）：</b>光塔 <code>spire-r2</code>、探索者 <code>seeker-l2-r2</code>、渡的肖像。我接進遊戲給你看，確認風格後再量產。</li>
+    <li>其餘 P1：光塔 → 稜鏡 → 探索者 → 卡背 → 橫幅 → 渡的頭像。</li>
+    <li>P2：探索者補滿 → 光塔變體 → NPC 姿勢 → 分享圖。</li>
+  </ol>
+</div>
+
+<h2>1. 世界觀（畫之前先知道的事）</h2>
+<ul>
+  <li><b>碑原：</b>一片立著無數古老石碑的平原。觀測站蓋在碑原邊緣，探索者從這裡出發。</li>
+  <li><b>光：</b>很久以前，一道光碎裂成無數碎片，散落在星空裡的二十四個目的地（分成六個星團，越往中心越深、越危險）。探索者坐在光塔的泊位上，經由「光橋」去把光帶回來。</li>
+  <li><b>光塔：</b>隊伍的基地，像一座會發光的石塔，塔身有讓探索者坐的泊位。</li>
+  <li><b>共鳴稜鏡：</b>裝在光塔頂端，決定光橋的形狀，也就是這趟航行的風險風格。</li>
+  <li><b>探索者：</b>普通人，不是戰士。他們帶著燈、繩索、儀器這類工具，而不是武器。每個人身上都帶著六種「光紋」之一，光紋和目的地相同時特別順。</li>
+  <li><b>氣氛：</b>安靜、有點寂寥，但帶著希望。是「黑暗裡的一點光」，不是刺眼的霓虹。</li>
+</ul>
+
+<h2>2. 美術風格</h2>
+<h3>2.1 風格定位</h3>
+<p><b>暗色科幻概念美術，半寫實數位繪畫。</b>表面霧面、有使用痕跡；光只出現在該亮的地方（晶體、核心、燈、光紋）。以 Signal-Keeper 概念圖（<code>docs/lightdive/art/signal-keeper/</code>）為基準：炭黑外套、米白面具、萊姆綠發光。</p>
+<div class="two">
+  <div>
+    <b class="ok">要</b>
+    <ul>
+      <li>深色背景上的選擇性光源，強烈明暗對比</li>
+      <li>風化的石頭、舊金屬、布料，搭配乾淨發光的晶體</li>
+      <li>輪廓清楚：縮到 64px 還認得出是什麼</li>
+      <li>手作感、有故事的細節（補丁、刮痕、綁帶）</li>
+      <li>主光左上，邊緣補一圈冷色輪廓光</li>
+    </ul>
+  </div>
+  <div>
+    <b class="no">不要</b>
+    <ul>
+      <li>動漫 Q 版、像素風、塑膠感 3D 算圖</li>
+      <li>滿版霓虹、賽博龐克招牌、過飽和</li>
+      <li>武器、戰鬥姿勢、血</li>
+      <li>文字、數字、Logo、浮水印、簽名</li>
+      <li>硬幣、金幣堆、鈔票、寶箱這類「賺錢」意象</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 色彩</h3>
+<p>畫面比例大約是：<b>70% 深色</b>（炭黑、深青、深藍）＋<b>20% 中性色</b>（米白、石灰、舊金屬）＋<b>10% 發光色</b>（稀有度色或光紋色）。發光色只用在光源上。</p>
+<table>
+  <tr><th style="width:18%">用途</th><th>色號</th></tr>
+  <tr><td>基礎色</td><td><span class="sw" style="background:#0b0f0d"></span>炭黑 #0B0F0D　<span class="sw" style="background:#13201f"></span>深青 #13201F　<span class="sw" style="background:#e9ecef"></span>米白 #E9ECEF　<span class="sw" style="background:#8a8f88"></span>石灰 #8A8F88　<span class="sw" style="background:#c9ff55"></span>萊姆綠 #C9FF55（觀測站、Rovyn）　<span class="sw" style="background:#f0c766"></span>燈金 #F0C766（碼頭、渡）</td></tr>
+  <tr><td>稀有度（0→4）</td><td><span class="sw" style="background:#b9c2cc"></span>微光 #B9C2CC　<span class="sw" style="background:#5fd36a"></span>輝脈 #5FD36A　<span class="sw" style="background:#4aa8ff"></span>澄晶 #4AA8FF　<span class="sw" style="background:#b46bff"></span>稜光 #B46BFF　<span class="sw" style="background:#ff9d2e"></span>曜核 #FF9D2E</td></tr>
+  <tr><td>光紋（0→5）</td><td><span class="sw" style="background:#ffd98a"></span>曦光 #FFD98A　<span class="sw" style="background:#dde6ee"></span>霧光 #DDE6EE　<span class="sw" style="background:#7fd3ff"></span>晶光 #7FD3FF　<span class="sw" style="background:#ff6a3d"></span>熾光 #FF6A3D　<span class="sw" style="background:#a97cff"></span>雷光 #A97CFF　<span class="sw" style="background:#1fa59a"></span>淵光 #1FA59A</td></tr>
+</table>
+<p class="small">規則：光塔和稜鏡的發光色＝稀有度色；探索者的發光色＝光紋色（稀有度改由裝備和光量表現）。</p>
+
+<h3>2.3 稀有度階梯（三種卡共用）</h3>
+<table>
+  <tr><th style="width:12%">稀有度</th><th style="width:20%">材質</th><th style="width:17%">發光</th><th style="width:20%">裝飾與細節</th><th>給人的感覺</th></tr>
+  <tr><td>0 微光</td><td>風化石、舊銅、粗布</td><td>一點點微弱的光</td><td>極少；有磨損</td><td>剛起步、樸素</td></tr>
+  <tr><td>1 輝脈</td><td>石頭裡開始有光脈</td><td>細細的光紋流動</td><td>少量刻紋</td><td>開始醒過來</td></tr>
+  <tr><td>2 澄晶</td><td>半透明晶體出現</td><td>穩定、清楚的光</td><td>規整的結構</td><td>可靠、成熟</td></tr>
+  <tr><td>3 稜光</td><td>多稜面晶體＋精工金屬</td><td>明亮的光束</td><td>漂浮的碎片、光環</td><td>罕見、精緻</td></tr>
+  <tr><td>4 曜核</td><td>發光的核心＋古老而華麗的結構</td><td>強烈但不刺眼，有光暈和粒子</td><td>最多，但仍然克制</td><td>傳說、莊嚴</td></tr>
+</table>
+
+<h3>2.4 構圖與技術規格（所有卡片主體）</h3>
+<ul>
+  <li><b>尺寸：</b>2048×2048 正方形（最少 1024×1024）。</li>
+  <li><b>背景：</b>優先透明。生成工具做不到透明時，用<b>純黑 #000000 平塗背景</b>，我來去背；發光的部分在純黑底上最好處理。</li>
+  <li><b>構圖：</b>主體置中，四邊各留 10% 空白（遊戲外框會蓋住邊緣）。光塔底部放在畫面下方 15% 處；人物露到膝蓋以上或全身。</li>
+  <li><b>角度：</b>光塔和稜鏡用四分之三側面、略為仰視（顯得雄偉）；探索者平視、四分之三側身。</li>
+  <li><b>同一類的所有圖</b>保持相同的角度、大小比例和光線方向，放在一起才像一套。</li>
+  <li><b>格式：</b>PNG、sRGB。</li>
+</ul>
+
+<h3>2.5 遊戲會疊上去的東西（不用你畫）</h3>
+<p>每張卡最後由程式疊成：<b>① 稀有度光環底 → ② 你的插圖 → ③ 稀有度外框 → ④ 光紋／光束徽記（左上角）→ ⑤ 名稱、戰力、航程（遊戲文字）</b>。NFT 市集看到的也是疊好的成品，由之後的圖片服務自動產生。</p>
+
+<h2 class="page-break">3. 光塔　<span class="p1">P1</span> 5 張＋<span class="p2">P2</span> 5 張變體</h2>
+<p>隊伍的基地。<b>泊位數＝稀有度＋1</b>，這是遊戲規則，畫面上一定要數得出來。泊位是探索者坐的地方：可以畫成塔身上發光的平台、凹槽或座位，空著就好，不用畫人。</p>
+<table>
+  <tr><th style="width:17%">檔名</th><th style="width:8%">稀有度</th><th style="width:6%">泊位</th><th>描述</th></tr>
+  <tr><td><code>card/spire-r0.png</code></td><td>微光</td><td>1</td><td>一根矮胖的風化石柱，表面有裂痕和苔痕，頂端一個淺淺的石座泊位，座位邊緣透出一點灰白微光。旁邊散落兩塊碎石。</td></tr>
+  <tr><td><code>card/spire-r1.png</code></td><td>輝脈</td><td>2</td><td>修整過的石塔，兩層各一個泊位；石頭縫隙裡有綠色光脈往上流動，像葉脈。塔底綁著舊繩索。</td></tr>
+  <tr><td><code>card/spire-r2.png</code></td><td>澄晶</td><td>3</td><td>石造塔基加上半透明藍色晶體塔身，三個泊位沿塔身螺旋排列；晶體內部有柔和的藍光。</td></tr>
+  <tr><td><code>card/spire-r3.png</code></td><td>稜光</td><td>4</td><td>高瘦的多稜面紫晶塔，四個泊位像花瓣一樣向外伸出；塔頂射出一道往上的光束，周圍漂浮幾片晶體碎片。</td></tr>
+  <tr><td><code>card/spire-r4.png</code></td><td>曜核</td><td>5</td><td>宏偉的古塔，石、金屬與晶體交織；中心嵌著一顆燃燒般的橘金核心，五個泊位環繞核心；塔身有細緻的古老刻紋，四周有緩慢上升的光粒。</td></tr>
+</table>
+<p class="small">P2 變體：<code>card/spire-r0-v2.png</code> 到 <code>card/spire-r4-v2.png</code>。同稀有度、同泊位數、同材質，換一種外形（例如方塔改成尖塔、對稱改成不對稱），遊戲會依每張卡的 dna 二選一。</p>
+
+<h2>4. 共鳴稜鏡　<span class="p1">P1</span> 15 張</h2>
+<p>裝在光塔頂端的稜鏡，決定這趟航行的風險風格。<b>畫成單獨懸浮的稜鏡</b>，下方帶一個小小的金屬托環（表示它是裝在塔頂的零件），不用畫光塔。三種光束的<b>形狀必須一眼分得出來</b>；稀有度只改材質與精緻度（照 2.3 的階梯）。</p>
+<table>
+  <tr><th style="width:14%">光束</th><th style="width:30%">形狀</th><th style="width:26%">光的樣子</th><th>檔名</th></tr>
+  <tr><td>廣域（穩）</td><td>寬而圓潤的扇形或碗形晶體，邊緣柔和</td><td>光向四周柔柔散開，像一盞罩燈</td><td><code>card/prism-b0-r0.png</code> 到 <code>card/prism-b0-r4.png</code></td></tr>
+  <tr><td>聚焦（標準）</td><td>經典的多面稜鏡，對稱、俐落</td><td>一道清楚的主光束往前射</td><td><code>card/prism-b1-r0.png</code> 到 <code>card/prism-b1-r4.png</code></td></tr>
+  <tr><td>針芒（搏）</td><td>細長尖銳的針狀晶體，一端極尖</td><td>光被壓縮成一個亮點，從尖端射出</td><td><code>card/prism-b2-r0.png</code> 到 <code>card/prism-b2-r4.png</code></td></tr>
+</table>
+<table>
+  <tr><th style="width:12%">稀有度</th><th>稜鏡材質（三種光束通用）</th></tr>
+  <tr><td>微光</td><td>霧濁的石英，托環是失去光澤的舊銅，有刮痕</td></tr>
+  <tr><td>輝脈</td><td>帶綠色光脈的玻璃，托環刻有簡單紋路</td></tr>
+  <tr><td>澄晶</td><td>清澈的藍色晶體，托環是拋光的銀灰金屬</td></tr>
+  <tr><td>稜光</td><td>紫色多稜面晶體，周圍繞著 2～3 片小碎晶，托環有精細鏤空</td></tr>
+  <tr><td>曜核</td><td>中心有橘金色光核的晶體，外圍一到兩圈緩慢旋轉的光環，托環古老而華麗</td></tr>
+</table>
+
+<h2 class="page-break">5. 探索者　<span class="p1">P1</span> 6 張＋<span class="p2">P2</span> 24 張</h2>
+<p>碑原觀測站的探索者，和 Rovyn 是同一個世界的人：穿適合長途跋涉的大衣、斗篷、兜帽或護目鏡，身上帶著和自己<b>光紋</b>同色的光源（燈、晶體、紋路）。<b>拿的是工具，不是武器。</b></p>
+<ul>
+  <li><b>光紋</b>決定主色、光源造型和氣質。</li>
+  <li><b>稀有度</b>決定裝備精緻度與光量：微光是學徒、樸素；曜核是傳說人物、身上的光最多。</li>
+  <li><b>人物要多樣：</b>年紀、體型、性別、膚色都要分散，下表已經幫你分配好。</li>
+  <li>P1 先做每種光紋的「澄晶」那張（表中標★），共 6 張。</li>
+</ul>
+<table>
+  <tr><th style="width:9%">光紋</th><th style="width:10%">稀有度</th><th style="width:25%">檔名</th><th>人物設定</th></tr>
+  <tr><td rowspan="5">曦光<br><span class="sw" style="background:#ffd98a"></span>#FFD98A<br><span class="small">清晨、提燈、溫暖、引路</span></td><td>微光</td><td><code>card/seeker-l0-r0.png</code></td><td>十來歲的跑腿學徒男孩，提著一盞小銅提燈，大衣有補丁</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l0-r1.png</code></td><td>年輕女製圖師，背著地圖筒，長桿上掛著提燈</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l0-r2.png</code></td><td>中年男嚮導，胸前皮帶上嵌著一盞晶體提燈，神情沉穩</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l0-r3.png</code></td><td>高挑的女傳令者，肩後一圈像光環的環形燈</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l0-r4.png</code></td><td>白髮的「帶來黎明的人」，斗篷內襯透出金光，掌心上浮著一顆小太陽般的燈核</td></tr>
+  <tr><td rowspan="5">霧光<br><span class="sw" style="background:#dde6ee"></span>#DDE6EE<br><span class="small">薄霧、輕紗、安靜、偵察</span></td><td>微光</td><td><code>card/seeker-l1-r0.png</code></td><td>圍著灰色長圍巾的小女孩，手裡一個小霧鈴</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l1-r1.png</code></td><td>安靜的男追蹤者，面紗遮住下半臉，腰間掛著繩索和鉤</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l1-r2.png</code></td><td>戴霧玻璃護目鏡的女聆聽者，銀色長圍巾隨風飄</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l1-r3.png</code></td><td>半透明長紗像霧一樣拖在身後的男行者，身形修長</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l1-r4.png</code></td><td>年老的「霧中行者」，身體邊緣化成銀色霧氣，神情平靜</td></tr>
+  <tr><td rowspan="5">晶光<br><span class="sw" style="background:#7fd3ff"></span>#7FD3FF<br><span class="small">冰晶、透鏡、精準</span></td><td>微光</td><td><code>card/seeker-l2-r0.png</code></td><td>戴大護目鏡的打磨透鏡學徒（少年），手上沾著粉</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l2-r1.png</code></td><td>女測量員，扛著裝有晶體透鏡的三腳架</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l2-r2.png</code></td><td>男工程師，一隻手臂套著晶體透鏡護具，正在校準</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l2-r3.png</code></td><td>女領航員，身邊漂浮著一圈大小不同的透鏡</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l2-r4.png</code></td><td>晶體賢者（年長），頭頂一圈冰晶結構像冠冕</td></tr>
+  <tr><td rowspan="5">熾光<br><span class="sw" style="background:#ff6a3d"></span>#FF6A3D<br><span class="small">火星、熔光、衝勁</span></td><td>微光</td><td><code>card/seeker-l3-r0.png</code></td><td>臉上沾煤灰的燒爐小孩，腰間一個發光的炭袋</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l3-r1.png</code></td><td>壯碩的女鍛造師，拿著一把燒紅的鍛錘（工具）</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l3-r2.png</code></td><td>男跑者，靴子內襯透出火光，腳下留下火星</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l3-r3.png</code></td><td>女先鋒，前臂戴著燃燒紋路的護手，擋在前方</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l3-r4.png</code></td><td>年老的「守火人」，護具裂縫裡透出熔金般的光</td></tr>
+  <tr><td rowspan="5">雷光<br><span class="sw" style="background:#a97cff"></span>#A97CFF<br><span class="small">電弧、風暴、銳利</span></td><td>微光</td><td><code>card/seeker-l4-r0.png</code></td><td>背著線圈背包、頭頂天線的男孩</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l4-r1.png</code></td><td>女追風者，手持避雷杖，衣角被風吹起</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l4-r2.png</code></td><td>男訊號員，雙肩各一組發出電弧的線圈</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l4-r3.png</code></td><td>女攀繩者，用兩條電弧光索勾住空中的光（工具，不是武器）</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l4-r4.png</code></td><td>浮在半空的「喚雷者」（中年），斗篷裡藏著紫色閃電</td></tr>
+  <tr><td rowspan="5">淵光<br><span class="sw" style="background:#1fa59a"></span>#1FA59A<br><span class="small">深海、潮汐、沉穩</span></td><td>微光</td><td><code>card/seeker-l5-r0.png</code></td><td>夾著小銅潛水盔的潛水學徒（少女）</td></tr>
+  <tr><td>輝脈</td><td><code>card/seeker-l5-r1.png</code></td><td>男讀潮人，胸前掛著青色貝殼墜子</td></tr>
+  <tr><td>澄晶 ★</td><td><code>card/seeker-l5-r2.png</code></td><td>穿青光耐壓潛水衣的女深潛者，頭盔夾在腋下</td></tr>
+  <tr><td>稜光</td><td><code>card/seeker-l5-r3.png</code></td><td>男守潮人，肩上扛著一條發青光的錨鏈</td></tr>
+  <tr><td>曜核</td><td><code>card/seeker-l5-r4.png</code></td><td>年老的「深淵長者」，皮膚上有生物螢光般的紋路，眼睛像深海</td></tr>
+</table>
+
+<h2 class="page-break">6. NPC</h2>
+<h3>6.1 渡・碼頭看燈人（市集頁）　<span class="p1">P1</span> 2 張＋<span class="p2">P2</span> 2 張</h3>
+<p><b>故事設定：</b>在東邊碼頭點燈點了四十年的老人，大約七十歲。每天傍晚爬上石柱旁的鐵梯點燈，用長剪刀修燈芯。穿一件磨出毛邊的厚外套；他坐的長椅上鋪著一條毯子，那是以前坐在那裡的「汐」留下的，他一直沒收起來。膝蓋不好，站起來會響。話很少，常坐著看礁海。手掌粗厚（他說：「手指會騙人，手掌不會。」）。</p>
+<ul>
+  <li><b>外型：</b>精瘦、背有點駝；灰白短髮與短鬍渣；深色厚大衣，袖口和衣襬磨出毛邊；舊皮手套塞在口袋；脖子上掛著一串鑰匙（鐵皮櫃的）。</li>
+  <li><b>表情：</b>平靜、看透世事、帶一點溫柔；不要畫成狡猾或滑稽的商人。</li>
+  <li><b>光線：</b>燈金色（#F0C766）的暖光從上方照下來，打在臉和手上；背景是暗青色的礁海與夜空。</li>
+</ul>
+<table>
+  <tr><th>檔名</th><th>尺寸</th><th>背景</th><th>畫面</th><th>優先</th></tr>
+  <tr><td><code>npc/du-portrait.png</code></td><td>1000×1220（直式）</td><td>透明（或純黑）</td><td>七分身，坐在長椅上（椅上有毯子），身旁是燈柱和鐵梯，長剪刀擱在膝上，看向畫面外</td><td><span class="p1">P1</span></td></tr>
+  <tr><td><code>npc/du-face.png</code></td><td>512×512</td><td>深色</td><td>同一個人的頭肩特寫，用在小頭像和對話框</td><td><span class="p1">P1</span></td></tr>
+  <tr><td><code>npc/du-pose-lamp.png</code></td><td>1000×1220</td><td>透明</td><td>站在鐵梯上，舉剪刀修燈芯，燈光正亮</td><td><span class="p2">P2</span></td></tr>
+  <tr><td><code>npc/du-pose-ledger.png</code></td><td>1000×1220</td><td>透明</td><td>站在鐵皮櫃前，翻一本很厚的帳冊（成交紀錄頁用）</td><td><span class="p2">P2</span></td></tr>
+</table>
+
+<h3>6.2 Rovyn・訊號守望者（觀測站、潛光頁）　<span class="p2">P2</span> 4 張</h3>
+<p>已有正面肖像與頭像（<code>public/lightdive/keeper-portrait.webp</code>）。他戴面具，<b>表情靠單眼與胸口核心的亮度、軌道光環的開合、手勢和 SIGNAL 訊號板表現</b>。四張都要和現有肖像同角度、同大小、同服裝（1000×1220，透明）：</p>
+<table>
+  <tr><th>檔名</th><th>姿勢</th><th>用在哪裡</th></tr>
+  <tr><td><code>npc/rovyn-pose-guide.png</code></td><td>一手舉起 SIGNAL 訊號板指向前方，單眼正常亮度</td><td>新手引導、今日航線建議</td></tr>
+  <tr><td><code>npc/rovyn-pose-bright.png</code></td><td>胸口核心與單眼最亮，軌道光環張開，身體微微後仰</td><td>大豐收、傳說結果</td></tr>
+  <tr><td><code>npc/rovyn-pose-warn.png</code></td><td>身體前傾，單眼縮成一個亮點，光環收緊</td><td>停泊提醒、抉擇快截止</td></tr>
+  <tr><td><code>npc/rovyn-pose-quiet.png</code></td><td>低頭，雙手垂下，所有光都很暗</td><td>空手而歸、今天都做完了</td></tr>
+</table>
+
+<h2>7. 卡背　<span class="p1">P1</span> 3 張</h2>
+<p>召喚時蓋著發下來、翻開前看到的那一面。<b>1400×2000 直式</b>，不透明。三張共用同一個設計框架，只換中央紋章：</p>
+<ul>
+  <li><b>底：</b>炭黑，帶極細的萊姆綠線條圖樣（光橋網格的意象），四角有對稱的角飾。</li>
+  <li><b>中央紋章：</b><code>back/spire.png</code> 一座光塔的剪影；<code>back/prism.png</code> 一面稜鏡；<code>back/seeker.png</code> 一個戴兜帽的探索者側影。</li>
+  <li>不放文字；紋章用萊姆綠細線＋淡淡的光暈，不要太亮（翻開後才是重點）。</li>
+</ul>
+
+<h2>8. 召喚頁橫幅　<span class="p1">P1</span> 3 張</h2>
+<p><b>1920×1080</b>，不透明。主體放在<b>左側到中間（畫面左邊 60%）</b>；右側 35% 和下方 30% 會被遊戲蓋上漸層、文字和按鈕，不要放重點。</p>
+<table>
+  <tr><th>檔名</th><th>畫面</th></tr>
+  <tr><td><code>banner/spire.png</code></td><td>黃昏的碑原，成排的石碑之間立著幾座光塔，最高的一座正在亮起；天空是深青到紫的漸層</td></tr>
+  <tr><td><code>banner/prism.png</code></td><td>夜空下，三面不同形狀的稜鏡（廣域、聚焦、針芒）懸在塔頂，光被折成三種形狀射向星空</td></tr>
+  <tr><td><code>banner/seeker.png</code></td><td>光橋入口，一群探索者整裝待發的背影，六種光紋的燈火各自亮著，遠方光橋通向星空</td></tr>
+</table>
+
+<h2>9. 其他</h2>
+<table>
+  <tr><th>檔名</th><th>尺寸</th><th>說明</th><th>優先</th></tr>
+  <tr><td><code>misc/share-bg.png</code></td><td>1200×630</td><td>分享航行結果的底圖：深色太空與光橋，左側 55% 保持乾淨（遊戲會放結果文字），右側 45% 會放 Rovyn</td><td><span class="p2">P2</span></td></tr>
+  <tr><td><code>misc/og-lightdive.png</code></td><td>1200×630</td><td>貼遊戲連結時的預覽圖：碑原、光塔與星空的主視覺。這張例外，可以放遊戲名稱 Logo</td><td><span class="p2">P2</span></td></tr>
+  <tr><td><code>frame/</code>、<code>aura/</code>、<code>emblem/</code></td><td>2048／512</td><td>想把程式畫的外框（5）、光環底（5）、徽記（9）換成手繪時才需要，屆時再給詳細規格</td><td><span class="p3">P3</span></td></tr>
+  <tr><td><code>space/galaxy.png</code>、<code>space/cluster-1.png</code> 到 <code>cluster-6.png</code></td><td>2560×1440</td><td>星圖與 6 個星團背景。現在用 ESA/Hubble 照片（CC BY 4.0，已在素材授權頁標註），想換原創才需要</td><td><span class="p3">P3</span></td></tr>
+</table>
+<p class="small">不需要：介面圖示（已用有授權的圖示組）、音效與音樂（已有，CC BY）。</p>
+
+<h2 class="page-break">10. AI 生成提示詞範本</h2>
+<p>多數工具用英文效果最好。每張圖都用同一段「風格段落」開頭，才會像同一套。方括號的部分照各節的描述替換。</p>
+<pre><b>風格段落（每張都放在最前面）</b>
+dark sci-fi concept art, semi-realistic digital painting, matte weathered materials,
+charcoal and off-white palette with a few selective glowing accents in [HEX color],
+strong contrast, soft volumetric light from the upper left, cool rim light,
+quiet and slightly melancholic mood, clean readable silhouette, centered,
+isolated on a plain pure black background</pre>
+<pre><b>排除（工具有「負面提示詞」欄位就填）</b>
+text, letters, numbers, logo, watermark, signature, coins, gold coins, money, treasure chest,
+weapon, sword, gun, blood, anime, chibi, pixel art, plastic 3D render, neon signs, oversaturated,
+extra fingers, deformed hands, blurry, cropped subject</pre>
+<pre><b>光塔範例（spire-r2）</b>
+[風格段落 with #4AA8FF] , a single tower standing alone, stone base with a translucent blue
+crystal body, exactly three empty glowing seat platforms spiralling around the tower,
+three-quarter view, slightly low angle, full tower visible, base near the bottom of the frame</pre>
+<pre><b>稜鏡範例（prism-b2-r3）</b>
+[風格段落 with #B46BFF] , a floating needle-shaped crystal prism, long and sharp with one very fine tip,
+violet faceted crystal, two small crystal shards orbiting it, an ornate openwork metal mounting ring
+below it, light compressed into a single bright point at the tip</pre>
+<pre><b>探索者範例（seeker-l2-r2）</b>
+[風格段落 with #7FD3FF] , a male engineer explorer, long travel coat with straps and pouches,
+one forearm fitted with a crystal lens brace glowing pale blue, calibrating it with the other hand,
+calm focused expression, three-quarter view, knees up, no weapon</pre>
+<pre><b>渡範例（du-portrait）</b>
+[風格段落 with #F0C766 warm lamp light] , an old lamp-keeper about seventy, lean and slightly stooped,
+short grey hair and stubble, heavy dark coat with frayed cuffs and hem, sitting on a bench with a
+folded blanket on it, long wick-trimming scissors resting on his knee, an iron ladder and a lit dock
+lamp beside him, dark teal reef sea behind, calm gentle eyes looking out of frame</pre>
+<p class="small">提示詞裡不要寫在世畫家的名字、「某某風格」、或任何現有作品與角色的名稱。</p>
+
+<h2>11. 授權與紀錄（重要）</h2>
+<div class="box warn">
+<ul>
+  <li><b>確認工具條款：</b>允許商業使用，也允許把圖做成 NFT 販售。條款頁面截圖存進 <code>docs/lightdive/art/license/</code>。</li>
+  <li><b>每張都留紀錄：</b>工具名稱與版本、日期、完整提示詞，記在 <code>docs/lightdive/art/incoming/LOG.md</code>（已建好範本）。以後有人質疑版權時，這就是證據。</li>
+  <li><b>不上傳別人的圖當參考；</b>只用我們自己的 Signal-Keeper 概念圖和已經交件的圖當參考。</li>
+  <li><b>交件前自己檢查：</b>手指數量、文字殘影、浮水印、看起來像簽名的筆跡、多餘的肢體；有就重做。</li>
+</ul>
+</div>
+
+<h2>12. 交件方式與我接手後做的事</h2>
+<ol>
+  <li>檔案放進 <code>genesis/docs/lightdive/art/incoming/</code> 的對應子資料夾（<code>card/</code>、<code>npc/</code>、<code>back/</code>、<code>banner/</code>、<code>misc/</code>，都已建好），檔名照本清單。可以一批一批給。</li>
+  <li>我會去背（純黑底的圖）、轉成 WebP（遊戲用 1024 與 512），換掉目前程式畫的暫代圖：
+    <ul>
+      <li>卡片：程式畫外框、光環和徽記並疊圖，依每張卡的 dna 挑變體。</li>
+      <li>渡和 Rovyn 的肖像與姿勢、卡背、召喚橫幅。</li>
+    </ul>
+  </li>
+  <li>在管理頁做一個「全部組合預覽」，一次排出所有卡片組合，讓你檢查有沒有不協調的。</li>
+  <li>測試網階段再做 NFT 的圖片與資料服務（<code>tokenURI</code>），讓市集和錢包看到同一張疊好的卡。這一步要部署，到時會先問你。</li>
+</ol>
+<p class="small">本清單由 RovynCore 開發團隊整理（第 2 版，2026-10-12）。取代 2026-10-11 的第 1 版。</p>
+</body>
+</html>

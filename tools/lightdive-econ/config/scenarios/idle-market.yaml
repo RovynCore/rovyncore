@@ -1,0 +1,3 @@
+# Variant: quitting players sell their idle cards to newcomers instead of the fixed trade ratio.
+market:
+  mode: {value: idle_inventory}

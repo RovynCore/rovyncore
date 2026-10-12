@@ -1,0 +1,4 @@
+# Failure case R2/R3: a launch-day rush (1,500 newcomers a day on days 2-3) while the rate is still at the launch cap,
+# to test the daily ceiling (1.5% of the pool).
+behaviour:
+  arrivals: {value: {peak: 60, ramp_days: 30, hold_days: 90, decay: 0.98, floor: 8, stop_day: null, surge: {from: 2, days: 2, per_day: 1500}}}

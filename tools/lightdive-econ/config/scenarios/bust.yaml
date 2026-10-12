@@ -1,0 +1,3 @@
+# Bust: arrivals stop after day 45.
+behaviour:
+  arrivals: {value: {peak: 60, ramp_days: 30, hold_days: 45, decay: 0.98, floor: 0, stop_day: 45}}

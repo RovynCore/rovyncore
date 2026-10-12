@@ -1,0 +1,188 @@
+[
+ {
+  "slot": "click",
+  "file": "click-1.mp3",
+  "from": "CB Sounddesign - Activation 2/UIClick_UI Click 33_CB Sounddesign_ACTIVATION2.wav",
+  "kb": 3
+ },
+ {
+  "slot": "click",
+  "file": "click-2.mp3",
+  "from": "BluezoneCorp - Retrofuturistic Computer/Bluezone_BC0304_retrofuturistic_computer_button_013.wav",
+  "kb": 6
+ },
+ {
+  "slot": "click",
+  "file": "click-3.mp3",
+  "from": "Doex Studio - Qantum UI/UI_Select_Plastic_05.wav",
+  "kb": 10
+ },
+ {
+  "slot": "hover",
+  "file": "hover-1.mp3",
+  "from": "BluezoneCorp - Futuristic User Interface/Bluezone_BC0303_futuristic_user_interface_high_tech_beep_038.wav",
+  "kb": 2
+ },
+ {
+  "slot": "toggle",
+  "file": "toggle-1.mp3",
+  "from": "Rescopic Sound - User Interaction/UIMvmt_Window Open Thin 05_RSCPC_USIN.wav",
+  "kb": 14
+ },
+ {
+  "slot": "toggle",
+  "file": "toggle-2.mp3",
+  "from": "BluezoneCorp - High Voltage/Bluezone_BC0299_electricity_electronic_lighter_button_click_on_off_002_02.wav",
+  "kb": 14
+ },
+ {
+  "slot": "open",
+  "file": "open-1.mp3",
+  "from": "Rescopic Sound - Distinct Whooshes/WHSH_Pure SciFi-Whoosh Fast 03_RSCPC_DW.wav",
+  "kb": 23
+ },
+ {
+  "slot": "open",
+  "file": "open-2.mp3",
+  "from": "CB Sounddesign - Activation 2/UIMvmt_UI Zooms 103_CB Soudndesign_ACTIVATION2.wav",
+  "kb": 11
+ },
+ {
+  "slot": "open",
+  "file": "open-3.mp3",
+  "from": "Rogue Waves - Anime Studio/WHSH_Whoosh Synth Noise 28_RogueWaves_AnimeStudio.wav",
+  "kb": 23
+ },
+ {
+  "slot": "depart",
+  "file": "depart-1.mp3",
+  "from": "Chupapsound - Essential Scifi/WHOOSH PASS SF LOW.wav",
+  "kb": 40
+ },
+ {
+  "slot": "depart",
+  "file": "depart-2.mp3",
+  "from": "Mechanical Wave - Cinematic Feel/WHSH_Sci-Fi Heavy Whoosh_MWSFX_CF 29.wav",
+  "kb": 42
+ },
+ {
+  "slot": "depart",
+  "file": "depart-3.mp3",
+  "from": "BluezoneCorp - Futuristic User Interface/Bluezone_BC0303_futuristic_user_interface_transition_006.wav",
+  "kb": 23
+ },
+ {
+  "slot": "event",
+  "file": "event-1.mp3",
+  "from": "BluezoneCorp - Futuristic User Interface/Bluezone_BC0303_futuristic_user_interface_alert_003.wav",
+  "kb": 26
+ },
+ {
+  "slot": "event",
+  "file": "event-2.mp3",
+  "from": "BluezoneCorp - Futuristic User Interface/Bluezone_BC0303_futuristic_user_interface_data_glitch_003.wav",
+  "kb": 25
+ },
+ {
+  "slot": "scan",
+  "file": "scan-1.mp3",
+  "from": "CB Sounddesign - Activation 2/UIData_Counter mid 54_CB Sounddesign_ACTIVATION2.wav",
+  "kb": 31
+ },
+ {
+  "slot": "scan",
+  "file": "scan-2.mp3",
+  "from": "BluezoneCorp - Alien Interface/Bluezone_BC0300_alien_interface_sci_fi_texture_003.wav",
+  "kb": 30
+ },
+ {
+  "slot": "empty",
+  "file": "empty-1.mp3",
+  "from": "Rogue Waves - Anime Studio/DSGNMisc_Charge Down Classic 1_RogueWaves_AnimeStudio.wav",
+  "kb": 32
+ },
+ {
+  "slot": "empty",
+  "file": "empty-2.mp3",
+  "from": "Doex Studio - Qantum UI/UI_Noisy_Impact_09.wav",
+  "kb": 13
+ },
+ {
+  "slot": "normal",
+  "file": "normal-1.mp3",
+  "from": "CB Sounddesign - Activation 2/UIMisc_Feedback 36 up_CB Sounddesign_ACTIVATION2.wav",
+  "kb": 13
+ },
+ {
+  "slot": "normal",
+  "file": "normal-2.mp3",
+  "from": "BluezoneCorp - Alien Interface/Bluezone_BC0300_alien_interface_sci_fi_transition_004.wav",
+  "kb": 18
+ },
+ {
+  "slot": "good",
+  "file": "good-1.mp3",
+  "from": "Doex Studio - 90s Anime SFX Pack/Short_PowerUp_005.wav",
+  "kb": 38
+ },
+ {
+  "slot": "good",
+  "file": "good-2.mp3",
+  "from": "BluezoneCorp - Alien Interface/Bluezone_BC0300_alien_interface_sci_fi_transition_008.wav",
+  "kb": 18
+ },
+ {
+  "slot": "great",
+  "file": "great-1.mp3",
+  "from": "BluezoneCorp - Modern Cinematic Impact/Bluezone_BC0294_modern_cinematic_impact_022.wav",
+  "kb": 56
+ },
+ {
+  "slot": "great",
+  "file": "great-2.mp3",
+  "from": "Mechanical Wave - Cinematic Feel/DSGNBoom_Cinematic Hit_MWSFX_CF 05.wav",
+  "kb": 56
+ },
+ {
+  "slot": "legend",
+  "file": "legend-1.mp3",
+  "from": "Jake Fielding - Haunted Metal Vol.1 - Cinematic Hits & Impacts/DSGNBoom_Cinematic Metallic Hit, Boom, Trailer, Sub_JF_Haunted Metal Vol 1_18.wav",
+  "kb": 95
+ },
+ {
+  "slot": "legend",
+  "file": "legend-2.mp3",
+  "from": "BluezoneCorp - Modern Cinematic Impact/Bluezone_BC0294_modern_cinematic_impact_boom_003.wav",
+  "kb": 79
+ },
+ {
+  "slot": "legend",
+  "file": "legend-3.mp3",
+  "from": "Orbital Emitter - Cinematic Transitions for Editors Volume 2/80,TheGong.wav",
+  "kb": 95
+ },
+ {
+  "slot": "summon",
+  "file": "summon-1.mp3",
+  "from": "Chupapsound - Essential Scifi/DSGN VORTEX IN.wav",
+  "kb": 41
+ },
+ {
+  "slot": "summon",
+  "file": "summon-2.mp3",
+  "from": "BluezoneCorp - Alien Interface/Bluezone_BC0300_alien_interface_sci_fi_transition_008.wav",
+  "kb": 18
+ },
+ {
+  "slot": "claim",
+  "file": "claim-1.mp3",
+  "from": "Mechanical Wave - Sound Effects Collection/BELLHand_Metallic Bell_ 22_MWSFX_SEC.wav",
+  "kb": 36
+ },
+ {
+  "slot": "ambience",
+  "file": "ambience-1.mp3",
+  "from": "Doex Studio - Qantum UI/UI_BACKGROUND_LOW_DarkDrone_01.wav",
+  "kb": 115
+ }
+]

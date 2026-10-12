@@ -1,0 +1,19 @@
+list_rate=0 s0     days 365  pool      436,607  rate 0.00592  active  1013   35.0s  ok
+list_rate=0 s1     days 365  pool      443,282  rate 0.00578  active  1045   35.2s  ok
+list_rate=0 s2     days 365  pool      437,697  rate 0.00592  active  1010   39.8s  ok
+list_rate=0.1 s0   days 365  pool      450,038  rate 0.00570  active  1081   41.8s  ok
+list_rate=0.1 s1   days 365  pool      458,074  rate 0.00586  active  1078   46.0s  ok
+list_rate=0.1 s2   days 365  pool      452,218  rate 0.00581  active  1079   53.0s  ok
+list_rate=0.25 s0  days 365  pool      476,672  rate 0.00536  active  1192   43.1s  ok
+list_rate=0.25 s1  days 365  pool      483,056  rate 0.00545  active  1226   45.1s  ok
+list_rate=0.25 s2  days 365  pool      477,181  rate 0.00565  active  1176   44.5s  ok
+list_rate=0.5 s0   days 365  pool      549,301  rate 0.00513  active  1478   48.7s  ok
+list_rate=0.5 s1   days 365  pool      545,551  rate 0.00509  active  1484   47.7s  ok
+list_rate=0.5 s2   days 365  pool      556,289  rate 0.00515  active  1492   49.0s  ok
+list_rate=0.75 s0  days 365  pool      665,867  rate 0.00461  active  1992   57.6s  ok
+list_rate=0.75 s1  days 365  pool      658,538  rate 0.00471  active  1960   51.3s  ok
+list_rate=0.75 s2  days 365  pool      666,119  rate 0.00465  active  1977   53.0s  ok
+list_rate=1 s0     days 365  pool      846,000  rate 0.00431  active  2717   58.9s  ok
+list_rate=1 s1     days 365  pool      844,588  rate 0.00433  active  2713   59.8s  ok
+list_rate=1 s2     days 365  pool      830,190  rate 0.00435  active  2682   60.9s  ok
+sweep written to <repo>/tools/lightdive-econ/reports/sweep-market-c

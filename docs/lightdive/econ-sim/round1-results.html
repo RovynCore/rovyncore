@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>潛光遠征 v3 經濟模擬器：第一輪實作結果</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  :root { --ink: #1c2230; --muted: #5b6475; --line: #d8dde6; --accent: #2f6f4f; --warn: #a3471f; --soft: #f3f6f4; }
+  body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14px 0 6px; break-after: avoid; }
+  p { margin: 4px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 8.4pt; }
+  th, td { border: 1px solid var(--line); padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eef1f5; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr { break-inside: avoid; }
+  code { font-family: Consolas, monospace; font-size: 8.4pt; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 2px; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 24px; }
+  .cover dl { display: grid; grid-template-columns: 34mm 1fr; gap: 4px 10px; }
+  .cover dt { color: var(--muted); }
+  .box { border: 1px solid var(--line); background: var(--soft); border-radius: 6px; padding: 8px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .box.warn { background: #fbf2ee; border-color: #e7c3b3; }
+  .hi { color: var(--warn); font-weight: 700; }
+  .ok { color: var(--accent); font-weight: 700; }
+  .small { font-size: 8.4pt; color: var(--muted); }
+  .page-break { break-before: page; }
+  ul, ol { margin: 4px 0 8px 18px; padding: 0; }
+  img { width: 100%; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">ROVYNCORE · LIGHTDIVE</div>
+  <h1>潛光遠征 v3 經濟模擬器</h1>
+  <div class="sub">第一輪實作結果：模擬核心、測試與情境報告</div>
+  <dl>
+    <dt>日期</dt><dd>2026-10-10</dd>
+    <dt>位置</dt><dd><code>tools/lightdive-econ/</code>（新增資料夾；沒有修改任何遊戲、網站或合約檔案）</dd>
+    <dt>環境</dt><dd>Python 3.12.10（python.org，經 winget 安裝並驗證雜湊）；專案內獨立環境，套件版本鎖定</dd>
+    <dt>測試</dt><dd>35 項全部通過（執行紀錄：<code>reports/round1/pytest.txt</code>）</dd>
+    <dt>情境</dt><dd>7 個情境 × 365 天，加上 3 個主要情境各 5 組種子，共 22 次完整執行，每天檢查守恆與不變量，全部通過</dd>
+    <dt>重要聲明</dt><dd>玩家行為是假設，不是資料；結果描述的是在這些假設下的情況，不是預測，也不是收益保證。合約未經審計、未部署。</dd>
+  </dl>
+</section>
+
+<h2>0. 摘要</h2>
+<ul>
+  <li><b>規則和合約完全一致</b>：模擬器的勝算表、每日星象、出發計畫用和合約相同的整數算法，3,456 組從合約匯出的資料逐一比對，<span class="ok">全部相同</span>。</li>
+  <li><b>在上限沒有卡住時，結果和舊模擬一致</b>：冷卻情境的核光池差 −6%，分配率差不到 1%。</li>
+  <li><b class="hi">最重要的發現：離開的玩家手上的卡會永遠佔住光塔上限。</b>航程只有出發才會減少，玩家不玩了，卡就一直「活著」。基準情境到第 365 天，3,000 座光塔裡有 1,900 座閒置，新玩家進不來（3,444 人被擋），召喚收入減少，核光池從 100 萬降到約 45 萬。舊模擬沒有看到這件事，因為它在玩家離開時直接空出名額。</li>
+  <li><b>如果閒置的卡能賣給新玩家</b>（idle-market 情境），核光池第 365 天約 84 萬、活躍玩家約 2,700 人，全體領回／投入 0.69，和舊模擬的 0.71 接近。</li>
+  <li><b>開服暴衝會碰到每日上限</b>：第 2～3 天各湧入 1,500 人時，第 4 天有 2,207 趟出發被拒絕。</li>
+  <li><b>核光池初始金額影響很大</b>：只放 1 萬 RVYN 時，第 365 天只剩 273 位活躍玩家，玩家報酬中位數 0.26。</li>
+  <li><b>需要你決定</b>：怎麼處理閒置的卡（第 6 節列了 4 個做法）。</li>
+</ul>
+
+<h2>1. 做了什麼</h2>
+<table>
+  <tr><th style="width:34%">部分</th><th>內容</th></tr>
+  <tr><td>設定檔 <code>config/base.yaml</code></td><td>所有數字集中在這裡，每個都標明來源（合約／白皮書／草案／假設）與狀態（未確定）。程式中沒有寫死任何經濟參數；少了來源的設定會被拒絕。</td></tr>
+  <tr><td>規則 <code>rules.py</code>、<code>keccak.py</code></td><td>18 張勝算表、每日光與星象（自己實作 Ethereum 的 Keccak-256）、超出門檻、同頻、星象、抉擇，與合約逐位一致</td></tr>
+  <tr><td>卡片與牌組 <code>entities.py</code></td><td>每副 1,000 張、張數固定的牌組（和合約一樣）；戰力、航程、停泊、續航一次、歸航；總量上限 3,000／6,000／12,000</td></tr>
+  <tr><td>核光池 <code>pool.py</code></td><td>方案 B：當天第一趟出發時用前一天的光塵固定分配率；每趟先預留，超過 1.5% 就拒絕；不會欠超過餘額</td></tr>
+  <tr><td>帳本 <code>ledger.py</code></td><td>每一筆 RVYN（召喚、續航、出發成本、提領稅、市集稅、銷毀、營運）都記帳，總量守恆</td></tr>
+  <tr><td>玩家行為 <code>policies.py</code></td><td>第一輪沿用舊模擬的假設（到來曲線、離開門檻、續航率 40%、每 7 天提領、去最深的目的地）；第二輪的玩家行為模型會接在這裡</td></tr>
+  <tr><td>每日流程 <code>engine.py</code></td><td>換日 → 歸航 → 新玩家 → 依隨機順序出發 → 市集稅 → 提領 → 記錄與檢查</td></tr>
+  <tr><td>情境</td><td>基準、爆紅、冷卻；轉售閒置卡；失敗案例：小核光池、開服暴衝、歸航程式停擺</td></tr>
+</table>
+
+<h2>2. 測試結果（實際執行，35 項全部通過）</h2>
+<table>
+  <tr><th style="width:30%">測試</th><th>內容</th><th style="width:12%">結果</th></tr>
+  <tr><td>Keccak-256</td><td>已知向量（空字串、abc、多區塊）</td><td class="ok">通過</td></tr>
+  <tr><td>T1 勝算表</td><td>18 張：機率合計 10,000、平均剛好 1.00、最高 ×10</td><td class="ok">通過</td></tr>
+  <tr><td>T2 出發計畫</td><td>3,456 組與合約逐一比對（勝算表、風險、係數、出發成本、耗損機率、星象）</td><td class="ok">通過</td></tr>
+  <tr><td>T3 每日星象</td><td>5 個日期的光與星象和合約公式相同</td><td class="ok">通過</td></tr>
+  <tr><td>T4 抉擇</td><td>18 張表的求穩／求險，平均在 0.97／1.03 的捨入誤差內；求穩不會空手</td><td class="ok">通過（36 項）</td></tr>
+  <tr><td>T5 可重現</td><td>同種子結果完全相同；不同種子結果不同</td><td class="ok">通過</td></tr>
+  <tr><td>T6 收斂</td><td>波動最大的表抽 100 萬次，平均倍率在 1.00 ± 0.01</td><td class="ok">通過</td></tr>
+  <tr><td>I1～I7 不變量</td><td>5 個情境每天檢查：RVYN 守恆、池子不欠超過餘額、預留不超過上限、分配率不超過 0.015、總量上限、航程不為負、出發次數與隊伍上限</td><td class="ok">通過</td></tr>
+  <tr><td>帳本與設定</td><td>不能透支、不能負數；沒有來源的設定會被拒絕</td><td class="ok">通過</td></tr>
+  <tr><td>失敗案例</td><td>開服暴衝會碰到上限；小核光池仍然不欠款；閒置卡會擋住新玩家</td><td class="ok">通過</td></tr>
+</table>
+<p class="small">此外，22 次 365 天完整執行在每天結束時都跑了 I1～I7 檢查，沒有任何失敗。每次執行的設定指紋與輸出的 SHA-256 都記錄在 <code>reports/&lt;情境&gt;/summary.json</code>，可以逐位重現。</p>
+
+<h2 class="page-break">3. 情境結果（第 365 天）</h2>
+<table>
+  <tr><th>情境</th><th>核光池</th><th>分配率</th><th>活躍玩家</th><th>閒置光塔</th><th>被擋的新玩家</th><th>被拒的出發</th><th>全體領回／投入</th><th>玩家報酬 p10／p50／p90</th><th>報酬 ≥ 1 的玩家</th></tr>
+  <tr><td>基準</td><td class="n">450,702</td><td class="n">0.00581</td><td class="n">1,048</td><td class="n">1,900</td><td class="n">3,444</td><td class="n">0</td><td class="n">0.96</td><td>0.38／0.88／1.20</td><td class="n">32%</td></tr>
+  <tr><td>爆紅</td><td class="n">434,063</td><td class="n">0.00659</td><td class="n">957</td><td class="n">1,936</td><td class="n">37,241</td><td class="n">0</td><td class="n">0.96</td><td>0.34／0.87／1.18</td><td class="n">31%</td></tr>
+  <tr><td>冷卻</td><td class="n">499,782</td><td class="n">0.00519</td><td class="n">1,351</td><td class="n">1,117</td><td class="n">0</td><td class="n">0</td><td class="n">0.94</td><td>0.50／0.91／1.12</td><td class="n">25%</td></tr>
+  <tr><td>轉售閒置卡</td><td class="n">842,569</td><td class="n">0.00436</td><td class="n">2,709</td><td class="n">0</td><td class="n">6</td><td class="n">0</td><td class="n">0.69</td><td>0.62／0.81／1.14</td><td class="n">19%</td></tr>
+  <tr><td>小核光池（1 萬）</td><td class="n">123,592</td><td class="n">0.00638</td><td class="n">273</td><td class="n">2,707</td><td class="n">1,382</td><td class="n">67（5 天）</td><td class="n">0.56</td><td>0.12／0.26／0.82</td><td class="n">2%</td></tr>
+  <tr><td>開服暴衝</td><td class="n">442,251</td><td class="n">0.00589</td><td class="n">1,029</td><td class="n">1,910</td><td class="n">6,226</td><td class="n">2,207（1 天）</td><td class="n">0.95</td><td>0.33／0.86／1.17</td><td class="n">30%</td></tr>
+  <tr><td>歸航程式停擺 60 天</td><td class="n">353,820</td><td class="n">0.00717</td><td class="n">685</td><td class="n">1,681</td><td class="n">5,762</td><td class="n">0</td><td class="n">1.09</td><td>0.37／0.93／1.37</td><td class="n">43%</td></tr>
+</table>
+<p class="small">全體領回／投入 = 玩家提領 + 未提領餘額，除以玩家付進遊戲的 RVYN（召喚、續航、向其他玩家買卡）。玩家報酬 = 每位玩家的（提領 + 未提領 + 賣卡所得）÷ 付出。基準情境 5 組種子的核光池落在 453,050～456,580，結論不受種子影響。</p>
+
+<img src="round1-overview.png" alt="七個情境 365 天的核光池、分配率、活躍玩家與感受到的報酬比">
+
+<h2 class="page-break">4. 和舊模擬（sim-v3.cjs）的差異</h2>
+<table>
+  <tr><th>情境</th><th>指標</th><th>舊模擬（5 次範圍）</th><th>新模型</th><th>新模型 5 種子範圍</th><th>差距</th></tr>
+  <tr><td>冷卻</td><td>核光池</td><td class="n">530,341～534,393</td><td class="n">499,782</td><td class="n">495,050～501,620</td><td class="n">−6.1%</td></tr>
+  <tr><td>冷卻</td><td>第 90／365 天分配率</td><td class="n">0.0065／0.0052</td><td class="n">0.00659／0.00519</td><td></td><td class="n">+0.8%／+0.6%</td></tr>
+  <tr><td>基準</td><td>核光池</td><td class="n">981,450～988,694</td><td class="n">450,702</td><td class="n">453,050～456,580</td><td class="n hi">−54%</td></tr>
+  <tr><td>冷卻</td><td>第 365 天隊伍</td><td class="n">1,453～1,467</td><td class="n">1,351</td><td class="n">1,335～1,365</td><td class="n">−7.5%</td></tr>
+  <tr><td>冷卻</td><td>全體領回／投入</td><td class="n">0.89</td><td class="n">0.94</td><td class="n">0.93～0.94</td><td class="n">+5.1%</td></tr>
+  <tr><td>基準</td><td>第 90／365 天分配率</td><td class="n">0.0054／0.0046</td><td class="n">0.00712／0.00581</td><td></td><td class="n">+32%／+25%</td></tr>
+  <tr><td>基準</td><td>全體領回／投入</td><td class="n">0.71</td><td class="n">0.96</td><td class="n">0.96</td><td class="n">+36%</td></tr>
+  <tr><td>基準</td><td>第 365 天隊伍</td><td class="n">2,999～3,000</td><td class="n">1,048</td><td class="n">1,043～1,066</td><td class="n hi">−65%</td></tr>
+  <tr><td>爆紅</td><td>核光池</td><td class="n">978,806～989,397</td><td class="n">434,063</td><td class="n">434,010～442,860</td><td class="n hi">−56%</td></tr>
+  <tr><td>（對照）轉售閒置卡</td><td>全體領回／投入</td><td class="n">0.71（基準）</td><td class="n">0.69</td><td></td><td class="n">−3%</td></tr>
+</table>
+<h3>差距的原因（沒有調參數去湊數字）</h3>
+<ol>
+  <li><b>閒置卡佔住上限</b>（主要原因）：舊模擬的隊伍上限是「同時在玩的 3,000 人」，有人離開就空出名額。合約的上限是「同時存在的 3,000 座光塔」，離開的人的光塔仍然存在。冷卻情境本來就沒什麼新玩家，所以兩者接近；基準和爆紅情境的新玩家被擋在門外，差距就很大。</li>
+  <li><b>成本的算法</b>：舊模擬把卡片成本攤成每天平均；新模型逐張卡記錄航程用完、停泊、續航（40% 機率）、歸航、補卡。</li>
+  <li><b>新模型多了</b>：同頻、星象、每日上限擋人、三種卡的總量上限、牌組抽卡、未提領的餘額。</li>
+</ol>
+
+<h2>5. 主要發現與失敗案例</h2>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:22%">發現</th><th>內容</th></tr>
+  <tr><td>F1</td><td class="hi">閒置卡永遠佔住上限</td><td>航程只在出發時減少；玩家離開後，手上沒用完的卡會一直存在。基準情境第 365 天有 1,900 座光塔閒置，新玩家被擋，召喚收入下降，核光池降到約 45 萬。這是規則設計問題，不是模擬的錯誤。</td></tr>
+  <tr><td>F2</td><td>轉售能大幅緩解</td><td>如果離開的玩家把卡賣給新玩家（假設以召喚價 80% 成交），活躍玩家維持約 2,700 人、核光池約 84 萬，整體接近舊模擬。實際上會不會轉售，取決於市集與價格（第二輪模擬訂單簿）。</td></tr>
+  <tr><td>F3</td><td>開服暴衝碰到上限</td><td>開服頭幾天分配率在 0.015 上限時，若一天湧入大量隊伍，預留會碰到 1.5% 上限，晚到的人當天不能出發（暴衝情境第 4 天 2,207 趟；小核光池情境 5 天共 67 趟）。其他情境全年都沒有碰到。</td></tr>
+  <tr><td>F4</td><td>核光池初始金額很重要</td><td>只放 1 萬時，早期分配率低、玩家很快離開，第 365 天只剩 273 位玩家，報酬中位數 0.26。</td></tr>
+  <tr><td>F5</td><td>歸航程式不能停</td><td>停擺 60 天時，停泊卡也佔住上限，被擋的新玩家增加（5,762 人），核光池降到約 35 萬，且全體領回超過投入（1.09），表示核光池在被提領而不是被補充。</td></tr>
+  <tr><td>F6</td><td>報酬差距大</td><td>基準情境中，玩家報酬中位數 0.88，只有約三分之一的玩家拿回比投入多；p10 只有 0.38。對外說明時必須誠實揭露。</td></tr>
+</table>
+<div class="box">沒有發生的事：任何情境、任何一天，RVYN 都守恆；核光池從來沒有欠超過餘額（缺口 0）；分配率從未超過 0.015；預留從未超過上限。</div>
+
+<h2>6. 需要你決定：閒置卡怎麼處理</h2>
+<table>
+  <tr><th style="width:5%"></th><th style="width:30%">做法</th><th>效果與代價</th></tr>
+  <tr><td>A</td><td>閒置會慢慢消耗航程（例如連續 7 天沒出發，每天扣 1 次）</td><td>上限會自然釋出；但對只是暫時休息的玩家不友善，需要明確告知</td></tr>
+  <tr><td>B</td><td>上限只算「最近 N 天有出發過」的光塔</td><td>新玩家不會被擋；但總量不再是硬上限，稀有度保障變弱</td></tr>
+  <tr><td>C</td><td>維持現狀，靠市集轉售</td><td>規則最簡單；結果取決於轉售意願與價格（第二輪模擬）</td></tr>
+  <tr><td>D</td><td>提高光塔上限，或在達到一定比例閒置時由多簽調整</td><td>簡單；但只是延後問題</td></tr>
+</table>
+<p>我的建議是先做 <b>C</b>（市集本來就要做），並在第二輪用訂單簿模擬轉售是否足夠；如果不夠，再考慮 <b>A</b>。這個決定會影響合約，所以先記下來，不會自行修改。</p>
+
+<h2>7. 限制</h2>
+<ul>
+  <li>玩家行為全部是假設（到來人數、離開門檻、續航率、提領頻率、轉售價格）。</li>
+  <li>每位玩家只有 1 支隊伍、都去最深的目的地、不做抉擇（設定可改）；召喚價固定在開賣價；沒有 RVYN 價格與流動池。</li>
+  <li>以「天」為單位模擬，同一天內的出發依隨機順序依序進行。</li>
+  <li>結果只描述在這些假設下的情況，不是預測，也不是收益保證。</li>
+</ul>
+
+<h2>8. 下一步（第二輪，等你確認）</h2>
+<ol>
+  <li>玩家行為模型：多隊伍、目的地與抉擇策略、休息與回歸。</li>
+  <li>RVYN／ETH 流動池與召喚價自動換算。</li>
+  <li>市集訂單簿：離開的玩家賣卡、新玩家買卡，驗證做法 C 是否足夠。</li>
+  <li>365 天 Monte Carlo 多種子彙總；Streamlit 儀表板讀取輸出。</li>
+</ol>
+<p class="small">執行方式見 <code>tools/lightdive-econ/README.md</code>：<code>.venv/Scripts/python -m pytest</code>、<code>.venv/Scripts/python -m lightdive_sim all --seeds 5</code>。本報告由 RovynCore 開發團隊整理，2026-10-10。</p>
+</body>
+</html>

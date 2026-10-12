@@ -1,0 +1,9 @@
+list_rate=0 s0     days 365  pool      420,320  rate 0.00661  active   921   43.7s  ok
+list_rate=0 s1     days 365  pool      427,370  rate 0.00662  active   926   46.4s  ok
+list_rate=0.25 s0  days 365  pool      461,064  rate 0.00628  active  1039   60.2s  ok
+list_rate=0.25 s1  days 365  pool      456,910  rate 0.00628  active  1019   49.8s  ok
+list_rate=0.5 s0   days 365  pool      509,274  rate 0.00600  active  1210   54.4s  ok
+list_rate=0.5 s1   days 365  pool      508,998  rate 0.00596  active  1204   60.0s  ok
+list_rate=1 s0     days 365  pool      889,896  rate 0.00449  active  2731   93.3s  ok
+list_rate=1 s1     days 365  pool      889,990  rate 0.00456  active  2713   81.1s  ok
+sweep written to <repo>/tools/lightdive-econ/reports/sweep-market-c-boom

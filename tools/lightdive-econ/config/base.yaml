@@ -1,0 +1,85 @@
+# Lightdive v3 economy simulator: every number the model uses lives in this file (scenarios override parts of it).
+# Each entry: {value, source, status?}
+#   source: contract   = LightdiveConfig3 / Minter3 / Expedition3 / Pool3 / Market3 (local tests, unaudited, not deployed)
+#           whitepaper = docs/lightdive/WHITEPAPER-v3.md
+#           draft      = docs/lightdive/RULES-v3-draft.md
+#           assumption = a modelling assumption, NOT data (mostly carried over from docs/lightdive/simulation/sim-v3.cjs)
+#   status:  undecided = the owner has not confirmed this number (see the round 1 report, section 4)
+
+run:
+  seed: {value: 20261010, source: assumption}
+  days: {value: 365, source: assumption}
+  start_chain_day: {value: 20737, source: assumption}        # UTC day number of day 0 (2026-10-10); only sets the daily sky
+  check_invariants: {value: true, source: assumption}
+
+pool:
+  initial_rvyn: {value: 1000000, source: whitepaper, status: undecided}   # Q7: when and how it is funded
+  emission_bp: {value: 100, source: contract}
+  ceiling_bp: {value: 150, source: contract, status: undecided}           # Q3
+  cap_per_point_rvyn: {value: 0.015, source: contract, status: undecided} # Q3: how long the launch guard lasts
+
+fees:
+  claim_fee_max_bp: {value: 1500, source: contract}
+  claim_fee_step_bp: {value: 100, source: contract}
+  tax_to_pool_bp: {value: 9500, source: contract}
+  market_tax_bp: {value: 500, source: contract}
+
+summon:
+  price_rvyn: {value: [50, 30, 20], source: contract}                     # spire, prism, seeker (fixed in round 1: Q2)
+  split_bp: {value: {pool: 7000, burn: 1500, treasury: 1500}, source: contract}
+  renew_share_bp: {value: 5000, source: contract}
+  renew_basis: {value: current_price, source: contract, status: undecided}  # Q1: current_price | launch_price
+  voyages: {value: [180, 135, 45], source: contract}
+  dock_days: {value: 7, source: contract}
+  caps: {value: [3000, 6000, 12000], source: contract}
+  deck: {value: {spire: [480, 290, 150, 70, 10], prism: [500, 280, 150, 60, 10], seeker: [440, 350, 150, 50, 10]}, source: contract}
+  deck_prism_beam_tenths: {value: [4, 4, 2], source: contract}
+  power_bands:
+    value:
+      spire: [[41, 55], [56, 75], [76, 95], [96, 115], [116, 140]]
+      prism: [[10, 19], [20, 29], [30, 39], [40, 49], [50, 60]]
+      seeker: [[10, 39], [40, 79], [80, 119], [120, 159], [160, 200]]
+    source: contract
+
+play:
+  daily_passes: {value: 3, source: contract}
+  team_dives_per_day: {value: 3, source: contract}
+  max_teams: {value: 5, source: contract}
+  thresholds: {value: [51, 60, 70, 80, 92, 106, 122, 140, 160, 185, 215, 250, 290, 335, 385, 440, 500, 570, 650, 740, 840, 950, 1070, 1180], source: contract}
+  coef_bp: {value: [10000, 10250, 10510, 10770, 11040, 11310, 11600, 11890, 12180, 12490, 12800, 13120, 13450, 13790, 14130, 14480, 14850, 15220, 15600, 15990, 16390, 16800, 17220, 17650], source: contract}
+  levy_bp: {value: [300, 500, 700, 900, 1100, 1300], source: contract}
+  wear2_bp: {value: [0, 500, 1000, 1500, 2000, 2500], source: contract}
+  wear3_bp: {value: [0, 0, 0, 250, 600, 1000], source: contract}
+  odds_file: {value: data/odds.json, source: contract}
+
+behaviour:
+  # arrivals per day: ramps to `peak` over `ramp_days`, holds until `hold_days`, then decays by `decay` a day, never
+  # below `floor`; bust: 0 after `stop_day`. Multiplied by the smoothed average return ratio, clamped to [0.2, 1.5].
+  arrivals: {value: {peak: 60, ramp_days: 30, hold_days: 90, decay: 0.98, floor: 8, stop_day: null}, source: assumption}
+  quit_threshold_range: {value: [0.35, 1.2], source: assumption}   # a player quits when a card runs out and the ratio is below its own threshold
+  renew_rate: {value: 0.4, source: assumption}                     # share of docking cards their owner renews
+  claim_every_days: {value: 7, source: assumption}
+  destination: {value: deepest, source: assumption}                # deepest reachable destination
+  decision_mix: {value: {none: 1.0, steady: 0.0, bold: 0.0, detour: 0.0}, source: assumption}
+  teams_per_player: {value: 1, source: assumption}
+  keeper_delay_days: {value: 0, source: assumption}               # days after a dock expires before someone sends the card home
+  ratio_smoothing: {value: 0.8, source: assumption}               # yield_ratio = s * previous + (1 - s) * today
+  initial_yield_ratio: {value: 2.0, source: assumption}
+  # expected cost of keeping a card per day, used only for the players' perceived return ratio (sim-v3 model)
+  wear_factor: {value: [1.0, 1.05, 1.1, 1.2, 1.32, 1.45], source: assumption}
+
+market:
+  mode: {value: fixed_ratio, source: assumption}                   # fixed_ratio (sim-v3) | idle_inventory
+  trade_volume_vs_mint: {value: 0.3, source: assumption}           # fixed_ratio mode
+  idle_price_vs_summon: {value: 0.8, source: assumption}           # idle_inventory mode: price of a used card
+  # order_book mode (decision C, 10-10: keep the contract, rely on resale). See lightdive_sim/market.py.
+  #   list_rate          share of quitting players who list their idle cards at all (the rest walk away; their cards stay idle)
+  #   ask_start_range    first ask as a share of the new price for the voyages left
+  #   markdown_per_day   the ask falls this much a day while unsold, down to ask_floor
+  #   delist_after_days  then the seller gives up and the card stays idle
+  #   buy_vs_new         a buyer takes a used card if it costs at most this share of a new one per voyage ...
+  #   buy_vs_new_capped  ... or at most this when a new summon is blocked by the cap
+  order_book:
+    value: {list_rate: 0.5, ask_start_range: [0.6, 1.0], markdown_per_day: 0.03, ask_floor: 0.2, delist_after_days: 60, buy_vs_new: 0.9, buy_vs_new_capped: 1.0}
+    source: assumption
+    status: undecided

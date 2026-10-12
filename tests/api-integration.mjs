@@ -506,6 +506,31 @@ try {
       200,
     );
   });
+  await check("Lightdive announcements: public list, signed admin save, time window and validation", async () => {
+    const empty = await call("lightdive/announcements");
+    assert.equal(empty.status, 200);
+    assert.deepEqual(empty.data.items, []);
+    const signedAdmin = async (action, payload) => {
+      const challenge = await call("challenge", { action, payload });
+      assert.equal(challenge.status, 200);
+      const signature = await ownerAccount.signMessage({ message: challenge.data.message });
+      return call("admin", { action, payload, auth: { id: challenge.data.id, signature } });
+    };
+    const nowSec = Math.floor(Date.now() / 1000);
+    const items = [
+      { id: "a1", kind: "event", title: "測試網開放", body: "歡迎來到碑原。", titleEn: "", bodyEn: "", link: "https://www.rovyncore.com", pinned: true, startsAt: 0, endsAt: 0 },
+      { id: "a2", kind: "news", title: "已結束的公告", body: "", titleEn: "", bodyEn: "", link: "", pinned: false, startsAt: 0, endsAt: nowSec - 60 },
+    ];
+    assert.equal((await call("admin", { action: "lightdive-announcements", payload: { items } })).status, 401);
+    const saved = await signedAdmin("lightdive-announcements", { items });
+    assert.equal(saved.status, 200);
+    const visible = await call("lightdive/announcements");
+    assert.deepEqual(visible.data.items.map((a) => a.id), ["a1"]);
+    const bad = await signedAdmin("lightdive-announcements", { items: [{ ...items[0], link: "javascript:alert(1)" }] });
+    assert.equal(bad.status, 400);
+    const read = await signedAdmin("lightdive-announcements-read", {});
+    assert.deepEqual(read.data.items.map((a) => a.id), ["a1", "a2"]);
+  });
   await check("X post fetching is removed: no endpoint, no admin action, updates page shows the log only", async () => {
     assert.equal((await call("x-updates")).status, 404);
     for (const action of ["x-update-import", "x-update-remove"]) assert.equal((await call("challenge", { action, payload: {} })).status, 400);

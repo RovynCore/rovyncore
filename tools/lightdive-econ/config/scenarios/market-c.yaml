@@ -1,0 +1,4 @@
+# Decision C (10-10): no contract change; quitting players may sell idle cards on an order book (market.order_book).
+# Base arrivals. `python -m lightdive_sim sweep market-c --key market.order_book.list_rate ...` varies how many sell.
+market:
+  mode: {value: order_book}

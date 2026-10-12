@@ -1,0 +1,6 @@
+Sound effects in this folder are edited excerpts from the Sonniss #GameAudioGDC Bundle 2024
+(https://sonniss.com/gameaudiogdc), used under the GDC Bundle License (https://sonniss.com/gdc-bundle-license/).
+Royalty-free, commercial use allowed, no attribution required. Not for redistribution as sound effects;
+not for AI training. SOURCES.json lists the original library and file for each clip.
+Original vendors include BluezoneCorp, CB Sounddesign, Doex Studio, Rescopic Sound, Rogue Waves,
+Chupapsound, Mechanical Wave, Jake Fielding and Orbital Emitter.

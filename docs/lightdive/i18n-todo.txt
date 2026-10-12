@@ -1,0 +1,14 @@
+# Lightdive strings still missing an English translation, by first file that uses them
+
+## components\lightdive\v3\alerts.tsx (8)
+{0} 遇到岔路，等你抉擇
+{0} 帶回了結果
+{0} · 揭曉前 1 分鐘截止。
+{0} · {1} ×{2}，回到遊戲收取。
+抉擇與揭曉提醒
+遊戲開著、但你在看別的分頁或視窗時，航行出現抉擇或結果揭曉，會跳出瀏覽器通知。關掉這個分頁後就不會再提醒。
+瀏覽器封鎖了這個網站的通知。要開啟的話，請到瀏覽器的網站設定裡允許通知。
+這個瀏覽器不支援通知。
+
+## components\lightdive\v3\settings-page.tsx (1)
+提醒

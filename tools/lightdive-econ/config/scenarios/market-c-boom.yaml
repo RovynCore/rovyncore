@@ -1,0 +1,5 @@
+# Decision C with boom arrivals: the case where the spire cap binds hardest.
+behaviour:
+  arrivals: {value: {peak: 300, ramp_days: 30, hold_days: 90, decay: 0.98, floor: 30, stop_day: null}}
+market:
+  mode: {value: order_book}

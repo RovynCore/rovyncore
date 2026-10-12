@@ -1,7 +1,7 @@
 // Read side of RovynCore: Lightdive (testnet). Contracts: packages/contracts/lightdive.
 // Everything here reads the chain directly; there is no server state. Addresses come from
 // packages/web3/lightdive.json, written by scripts/lightdive-deploy.mjs.
-import { getAddress, type Abi, type Address, type PublicClient } from "viem";
+import { decodeEventLog, getAddress, type Abi, type Address, type PublicClient, type TransactionReceipt } from "viem";
 import deployment from "@/packages/web3/lightdive.json";
 import abis from "@/packages/web3/lightdive-abi.json";
 import { CHAINS, type ChainId } from "@/packages/web3/config";
@@ -29,7 +29,21 @@ type Deployment = {
   minter: Address | null;
   expedition: Address | null;
 };
-const D = deployment as Deployment;
+/**
+ * Local development only: on localhost a deployment written by scripts/lightdive-localnet.mjs can be
+ * put in localStorage ("lightdive:local-deployment") so the game runs against a local chain. Any other
+ * host always uses packages/web3/lightdive.json.
+ */
+function localOverride(): Deployment | null {
+  if (typeof window === "undefined" || !/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) return null;
+  try {
+    const raw = window.localStorage.getItem("lightdive:local-deployment");
+    return raw ? (JSON.parse(raw) as Deployment) : null;
+  } catch {
+    return null;
+  }
+}
+const D: Deployment = localOverride() ?? (deployment as Deployment);
 export type Contracts = { [K in Exclude<keyof Deployment, "chainId" | "deploymentBlock" | "rpcUrl">]: Address };
 
 /** null until scripts/lightdive-deploy.mjs has filled packages/web3/lightdive.json. */
@@ -48,6 +62,7 @@ export const CONTRACTS: Contracts | null =
 export const GAME_CHAIN = CHAINS[D.chainId];
 export const GAME_RPC = D.rpcUrl || undefined;
 export const DEPLOYMENT_BLOCK = BigInt(D.deploymentBlock);
+export const EXPLORER = GAME_CHAIN.blockExplorers?.default.url ?? "";
 
 export const KIND = { spire: 0, prism: 1, seeker: 2 } as const;
 export type Kind = (typeof KIND)[keyof typeof KIND];
@@ -84,6 +99,9 @@ export type DiveRecord = {
   result: { tier: number; multX100: number; lightdust: bigint; reward: bigint; fallbackUsed: boolean } | null;
 };
 export type MintRequest = { id: bigint; kind: number; qty: number; slot: bigint; fulfilled: boolean; ready: boolean };
+/** A dive's outcome as soon as its slot is revealed (before the day closes and the RVYN is known). */
+export type DiveOutcome = { tier: number; multX100: number; fallbackUsed: boolean };
+export type BeamTier = { probBp: number; lo: number; hi: number };
 
 export type Overview = {
   /** Chain time of the latest block, in seconds. */
@@ -327,4 +345,113 @@ export async function diveSettleable(client: PublicClient, c: Contracts, dive: D
 export function previewLuminance(spire: Nft, prism: Nft | null, seekers: Nft[]): number {
   const fixed = spire.attributes.luminance + (prism?.attributes.luminance ?? 0);
   return Math.floor((fixed * seekers.length) / spire.attributes.trait) + seekers.reduce((s, n) => s + n.attributes.luminance, 0);
+}
+
+/** Outcome of unsettled dives whose slot randomness is already revealed, computed with the same view
+ * the contract uses at settlement (LightdiveConfig.drawMultiplier). Fallback slots settle at 1.00x. */
+export async function readDiveOutcomes(client: PublicClient, c: Contracts, dives: DiveRecord[]): Promise<Map<bigint, DiveOutcome>> {
+  const open = dives.filter((d) => !d.settled).slice(0, 60);
+  const found = await Promise.all(
+    open.map(async (d): Promise<[bigint, DiveOutcome] | null> => {
+      try {
+        const info = (await client.readContract({ address: c.expedition, abi: ABI.Expedition, functionName: "diveInfo", args: [d.id] })) as { entropy: `0x${string}` };
+        const [ok, fallbackUsed, r] = (await client.readContract({ address: c.beacon, abi: ABI.RandomnessBeacon, functionName: "randomFor", args: [d.slot, info.entropy] })) as [boolean, boolean, bigint];
+        if (!ok) return null;
+        if (fallbackUsed) return [d.id, { tier: 1, multX100: 100, fallbackUsed: true }];
+        const [tier, mult] = (await client.readContract({ address: c.config, abi: ABI.LightdiveConfig, functionName: "drawMultiplier", args: [d.beam, r] })) as [number, number];
+        return [d.id, { tier: Number(tier), multX100: Number(mult), fallbackUsed: false }];
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return new Map(found.filter((x): x is [bigint, DiveOutcome] => x !== null));
+}
+
+export async function readBeamTiers(client: PublicClient, c: Contracts): Promise<BeamTier[][]> {
+  const rows = await Promise.all([0, 1, 2].map((b) => client.readContract({ address: c.config, abi: ABI.LightdiveConfig, functionName: "beamTiers", args: [b] })));
+  return (rows as { probBp: number; lo: number; hi: number }[][]).map((r) => r.map((x) => ({ probBp: Number(x.probBp), lo: Number(x.lo), hi: Number(x.hi) })));
+}
+
+/** NFTs minted to `player` in a transaction (a fulfilled draw), with their attributes. */
+export async function mintedIn(client: PublicClient, c: Contracts, receipt: TransactionReceipt, player: Address): Promise<Nft[]> {
+  const ids: bigint[] = [];
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== c.nft.toLowerCase()) continue;
+    try {
+      const ev = decodeEventLog({ abi: ABI.LightdiveNFT, data: log.data, topics: log.topics });
+      const a = ev.args as unknown as { from: Address; to: Address; tokenId?: bigint; id?: bigint };
+      if (ev.eventName === "Transfer" && /^0x0{40}$/i.test(a.from) && a.to.toLowerCase() === player.toLowerCase()) ids.push((a.tokenId ?? a.id) as bigint);
+    } catch {
+      // another event of the NFT contract
+    }
+  }
+  return attributesOf(client, c, ids);
+}
+
+/** The daily light coordinate of a depth. Its attribute rotates every day (the "Anomaly"). It is a
+ * story element: the contract records the coordinate, but its attribute does not change rewards. */
+export function coordinate(day: number, depth: number) {
+  const id = (day % 10_000) * 10 + depth;
+  return { id, label: `${["I", "II", "III", "IV", "V", "VI"][depth]}·${String(day % 10_000).padStart(4, "0")}`, attribute: skyOf(day)[depth] };
+}
+
+/** The six lights over the six depths for one day: a shuffle seeded by the day number, so every
+ * light appears once a day and the arrangement changes daily. */
+function skyOf(day: number): number[] {
+  const order = [0, 1, 2, 3, 4, 5];
+  let seed = (day * 2654435761) >>> 0;
+  for (let i = order.length - 1; i > 0; i--) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const j = seed % (i + 1);
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
+/** Claim fee in basis points right now, as LightdiveConfig.claimFeeBp computes it. */
+export function claimFeeNow(o: Overview, p: PlayerState, at = o.now): number {
+  if (p.lastClaimAt === 0n) return o.claimFeeMaxBp;
+  const days = Math.floor((at - Number(p.lastClaimAt)) / 86_400);
+  return days >= o.claimFeeDecayDays ? 0 : Math.floor((o.claimFeeMaxBp * (o.claimFeeDecayDays - days)) / o.claimFeeDecayDays);
+}
+
+/** Today's release estimate, as CoreLightPool.closeDay computes it: min(rate x available, points x cap per point). */
+export function releaseEstimate(o: Overview): bigint {
+  const byRate = (o.pool.available * BigInt(o.emissionRateBp)) / 10_000n;
+  const byCap = (o.todayPoints * o.yieldCapPerPoint) / 10_000n;
+  return byRate < byCap ? byRate : byCap;
+}
+
+export type Activity = {
+  id: bigint; owner: Address; spire: bigint; depth: number; coordinate: number; day: number; slot: bigint; beam: number;
+  luminance: bigint; points: bigint; block: bigint; result: { tier: number; multX100: number; reward: bigint } | null;
+};
+
+/** Every player's recent dives (newest first) with their settled results, for the live exploration log. */
+export async function readRecentActivity(client: PublicClient, c: Contracts, limit = 40, lookback = 400_000n): Promise<Activity[]> {
+  const latest = await client.getBlockNumber({ cacheTime: 0 });
+  const start = latest > lookback && latest - lookback > DEPLOYMENT_BLOCK ? latest - lookback : DEPLOYMENT_BLOCK;
+  const step = 50_000n;
+  const dived: Activity[] = [];
+  const settled = new Map<bigint, Activity["result"]>();
+  for (let from = start; from <= latest; from += step) {
+    const to = from + step - 1n > latest ? latest : from + step - 1n;
+    const [d, s] = await Promise.all([
+      client.getContractEvents({ address: c.expedition, abi: ABI.Expedition, eventName: "Dived", fromBlock: from, toBlock: to }),
+      client.getContractEvents({ address: c.expedition, abi: ABI.Expedition, eventName: "Settled", fromBlock: from, toBlock: to }),
+    ]);
+    for (const l of d) {
+      const a = l.args as { diveId: bigint; owner: Address; spire: bigint; depth: number; coordinate: number; luminance: bigint; points: bigint; beam: number; day: number; slot: bigint };
+      dived.push({ id: a.diveId, owner: a.owner, spire: a.spire, depth: Number(a.depth), coordinate: Number(a.coordinate), day: Number(a.day), slot: a.slot, beam: Number(a.beam), luminance: a.luminance, points: a.points, block: l.blockNumber ?? 0n, result: null });
+    }
+    for (const l of s) {
+      const a = l.args as { diveId: bigint; tier: number; multX100: number; reward: bigint };
+      settled.set(a.diveId, { tier: Number(a.tier), multX100: Number(a.multX100), reward: a.reward });
+    }
+  }
+  return dived
+    .map((x) => ({ ...x, result: settled.get(x.id) ?? null }))
+    .sort((a, b) => Number(b.id - a.id))
+    .slice(0, limit);
 }

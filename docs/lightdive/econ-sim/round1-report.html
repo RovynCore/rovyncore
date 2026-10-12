@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>潛光遠征 v3 經濟模擬器：第一輪報告</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  :root { --ink: #1c2230; --muted: #5b6475; --line: #d8dde6; --accent: #2f6f4f; --warn: #a3471f; --soft: #f3f6f4; }
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14px 0 6px; break-after: avoid; }
+  p { margin: 4px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 8.6pt; break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eef1f5; font-weight: 700; }
+  tr { break-inside: avoid; }
+  code, .mono { font-family: Consolas, "Courier New", monospace; font-size: 8.4pt; }
+  pre { font-family: Consolas, monospace; font-size: 8pt; background: #f6f7f9; border: 1px solid var(--line); padding: 8px; white-space: pre-wrap; break-inside: avoid; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 2px; font-size: 10pt; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 24px; }
+  .cover dl { display: grid; grid-template-columns: 34mm 1fr; gap: 4px 10px; font-size: 10pt; }
+  .cover dt { color: var(--muted); }
+  .box { border: 1px solid var(--line); background: var(--soft); border-radius: 6px; padding: 8px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .box.warn { background: #fbf2ee; border-color: #e7c3b3; }
+  .tag { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 7.6pt; font-weight: 700; white-space: nowrap; }
+  .t-c { background: #dcefe4; color: #1f5a3c; }   /* contract */
+  .t-p { background: #e2ebf7; color: #24497a; }   /* preview */
+  .t-d { background: #f6ecd6; color: #7a5410; }   /* draft */
+  .t-u { background: #f7dcd6; color: #8a2b16; }   /* undecided */
+  .t-a { background: #ece6f5; color: #553585; }   /* assumption */
+  .sev-h { color: var(--warn); font-weight: 700; }
+  .sev-m { color: #8a6a12; font-weight: 700; }
+  .sev-l { color: var(--muted); font-weight: 700; }
+  .small { font-size: 8.4pt; color: var(--muted); }
+  .page-break { break-before: page; }
+  ul, ol { margin: 4px 0 8px 18px; padding: 0; }
+  li { margin: 2px 0; }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+  .flow div { border: 1px solid var(--line); border-radius: 5px; padding: 6px; font-size: 8.4pt; background: #fff; }
+  .flow b { display: block; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">ROVYNCORE · LIGHTDIVE</div>
+  <h1>潛光遠征 v3 經濟模擬器</h1>
+  <div class="sub">第一輪：規格盤點、缺失清單、模型設計、測試計畫與預計檔案</div>
+  <dl>
+    <dt>日期</dt><dd>2026-10-10</dd>
+    <dt>依據</dt><dd>白皮書 v3（四語版）、規則書 v3 草案、v3 合約（本機測試版）、預覽版規則程式、既有模擬 sim-v3.cjs</dd>
+    <dt>本輪範圍</dt><dd>只做規格分析與設計。<b>Python 模擬器尚未實作</b>；照需求「確認後才開始實作」。</dd>
+    <dt>重要聲明</dt><dd>合約未經審計、未部署。本報告所有數字均標明來源與狀態；標為「模擬假設」的數字不是實際資料，也不是任何收益保證。</dd>
+  </dl>
+</section>
+
+<h2>0. 摘要</h2>
+<ul>
+  <li><b>參數已大致齊全</b>：遊戲與代幣的核心數字（戰力、勝算表、目的地、稅率、壽命、分配率）在合約、白皮書、預覽版三處一致，並已用 3,456 組計畫逐一比對合約與網站結果完全相同。</li>
+  <li><b>規則書 v3 草案已過時 6 處</b>：收益結算方式（已改為方案 B）、抉擇截止時間、特別款、召喚揭曉時間、續航價基準、自動換算價格的實作方式（見第 3 節）。</li>
+  <li><b>既有模擬不可重現</b>：sim-v3.cjs 依賴 v3-power.cjs 的 <code>Math.random()</code>，同樣條件跑 5 次，第 365 天核光池在基準情境落在 981,450～988,694 之間（約 ±0.4%）。新模擬器必須全面改用固定種子。</li>
+  <li><b>方案 A 與 B 差異小</b>：把分配率改成「用前一天結果固定」（方案 B）後，三種情境的結果差距約 1%，落在上述隨機浮動範圍內，結論不變。</li>
+  <li><b>11 個需要確認的問題</b>（第 4 節），其中 4 個會直接影響模擬結果：續航價基準、自動換算價格的來源、每日上限 1.5% 與 0.015 上限的期限、玩家行為參數。</li>
+  <li><b>7 項潛在經濟風險</b>（第 5 節），最重要的是：多錢包繞過每錢包限制、每日上限造成的先搶先贏、未歸航的停泊卡佔用總量上限。</li>
+  <li><b>環境限制</b>：這台電腦目前沒有安裝 Python，實作前需要先安裝 Python 3.12 與套件（需要你同意下載）。</li>
+</ul>
+
+<h2>1. 讀取範圍</h2>
+<table>
+  <tr><th style="width:38%">文件／程式</th><th>內容</th><th style="width:18%">版本／日期</th></tr>
+  <tr><td><code>docs/lightdive/WHITEPAPER-v3.md</code>（及 .en／.ko）</td><td>開發者白皮書，14 節</td><td>2026-10-10 更新</td></tr>
+  <tr><td><code>docs/lightdive/RULES-v3-draft.md</code></td><td>規則書 v3 草案</td><td>2026-10-08</td></tr>
+  <tr><td><code>docs/lightdive/FEATURES-v3-draft.md</code>、<code>CONTRACT-FEASIBILITY-v3.md</code></td><td>功能清單、上鏈評估、老闆決定紀錄</td><td>10-08／10-10</td></tr>
+  <tr><td><code>packages/contracts/lightdive-v3/*.sol</code>（8 份）</td><td>v3 合約：Config、NFT、Minter、Expedition、Pool、Market、drand 驗證</td><td>10-10，本機測試 13 項通過</td></tr>
+  <tr><td><code>lib/lightdive-v3/rules.ts</code>、<code>odds.ts</code></td><td>預覽版規則與 18 張勝算表</td><td>10-10</td></tr>
+  <tr><td><code>components/lightdive/v3/sim.ts</code></td><td>預覽版遊戲模擬（瀏覽器內）</td><td>10-10</td></tr>
+  <tr><td><code>docs/lightdive/simulation/v3-power.cjs</code>、<code>v3-odds.cjs</code>、<code>sim-v3.cjs</code></td><td>既有戰力分布、勝算表產生器、經濟模擬</td><td>10-08；sim-v3 於 10-10 加入方案 B</td></tr>
+</table>
+
+<h2>2. 參數盤點</h2>
+<p>狀態標記：
+<span class="tag t-c">合約</span> 已寫進 v3 合約並通過本機測試（未部署）
+<span class="tag t-p">預覽</span> 只在預覽版模擬
+<span class="tag t-d">草案</span> 文件寫了、尚未實作
+<span class="tag t-u">未確定</span> 數字或做法還沒定
+<span class="tag t-a">模擬假設</span> 只是模擬用的假設，不是資料</p>
+
+<h3>2.1 NFT 與召喚</h3>
+<table>
+  <tr><th style="width:26%">參數</th><th style="width:34%">數值</th><th style="width:12%">狀態</th><th>來源</th></tr>
+  <tr><td>戰力區間（★1～★5）</td><td>光塔 41–55／56–75／76–95／96–115／116–140；稜鏡 10–19／…／50–60；探索者 10–39／40–79／80–119／120–159／160–200</td><td><span class="tag t-c">合約</span></td><td>LightdiveMinter3、白皮書 §4</td></tr>
+  <tr><td>稀有度機率</td><td>光塔 48／29／15／7／1%；稜鏡 50／28／15／6／1%；探索者 44／35／15／5／1%</td><td><span class="tag t-c">合約</span></td><td>以牌組實作：每副 1,000 張，張數固定</td></tr>
+  <tr><td>牌組大小</td><td>1,000 張／副，抽完換新</td><td><span class="tag t-c">合約</span> <span class="tag t-u">未確定</span></td><td>數字為工程選擇，未經老闆確認</td></tr>
+  <tr><td>泊位數</td><td>光塔稀有度 + 1（1～5）</td><td><span class="tag t-c">合約</span></td><td>白皮書 §4</td></tr>
+  <tr><td>稜鏡光束比例</td><td>廣域 40%、聚焦 40%、針芒 20%（每個稀有度內）</td><td><span class="tag t-c">合約</span></td><td>Minter3、預覽版 sim.ts</td></tr>
+  <tr><td>探索者光紋</td><td>6 種均勻</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>航程（壽命）</td><td>180／135／45 次（每天 3 次約 60／45／15 天）</td><td><span class="tag t-c">合約</span></td><td>白皮書 §4、§10</td></tr>
+  <tr><td>同時存在上限</td><td>光塔 3,000、稜鏡 6,000、探索者 12,000；只能往下調</td><td><span class="tag t-c">合約</span></td><td>老闆 10-10 確認</td></tr>
+  <tr><td>開賣價</td><td>50／30／20 RVYN</td><td><span class="tag t-c">合約</span></td><td>白皮書 §4、§9</td></tr>
+  <tr><td>價格自動換算</td><td>每天一次、±10%、限開賣價 10%～200%</td><td><span class="tag t-c">合約</span>（範圍）<span class="tag t-d">草案</span>（來源）</td><td>合約由「定價角色」在範圍內設定；規則書 §8 寫的是鏈上 TWAP 與 ETH 目標價值</td></tr>
+  <tr><td>召喚分帳</td><td>70% 核光池、15% 銷毀、15% 營運</td><td><span class="tag t-c">合約</span></td><td>白皮書 §9</td></tr>
+  <tr><td>每筆上限</td><td>光塔 3、稜鏡 5、探索者 10</td><td><span class="tag t-c">合約</span></td><td>沿用 v2</td></tr>
+  <tr><td>開賣限購</td><td>開賣前 48 小時每錢包最多 3 座光塔</td><td><span class="tag t-c">合約</span></td><td>老闆 10-10 同意保留</td></tr>
+  <tr><td>召喚揭曉</td><td>申請後約 6 秒的 drand 輪次；24 小時沒揭曉改用申請時的熵</td><td><span class="tag t-c">合約</span></td><td>6 秒與 24 小時為工程選擇</td></tr>
+  <tr><td>首抽優惠、特別款</td><td>已移除</td><td><span class="tag t-c">合約</span></td><td>老闆 10-10 決定</td></tr>
+  <tr><td>續航</td><td>停泊 7 天內一次，價格 = <b>現價</b> × 50%，分帳同召喚</td><td><span class="tag t-c">合約</span> <span class="tag t-u">未確定</span></td><td>規則書寫「原價 50%」，rules.ts 註解寫「開賣價 50%」</td></tr>
+  <tr><td>版稅（ERC-2981）</td><td>5%（給 treasury）</td><td><span class="tag t-c">合約</span> <span class="tag t-u">未確定</span></td><td>文件都沒有寫</td></tr>
+</table>
+
+<h3>2.2 隊伍、出發與星圖</h3>
+<table>
+  <tr><th style="width:26%">參數</th><th style="width:34%">數值</th><th style="width:12%">狀態</th><th>來源</th></tr>
+  <tr><td>每錢包隊伍上限</td><td>5</td><td><span class="tag t-c">合約</span></td><td>Config3 可在 1～20 調整</td></tr>
+  <tr><td>出發令</td><td>每錢包每天 3 張；每隊每天 3 次（UTC 日）</td><td><span class="tag t-c">合約</span></td><td>白皮書 §3</td></tr>
+  <tr><td>收取後才能再出發</td><td>同一隊伍需先揭曉（收取）</td><td><span class="tag t-c">合約</span></td><td>規則書 §2</td></tr>
+  <tr><td>隊伍戰力</td><td>光塔 + 稜鏡 + 所有探索者（51～1200）</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>24 個門檻</td><td>51, 60, 70, 80, 92, 106, 122, 140, 160, 185, 215, 250, 290, 335, 385, 440, 500, 570, 650, 740, 840, 950, 1070, 1180</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>收益係數</td><td>round(1000 × 1.025<sup>i</sup>) / 1000（1.000～1.765）</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>出發成本</td><td>各星團 3／5／7／9／11／13%</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>多耗損機率</td><td>②5%×2；③10%×2；④15%×2 + 2.5%×3；⑤20%×2 + 6%×3；⑥25%×2 + 10%×3</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>18 張勝算表</td><td>每張機率合計 100%、平均倍率 1.00、最高 ×10</td><td><span class="tag t-c">合約</span></td><td>v3-odds.json；合約寫入時強制檢查</td></tr>
+  <tr><td>超出門檻的穩定</td><td>每超過 20% 空手 −1 點，最多 −5，移到「一般」</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>同頻</td><td>每位同頻探索者 +15% 自身戰力，整隊上限 +10%</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>星象</td><td>每天 4 個目的地：星潮（只耗損 1）、光潮（係數 ×1.05）、雷暴（風險 +1、成本 −2 點）、靜海（風險 −1）</td><td><span class="tag t-c">合約</span></td><td>由 keccak 公式決定，網站與合約一致</td></tr>
+  <tr><td>航行抉擇</td><td>求穩 ×0.97、求險 ×1.03（空手 ×1.5 + 4 點、上限 60%；大豐收 ×2.5；傳說 ×3）、繞道（只耗損 1、成本 +2 點）</td><td><span class="tag t-c">合約</span></td><td>整數算法與網站逐一比對一致</td></tr>
+  <tr><td>航行與抉擇時間</td><td>出發後約 5 分鐘揭曉；抉擇 30% 出現（畫面），揭曉前 60 秒截止（合約）</td><td><span class="tag t-c">合約</span></td><td>60 秒為工程選擇</td></tr>
+</table>
+
+<h3>2.3 收益、稅與核光池</h3>
+<table>
+  <tr><th style="width:26%">參數</th><th style="width:34%">數值</th><th style="width:12%">狀態</th><th>來源</th></tr>
+  <tr><td>核光池初始注入</td><td>1,000,000 RVYN</td><td><span class="tag t-d">草案</span></td><td>白皮書 §9（來自「產品與生態」配置，注入時間未定）</td></tr>
+  <tr><td>今日分配率（方案 B）</td><td>當天第一趟出發時固定：min(0.015, 可分配餘額 × 1% ÷ 前一天光塵總和)</td><td><span class="tag t-c">合約</span></td><td>老闆 10-10 選 B</td></tr>
+  <tr><td>每日上限</td><td>當天預留總額 ≤ 可分配餘額 × 1.5%，超過不能出發</td><td><span class="tag t-c">合約</span> <span class="tag t-u">未確定</span></td><td>1.5% 為建議值</td></tr>
+  <tr><td>每點上限 0.015</td><td>開服保護</td><td><span class="tag t-c">合約</span> <span class="tag t-u">未確定</span></td><td>何時解除未定</td></tr>
+  <tr><td>收益</td><td>光塵 × 倍率 × 分配率 − 出發成本；揭曉當下入帳</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>出發成本去向</td><td>95% 留在池、5% 銷毀；空手不扣</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>提領稅</td><td>15% 起每天 −1 點，第 15 天起 0；95／5</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>市集稅</td><td>成交價 5%，賣方負擔；95／5</td><td><span class="tag t-c">合約</span></td><td></td></tr>
+  <tr><td>管理者可調範圍</td><td>釋出 0.2%～1.5%、上限 ≤ 3%、每點上限 ≤ 1 RVYN、勝算表必須平均 1.00</td><td><span class="tag t-c">合約</span></td><td>多簽＋時間鎖尚未設定</td></tr>
+  <tr><td>隨機數</td><td>drand evmnet，鏈上驗證；停擺 24 小時以 ×1.00、耗損 1 結算</td><td><span class="tag t-c">合約</span></td><td>老闆 10-10 確認</td></tr>
+</table>
+
+<h3>2.4 既有模擬的行為假設（全部是假設，不是資料）</h3>
+<table>
+  <tr><th style="width:30%">假設</th><th style="width:30%">數值</th><th>出處</th></tr>
+  <tr><td>新玩家到來</td><td>基準：前 30 天爬升到每天 60 人，90 天後每天 −2%（最少 8）；爆紅 300；冷卻 45 天後為 0</td><td><span class="tag t-a">模擬假設</span> sim-v3.cjs</td></tr>
+  <tr><td>每位玩家</td><td>只有 1 支隊伍、每天出發 3 次、都去最深可到的目的地</td><td><span class="tag t-a">模擬假設</span></td></tr>
+  <tr><td>離開條件</td><td>探索者到期時，若平均「領回 ÷ 成本」低於個人門檻（0.35～1.2 隨機）就離開</td><td><span class="tag t-a">模擬假設</span></td></tr>
+  <tr><td>續航率</td><td>到期 NFT 的 40% 會續航</td><td><span class="tag t-a">模擬假設</span></td></tr>
+  <tr><td>提領頻率</td><td>平均每 7 天提領一次（平均稅率 8%）</td><td><span class="tag t-a">模擬假設</span></td></tr>
+  <tr><td>交易量</td><td>市集成交額 = 召喚額 × 30%</td><td><span class="tag t-a">模擬假設</span></td></tr>
+  <tr><td>耗損期望值</td><td>各星團 1.00／1.05／1.10／1.20／1.32／1.45（未扣星潮、繞道）</td><td><span class="tag t-a">模擬假設</span>（由機率推得）</td></tr>
+  <tr><td>未模擬</td><td>同頻、抉擇、星象、多隊伍、每日上限擋人、RVYN 價格、流動池</td><td>第二輪範圍</td></tr>
+</table>
+
+<h2 class="page-break">3. 文件之間的衝突與不一致</h2>
+<table>
+  <tr><th style="width:4%">#</th><th style="width:16%">項目</th><th style="width:20%">規則書 v3 草案</th><th style="width:20%">白皮書（10-10）</th><th style="width:20%">合約／預覽</th><th>建議</th></tr>
+  <tr><td>C1</td><td>收益何時確定</td><td>§2、§7：當天結束後換成 RVYN；E = 當天池子 1% 按當天光塵分（方案 A）</td><td>§8 已改為方案 B</td><td>合約：方案 B；預覽：揭曉即入帳</td><td>規則書 §2、§7.0 公式改寫為方案 B</td></tr>
+  <tr><td>C2</td><td>抉擇截止</td><td>§2、§6.4：揭曉前都可以選；每趟最多一筆抉擇交易</td><td>§7：揭曉前 1 分鐘截止</td><td>合約：截止前可以改選多次</td><td>規則書改為「揭曉前 1 分鐘截止，可改選」</td></tr>
+  <tr><td>C3</td><td>特別款</td><td>§3：特別款、星紋只是外觀</td><td>沒有寫</td><td>合約：沒有特別款</td><td>規則書刪除特別款</td></tr>
+  <tr><td>C4</td><td>續航價基準</td><td>原價 50%</td><td>原價 50%</td><td>合約：現價 × 50%；rules.ts 註解：開賣價 × 50%</td><td>需要確認（Q1）</td></tr>
+  <tr><td>C5</td><td>抽卡價自動換算</td><td>§8：鏈上讀流動池 TWAP、以 ETH 目標價值換算、流動性門檻</td><td>§9：依 24 小時平均價自動換算</td><td>合約：「定價角色」在範圍內手動或自動設定，沒有鏈上 TWAP</td><td>需要確認（Q2）</td></tr>
+  <tr><td>C6</td><td>召喚揭曉時間</td><td>（沒有寫）</td><td>§9：幾秒鐘</td><td>合約 6 秒；預覽約 8 秒</td><td>一致即可，不影響經濟</td></tr>
+  <tr><td>C7</td><td>總量上限</td><td>§10：刻意不學「NFT 無限量」，但沒有數字</td><td>§4：3,000／6,000／12,000</td><td>合約同白皮書；sim-v3 只限制隊伍 3,000</td><td>模擬器加入三種上限</td></tr>
+  <tr><td>C8</td><td>每玩家隊伍數</td><td>每錢包最多 5 隊</td><td>同</td><td>sim-v3 假設每人 1 隊</td><td>新模擬器支援多隊伍（第二輪 ABM）</td></tr>
+  <tr><td>C9</td><td>版稅</td><td>沒有寫</td><td>沒有寫</td><td>合約預設 ERC-2981 5% 給 treasury</td><td>需要確認（Q6）</td></tr>
+  <tr><td>C10</td><td>每日上限</td><td>沒有</td><td>§8：1.5%</td><td>合約 1.5%，管理者可調到 3%</td><td>規則書補上</td></tr>
+  <tr><td>C11</td><td>drand 停擺保底</td><td>沒有</td><td>§11：一天後 ×1.00、耗損 1</td><td>合約同</td><td>規則書補上</td></tr>
+  <tr><td>C12</td><td>試算數字</td><td>§9 用方案 A 算</td><td>—</td><td>sim-v3 已加入方案 B（差距約 1%）</td><td>用新模擬器重算後更新</td></tr>
+  <tr><td>C13</td><td>可重現性</td><td>寫「所有數字都可以用模擬重算」</td><td>—</td><td>v3-power.cjs 使用 Math.random，結果每次不同</td><td>新模擬器全部用固定種子</td></tr>
+</table>
+
+<h2>4. 缺失清單與待確認問題</h2>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:40%">問題</th><th style="width:12%">影響模擬</th><th>目前的處理（暫定，不當成事實）</th></tr>
+  <tr><td>Q1</td><td>續航價是「開賣價 × 50%」還是「當時召喚價 × 50%」？</td><td class="sev-h">高</td><td>兩種都做成設定，預設跟合約（現價）</td></tr>
+  <tr><td>Q2</td><td>召喚價換算的資料來源：鏈上 TWAP，還是鏈下程式讀價後在範圍內設定？目標價值（ETH）與流動性門檻是多少？</td><td class="sev-h">高</td><td>第一輪固定開賣價；第二輪接 AMM 後才模擬換算</td></tr>
+  <tr><td>Q3</td><td>每日上限 1.5% 是否確定？每點 0.015 的開服保護何時解除、由誰決定？</td><td class="sev-h">高</td><td>設定檔參數，做敏感度分析</td></tr>
+  <tr><td>Q4</td><td>玩家行為：到來曲線、離開條件、提領頻率、抉擇偏好、目的地選擇（最深 vs 最划算）</td><td class="sev-h">高</td><td>沿用 sim-v3 假設並明確標示；第二輪 ABM 改成可設定的策略</td></tr>
+  <tr><td>Q5</td><td>RVYN 價格與流動池深度（ETH 計價）</td><td class="sev-m">中</td><td>第一輪不模擬價格，只用 RVYN 計</td></tr>
+  <tr><td>Q6</td><td>ERC-2981 版稅 5% 是否保留？外部市場版稅不一定會付</td><td class="sev-l">低</td><td>不計入核光池</td></tr>
+  <tr><td>Q7</td><td>核光池 1,000,000 RVYN 何時注入、是否一次注入</td><td class="sev-m">中</td><td>第 0 天一次注入</td></tr>
+  <tr><td>Q8</td><td>停泊中的卡能否私下轉讓？（合約允許轉，但市集不收）</td><td class="sev-l">低</td><td>照合約</td></tr>
+  <tr><td>Q9</td><td>停泊 7 天沒續航的卡需要有人送交易才會燒毀，誰負責、多久跑一次？未燒毀前仍佔總量上限</td><td class="sev-m">中</td><td>假設營運程式每天執行</td></tr>
+  <tr><td>Q10</td><td>營運金庫 15% 的用途，是否會回流核光池</td><td class="sev-l">低</td><td>不回流</td></tr>
+  <tr><td>Q11</td><td>管理者權限的時間鎖長度、多簽門檻</td><td class="sev-l">低</td><td>第一輪不模擬參數變更</td></tr>
+</table>
+
+<h2 class="page-break">5. 潛在經濟漏洞與風險</h2>
+<table>
+  <tr><th style="width:4%">#</th><th style="width:18%">風險</th><th style="width:34%">機制</th><th style="width:8%">嚴重度</th><th>建議的模擬測試／對策</th></tr>
+  <tr><td>R1</td><td>多錢包繞過每錢包限制</td><td>出發令、5 隊、開賣限購都是「每錢包」；開多個錢包就能繞過。真正的總量限制只有 3,000 座光塔上限。</td><td class="sev-h">高</td><td>模擬大戶開 N 個錢包時的收益佔比；對策：靠總量上限與收益分池自我平衡，對外說明</td></tr>
+  <tr><td>R2</td><td>每日上限的先搶先贏</td><td>方案 B 下，當天預留滿 1.5% 後不能出發。人突然變多時，晚出發的人當天拿不到出發機會。</td><td class="sev-m">中</td><td>統計每日觸頂次數與受影響玩家比例；可考慮調高上限或在畫面預警</td></tr>
+  <tr><td>R3</td><td>前一天光塵定今天分配率</td><td>人數快速成長時，今天的總釋出可能超過 1%（最多 1.5%）；快速流失時低於 1%。</td><td class="sev-m">中</td><td>爆紅、冷卻情境比較 A／B 的池子曲線（目前差距約 1%）</td></tr>
+  <tr><td>R4</td><td>未歸航的停泊卡佔用上限</td><td>沒人呼叫歸航時，停泊過期的卡仍算在總量內，可能擋住新召喚。</td><td class="sev-m">中</td><td>模擬營運程式延遲或停止時的影響</td></tr>
+  <tr><td>R5</td><td>池子耗盡時收益被默默縮減</td><td>合約入帳時「不超過可分配餘額」，畫面顯示的基礎收益可能高於實際入帳。</td><td class="sev-m">中</td><td>壓力測試：池子極小、大量幸運倍率；對策：畫面提示</td></tr>
+  <tr><td>R6</td><td>召喚價在下限時池子補充變少</td><td>RVYN 漲 10 倍以上時召喚價卡在 10%，流回池子的 RVYN 變少。規則書 §8 已提到。</td><td class="sev-m">中</td><td>第二輪接 AMM 後模擬</td></tr>
+  <tr><td>R7</td><td>定價角色與管理者權限</td><td>定價角色每天可動 ±10%；管理者可改勝算表（平均必須 1.00）與釋出率（有範圍）。</td><td class="sev-l">低</td><td>多簽＋時間鎖；模擬不涵蓋惡意操作</td></tr>
+</table>
+<div class="box">已確認<b>不是</b>漏洞的：池子不會欠超過餘額（合約強制）；每張勝算表平均都是 1.00（合約寫入時強制）；隨機數由 drand 公開輪次決定，抉擇在公開前截止；空手而歸不扣出發成本。</div>
+
+<h2>6. 重現既有情境（以現有 JavaScript 模擬執行）</h2>
+<p>為了先確認基準，我實際執行了 <code>sim-v3.cjs</code>（已加入方案 B），同樣條件跑 5 次。以下是第 365 天的結果：</p>
+<table>
+  <tr><th>情境</th><th>核光池（5 次範圍）</th><th>第 90 天分配率</th><th>第 365 天分配率</th><th>平均領回／成本 第 90／365 天</th><th>全體領走／投入</th></tr>
+  <tr><td>基準 B</td><td>981,450～988,694</td><td>0.00538～0.00543</td><td>0.00460～0.00469</td><td>0.85～0.86 ／ 0.73～0.74</td><td>0.71</td></tr>
+  <tr><td>爆紅 B</td><td>978,806～989,397</td><td>0.00540～0.00552</td><td>0.00464～0.00466</td><td>0.86～0.87 ／ 0.73～0.74</td><td>0.71</td></tr>
+  <tr><td>冷卻 B</td><td>530,341～534,393</td><td>0.00646～0.00662</td><td>0.00512～0.00520</td><td>1.03～1.04 ／ 0.82</td><td>0.89</td></tr>
+</table>
+<p>對照規則書 §9.2（方案 A）：基準約 98 萬、爆紅約 98 萬、冷卻約 53 萬；0.71／0.71／0.89。<b>差異報告</b>：</p>
+<ul>
+  <li>方案 B 與規則書的方案 A 結果一致到 1% 以內；差距小於模擬本身的隨機浮動，結論不變。</li>
+  <li>浮動來源：<code>v3-power.cjs</code> 的 <code>team()</code> 使用 <code>Math.random()</code>，沒有種子，因此無法逐位重現。</li>
+  <li>這份模擬沒有涵蓋：同頻、抉擇、星象、多隊伍、每日上限擋人、總量上限（稜鏡、探索者）、RVYN 價格。結果只能視為整體量級的參考。</li>
+</ul>
+<div class="box warn"><b>限制</b>：上表是既有 JavaScript 模擬的結果，不是新 Python 模擬器的結果（尚未實作）。所有玩家行為參數都是假設；結果只描述在這些假設下的情況，不代表實際營運，也不是收益預測。</div>
+
+<h2 class="page-break">7. Python 模型設計</h2>
+<h3>7.1 原則</h3>
+<ul>
+  <li><b>離線、可重現</b>：所有亂數來自設定檔中的種子（NumPy PCG64）；同一份設定與種子必須產生逐位相同的結果，並在報告中記錄輸出雜湊。</li>
+  <li><b>假設集中</b>：所有數字只存在設定檔（YAML），每個數字標明來源：<code>contract</code>／<code>whitepaper</code>／<code>draft</code>／<code>assumption</code>。程式中不得寫死任何經濟參數。</li>
+  <li><b>與合約一致</b>：勝算表、計畫（星象 → 超出門檻 → 抉擇）用與合約相同的整數算法；以合約測試匯出的 3,456 組向量做比對測試。</li>
+  <li><b>完整記帳</b>：每一筆 RVYN 移動都記錄在帳本（召喚、續航、出發成本、提領稅、市集稅、銷毀、營運），用來做守恆測試。</li>
+  <li><b>不修改現有遊戲或合約</b>：全部是新檔案；不需要私鑰、不連任何網路。</li>
+</ul>
+
+<h3>7.2 每日流程（一天的模擬順序）</h3>
+<div class="flow">
+  <div><b>1. 換日</b>每日光與 4 個星象（keccak 公式）；出發令歸零</div>
+  <div><b>2. 生命週期</b>停泊到期的卡歸航；決定續航</div>
+  <div><b>3. 市場</b>新玩家召喚；（第二輪）市集買賣</div>
+  <div><b>4. 組隊</b>依策略組隊（最多 5 隊）</div>
+  <div><b>5. 定分配率</b>第一趟出發時：min(0.015, 可分配 × 1% ÷ 昨日光塵)、上限 1.5%</div>
+  <div><b>6. 出發</b>每錢包 3 張、每隊 3 次；預留收益，觸頂則拒絕</div>
+  <div><b>7. 抉擇與揭曉</b>依策略抉擇；抽結果、倍率、耗損；入帳；出發成本 95／5</div>
+  <div><b>8. 提領與記錄</b>依策略提領（稅 95／5）；寫入每日指標與帳本</div>
+</div>
+
+<h3>7.3 模組</h3>
+<table>
+  <tr><th style="width:28%">模組</th><th>內容</th></tr>
+  <tr><td><code>params.py</code></td><td>讀取並驗證 YAML 設定（型別、範圍、來源標記）</td></tr>
+  <tr><td><code>rules.py</code></td><td>勝算表、目的地、計畫（含抉擇的整數重塑）、同頻、超出門檻、星象；與合約逐位一致</td></tr>
+  <tr><td><code>keccak.py</code></td><td>Keccak-256（Python 內建的 sha3_256 與 Ethereum 的 keccak 不同），用於每日星象公式</td></tr>
+  <tr><td><code>entities.py</code></td><td>NFT、隊伍、錢包、牌組、總量上限</td></tr>
+  <tr><td><code>pool.py</code></td><td>核光池：可分配、已入帳未提領、每日分配率與上限、銷毀</td></tr>
+  <tr><td><code>ledger.py</code></td><td>複式帳本，所有 RVYN 流向</td></tr>
+  <tr><td><code>policies.py</code></td><td>玩家策略介面（第一輪只放 sim-v3 的簡單策略；第二輪換成 ABM）</td></tr>
+  <tr><td><code>engine.py</code></td><td>每日流程</td></tr>
+  <tr><td><code>scenarios.py</code>、<code>report.py</code></td><td>基準、爆紅、冷卻情境；輸出 CSV／JSON、圖表、差異報告、失敗案例</td></tr>
+</table>
+
+<h3>7.4 設定檔範例（節錄）</h3>
+<pre>seed: 20261010
+days: 365
+pool:
+  initial: {value: 1000000, source: whitepaper}
+  emission_bp: {value: 100, source: contract}
+  ceiling_bp: {value: 150, source: contract, status: undecided}
+  cap_per_point: {value: 0.015, source: contract, status: undecided}
+summon:
+  price: {value: [50, 30, 20], source: contract}
+  split: {value: {pool: 0.70, burn: 0.15, treasury: 0.15}, source: contract}
+  renew_basis: {value: current_price, source: contract, status: undecided}   # Q1
+  caps: {value: [3000, 6000, 12000], source: contract}
+behaviour:                        # all assumptions
+  arrivals: {value: base_curve, source: assumption}
+  renew_rate: {value: 0.40, source: assumption}
+  claim_every_days: {value: 7, source: assumption}</pre>
+
+<h2>8. 測試計畫</h2>
+<h3>8.1 守恆與不變量（每一個模擬日都檢查）</h3>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:30%">不變量</th><th>內容</th></tr>
+  <tr><td>I1</td><td>RVYN 守恆</td><td>所有帳戶餘額（玩家、核光池、營運、市集保管）+ 已銷毀 = 初始總量</td></tr>
+  <tr><td>I2</td><td>池子償付能力</td><td>可分配 ≥ 0；已入帳未提領 ≤ 池子餘額；任何一次入帳 ≤ 當時可分配</td></tr>
+  <tr><td>I3</td><td>每日上限</td><td>當天預留 ≤ 當天上限；分配率 ≤ 0.015</td></tr>
+  <tr><td>I4</td><td>分帳</td><td>召喚 70／15／15、稅 95／5，每筆加總等於原金額（容許最小單位誤差）</td></tr>
+  <tr><td>I5</td><td>NFT 生命週期</td><td>航程不為負；每張最多續航一次；歸航後不能使用；同時存在數 ≤ 上限</td></tr>
+  <tr><td>I6</td><td>出發限制</td><td>每錢包每天 ≤ 3；每隊每天 ≤ 3；每錢包 ≤ 5 隊；未收取的隊伍不能出發</td></tr>
+  <tr><td>I7</td><td>空手規則</td><td>倍率 0 時收益與出發成本都是 0，但仍耗損航程</td></tr>
+</table>
+<h3>8.2 規則一致性</h3>
+<ul>
+  <li><b>T1 勝算表</b>：18 張表機率合計 10,000、平均倍率剛好 1.00、最高 ×10。</li>
+  <li><b>T2 計畫比對</b>：用合約測試匯出的 3,456 組（3 天 × 24 目的地 × 3 光束 × 4 種戰力 × 4 種抉擇）逐一比對勝算表、風險、係數、成本、耗損機率。</li>
+  <li><b>T3 星象</b>：每日光與星象和合約公式一致（5 個日期 × 24 目的地）。</li>
+  <li><b>T4 抉擇平均</b>：求穩、求險改寫後的平均倍率在 0.97、1.03 的整數捨入誤差內。</li>
+</ul>
+<h3>8.3 統計與重現</h3>
+<ul>
+  <li><b>T5 可重現</b>：同設定同種子跑兩次，輸出雜湊相同；換種子則不同。</li>
+  <li><b>T6 收斂</b>：100 萬次抽樣的平均倍率在 1.00 ± 0.005（99% 信賴區間）。</li>
+  <li><b>T7 情境回歸</b>：在 sim-v3 的相同假設下，基準、爆紅、冷卻的第 365 天核光池與全體領走／投入，落在第 6 節範圍的 ±3% 內；超出就列入差異報告，不調參數去「湊」結果。</li>
+</ul>
+<h3>8.4 失敗案例（必須在報告中保留）</h3>
+<ul>
+  <li>池子極小：檢查入帳被縮減的次數與金額（R5）。</li>
+  <li>人數暴增：每日上限觸頂的天數與被拒絕的出發次數（R2）。</li>
+  <li>歸航程式停止 30 天：總量上限被佔用的程度（R4）。</li>
+  <li>召喚價固定在 10% 下限：池子 365 天曲線（R6，第二輪）。</li>
+  <li>任何不變量失敗：中止模擬，輸出當天狀態快照，不得略過。</li>
+</ul>
+
+<h2 class="page-break">9. 預計新增的檔案</h2>
+<p>全部是<b>新增</b>，不修改任何現有遊戲、網站或合約檔案。建議放在 <code>tools/lightdive-econ/</code>。</p>
+<table>
+  <tr><th style="width:42%">檔案</th><th>用途</th></tr>
+  <tr><td><code>README.md</code></td><td>安裝、執行、重現方法與限制</td></tr>
+  <tr><td><code>pyproject.toml</code>／<code>requirements.txt</code></td><td>numpy、pandas、pyyaml、pytest、matplotlib（版本鎖定）</td></tr>
+  <tr><td><code>config/base.yaml</code>、<code>config/scenarios/{base,boom,bust}.yaml</code></td><td>所有參數與假設</td></tr>
+  <tr><td><code>lightdive_sim/{params,rules,keccak,entities,pool,ledger,policies,engine,scenarios,report}.py</code></td><td>模擬核心</td></tr>
+  <tr><td><code>data/odds.json</code></td><td>18 張勝算表（複製自 v3-odds.json）</td></tr>
+  <tr><td><code>data/plan-vectors.json</code></td><td>由合約測試匯出的 3,456 組比對資料</td></tr>
+  <tr><td><code>tests/test_tables.py</code>、<code>test_plan_parity.py</code>、<code>test_invariants.py</code>、<code>test_determinism.py</code>、<code>test_scenarios.py</code></td><td>第 8 節的測試</td></tr>
+  <tr><td><code>scripts/export-plan-vectors.mjs</code></td><td>從合約匯出比對資料（唯讀使用現有合約，不修改）</td></tr>
+  <tr><td><code>reports/round1/</code></td><td>測試輸出、情境結果、差異報告（保留原始執行紀錄）</td></tr>
+</table>
+<div class="box warn"><b>環境需求</b>：這台電腦目前<b>沒有安裝 Python</b>（只有 Windows 的捷徑）。實作前需要安裝 Python 3.12 與上述套件，這需要你同意下載。</div>
+
+<h2>10. 第二輪預留（本輪不實作）</h2>
+<table>
+  <tr><th style="width:30%">模組</th><th>預留的介面</th></tr>
+  <tr><td>玩家行為 ABM</td><td><code>policies.py</code> 的策略介面：組隊、選目的地、抉擇、提領、續航、離開</td></tr>
+  <tr><td>RVYN／ETH DEX（AMM）</td><td>價格來源介面；召喚價換算（每天 ±10%、10%～200%）</td></tr>
+  <tr><td>入金、賣出、退出市場</td><td>錢包的 ETH 與 RVYN 餘額、買賣事件</td></tr>
+  <tr><td>NFT 訂單簿與撮合</td><td>市集掛單、成交、5% 稅；帳本已預留市集保管帳戶</td></tr>
+  <tr><td>365 天 Monte Carlo</td><td>種子清單、並行執行、分位數彙總</td></tr>
+  <tr><td>Streamlit Dashboard</td><td>讀取 <code>reports/</code> 的輸出，不直接跑模擬</td></tr>
+</table>
+
+<h2>11. 限制聲明</h2>
+<ul>
+  <li>本輪沒有寫任何 Python 程式，也沒有宣稱任何測試通過；第 6 節的數字來自實際執行既有 JavaScript 模擬並保留了結果。</li>
+  <li>合約已在本機測試鏈通過 13 項測試，但<b>未經審計、未部署</b>，可能仍有未發現的問題。</li>
+  <li>玩家行為、到來人數、續航率、提領頻率、交易量都是假設；模擬結果只描述這些假設下的情況，不是預測，也不是收益保證。</li>
+  <li>待確認的問題（第 4 節）確定之前，相關參數以「未確定」標記並做敏感度分析，不當成事實。</li>
+</ul>
+<p class="small">本報告由 RovynCore 開發團隊整理，2026-10-10。</p>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>潛光遠征 v3：做法 C 驗證結果</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  :root { --ink: #1c2230; --muted: #5b6475; --line: #d8dde6; --accent: #2f6f4f; --warn: #a3471f; --soft: #f3f6f4; }
+  body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 4px; }
+  h2 { font-size: 13.5pt; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); break-after: avoid; }
+  p { margin: 4px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 8.6pt; }
+  th, td { border: 1px solid var(--line); padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: #eef1f5; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr { break-inside: avoid; }
+  code { font-family: Consolas, monospace; font-size: 8.4pt; }
+  .kicker { color: var(--accent); font-weight: 700; letter-spacing: 2px; }
+  .sub { color: var(--muted); margin-bottom: 12px; }
+  .box { border: 1px solid var(--line); background: var(--soft); border-radius: 6px; padding: 8px 12px; margin: 8px 0 12px; break-inside: avoid; }
+  .box.warn { background: #fbf2ee; border-color: #e7c3b3; }
+  .hi { color: var(--warn); font-weight: 700; }
+  .small { font-size: 8.4pt; color: var(--muted); }
+  .page-break { break-before: page; }
+  ul, ol { margin: 4px 0 8px 18px; padding: 0; }
+  img { width: 100%; border: 1px solid var(--line); break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<div class="kicker">ROVYNCORE · LIGHTDIVE</div>
+<h1>做法 C 驗證結果：不改合約，靠市集轉售</h1>
+<div class="sub">2026-10-10 · 經濟模擬器 <code>tools/lightdive-econ/</code> · 合約未經審計、未部署 · 結果是在假設下的情況，不是預測，也不是收益保證</div>
+
+<h2>0. 結論</h2>
+<div class="box">
+<ul>
+  <li><b>新玩家願意買二手卡。</b>只要有人上架，卡很快就賣掉：第 365 天還掛在市集上的光塔最多只有 5 座，所有情境裡也沒有任何一張卡因為賣不掉而下架。</li>
+  <li><b>關鍵是「離開的玩家會不會上架」。</b>閒置光塔幾乎和「不上架的人」成正比：一半的人上架，閒置光塔只減少約四分之一；要到幾乎所有人都上架，上限才會完全釋出。</li>
+  <li><b>所以做法 C 可行，但要靠介面讓上架變得容易又顯眼</b>（第 4 節，全部是網站／遊戲介面，不用改合約）。</li>
+  <li><b>爆紅時，就算全部轉售，光塔仍然不夠。</b>這時閒置光塔是 0，3,000 座都在使用中，是上限本身的稀有度設計，不是閒置卡的問題。</li>
+  <li><b>上架越多、玩家越多，平均每人的報酬越低</b>（中位數 0.88 → 0.74），因為更多人分同一份核光。</li>
+</ul>
+</div>
+
+<h2>1. 這一輪做了什麼</h2>
+<ul>
+  <li>新增市集掛單模式（<code>lightdive_sim/market.py</code>），取代第一輪「所有離開的人都以召喚價八成賣出」的樂觀假設：
+    <ul>
+      <li>離開的玩家只有一部分會上架（「上架率」，是假設，所以做成可調整並逐一測試）；沒上架的卡會一直閒置。</li>
+      <li>開價是新卡每趟航程價格的 60%～100%，乘上剩餘航程；沒賣出就每天降 3%，最低 20%；60 天還賣不掉就放棄。</li>
+      <li>新玩家需要卡時，挑每趟航程最便宜的二手卡：比新卡便宜 10% 以上才買；如果上限已滿、無法召喚，最高願意付到新卡的價格。</li>
+      <li>交易照合約收 5% 市集稅（95% 進核光池、5% 銷毀）。</li>
+    </ul>
+  </li>
+  <li>新增 6 項測試（開價下降與底價、放棄下架、買最便宜的、只在划算或上限滿時才買、賣家收入與帳本一致、上架越多新玩家越容易進來），<b>共 41 項全部通過</b>。</li>
+  <li>新增「參數掃描」指令，同一個設定換不同數值各跑多組種子。上架率 0%～100% 共 6 個數值 × 3 組種子，加上爆紅 4 個數值 × 2 組種子，共 26 次 365 天模擬，每天都檢查守恆與不變量，全部通過。</li>
+  <li>重跑第一輪全部情境：數字和第一輪報告完全相同，新功能沒有改變舊結果。</li>
+</ul>
+
+<h2>2. 基準人數：上架率 vs 結果（第 365 天，3 組種子平均）</h2>
+<table>
+  <tr><th>上架率</th><th>閒置光塔</th><th>被擋的新玩家（累計）</th><th>活躍玩家</th><th>核光池</th><th>二手交易</th><th>賣不掉而放棄</th><th>全體領回／投入</th><th>玩家報酬中位數</th><th>報酬 ≥ 1</th></tr>
+  <tr><td>0%</td><td class="n hi">1,928</td><td class="n hi">3,368</td><td class="n">1,023</td><td class="n">439,195</td><td class="n">0</td><td class="n">0</td><td class="n">0.96</td><td class="n">0.88</td><td class="n">31%</td></tr>
+  <tr><td>10%</td><td class="n">1,870</td><td class="n">3,090</td><td class="n">1,079</td><td class="n">453,444</td><td class="n">961</td><td class="n">0</td><td class="n">0.94</td><td class="n">0.86</td><td class="n">29%</td></tr>
+  <tr><td>25%</td><td class="n">1,746</td><td class="n">2,572</td><td class="n">1,198</td><td class="n">478,970</td><td class="n">2,508</td><td class="n">0</td><td class="n">0.91</td><td class="n">0.85</td><td class="n">26%</td></tr>
+  <tr><td>50%</td><td class="n">1,442</td><td class="n">1,708</td><td class="n">1,485</td><td class="n">550,380</td><td class="n">5,249</td><td class="n">0</td><td class="n">0.85</td><td class="n">0.82</td><td class="n">19%</td></tr>
+  <tr><td>75%</td><td class="n">909</td><td class="n">673</td><td class="n">1,976</td><td class="n">663,508</td><td class="n">8,002</td><td class="n">0</td><td class="n">0.78</td><td class="n">0.78</td><td class="n">14%</td></tr>
+  <tr><td>100%</td><td class="n">2</td><td class="n">20</td><td class="n">2,704</td><td class="n">840,260</td><td class="n">9,609</td><td class="n">0</td><td class="n">0.72</td><td class="n">0.74</td><td class="n">11%</td></tr>
+</table>
+<p class="small">3 組種子之間的差距很小（例如上架率 50% 時核光池 545,551～556,289），結論不受種子影響。完整表格含範圍：<code>reports/sweep-market-c/sweep.md</code>。舊模擬（sim-v3）的基準核光池約 98 萬、全體領回／投入 0.71，只有在上架率接近 100% 時才接近。</p>
+<img src="decision-c-sweep.png" alt="上架率 0% 到 100%：核光池、活躍玩家、閒置光塔、被擋的新玩家">
+
+<h2 class="page-break">3. 爆紅人數（每天最多 300 人）：上架率 vs 結果（2 組種子平均）</h2>
+<table>
+  <tr><th>上架率</th><th>閒置光塔</th><th>被擋的新玩家（累計）</th><th>活躍玩家</th><th>核光池</th><th>二手交易</th><th>全體領回／投入</th><th>玩家報酬中位數</th><th>報酬 ≥ 1</th></tr>
+  <tr><td>0%</td><td class="n hi">1,971</td><td class="n">37,068</td><td class="n">924</td><td class="n">423,845</td><td class="n">0</td><td class="n">0.96</td><td class="n">0.87</td><td class="n">31%</td></tr>
+  <tr><td>25%</td><td class="n">1,858</td><td class="n">34,400</td><td class="n">1,029</td><td class="n">458,987</td><td class="n">3,211</td><td class="n">0.91</td><td class="n">0.85</td><td class="n">27%</td></tr>
+  <tr><td>50%</td><td class="n">1,662</td><td class="n">30,955</td><td class="n">1,207</td><td class="n">509,136</td><td class="n">7,471</td><td class="n">0.86</td><td class="n">0.83</td><td class="n">21%</td></tr>
+  <tr><td>100%</td><td class="n">0</td><td class="n">17,926</td><td class="n">2,722</td><td class="n">889,943</td><td class="n">25,191</td><td class="n">0.67</td><td class="n">0.73</td><td class="n">8%</td></tr>
+</table>
+<p>上架率 100% 時閒置光塔是 0，但仍有約 1.8 萬人進不來：3,000 座光塔全部有人在用。這是上限的稀有度本身，不是閒置卡造成的。要不要因此調整上限，是另一個決定，這次不需要做。</p>
+<img src="decision-c-sweep-boom.png" alt="爆紅人數下的上架率掃描">
+
+<h2>4. 讓上架率變高：只改介面，不改合約</h2>
+<p>模擬顯示買家不缺，缺的是賣家「記得上架」。以下都是網站／遊戲介面的工作，可以在測試網階段做：</p>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:30%">做法</th><th>說明</th></tr>
+  <tr><td>1</td><td>「閒置的卡」提醒</td><td>錢包裡有不在任何隊伍、沒停泊的卡時，在遊戲首頁顯示數量，旁邊放「到市集上架」按鈕。只顯示事實，不顯示「划算」之類的試算（遵守市集介面規則）。</td></tr>
+  <tr><td>2</td><td>解散隊伍時順便上架</td><td>玩家拆掉隊伍或卡用完時，詢問其他卡要不要上架，一步一步引導。</td></tr>
+  <tr><td>3</td><td>一次上架多張</td><td>目前市集合約一次只能上架一張（<code>list(id, price)</code>），多張卡要簽多次。介面可以排隊依序簽；如果要「一次簽名上架多張」就要在合約加一個批次函式，這屬於合約修改，需要你另外同意，現在不做。</td></tr>
+  <tr><td>4</td><td>公開上限使用情況</td><td>在透明度頁面顯示三種卡的「存在數量／在隊伍中的數量」，讓大家看到有多少卡閒置。</td></tr>
+  <tr><td>5</td><td>上線後實際量測</td><td>上架率是這次最重要的未知數。測試網和上線初期可以從鏈上事件算出真實的上架率，再用這個模擬器重跑。</td></tr>
+</table>
+
+<h2>5. 限制</h2>
+<ul>
+  <li>上架率、開價、降價速度、買家門檻都是假設；這次只掃描了上架率，其他用預設值。</li>
+  <li>合約的掛單價格是固定的，不會自動降價；模型中的每日降價代表賣家自己改價。因為卡幾乎都很快賣出、沒有人放棄，這個假設對結果影響很小。</li>
+  <li>買家不看戰力和稀有度，只看每趟航程的價格；實際上低戰力的二手卡可能比較難賣。</li>
+  <li>仍是每位玩家 1 支隊伍、去最深的目的地；召喚價固定；沒有 RVYN 價格與流動池（第二輪）。</li>
+</ul>
+
+<h2>6. 接下來</h2>
+<ol>
+  <li>做法 C 已記錄為決定；合約維持原樣。</li>
+  <li>第 4 節的介面項目 1、2、4 可以排進測試網預覽版本（不用改合約）；項目 3 的批次函式要等你決定。</li>
+  <li>第二輪其他部分（多隊伍玩家、流動池、大量種子彙總、儀表板）等你說要做再開始。</li>
+</ol>
+<p class="small">重現方式：<code>.venv/Scripts/python -m lightdive_sim sweep market-c --key market.order_book.list_rate --values 0,0.1,0.25,0.5,0.75,1 --seeds 3</code>（爆紅：<code>market-c-boom</code>，<code>--values 0,0.25,0.5,1 --seeds 2</code>）。測試紀錄：<code>reports/decision-c/pytest.txt</code>。本報告由 RovynCore 開發團隊整理，2026-10-10。</p>
+</body>
+</html>

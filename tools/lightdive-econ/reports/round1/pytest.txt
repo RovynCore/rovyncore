@@ -1,0 +1,45 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0 -- <repo>/tools/lightdive-econ/.venv/Scripts/python.exe
+cachedir: .pytest_cache
+rootdir: <repo>/tools/lightdive-econ
+configfile: pytest.ini
+testpaths: tests
+collecting ... collected 35 items
+
+tests/test_engine.py::test_ledger_conserves_and_refuses_overdraft PASSED [  2%]
+tests/test_engine.py::test_config_requires_a_source_for_every_value PASSED [  5%]
+tests/test_engine.py::test_invariants_hold_every_day[base-120] PASSED    [  8%]
+tests/test_engine.py::test_invariants_hold_every_day[idle-market-120] PASSED [ 11%]
+tests/test_engine.py::test_invariants_hold_every_day[fail-tiny-pool-60] PASSED [ 14%]
+tests/test_engine.py::test_invariants_hold_every_day[fail-surge-80] PASSED [ 17%]
+tests/test_engine.py::test_invariants_hold_every_day[fail-keeper-down-90] PASSED [ 20%]
+tests/test_engine.py::test_rvyn_totals_add_up PASSED                     [ 22%]
+tests/test_engine.py::test_same_seed_same_result_other_seed_differs PASSED [ 25%]
+tests/test_engine.py::test_ceiling_blocks_a_launch_rush_and_a_tiny_pool_stays_solvent PASSED [ 28%]
+tests/test_engine.py::test_caps_block_newcomers_when_idle_cards_hold_them PASSED [ 31%]
+tests/test_rules.py::test_keccak_known_vectors PASSED                    [ 34%]
+tests/test_rules.py::test_tables_sum_and_average PASSED                  [ 37%]
+tests/test_rules.py::test_sky_matches_contract PASSED                    [ 40%]
+tests/test_rules.py::test_plans_match_contract PASSED                    [ 42%]
+tests/test_rules.py::test_claim_fee_matches_contract PASSED              [ 45%]
+tests/test_rules.py::test_decision_averages[1/u5ee3/u57df] PASSED        [ 48%]
+tests/test_rules.py::test_decision_averages[1/u805a/u7126] PASSED        [ 51%]
+tests/test_rules.py::test_decision_averages[1/u91dd/u8292] PASSED        [ 54%]
+tests/test_rules.py::test_decision_averages[2/u5ee3/u57df] PASSED        [ 57%]
+tests/test_rules.py::test_decision_averages[2/u805a/u7126] PASSED        [ 60%]
+tests/test_rules.py::test_decision_averages[2/u91dd/u8292] PASSED        [ 62%]
+tests/test_rules.py::test_decision_averages[3/u5ee3/u57df] PASSED        [ 65%]
+tests/test_rules.py::test_decision_averages[3/u805a/u7126] PASSED        [ 68%]
+tests/test_rules.py::test_decision_averages[3/u91dd/u8292] PASSED        [ 71%]
+tests/test_rules.py::test_decision_averages[4/u5ee3/u57df] PASSED        [ 74%]
+tests/test_rules.py::test_decision_averages[4/u805a/u7126] PASSED        [ 77%]
+tests/test_rules.py::test_decision_averages[4/u91dd/u8292] PASSED        [ 80%]
+tests/test_rules.py::test_decision_averages[5/u5ee3/u57df] PASSED        [ 82%]
+tests/test_rules.py::test_decision_averages[5/u805a/u7126] PASSED        [ 85%]
+tests/test_rules.py::test_decision_averages[5/u91dd/u8292] PASSED        [ 88%]
+tests/test_rules.py::test_decision_averages[6/u5ee3/u57df] PASSED        [ 91%]
+tests/test_rules.py::test_decision_averages[6/u805a/u7126] PASSED        [ 94%]
+tests/test_rules.py::test_decision_averages[6/u91dd/u8292] PASSED        [ 97%]
+tests/test_rules.py::test_draw_converges_to_one PASSED                   [100%]
+
+======================== 35 passed in 86.74s (0:01:26) ========================

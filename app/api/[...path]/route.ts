@@ -1,4 +1,5 @@
 import { waitUntil } from "cloudflare:workers";
+import { ANNOUNCEMENTS_KEY, activeAnnouncements, announcementListSchema, type Announcement } from "@/lib/lightdive-announcements";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
 import {
@@ -213,6 +214,11 @@ async function handle(request: Request) {
       fail(404, "Unknown operations endpoint");
     }
     if (request.method === "GET") {
+      if (route === "lightdive" && path[1] === "announcements" && path.length === 2) {
+        await rate(request, "lightdive-public", 120);
+        const saved = await setting<{ items: Announcement[] }>(ANNOUNCEMENTS_KEY, { items: [] });
+        return respond({ items: activeAnnouncements(saved.items ?? [], now()) });
+      }
       if (route === "rvyn" && (path[1] === "status" || path[1] === "allowlist")) {
         await rate(request, "rvyn-public", 120);
         const c = await config();
@@ -643,6 +649,8 @@ async function handle(request: Request) {
             "record-correction",
             "sale-desk",
             "allowlist-window",
+            "lightdive-announcements",
+            "lightdive-announcements-read",
             "allowlist-import",
             "allowlist-revoke",
             "allowlist-approve",
@@ -667,6 +675,22 @@ async function handle(request: Request) {
     if (route === "admin") {
       const { action, payload, auth } = body;
       await requireAdmin(request, action, payload, auth);
+      if (action === "lightdive-announcements") {
+        const p = announcementListSchema.parse(payload);
+        if (new Set(p.items.map((a) => a.id)).size !== p.items.length) fail(400, "Announcement ids must be unique");
+        const timestamp = now();
+        await db().batch([
+          db().prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
+            .bind(ANNOUNCEMENTS_KEY, JSON.stringify({ items: p.items, updatedAt: timestamp })),
+          db().prepare("INSERT INTO audit(id,action,detail,created) VALUES(?,?,?,?)")
+            .bind(crypto.randomUUID(), "lightdive-announcements", JSON.stringify({ count: p.items.length, ids: p.items.map((a) => a.id) }), timestamp),
+        ]);
+        return respond({ items: p.items });
+      }
+      if (action === "lightdive-announcements-read") {
+        const saved = await setting<{ items: Announcement[] }>(ANNOUNCEMENTS_KEY, { items: [] });
+        return respond({ items: saved.items ?? [] });
+      }
       const c = await liveConfig();
       if (action === "dashboard") {
         const tokens = await listTokens(c, "new", "", true);

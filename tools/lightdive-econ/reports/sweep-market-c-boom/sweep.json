@@ -1,0 +1,138 @@
+{
+ "0.0": [
+  {
+   "pool": 420320.16935023415,
+   "active": 921,
+   "idle_spires": 1974,
+   "listed_spires": 0,
+   "rejected": 37038,
+   "trades": 0,
+   "volume": 0.0,
+   "sellers": 0,
+   "walked_away": 5681,
+   "delisted": 0,
+   "ratio": 0.9582602238168781,
+   "roi_p50": 0.8740969243354183,
+   "roi_ge_1": 0.3126656848306333,
+   "failed": false
+  },
+  {
+   "pool": 427370.484533585,
+   "active": 926,
+   "idle_spires": 1968,
+   "listed_spires": 0,
+   "rejected": 37097,
+   "trades": 0,
+   "volume": 0.0,
+   "sellers": 0,
+   "walked_away": 5633,
+   "delisted": 0,
+   "ratio": 0.9534477866061628,
+   "roi_p50": 0.8669474047798318,
+   "roi_ge_1": 0.3068618751848565,
+   "failed": false
+  }
+ ],
+ "0.25": [
+  {
+   "pool": 461064.27557171846,
+   "active": 1039,
+   "idle_spires": 1851,
+   "listed_spires": 0,
+   "rejected": 34275,
+   "trades": 3283,
+   "volume": 44635.385926531104,
+   "sellers": 1615,
+   "walked_away": 4791,
+   "delisted": 0,
+   "ratio": 0.9088493814812081,
+   "roi_p50": 0.8491448116732501,
+   "roi_ge_1": 0.26023430301434775,
+   "failed": false
+  },
+  {
+   "pool": 456909.7049394615,
+   "active": 1019,
+   "idle_spires": 1864,
+   "listed_spires": 0,
+   "rejected": 34524,
+   "trades": 3139,
+   "volume": 41868.46183146608,
+   "sellers": 1569,
+   "walked_away": 4764,
+   "delisted": 0,
+   "ratio": 0.913192818185326,
+   "roi_p50": 0.8526398801999665,
+   "roi_ge_1": 0.2714419100973723,
+   "failed": false
+  }
+ ],
+ "0.5": [
+  {
+   "pool": 509273.6106696995,
+   "active": 1210,
+   "idle_spires": 1653,
+   "listed_spires": 0,
+   "rejected": 30939,
+   "trades": 7533,
+   "volume": 102545.15968977,
+   "sellers": 3734,
+   "walked_away": 3727,
+   "delisted": 0,
+   "ratio": 0.857450722939697,
+   "roi_p50": 0.8327212126987205,
+   "roi_ge_1": 0.20937358147980029,
+   "failed": false
+  },
+  {
+   "pool": 508998.1785620786,
+   "active": 1204,
+   "idle_spires": 1671,
+   "listed_spires": 0,
+   "rejected": 30971,
+   "trades": 7409,
+   "volume": 98998.91534255426,
+   "sellers": 3679,
+   "walked_away": 3756,
+   "delisted": 0,
+   "ratio": 0.8590244262355105,
+   "roi_p50": 0.8276608298838706,
+   "roi_ge_1": 0.20569871722102395,
+   "failed": false
+  }
+ ],
+ "1.0": [
+  {
+   "pool": 889895.6668781547,
+   "active": 2731,
+   "idle_spires": 0,
+   "listed_spires": 0,
+   "rejected": 17901,
+   "trades": 25270,
+   "volume": 356533.6831312781,
+   "sellers": 12686,
+   "walked_away": 0,
+   "delisted": 0,
+   "ratio": 0.6712282152081885,
+   "roi_p50": 0.7316234566522286,
+   "roi_ge_1": 0.07962334251489335,
+   "failed": false
+  },
+  {
+   "pool": 889989.5260289297,
+   "active": 2713,
+   "idle_spires": 0,
+   "listed_spires": 0,
+   "rejected": 17951,
+   "trades": 25112,
+   "volume": 357975.2626883856,
+   "sellers": 12647,
+   "walked_away": 0,
+   "delisted": 0,
+   "ratio": 0.6710427963083875,
+   "roi_p50": 0.7307666793652299,
+   "roi_ge_1": 0.08107759731889662,
+   "failed": false
+  }
+ ]
+}

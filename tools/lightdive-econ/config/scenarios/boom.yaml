@@ -1,0 +1,3 @@
+# Boom: five times the arrivals of the base case.
+behaviour:
+  arrivals: {value: {peak: 300, ramp_days: 30, hold_days: 90, decay: 0.98, floor: 30, stop_day: null}}
