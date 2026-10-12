@@ -50,3 +50,7 @@ next-env.d.ts
 
 # Candidate contract builds (regenerate with npm run contracts:compile:lightdive)
 /packages/contracts/lightdive/artifacts/
+
+# Local wrangler state and secrets for the operator Worker
+workers/*/.wrangler/
+workers/*/.dev.vars
