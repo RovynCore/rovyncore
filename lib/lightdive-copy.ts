@@ -29,8 +29,6 @@ export const ATTRIBUTE: Copy[] = [
   c("Abysslight", "淵光", "渊光", "심연빛"),
 ];
 export const ATTRIBUTE_COLOR = ["#ffd98a", "#dde6ee", "#7fd3ff", "#ff6a3d", "#a97cff", "#1fa59a"];
-export const SPECIAL_SPIRE: Copy[] = [c("The Hollow Spire", "空心塔", "空心塔", "텅 빈 심장의 탑"), c("Genesis Spire", "創世塔", "创世塔", "창세의 탑")];
-export const SPECIAL_PRISM: Copy[] = [c("Echo Prism", "回聲稜鏡", "回声棱镜", "메아리 프리즘"), c("Tear of the Core", "核心之淚", "核心之泪", "코어의 눈물")];
 export const SIGNATURE: Copy[] = [
   c("Origin of First Light", "初光原點", "初光原点", "첫 빛의 기원"),
   c("Seven-Star Crown", "七星冠穹", "七星冠穹", "칠성의 관"),
@@ -87,7 +85,7 @@ export const T = {
   approve: c("Approve RVYN", "授權 RVYN", "授权 RVYN", "RVYN 승인"),
   saleClosed: c("Spire sale not open", "光塔尚未開賣", "光塔尚未开卖", "스파이어 판매 전"),
   requests: c("Your draws", "你的抽取", "你的抽取", "내 뽑기"),
-  waiting: c("Waiting for the hour's signal", "等待本小時訊號揭曉", "等待本小时信号揭晓", "이번 시간 신호 대기 중"),
+  waiting: c("Waiting for the signal (about a minute)", "等待訊號揭曉（約 1 分鐘）", "等待信号揭晓（约 1 分钟）", "신호 대기 중 (약 1분)"),
   reveal: c("Reveal", "揭曉", "揭晓", "공개"),
   revealed: c("Revealed", "已揭曉", "已揭晓", "공개됨"),
   equipTitle: c("Assemble a spire", "組成光塔", "组成光塔", "스파이어 편성"),
@@ -111,7 +109,6 @@ export const T = {
   empty: c("Nothing here yet.", "這裡還沒有東西。", "这里还没有东西。", "아직 아무것도 없습니다."),
   voyages: c("Voyages left", "剩餘航程", "剩余航程", "남은 항해"),
   luminance: c("Luminance", "光度", "光度", "광도"),
-  special: c("Special Edition", "特別款", "特别款", "스페셜 에디션"),
   signature: c("Signature", "星紋", "星纹", "시그니처"),
   settleAll: c("Settle ready dives", "結算可結算的航程", "结算可结算的航程", "정산 가능한 항해 정산"),
   pending: c("In progress", "航行中", "航行中", "항해 중"),

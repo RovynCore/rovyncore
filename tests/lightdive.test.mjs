@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ganache from "ganache";
 import { createPublicClient, createWalletClient, custom, defineChain, parseEther, keccak256, encodeAbiParameters } from "viem";
+import { tick, chainFor as operatorChain } from "../scripts/lightdive-operator-core.mjs";
 
 const A = JSON.parse(fs.readFileSync("packages/contracts/lightdive/artifacts/contracts.json", "utf8"));
 A.LaunchToken = JSON.parse(fs.readFileSync("packages/contracts/v2/artifacts/contracts.json", "utf8")).LaunchToken;
@@ -11,8 +12,21 @@ const E = parseEther;
 const HOUR = 3600;
 const DAY = 86_400;
 const SPIRE = 0, PRISM = 1, SEEKER = 2;
-const seedFor = (hour) => keccak256(encodeAbiParameters([{ type: "string" }, { type: "uint64" }], ["seed", BigInt(hour)]));
-const commitmentOf = (seed) => keccak256(encodeAbiParameters([{ type: "bytes32" }], [seed]));
+const SLOT = 60;
+const SLOTS_PER_DAY = 1440;
+// One hash chain per UTC day, as the operator builds it: v[last] from a secret, v[i] = keccak(v[i+1]),
+// anchor = keccak(v[0]).
+const chains = new Map();
+const chainFor = (day) => {
+  if (!chains.has(day)) {
+    const v = new Array(SLOTS_PER_DAY);
+    v[SLOTS_PER_DAY - 1] = keccak256(encodeAbiParameters([{ type: "string" }, { type: "uint32" }], ["seed", day]));
+    for (let i = SLOTS_PER_DAY - 2; i >= 0; i--) v[i] = keccak256(v[i + 1]);
+    chains.set(day, { v, anchor: keccak256(v[0]) });
+  }
+  return chains.get(day);
+};
+const seedFor = (slot) => chainFor(Math.floor(slot / SLOTS_PER_DAY)).v[slot % SLOTS_PER_DAY];
 
 // One fresh chain with the whole Lightdive system deployed and wired, the pool seeded with 1,000,000 RVYN.
 async function world() {
@@ -64,33 +78,40 @@ async function world() {
   }
 
   const bal = (who) => read(rvyn, "LaunchToken", "balanceOf", [who]);
-  const hourNow = async () => Math.floor((await now()) / HOUR);
-  /** Commits seeds for the next `n` hours and moves to the start of the first of them. */
+  const slotNow = async () => Math.floor((await now()) / SLOT);
+  /** Commits the day chains covering the next `n` hours and moves to the start of the next slot. */
   const commitAhead = async (n) => {
-    const start = (await hourNow()) + 1;
-    const hashes = Array.from({ length: n }, (_, i) => commitmentOf(seedFor(start + i)));
-    await ok(beacon, "RandomnessBeacon", "commit", [BigInt(start), hashes], operator);
-    await warpTo(start * HOUR);
+    const t = await now();
+    for (let day = Math.floor(t / DAY); day <= Math.floor((t + n * HOUR) / DAY); day++) {
+      await ok(beacon, "RandomnessBeacon", "commit", [day, chainFor(day).anchor], operator);
+    }
+    const start = Math.floor(t / SLOT) + 1;
+    await warpTo(start * SLOT);
     return start;
   };
-  const reveal = (hour) => ok(beacon, "RandomnessBeacon", "reveal", [BigInt(hour), seedFor(hour)], stranger);
+  const known = async (slot) => (await read(beacon, "RandomnessBeacon", "seedOf", [BigInt(slot)]))[0];
+  /** Reveals a finished slot unless a later reveal already fixed it. */
+  const reveal = async (slot) => {
+    if (!(await known(slot))) await ok(beacon, "RandomnessBeacon", "reveal", [BigInt(slot), seedFor(slot)], stranger);
+  };
   const lastRequestId = async () => (await read(minter, "LightdiveMinter", "requestCount")) - 1n;
-  /** Requests, reveals the hour and fulfills; returns the new token ids. */
+  /** Requests, reveals the slot and fulfills; returns the new token ids. */
   const mint = async (player, kind, qty) => {
-    const hour = await hourNow();
+    const slot = await slotNow();
     const before = await read(nft, "LightdiveNFT", "nextId");
     await ok(minter, "LightdiveMinter", "requestMint", [kind, qty], player);
     const id = await lastRequestId();
-    await warpTo((hour + 1) * HOUR + 1);
-    if (!(await read(beacon, "RandomnessBeacon", "revealed", [BigInt(hour)]))) await reveal(hour);
+    await warpTo((slot + 1) * SLOT + 1);
+    await reveal(slot);
     await ok(minter, "LightdiveMinter", "fulfill", [id], stranger);
     const after = await read(nft, "LightdiveNFT", "nextId");
     return Array.from({ length: Number(after - before) }, (_, i) => before + BigInt(i));
   };
   const attrs = (id) => read(nft, "LightdiveNFT", "attributes", [id]);
 
-  return { provider, client, accounts, admin, operator, treasury, alice, bob, stranger, rvyn, config, nft, beacon, pool, minter, exp,
-    ok, no, read, now, warpTo, bal, hourNow, commitAhead, reveal, mint, attrs, lastRequestId, done: () => provider.disconnect() };
+  const operatorWallet = createWalletClient({ chain, transport: custom(provider), account: operator });
+  return { provider, client, operatorWallet, accounts, admin, operator, treasury, alice, bob, stranger, rvyn, config, nft, beacon, pool, minter, exp,
+    ok, no, read, now, warpTo, bal, slotNow, commitAhead, known, reveal, mint, attrs, lastRequestId, done: () => provider.disconnect() };
 }
 
 test("config: beam tables average exactly 1.00 and bad tables are rejected", async () => {
@@ -146,6 +167,71 @@ test("config: sampled multipliers stay inside their tier ranges and average abou
   } finally { await w.done(); }
 });
 
+test("beacon: one-minute slots on daily hash chains", async () => {
+  const w = await world();
+  try {
+    const day = Math.floor((await w.now()) / DAY);
+    const { anchor } = chainFor(day);
+    await w.no(w.beacon, "RandomnessBeacon", "commit", [day, anchor], w.alice); // operator only
+    await w.no(w.beacon, "RandomnessBeacon", "commit", [day - 1, chainFor(day - 1).anchor], w.operator); // past day
+    await w.ok(w.beacon, "RandomnessBeacon", "commit", [day, anchor], w.operator);
+    await w.no(w.beacon, "RandomnessBeacon", "commit", [day, anchor], w.operator); // once per day
+    await w.ok(w.beacon, "RandomnessBeacon", "commit", [day + 1, chainFor(day + 1).anchor], w.operator);
+
+    const s = await w.slotNow();
+    if (s % SLOTS_PER_DAY > SLOTS_PER_DAY - 20) await w.warpTo((day + 1) * DAY + SLOT); // keep the test inside one day
+    const a = await w.slotNow();
+    assert.ok(await w.read(w.beacon, "RandomnessBeacon", "hasCommitment", [BigInt(a)]));
+    await w.no(w.beacon, "RandomnessBeacon", "reveal", [BigInt(a), seedFor(a)]); // slot not over
+    await w.warpTo((a + 10) * SLOT);
+    // Revealing a later slot fixes every earlier slot of the day, and only those.
+    await w.no(w.beacon, "RandomnessBeacon", "reveal", [BigInt(a + 5), seedFor(a + 6)]); // wrong value
+    await w.ok(w.beacon, "RandomnessBeacon", "reveal", [BigInt(a + 5), seedFor(a + 5)], w.stranger);
+    for (const x of [a, a + 3, a + 5]) {
+      const [isKnown, seed] = await w.read(w.beacon, "RandomnessBeacon", "seedOf", [BigInt(x)]);
+      assert.ok(isKnown);
+      assert.equal(seed, seedFor(x));
+    }
+    assert.equal(await w.known(a + 6), false);
+    await w.no(w.beacon, "RandomnessBeacon", "reveal", [BigInt(a + 2), seedFor(a + 2)]); // already fixed
+    await w.ok(w.beacon, "RandomnessBeacon", "reveal", [BigInt(a + 8), seedFor(a + 8)], w.stranger);
+    assert.equal((await w.read(w.beacon, "RandomnessBeacon", "seedOf", [BigInt(a + 7)]))[1], seedFor(a + 7));
+
+    // An unrevealed slot falls back only after the 48-hour timeout.
+    const [ready] = await w.read(w.beacon, "RandomnessBeacon", "randomFor", [BigInt(a + 9), "0x" + "11".repeat(32)]);
+    assert.equal(ready, false);
+    await w.warpTo((a + 10) * SLOT + 48 * HOUR);
+    const [ready2, fallbackUsed] = await w.read(w.beacon, "RandomnessBeacon", "randomFor", [BigInt(a + 9), "0x" + "11".repeat(32)]);
+    assert.ok(ready2 && fallbackUsed);
+  } finally { await w.done(); }
+});
+
+test("operator: commits days ahead and reveals only the slots that requests wait for", async () => {
+  const w = await world();
+  try {
+    const secret = "0x" + "ab".repeat(32);
+    const deployment = { beacon: w.beacon, minter: w.minter, expedition: w.exp };
+    const run = () => tick({ client: w.client, wallet: w.operatorWallet, deployment, abi: A.RandomnessBeacon.abi, secret, lookbackBlocks: 1000n });
+    const first = await run();
+    assert.equal(first.filter((x) => x.startsWith("committed")).length, 3, "today and two days ahead");
+    assert.deepEqual(await run(), [], "nothing to do: no requests yet");
+
+    const slot = Math.floor((await w.now()) / SLOT);
+    if (slot % SLOTS_PER_DAY > SLOTS_PER_DAY - 5) await w.warpTo((Math.floor(slot / SLOTS_PER_DAY) + 1) * DAY + SLOT);
+    await w.ok(w.minter, "LightdiveMinter", "requestMint", [SEEKER, 1], w.alice);
+    const id = await w.lastRequestId();
+    const reqSlot = Number((await w.read(w.minter, "LightdiveMinter", "request", [id])).slot);
+    assert.deepEqual(await run(), [], "the request's slot is not over yet");
+    await w.warpTo((reqSlot + 1) * SLOT + 1);
+    assert.deepEqual(await run(), [`revealed slot ${reqSlot}`]);
+    const [known, seed] = await w.read(w.beacon, "RandomnessBeacon", "seedOf", [BigInt(reqSlot)]);
+    assert.ok(known);
+    assert.equal(seed, operatorChain(secret, Math.floor(reqSlot / SLOTS_PER_DAY)).v[reqSlot % SLOTS_PER_DAY]);
+    await w.ok(w.minter, "LightdiveMinter", "fulfill", [id], w.stranger);
+    assert.deepEqual(await run(), [], "already revealed");
+  } finally { await w.done(); }
+});
+
 test("mint: payment split, first-mint discount, burn, sale gates and two-step draw", async () => {
   const w = await world();
   try {
@@ -167,13 +253,13 @@ test("mint: payment split, first-mint discount, burn, sale gates and two-step dr
     assert.equal(total, E("40"));
     assert.equal(discount, 0n);
 
-    // Nothing is minted until the hour is revealed.
+    // Nothing is minted until the slot is revealed, about a minute later.
     const id = await w.lastRequestId();
     await w.no(w.minter, "LightdiveMinter", "fulfill", [id]);
-    const hour = Number((await w.read(w.minter, "LightdiveMinter", "request", [id])).hour);
-    await w.warpTo((hour + 1) * HOUR + 1);
-    await w.no(w.beacon, "RandomnessBeacon", "reveal", [BigInt(hour), seedFor(hour + 1)]); // wrong seed
-    await w.reveal(hour);
+    const slot = Number((await w.read(w.minter, "LightdiveMinter", "request", [id])).slot);
+    await w.warpTo((slot + 1) * SLOT + 1);
+    await w.no(w.beacon, "RandomnessBeacon", "reveal", [BigInt(slot), seedFor(slot + 1)]); // wrong seed
+    await w.reveal(slot);
     await w.ok(w.minter, "LightdiveMinter", "fulfill", [id], w.stranger);
     await w.no(w.minter, "LightdiveMinter", "fulfill", [id]);
     assert.equal(await w.read(w.nft, "LightdiveNFT", "balanceOf", [w.alice]), 2n);
@@ -229,6 +315,31 @@ test("mint: decks keep exact counts and the live cap holds", async () => {
   } finally { await w.done(); }
 });
 
+test("mint: spires and prisms have no special editions", async () => {
+  const w = await world();
+  try {
+    await w.commitAhead(400);
+    await w.ok(w.minter, "LightdiveMinter", "openSpireSale", [0n]);
+    await w.warpTo((await w.now()) + 49 * HOUR);
+    const ids = [];
+    for (let i = 0; i < 5; i++) ids.push(...(await w.mint(w.alice, SPIRE, 3)));
+    for (let i = 0; i < 4; i++) ids.push(...(await w.mint(w.alice, PRISM, 5)));
+    const spireLum = [40, 70, 110, 160, 230];
+    const prismLum = [10, 20, 32, 48, 70];
+    for (const id of ids) {
+      const a = await w.attrs(id);
+      assert.equal(a.variant, 0, "no special edition");
+      const base = (a.kind === SPIRE ? spireLum : prismLum)[a.rarity];
+      assert.ok(a.luminance >= Math.floor(base * 0.9) && a.luminance <= Math.floor(base * 1.1), "luminance is base +/- 10%, no bonus");
+      if (a.kind === SPIRE) assert.equal(a.trait, a.rarity + 1);
+    }
+    for (const kind of [SPIRE, PRISM]) {
+      const deck = await w.read(w.minter, "LightdiveMinter", "deckOf", [kind]);
+      assert.equal(deck.specialLeft, undefined, "the deck has no special-edition counters");
+    }
+  } finally { await w.done(); }
+});
+
 /** A Lv.1+ spire, optionally a prism, and seekers owned by `who`, minted in one go. */
 async function crew(w, who, seekers) {
   await w.ok(w.minter, "LightdiveMinter", "openSpireSale", [0n]).catch(() => {});
@@ -261,6 +372,7 @@ test("expedition: equip rules, one dive per day, depth gate, settle after the da
     await w.ok(w.exp, "Expedition", "dive", [spire, 0, 7], w.alice);
     await w.no(w.exp, "Expedition", "dive", [spire, 0, 7], w.alice); // once per day
     const d = await w.read(w.exp, "Expedition", "diveInfo", [0n]);
+    assert.equal(Number(d.slot), (await w.slotNow()) + 5, "the outcome uses the slot five minutes ahead");
     assert.equal(d.points, BigInt(lum) * 10_000n);
     assert.equal(d.beam, p.trait);
     assert.equal((await w.attrs(spire)).voyagesLeft, 119);
@@ -269,7 +381,7 @@ test("expedition: equip rules, one dive per day, depth gate, settle after the da
     await w.no(w.exp, "Expedition", "settle", [[0n]]); // day not over
     const day = Number(d.day);
     await w.warpTo((day + 1) * DAY + 1);
-    await w.reveal(Number(d.hour));
+    await w.reveal(Number(d.slot));
     const avail = await w.read(w.pool, "CoreLightPool", "available");
     await w.ok(w.exp, "Expedition", "settle", [[0n]], w.stranger);
     await w.no(w.exp, "Expedition", "settle", [[0n]]);
@@ -308,7 +420,7 @@ test("expedition: equip rules, one dive per day, depth gate, settle after the da
   } finally { await w.done(); }
 });
 
-test("expedition: seekers come home after 10 voyages; an unrevealed hour settles at 1.00", async () => {
+test("expedition: seekers come home after 10 voyages; an unrevealed slot settles at 1.00", async () => {
   const w = await world();
   try {
     await w.commitAhead(24 * 16);
@@ -325,7 +437,7 @@ test("expedition: seekers come home after 10 voyages; an unrevealed hour settles
     assert.equal((await w.read(w.exp, "Expedition", "team", [spire])).seekers.length, 0);
     await w.no(w.exp, "Expedition", "dive", [spire, 0, 1], w.alice); // no seekers left
 
-    // No hour was ever revealed. The latest dive is still inside the 48-hour reveal window, so it
+    // No slot was ever revealed. The latest dive is still inside the 48-hour reveal window, so it
     // cannot settle yet; older dives are past it and settle at exactly 1.00x, as does the latest
     // one once its window has passed.
     await w.no(w.exp, "Expedition", "settle", [[9n]]);
@@ -353,7 +465,7 @@ test("pause stops minting and diving but never claims or unequip; the pool has n
     await w.warpTo((Math.floor((await w.now()) / DAY) + 1) * DAY + 60);
     await w.no(w.exp, "Expedition", "dive", [spire, 0, 1], w.alice);
     const d = await w.read(w.exp, "Expedition", "diveInfo", [0n]);
-    await w.reveal(Number(d.hour));
+    await w.reveal(Number(d.slot));
     await w.ok(w.exp, "Expedition", "settle", [[0n]]);
     if ((await w.read(w.exp, "Expedition", "credit", [w.alice])) > 0n) await w.ok(w.exp, "Expedition", "claim", [], w.alice);
     await w.ok(w.exp, "Expedition", "unequip", [spire], w.alice);
@@ -381,7 +493,7 @@ test("expedition: two players on the same day split the budget by Lightdust", as
     assert.equal(da.day, db.day);
     assert.equal(await w.read(w.exp, "Expedition", "dayPoints", [da.day]), da.points + db.points);
     await w.warpTo((Number(da.day) + 1) * DAY + 1);
-    for (const h of new Set([Number(da.hour), Number(db.hour)])) await w.reveal(h);
+    for (const x of [...new Set([Number(da.slot), Number(db.slot)])].sort((a, b) => a - b)) await w.reveal(x);
     await w.ok(w.exp, "Expedition", "settle", [[1n, 0n]], w.stranger);
     const budget = await w.read(w.pool, "CoreLightPool", "dayBudget", [da.day]);
     const logs = await w.client.getContractEvents({ address: w.exp, abi: A.Expedition.abi, eventName: "Settled", fromBlock: 0n });

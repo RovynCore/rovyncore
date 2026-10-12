@@ -1,11 +1,11 @@
 {
   "chainId": 46630,
-  "deploymentBlock": 130017649,
-  "rvyn": "0x0e161fc11cc50de25411bfb0141b32f7419a55ae",
-  "config": "0xb296df1e0bf288f2c5748b99ac2acb3139a2b206",
-  "nft": "0x8ee6f186c762ed9ca0ea25194d4f7719285b577d",
-  "beacon": "0x34215d740324fb8a8440314c895fed252f3bcf7e",
-  "pool": "0xdcc1688bab3209a2038494fb571ec27f3e566d48",
-  "minter": "0x342a55a8e5cf3eccc65f5199cc79be6d9dbfd319",
-  "expedition": "0xf07f4d41b2372e15b6f148893e2242ac95091cc4"
+  "deploymentBlock": 133718641,
+  "rvyn": "0xf9e518c1bc02d04530e0e54216914eca66840028",
+  "config": "0x5005c27693d214dd47e03c820f2a850f672bb0e0",
+  "nft": "0x2ad6bc1bfa80558cda0b5fb657cf1532f95888a5",
+  "beacon": "0x329b9a0c0b2615ac98c4909f4345e373052946ef",
+  "pool": "0x13be172f1cb96fcdf535b16700e34405a91df309",
+  "minter": "0x9f0b0a307ea91ba1b4a8555e656204027c7fbf6c",
+  "expedition": "0xfd407d1539a5e2fafcc7a08cb577dacfbe95d550"
 }

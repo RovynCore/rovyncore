@@ -13,7 +13,7 @@ import {
 } from "@/lib/lightdive";
 import {
   ATTRIBUTE, ATTRIBUTE_COLOR, BEAM, DEPTH, KIND_NAME, LOG_LINE, OUTCOME, RARITY, RARITY_COLOR, SIGNATURE,
-  SPECIAL_PRISM, SPECIAL_SPIRE, T, type Copy,
+  T, type Copy,
 } from "@/lib/lightdive-copy";
 import "./lightdive.css";
 
@@ -152,7 +152,7 @@ function Game({ c, t }: { c: Contracts; t: (v: Copy) => string }) {
         <Stat label={t(T.pool)} value={overview ? fmt(overview.pool.balance, 0) : "—"} unit="RVYN" />
         <Stat label={t(T.todayRelease)} value={overview ? fmt(estRelease, 0) : "—"} unit="RVYN" />
         <Stat label={t(T.todayDust)} value={overview ? (Number(overview.todayPoints) / 10_000).toLocaleString(locale, { maximumFractionDigits: 0 }) : "—"} />
-        <Stat label={t(T.signal)} value={overview ? t(overview.hourScheduled ? T.signalOk : T.signalOff) : "—"} tone={overview && !overview.hourScheduled ? "warn" : undefined} />
+        <Stat label={t(T.signal)} value={overview ? t(overview.slotScheduled ? T.signalOk : T.signalOff) : "—"} tone={overview && !overview.slotScheduled ? "warn" : undefined} />
         <div className="ld-stat ld-stat--claim">
           <span>{t(T.credit)}</span>
           <strong>{player ? fmt(player.credit) : "—"} <small>RVYN</small></strong>
@@ -209,7 +209,7 @@ function MintTab({ c, t, overview, player, requests, busy, send }: {
           const total = price * BigInt(qty[kind]) - (discounted ? price * BigInt(overview.firstDiscountBp) / 10_000n : 0n);
           const needsApproval = !player || player.allowance < total;
           const capped = kind !== KIND.seeker;
-          const disabled = busy !== null || overview.paused.minter || !overview.hourScheduled || (kind === KIND.spire && !spireOpen);
+          const disabled = busy !== null || overview.paused.minter || !overview.slotScheduled || (kind === KIND.spire && !spireOpen);
           return (
             <article key={kind} className="ld-card">
               <header>
@@ -365,7 +365,7 @@ function TeamCard({ c, t, team, overview, busy, send }: {
       <header>
         <Glyph kind={KIND.spire} rarity={s.rarity} />
         <div>
-          <h3>{s.variant ? t(SPECIAL_SPIRE[s.variant - 1]) : t(KIND_NAME[KIND.spire])} #{String(team.spire.id)}</h3>
+          <h3>{t(KIND_NAME[KIND.spire])} #{String(team.spire.id)}</h3>
           <p className="ld-mono">{t(RARITY[s.rarity])} · Lv.{s.trait} · {t(T.voyages)} {s.voyagesLeft}</p>
         </div>
         <strong className="ld-lum">{lum}<small>{t(T.totalLum)}</small></strong>
@@ -390,7 +390,7 @@ function TeamCard({ c, t, team, overview, busy, send }: {
       </p>
       {attuned && <p className="ld-attuned">#{String(attuned.id)} {t(T.attuned)}</p>}
       <div className="ld-actions">
-        <button type="button" className="ld-btn" disabled={doveToday || team.seekers.length === 0 || !reachable[depth] || busy !== null || !overview.hourScheduled || overview.paused.expedition}
+        <button type="button" className="ld-btn" disabled={doveToday || team.seekers.length === 0 || !reachable[depth] || busy !== null || !overview.diveScheduled || overview.paused.expedition}
           onClick={() => void send(`dive-${team.spire.id}`, c.expedition, ABI.Expedition, "dive", [team.spire.id, depth, coord.id])}>
           {team.seekers.length === 0 ? t(T.noSeekers) : doveToday ? t(T.doveToday) : t(T.dive)}
         </button>
@@ -409,8 +409,7 @@ function Vault({ t, nfts, teams }: { t: (v: Copy) => string; nfts: Nft[]; teams:
       <div className="ld-vault">
         {all.map((n) => {
           const a = n.attributes;
-          const name = a.kind === KIND.spire && a.variant ? t(SPECIAL_SPIRE[a.variant - 1])
-            : a.kind === KIND.prism && a.variant ? t(SPECIAL_PRISM[a.variant - 1]) : t(KIND_NAME[a.kind]);
+          const name = t(KIND_NAME[a.kind]);
           const detail = a.kind === KIND.spire ? `Lv.${a.trait}` : a.kind === KIND.prism ? t(BEAM[a.trait]) : t(ATTRIBUTE[a.trait]);
           return (
             <article key={String(n.id)} className="ld-nft" style={{ ["--rc" as string]: RARITY_COLOR[a.rarity] }}>
@@ -418,7 +417,6 @@ function Vault({ t, nfts, teams }: { t: (v: Copy) => string; nfts: Nft[]; teams:
               <h4>{name} <span className="ld-mono">#{String(n.id)}</span></h4>
               <p>{t(RARITY[a.rarity])} · {detail}</p>
               <p className="ld-mono">{t(T.luminance)} {a.luminance} · {t(T.voyages)} {a.voyagesLeft}</p>
-              {a.variant > 0 && a.kind !== KIND.seeker && <span className="ld-chip">{t(T.special)}</span>}
               {a.variant > 0 && a.kind === KIND.seeker && <span className="ld-chip">{t(T.signature)} · {t(SIGNATURE[a.variant - 1])}</span>}
             </article>
           );

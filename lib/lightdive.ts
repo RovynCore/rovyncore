@@ -53,6 +53,8 @@ export const KIND = { spire: 0, prism: 1, seeker: 2 } as const;
 export type Kind = (typeof KIND)[keyof typeof KIND];
 export const SEEKER_LUMINANCE = { lo: [20, 32, 48, 75, 120], hi: [30, 45, 68, 100, 160] };
 export const DEPTH_COUNT = 6;
+/** A dive's outcome comes from the randomness slot this many minutes after departure (Expedition.DIVE_SLOTS). */
+export const DIVE_SLOTS = 5n;
 
 export type Attributes = {
   kind: number;
@@ -65,7 +67,7 @@ export type Attributes = {
   dna: bigint;
 };
 export type Nft = { id: bigint; attributes: Attributes };
-export type Deck = { number: number; remaining: number; rarityLeft: readonly number[]; specialLeft: readonly number[]; signatureLeft: number; beamLeft: readonly (readonly number[])[] };
+export type Deck = { number: number; remaining: number; rarityLeft: readonly number[]; signatureLeft: number; beamLeft: readonly (readonly number[])[] };
 export type Team = { spire: Nft; prism: Nft | null; seekers: Nft[]; luminance: bigint; lastDiveDay: number | null };
 export type DiveRecord = {
   id: bigint;
@@ -73,21 +75,26 @@ export type DiveRecord = {
   depth: number;
   coordinate: number;
   day: number;
-  hour: bigint;
+  /** One-minute randomness slot of the outcome: five slots after departure. */
+  slot: bigint;
   beam: number;
   points: bigint;
   luminance: bigint;
   settled: boolean;
   result: { tier: number; multX100: number; lightdust: bigint; reward: bigint; fallbackUsed: boolean } | null;
 };
-export type MintRequest = { id: bigint; kind: number; qty: number; hour: bigint; fulfilled: boolean; ready: boolean };
+export type MintRequest = { id: bigint; kind: number; qty: number; slot: bigint; fulfilled: boolean; ready: boolean };
 
 export type Overview = {
   /** Chain time of the latest block, in seconds. */
   now: number;
   today: number;
-  hour: bigint;
-  hourScheduled: boolean;
+  /** Current one-minute randomness slot. */
+  slot: bigint;
+  /** Whether a mint sent now has randomness scheduled. */
+  slotScheduled: boolean;
+  /** Whether a dive sent now (resolving five slots later) has randomness scheduled. */
+  diveScheduled: boolean;
   prices: readonly [bigint, bigint, bigint];
   firstDiscountBp: number;
   emissionRateBp: number;
@@ -120,9 +127,9 @@ const reader = (client: PublicClient): Read => (address, abi, functionName, args
 
 export async function readOverview(client: PublicClient, c: Contracts): Promise<Overview> {
   const r = reader(client);
-  const [block, hour, prices, discount, rate, cap, feeMax, feeDays, today, saleStart, mPaused, ePaused] = await Promise.all([
+  const [block, slot, prices, discount, rate, cap, feeMax, feeDays, today, saleStart, mPaused, ePaused] = await Promise.all([
     client.getBlock(),
-    r(c.beacon, ABI.RandomnessBeacon, "currentHour"),
+    r(c.beacon, ABI.RandomnessBeacon, "currentSlot"),
     r(c.config, ABI.LightdiveConfig, "prices"),
     r(c.config, ABI.LightdiveConfig, "firstDiscountBp"),
     r(c.config, ABI.LightdiveConfig, "emissionRateBp"),
@@ -135,8 +142,9 @@ export async function readOverview(client: PublicClient, c: Contracts): Promise<
     r(c.expedition, ABI.Expedition, "paused"),
   ]);
   const depths = [...Array(DEPTH_COUNT).keys()];
-  const [scheduled, minLum, coef, balance, available, reserved, owed, todayPoints, decks, alive, maxAlive] = await Promise.all([
-    r(c.beacon, ABI.RandomnessBeacon, "hasCommitment", [hour]),
+  const [scheduled, diveScheduled, minLum, coef, balance, available, reserved, owed, todayPoints, decks, alive, maxAlive] = await Promise.all([
+    r(c.beacon, ABI.RandomnessBeacon, "hasCommitment", [slot]),
+    r(c.beacon, ABI.RandomnessBeacon, "hasCommitment", [(slot as bigint) + DIVE_SLOTS]),
     Promise.all(depths.map((i) => r(c.config, ABI.LightdiveConfig, "depthMinLuminance", [BigInt(i)]))),
     Promise.all(depths.map((i) => r(c.config, ABI.LightdiveConfig, "depthCoefBp", [BigInt(i)]))),
     r(c.rvyn, ERC20_ABI, "balanceOf", [c.pool]),
@@ -151,8 +159,9 @@ export async function readOverview(client: PublicClient, c: Contracts): Promise<
   return {
     now: Number(block.timestamp),
     today: Number(today),
-    hour: hour as bigint,
-    hourScheduled: scheduled as boolean,
+    slot: slot as bigint,
+    slotScheduled: scheduled as boolean,
+    diveScheduled: diveScheduled as boolean,
     prices: prices as readonly [bigint, bigint, bigint],
     firstDiscountBp: Number(discount),
     emissionRateBp: Number(rate),
@@ -280,9 +289,9 @@ export async function readDives(client: PublicClient, c: Contracts, account: Add
   }));
   return dived
     .map((l) => {
-      const a = l.args as { diveId: bigint; spire: bigint; depth: number; coordinate: number; luminance: bigint; points: bigint; beam: number; day: number; hour: bigint };
+      const a = l.args as { diveId: bigint; spire: bigint; depth: number; coordinate: number; luminance: bigint; points: bigint; beam: number; day: number; slot: bigint };
       const result = results.get(a.diveId) ?? null;
-      return { id: a.diveId, spire: a.spire, depth: Number(a.depth), coordinate: Number(a.coordinate), day: Number(a.day), hour: a.hour, beam: Number(a.beam), points: a.points, luminance: a.luminance, settled: result !== null, result };
+      return { id: a.diveId, spire: a.spire, depth: Number(a.depth), coordinate: Number(a.coordinate), day: Number(a.day), slot: a.slot, beam: Number(a.beam), points: a.points, luminance: a.luminance, settled: result !== null, result };
     })
     .sort((a, b) => Number(b.id - a.id));
 }
@@ -295,22 +304,22 @@ export async function readMintRequests(client: PublicClient, c: Contracts, accou
   const out: MintRequest[] = [];
   for (const l of requested) {
     const id = (l.args as { requestId: bigint }).requestId;
-    const req = (await r(c.minter, ABI.LightdiveMinter, "request", [id])) as { kind: number; qty: number; hour: bigint; fulfilled: boolean; entropy: `0x${string}` };
+    const req = (await r(c.minter, ABI.LightdiveMinter, "request", [id])) as { kind: number; qty: number; slot: bigint; fulfilled: boolean; entropy: `0x${string}` };
     let ready = false;
     if (!req.fulfilled) {
-      const [ok] = (await r(c.beacon, ABI.RandomnessBeacon, "randomFor", [req.hour, req.entropy])) as [boolean, boolean, bigint];
+      const [ok] = (await r(c.beacon, ABI.RandomnessBeacon, "randomFor", [req.slot, req.entropy])) as [boolean, boolean, bigint];
       ready = ok;
     }
-    out.push({ id, kind: Number(req.kind), qty: Number(req.qty), hour: req.hour, fulfilled: req.fulfilled, ready });
+    out.push({ id, kind: Number(req.kind), qty: Number(req.qty), slot: req.slot, fulfilled: req.fulfilled, ready });
   }
   return out.sort((a, b) => Number(b.id - a.id));
 }
 
-/** Whether a dive can be settled now: its day is over and its hour revealed (or expired after 48h). */
+/** Whether a dive can be settled now: its day is over and its slot revealed (or expired after 48h). */
 export async function diveSettleable(client: PublicClient, c: Contracts, dive: DiveRecord, today: number): Promise<boolean> {
   if (dive.settled || dive.day >= today) return false;
   const info = (await client.readContract({ address: c.expedition, abi: ABI.Expedition, functionName: "diveInfo", args: [dive.id] })) as { entropy: `0x${string}` };
-  const [ok] = (await client.readContract({ address: c.beacon, abi: ABI.RandomnessBeacon, functionName: "randomFor", args: [dive.hour, info.entropy] })) as [boolean, boolean, bigint];
+  const [ok] = (await client.readContract({ address: c.beacon, abi: ABI.RandomnessBeacon, functionName: "randomFor", args: [dive.slot, info.entropy] })) as [boolean, boolean, bigint];
   return ok;
 }
 

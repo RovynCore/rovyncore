@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Lightdive NFT 美術設計書 v2.1</title>
+<style>
+:root {
+  --ink: #111511; --ink2: #4a4f47; --muted: #80857c; --line: #dfe3d8;
+  --paper: #ffffff; --tint: #f4f7ee; --lime: #c9ff55; --limeDark: #4f7a00;
+  --night: #0b0c0e; --warn: #a14a00; --warnBg: #fff4e8;
+}
+@page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+@page cover { margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font-family: "Noto Sans CJK TC", "Noto Sans CJK JP", sans-serif; font-size: 9.8pt; line-height: 1.68; }
+.cover { page: cover; height: 297mm; width: 210mm; background: var(--night); color: #f2f5ee; position: relative; overflow: hidden; break-after: page; }
+.cover .art { position: absolute; left: 0; right: 0; top: 0; height: 120mm; background: url("ref/signal-keeper-keyart.webp") right center/cover no-repeat; }
+.cover .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,12,14,0) 55%, rgba(11,12,14,1) 100%); }
+.cover .inner { position: absolute; left: 20mm; right: 20mm; top: 128mm; }
+.cover .kicker { color: var(--lime); letter-spacing: .25em; font-size: 9pt; font-weight: 700; }
+.cover h1 { font-size: 30pt; line-height: 1.18; margin: 6mm 0 3mm; font-weight: 900; }
+.cover h1 small { display: block; font-size: 15pt; font-weight: 500; color: #cfd6c6; margin-top: 3mm; }
+.cover .sub { font-size: 11pt; color: #cfd6c6; max-width: 150mm; }
+.cover .meta { position: absolute; left: 20mm; right: 20mm; bottom: 20mm; font-size: 9pt; color: #aab3a0; border-top: 1px solid #2c3428; padding-top: 5mm; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 10mm; }
+.cover .meta b { color: #f2f5ee; font-weight: 500; }
+h2 { font-size: 17pt; font-weight: 900; margin: 0 0 4mm; padding-top: 1mm; break-after: avoid; }
+h2 .num { color: var(--limeDark); margin-right: 3mm; }
+h3 { font-size: 12pt; font-weight: 700; margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-size: 10.3pt; font-weight: 700; margin: 4mm 0 1mm; break-after: avoid; }
+section.chap { break-before: page; }
+p { margin: 0 0 2.6mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.8pt; line-height: 1.55; }
+tr { break-inside: avoid; }
+th { text-align: left; font-weight: 700; background: var(--tint); border-bottom: 1.4px solid var(--ink); padding: 1.2mm 2mm; }
+td { border-bottom: 1px solid var(--line); padding: 1.1mm 2mm; vertical-align: top; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.k { white-space: nowrap; font-weight: 700; }
+.lead { font-size: 10.6pt; color: var(--ink2); }
+.box { border: 1px solid var(--line); background: var(--tint); border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 3mm 0 4mm; break-inside: avoid; }
+.box.key { border-left: 4px solid var(--limeDark); }
+.box.warn { background: var(--warnBg); border-color: #f1d2b2; border-left: 4px solid var(--warn); }
+.box h4 { margin-top: 0; }
+.box p:last-child, .box ul:last-child { margin-bottom: 0; }
+code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+.prompt { font-family: "DejaVu Sans Mono", monospace; font-size: 7.9pt; background: #10140f; color: #e8f5d0; border-radius: 2.5mm; padding: 3mm 4mm; margin: 2mm 0 4mm; white-space: pre-wrap; line-height: 1.55; break-inside: avoid; }
+.prompt .lbl { color: var(--lime); font-weight: 700; display: block; margin-bottom: 1mm; font-family: "Noto Sans CJK TC", sans-serif; }
+.figure { margin: 3mm 0 5mm; break-inside: avoid; }
+.figure img { width: 100%; display: block; border-radius: 2mm; }
+.figure svg { width: 100%; display: block; }
+.figure .cap { font-size: 8.3pt; color: var(--ink2); margin-top: 1.5mm; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+.card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3mm 3.5mm; break-inside: avoid; font-size: 8.8pt; line-height: 1.6; }
+.card .t { font-weight: 700; font-size: 10pt; margin-bottom: 1mm; }
+.card .s { color: var(--muted); font-size: 8pt; letter-spacing: .05em; }
+.toc { columns: 2; column-gap: 10mm; font-size: 9.8pt; }
+.toc div { break-inside: avoid; padding: 1mm 0; border-bottom: 1px dotted var(--line); }
+.toc span { color: var(--limeDark); font-weight: 700; margin-right: 2mm; }
+.small { font-size: 8.3pt; color: var(--ink2); }
+.sw { display: inline-block; width: 3.4mm; height: 3.4mm; border-radius: .8mm; vertical-align: -0.5mm; margin-right: 1.5mm; border: 1px solid rgba(0,0,0,.25); }
+.spec { display: grid; grid-template-columns: 30mm 1fr; border-top: 1.4px solid var(--ink); margin: 2mm 0 4mm; font-size: 8.8pt; break-inside: avoid; }
+.spec div { padding: 1.1mm 2mm; border-bottom: 1px solid var(--line); }
+.spec div:nth-child(odd) { background: var(--tint); font-weight: 700; }
+.asset-head { background: var(--night); color: #eef3e6; border-radius: 3mm; padding: 4mm 5mm; margin: 0 0 4mm; break-inside: avoid; }
+.asset-head .id { color: var(--lime); font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; letter-spacing: .1em; }
+.asset-head .nm { font-size: 16pt; font-weight: 900; margin: 1mm 0; }
+.asset-head .one { color: #c3cbb8; font-size: 9.6pt; }
+.asset-head .pri { float: right; border: 1px solid var(--lime); color: var(--lime); border-radius: 2mm; padding: .3mm 2.4mm; font-size: 8.4pt; font-weight: 700; }
+.check li { list-style: none; position: relative; }
+.check li::before { content: "□"; position: absolute; left: -5mm; color: var(--limeDark); }
+.tag { display: inline-block; font-size: 7.5pt; font-weight: 700; padding: .2mm 2mm; border-radius: 2mm; vertical-align: 1px; margin-left: 1.5mm; background: var(--warnBg); color: var(--warn); border: 1px solid #f1d2b2; }
+.avoid { break-inside: avoid; }
+
+.ladder { display: grid; grid-template-columns: 22mm repeat(5, 1fr); font-size: 8.4pt; line-height: 1.5; border-top: 1.4px solid var(--ink); margin: 2mm 0 4mm; break-inside: avoid; }
+.ladder div { padding: 1.2mm 1.6mm; border-bottom: 1px solid var(--line); }
+.ladder .h { background: var(--tint); font-weight: 700; }
+.ladder .r0 { background: #eceee8; } .ladder .r1 { background: #e6f2cf; } .ladder .r2 { background: #d8f0a6; } .ladder .r3 { background: #c9ec7d; } .ladder .r4 { background: #10140f; color: #c9ff55; }
+.quote { border-left: 3px solid var(--limeDark); padding: 1mm 0 1mm 4mm; color: var(--ink2); margin: 2mm 0 4mm; }
+.src { font-size: 8pt; color: var(--ink2); word-break: break-all; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ COVER -->
+<div class="cover">
+  <div class="art"></div>
+  <div class="inner">
+    <div class="kicker">ROVYNCORE · LIGHTDIVE · NFT ART DIRECTION</div>
+    <h1>NFT 美術設計書<small>光塔與探索者的重新設計：讓玩家抽到的第一眼就分得出好壞</small></h1>
+    <div class="sub">光塔改為仰視的巨構，讓等級與功能一眼可讀；探索者不再用人臉、年齡與人種區分稀有度，改為五個從機械到純光逐級進化的職階。</div>
+  </div>
+  <div class="meta">
+    <div>版本 <b>v2.1（提案）</b></div><div>日期 <b>2026-10-12</b></div>
+    <div>取代 <b>ART-ASSETS.md 第 1、2 節</b></div><div>依據 <b>白皮書 v1.0、介面美術需求書 v1.0</b></div>
+    <div>合約影響 <b>無（只改鏈外的圖片合成）</b></div><div>狀態 <b>待老闆確認第 08 章的決定</b></div>
+  </div>
+</div>
+
+<!-- ============================================================ 00 -->
+<section>
+<h2><span class="num">00</span>一頁摘要</h2>
+<p class="lead">玩家抽卡的第一秒就會對整個專案下判斷：這張卡看起來厲害，還是廉價？這份文件的目標，是讓每一張 NFT 在 128 px 的市場縮圖裡，就能讓人分得出稀有度、看得懂它在遊戲裡做什麼，並且沒有「AI 感」。</p>
+
+<h3>三個關鍵改變</h3>
+<div class="grid3">
+  <div class="card"><div class="s">光塔 BEACON SPIRE</div><div class="t">從正面立面圖，改為仰視的巨構</div>鏡頭放低、往上看，加上人物尺度參考，讓光塔看起來高聳入天。泊位、晶核、稜鏡座、光橋發射口四個功能部件都要看得見；泊位的數量就是等級，玩家可以直接數出來。</div>
+  <div class="card"><div class="s">探索者 SEEKER</div><div class="t">從人臉肖像，改為五個無臉職階</div>微光是小型探光機，輝脈是著潛光服的潛光員，澄晶是晶甲衛，稜光是半化為光的行者，曜核是純光構成的存在。稀有度越高，越接近「光」本身。全部不露臉。</div>
+  <div class="card"><div class="s">稀有度 RARITY</div><div class="t">五個訊號同時升級</div>輪廓尺度、發光面積、姿勢能量、鏡頭戲劇性、背景深度，五個訊號一起隨稀有度往上走。卡框的顏色和特效由程式加上，美術不用畫。</div>
+</div>
+
+<h3>回答你提出的問題</h3>
+<table>
+  <tr><th style="width:52mm">問題</th><th>這份文件的回答</th></tr>
+  <tr><td><b>為什麼稀有度越高是年齡越大的不同人種？</b></td><td>這是《NFT 世界觀與故事 v3》的設定（該文件不在 repo 裡，開發端是照 ART-ASSETS.md 執行）。這個設定有三個問題：人臉最容易暴露 AI 生成的瑕疵；年齡和人種不是玩家一眼能讀出的「好壞」訊號；而且<b>把人種和年齡排成稀有度高低，會被解讀成「某些人種或年齡比較高級」，是公關風險</b>。本文件全部改掉。</td></tr>
+  <tr><td><b>一定要是人類嗎？</b></td><td>不用。新設計裡只有輝脈這一階是「穿著潛光服的人」，而且永遠看不到臉。其他四階是機械、晶體、半光體和純光體。</td></tr>
+  <tr><td><b>一定要是全身照嗎？</b></td><td>不用。每個稀有度有自己的取景：低稀有度是全身的小尺寸人物（像一個單位），越高越近、越大、越戲劇化，曜核是滿版的電影構圖，特效甚至超出卡框。</td></tr>
+  <tr><td><b>沒有特定動作、鏡頭視角嗎？</b></td><td>有，第 05 章為每一階規定了姿勢組和鏡頭角度：從平視的待命姿勢，一路到極低角度仰視的「降臨」姿勢。</td></tr>
+  <tr><td><b>光塔怎麼看起來磅礡？</b></td><td>鏡頭低於光塔基座、往上仰 15–30°，用廣角讓垂直線往上收斂，地平線壓低在畫面下方 20% 以內，並在基座旁放一位極小的探索者當尺度參考。詳見第 03 章。</td></tr>
+  <tr><td><b>CryptoMines 為什麼看起來厲害？</b></td><td>依你提供的 5 張遊戲截圖逐項拆解（第 1.2 節）。結論：它的角色是<b>精細的 3D 模型、全部不露臉、統一的攝影棚打光、主體塞滿畫面</b>，再加上依星數變色的深色背景。它的飛船反而不夠厲害，因為在畫面裡太小。這些結論已經回頭修正本文件的取景比例和背景規則。</td></tr>
+</table>
+
+<div class="box key">
+  <h4>不需要改合約</h4>
+  <p>合約只在鏈上存 <code>rarity</code>、<code>trait</code>（光塔等級／稜鏡光束／探索者屬性）、<code>variant</code>（探索者的星紋；光塔和稜鏡已移除特別款）和 <code>dna</code>（64 位元的外觀種子）。圖片和 metadata 由網站在鏈外依這些值合成（<code>LightdiveNFT.sol</code> 第 13–32 行）。所以本文件的所有改變，都只影響鏈外的圖片合成程式，已部署的測試網合約不用動。</p>
+</div>
+</section>
+
+<!-- ============================================================ 01 -->
+<section class="chap">
+<h2><span class="num">01</span>研究：好的抽卡美術為什麼一眼就懂</h2>
+
+<h3>1.1 可查證的發現</h3>
+<table>
+  <tr><th style="width:40mm">發現</th><th>內容</th><th style="width:40mm">對 Lightdive 的意義</th></tr>
+  <tr><td><b>稀有度要「一眼」辨識</b></td><td>卡牌遊戲設計的共識是：玩家應該一看就知道卡片的稀有度。常見做法是顏色編碼的卡框或寶石、高稀有度用燙金或閃卡處理，最稀有的卡用滿版或特殊版本的插圖。</td><td>卡框和閃卡效果交給程式；插圖本身也要隨稀有度升級（第 02 章）。</td></tr>
+  <tr><td><b>Hearthstone 的分級</b></td><td>傳說卡的頭像外圍有龍形邊框；金卡把插圖做成動畫並換上金框；鑽石卡是全新的 3D 動畫，插圖面積也更大。這些都是「外觀品質」的分級，和遊戲數值分開。</td><td>同一張插圖可以靠框、動畫、插圖面積再分出層次。曜核用「插圖面積更大、超出框」來表現。</td></tr>
+  <tr><td><b>Gods Unchained 的閃卡等級</b></td><td>同一張卡有從 Meteorite 到 Diamond 的閃卡等級，用卡框背景的顏色表現。公開報導中，鑽石傳說卡的價格遠高於一般版本。</td><td>視覺上的稀有感直接影響二級市場的價格，這也是白皮書要的「稀有 NFT 在市場上有價值」。</td></tr>
+  <tr><td><b>輪廓先過關</b></td><td>角色設計的基本檢查：頭、軀幹、手腳畫成純黑剪影時要清楚可讀；剪影不清楚的設計，加再多裝飾也救不回來。</td><td>每一階探索者的剪影要彼此明顯不同（第 05 章的剪影測試）。</td></tr>
+  <tr><td><b>揭曉演出逐級升級</b></td><td>抽卡遊戲的低稀有度只有簡單的光，高稀有度有華麗的演出；深藍、紫色帶出神秘感，金銀色系帶出價值感。</td><td>揭曉演出由程式依稀有度升級（介面美術需求書 A7 卡背）；插圖的發光面積也逐級增加。</td></tr>
+  <tr><td><b>AI 人臉的瑕疵集中在眼睛</b></td><td>研究生成人臉的論文指出，瑕疵最常出現在眼睛周圍，因為那裡的細節最多；頭髮也常出現重複的紋理。遊戲開發者也指出，AI 圖最大的問題是同一角色無法在多張圖裡保持一致，而人對臉和身體的不一致特別敏感。</td><td>探索者全部不露臉、不露皮膚。用面罩、頭盔、晶體、光取代臉。</td></tr>
+  <tr><td><b>仰視讓建築顯得巨大</b></td><td>低角度仰拍讓主體顯得更高、更有力量；極低角度（蟲視角）會讓垂直線往上方收斂，強調高度，同時仍能看到立面細節。歷史上常用來表現敬畏感。</td><td>光塔全部改為仰視構圖（第 03 章）。</td></tr>
+</table>
+
+<h3>1.2 CryptoMines 拆解</h3>
+<p>依據：你提供的 5 張截圖（遊戲內工人列表、工人市場、飛船列表、飛船市場、星球卡），共約 16 位工人、16 艘飛船。以下只寫截圖中看得到的事實；引用時不使用它的名稱、美術或素材（白皮書第 2 章）。</p>
+
+<h4>工人：為什麼看起來厲害</h4>
+<table>
+  <tr><th style="width:30mm">觀察項目</th><th>截圖中看到的</th><th style="width:46mm">為什麼有效</th></tr>
+  <tr><td class="k">製作方式</td><td>全部是 3D 模型渲染，不是手繪或生圖：硬表面的裝甲板、接縫、螺栓、迷彩塗裝、刮痕都清楚，材質有金屬的反光和磨損。</td><td>3D 模型的結構和光影天生正確，不會有生圖常見的「細節糊成一團」。</td></tr>
+  <tr><td class="k">臉</td><td>沒有任何一位露出人臉：全罩式頭盔、面罩、外星生物頭部（觸角、翼、角），只有一位是兜帽加橘色面罩。</td><td>拿掉了最容易出錯、最容易顯得廉價的部分。和本文件第 4.2 節的方向一致。</td></tr>
+  <tr><td class="k">取景</td><td>主體佔卡片高度約 75–85%，多數裁在大腿中段或膝蓋，人物置中、略偏下。</td><td>角色夠大，裝甲細節在縮圖裡也看得到。這是「厲害感」最主要的來源之一。</td></tr>
+  <tr><td class="k">鏡頭</td><td>平視或略微仰視，正面到 3/4 側面。</td><td>穩定、像攝影棚的產品照，整個系列看起來一致。</td></tr>
+  <tr><td class="k">姿勢</td><td>多數是放鬆的站姿；少數是蹲姿、坐姿（截圖中 2 星、4 星各有一位）。</td><td>姿勢不是重點。細節與打光到位時，靜態站姿也夠看。</td></tr>
+  <tr><td class="k">打光</td><td>單一柔和主光從前上方打下，背景是暗色的漸層，角色邊緣和背景之間有明顯的明暗分離。</td><td>所有工人同一套燈光，所以整個收藏看起來是同一個世界。</td></tr>
+  <tr><td class="k">配色</td><td>角色本身以灰、銀、炭色為主，彩度很低；顏色主要來自背景。</td><td>低彩度的角色顯得寫實、有份量；色彩交給背景去分級。</td></tr>
+  <tr><td class="k">背景＝稀有度</td><td>背景是深色的徑向漸層，顏色依星數不同：1 星深藍、2 星深綠、3 星深棕橘、4 星深紅、5 星深紫（5 星依截圖推斷）。飛船也用同一套背景色。</td><td>不用看星數，憑背景色就知道大概的稀有度。這是它最有效的「一眼辨識」設計。</td></tr>
+  <tr><td class="k">重複與個性</td><td>同一個模型被大量重複使用（截圖中有兩位工人完全相同），每一位靠<b>隨機產生的人名</b>（例如 Romek Atterton）和唯一 ID 區分。</td><td>證實「同一種卡共用同一張圖」是可行的；個性來自名字，不是外觀。和本文件第 06 章的方向一致。</td></tr>
+</table>
+
+<h4>它做得不好的地方</h4>
+<ul>
+  <li><b>飛船太小</b>：飛船只佔畫面寬度約 25–30%，懸在大片空白的背景中央，細節在縮圖裡完全看不出來。和塞滿畫面的工人相比，飛船明顯不夠厲害。<b>這正是光塔要避免的</b>：光塔必須大、必須塞滿畫面。</li>
+  <li><b>插圖本身看不出稀有度</b>：1 星和 4 星的工人在細節和質感上差不多，稀有度幾乎全靠星數徽章和背景色。本文件第 02 章的五個訊號，就是要讓插圖本身也能分出高低。</li>
+  <li><b>姿勢單調</b>：多數是同樣的站姿，同稀有度的卡片排在一起時缺乏變化。</li>
+</ul>
+
+<h4>對 Lightdive 的修正</h4>
+<table>
+  <tr><th style="width:42mm">修正</th><th>內容</th></tr>
+  <tr><td class="k">主體放大</td><td>原本微光 35–45% 太小了。改為：微光 65–70%、輝脈 70–75%、澄晶 75–85%、稜光 85–90%、曜核破框（第 02 章）。</td></tr>
+  <tr><td class="k">加上背景色調</td><td>第 02 章新增第 ⑥ 個訊號：每個稀有度一個很暗的背景色調。核光萊姆仍然是唯一的主光色，背景色只在暗部。</td></tr>
+  <tr><td class="k">考慮 3D 渲染路線</td><td>CryptoMines 的質感來自 3D 模型加統一燈光。第 07 章新增「3D 模型＋統一燈光渲染」的製作路線，作為 AI 2D 之外的選項。</td></tr>
+  <tr><td class="k">名字</td><td>每一位探索者由 dna 產生名字或呼號（第 6.2 節），讓重複的插圖也有個性。</td></tr>
+  <tr><td class="k">靜態姿勢可以接受</td><td>低稀有度可以用穩定的站姿，細節與打光比姿勢重要；動態姿勢留給高稀有度，作為升級的訊號。</td></tr>
+</table>
+
+<h3>1.3 「AI 感」從哪裡來，以及怎麼避開</h3>
+<p>綜合上面的研究和一般的製作經驗，生圖看起來廉價，通常來自以下幾個地方。每一項都有對應的做法，貫穿整份文件：</p>
+<table>
+  <tr><th style="width:42mm">廉價感的來源</th><th>這份文件的做法</th></tr>
+  <tr><td>人臉、皮膚、眼睛（瑕疵集中處）</td><td>全部不露臉、不露皮膚。手一律是機械、晶體或光構成，並且不做特寫。</td></tr>
+  <tr><td>每張圖的光線、鏡頭、色調都不一樣</td><td>每個稀有度規定固定的鏡頭角度、主光方向和色票（第 03、05 章），整個系列像同一個攝影棚拍的。</td></tr>
+  <tr><td>正中央、正面、對稱的「證件照」構圖</td><td>光塔改為仰視的 3/4 角度；探索者至少轉身 15° 並略微仰視，高稀有度才用動態姿勢。</td></tr>
+  <tr><td>到處都在發光</td><td>發光面積有明確上限，依稀有度從 2% 到 30%（第 02 章）。光越少，越顯得珍貴。</td></tr>
+  <tr><td>材質像塑膠、細節像糊在一起的紋理</td><td>指定具體材質：古石、陶瓷、晶體、拉絲金屬、織布。生圖後一定要修圖，補上清楚的結構線和磨損。</td></tr>
+  <tr><td>隨機抽出的造型，沒有設計語言</td><td>每一階有固定的造型規則（輪廓、部件、材質），先做設定稿，再依設定稿出圖，而不是直接用提示詞碰運氣。</td></tr>
+</table>
+</section>
+
+<!-- ============================================================ 02 -->
+<section class="chap">
+<h2><span class="num">02</span>稀有度辨識系統</h2>
+<p class="lead">五個稀有度：微光、輝脈、澄晶、稜光、曜核（白皮書第 5.1 節），三種 NFT 共用。玩家看到一張卡時，以下五個訊號要<b>同時</b>告訴他這張卡有多稀有。任何一個訊號單獨都不夠，五個一起才會形成「一眼就懂」。</p>
+
+<div class="ladder">
+  <div class="h">訊號</div><div class="h r0">微光</div><div class="h r1">輝脈</div><div class="h r2">澄晶</div><div class="h r3">稜光</div><div class="h r4">曜核</div>
+  <div class="h">① 主體大小</div><div>佔畫面高度 65–70%</div><div>70–75%</div><div>75–85%</div><div>85–90%</div><div>滿版，局部超出卡框</div>
+  <div class="h">② 發光面積</div><div>約 2%，只有一兩個小光點</div><div>約 5%，細光脈</div><div>約 10%，晶體內透光</div><div>約 18%，光構成的部件</div><div>約 30%，本體就是光</div>
+  <div class="h">③ 姿勢能量</div><div>待命、站定</div><div>準備出發、蓄勢</div><div>行動中、著地</div><div>懸浮、展開</div><div>降臨、張開</div>
+  <div class="h">④ 鏡頭</div><div>平視，仰角 0–5°</div><div>微仰 5–10°</div><div>仰視 10–20°</div><div>仰視 20–30°，略傾斜</div><div>極低角度 30°以上，或戲劇性構圖</div>
+  <div class="h">⑤ 背景深度</div><div>簡潔深色，單層</div><div>淡星雲，兩層</div><div>星雲＋光橋遠景</div><div>強烈的光源與粒子</div><div>專屬星紋背景（6 款）</div>
+  <div class="h">⑥ 背景色調</div><div>深石板藍 <code>#101722</code></div><div>深墨綠 <code>#0D1A14</code></div><div>深琥珀 <code>#1F1609</code></div><div>深緋紅 <code>#200C14</code></div><div>深紫＋稜彩 <code>#160D24</code></div>
+  <div class="h">程式加的</div><div>素面卡框</div><div>萊姆細框</div><div>亮萊姆框＋晶體角飾</div><div>稜彩邊緣、動態光</div><div>全稜彩框、動畫、超出框的特效</div>
+</div>
+
+<p class="small">⑥ 的色碼是背景最暗處到中間調的基準色，背景的平均亮度仍要低於 15%，讓萊姆光和角色是畫面中最亮的東西。這套色調參考了 CryptoMines「背景顏色代表星數」的做法，但壓得更暗，以免和核光萊姆搶。</p>
+
+<h3>2.1 三個檢查方法</h3>
+<div class="grid3">
+  <div class="card"><div class="t">縮圖測試</div>把五個稀有度各一張縮到 128×171 px 排成一列。不看卡框，只看插圖，旁人要能正確排出高低順序。這是 NFT 市場的實際顯示尺寸。</div>
+  <div class="card"><div class="t">灰階測試</div>把圖轉成灰階。稀有度越高，畫面中最亮的區域應該越大、越集中。如果灰階後五張看起來差不多，表示稀有度只靠顏色在撐。</div>
+  <div class="card"><div class="t">剪影測試</div>把主體塗成純黑。五個稀有度的剪影要明顯不同：尺度、外形複雜度、姿勢方向都不一樣。</div>
+</div>
+
+<h3>2.2 色彩的使用</h3>
+<ul>
+  <li><b>核光萊姆 <code>#C9FF55</code> 是唯一的品牌光色</b>，所有稀有度都用它當主光（沿用介面美術需求書第 2.3 節）。稀有度靠「光的量與形狀」區分，而不是換顏色，這樣整個系列才統一。</li>
+  <li><b>白熱 <code>#F4F6EE</code></b> 從澄晶開始出現在光的最亮處，曜核時大面積出現。</li>
+  <li><b>稜彩</b>（萊姆往兩側散出極窄的青、紫色散光）只在稜光和曜核出現，是「最高兩階」的專屬訊號。</li>
+  <li><b>屬性色</b>（曦光、霧光等六色）只出現在探索者的屬性光紋，由程式染色（第 05 章）。</li>
+</ul>
+
+<h3>2.3 卡片版面（三種 NFT 共用）</h3>
+<div class="figure">
+<svg viewBox="0 0 520 250" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect x="10" y="10" width="165" height="220" rx="7" fill="#0b0c0e"/>
+  <rect x="18" y="18" width="149" height="204" rx="4" fill="none" stroke="#a14a00" stroke-dasharray="3 2"/>
+  <rect x="18" y="176" width="149" height="46" fill="#c9ff55" fill-opacity=".15"/>
+  <rect x="18" y="18" width="149" height="22" fill="#c9ff55" fill-opacity=".15"/>
+  <g font-size="10" fill="#111511">
+    <text x="192" y="24" font-weight="700">1024 × 1366（直式 3:4，母檔 2048 × 2732）</text>
+    <text x="192" y="44">橘色虛線：外緣 48 px 由程式畫卡框，插圖要延伸到畫布邊緣（出血），</text>
+    <text x="192" y="58">　　　　但不要把重要內容放在這裡</text>
+    <text x="192" y="80">上方綠帶（0–140 px）：程式顯示稀有度與種類標記，</text>
+    <text x="192" y="94">　　　　這裡放天空或背景，不放主體的關鍵部位</text>
+    <text x="192" y="116">下方綠帶（1066–1366 px）：程式顯示名稱、光度、航程，</text>
+    <text x="192" y="130">　　　　這裡要夠暗（平均亮度 &lt; 15%），可以是地面、雲海、陰影</text>
+    <text x="192" y="152">主體的視覺重心放在 140–1066 px 之間</text>
+    <text x="192" y="174">曜核例外：主體和特效可以蓋過上方綠帶和卡框，</text>
+    <text x="192" y="188">　　　　由程式把卡框畫在主體「後面」，做出破框效果</text>
+    <text x="192" y="210">圖中不放任何文字、數字、星級符號（全域規則）</text>
+  </g>
+</svg>
+<div class="cap">圖 2-1　NFT 卡片的版面。綠帶是程式放資訊的區域，示意色不要畫進圖裡。</div>
+</div>
+</section>
+
+<!-- ============================================================ 03 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">5 張</span><div class="id">SPIRE · 光塔 BEACON SPIRE</div><div class="nm">光塔：仰望的巨構</div><div class="one">玩家的基地，整支隊伍的家。要讓人覺得「這東西大到看不到頂」。</div></div>
+
+<h3>3.1 敘事與功能</h3>
+<p>觀測者在 ROVYN CORE 周圍立起一座座光塔，用共鳴稜鏡把晶核的光折成光橋，讓探索者順著光橋潛進深空（白皮書第 3.1 節）。光塔是大型 NFT：等級 Lv.1–5 決定可以坐幾位探索者（席位 1–5 個），壽命 120 次航程，約四個月。它是玩家擁有最久、花最多錢（300 RVYN）的東西，<b>必須看起來值得</b>。</p>
+<p>原本的規格（ART-ASSETS.md 第 2 節，引自 v3 第 3.4、3.6 節）是「分體古石巨碑、晶核、三爪稜鏡座、沒有光柱」。這些全部保留，本文件補上<b>鏡頭、尺度和功能可讀性</b>。</p>
+
+<h3>3.2 四個功能部件：玩家要看得懂</h3>
+<div class="grid2">
+<div class="figure" style="margin:0">
+<svg viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <rect width="240" height="320" fill="#0b0c0e"/>
+  <path d="M70 300 L96 40 L120 20 L144 40 L170 300 Z" fill="none" stroke="#6b6e68" stroke-width="1.5"/>
+  <path d="M84 300 L104 70 M156 300 L136 70" stroke="#6b6e68" stroke-dasharray="3 3"/>
+  <circle cx="120" cy="58" r="11" fill="none" stroke="#c9ff55" stroke-width="2"/>
+  <path d="M103 34 L112 48 M137 34 L128 48 M120 14 L120 28" stroke="#c9ff55" stroke-width="2"/>
+  <g fill="none" stroke="#7de6ff" stroke-width="1.5">
+    <rect x="88" y="150" width="14" height="12"/><rect x="113" y="146" width="14" height="12"/><rect x="138" y="150" width="14" height="12"/>
+  </g>
+  <path d="M120 84 L120 132" stroke="#ff7a45" stroke-width="2"/>
+  <circle cx="120" cy="84" r="4" fill="#ff7a45"/>
+  <path d="M60 300 H180" stroke="#6b6e68"/>
+  <rect x="58" y="292" width="3" height="8" fill="#d8d6ce"/>
+  <g font-size="9" fill="#e8f0dc">
+    <text x="150" y="30">① 稜鏡座</text><text x="140" y="62">② 晶核</text><text x="156" y="160">③ 泊位</text><text x="124" y="110">④ 光橋口</text><text x="22" y="290">尺度人物</text>
+  </g>
+</svg>
+<div class="cap">圖 3-1　光塔的功能部件示意（只是位置關係，不是造型）。</div>
+</div>
+<div>
+<table>
+  <tr><th>部件</th><th>功能（遊戲規則）</th><th>畫法</th></tr>
+  <tr><td class="k">① 稜鏡座</td><td>每座光塔裝 1 面共鳴稜鏡（第 4.2 節）。</td><td>塔頂的三爪托座，<b>空著</b>（稜鏡是另一張 NFT），三爪尖端各有一個萊姆光點，讓人感覺「這裡要放東西」。</td></tr>
+  <tr><td class="k">② 晶核</td><td>光塔的力量來源，決定光塔的光度。</td><td>塔身上半部嵌著一顆巨大的晶體，從石縫中透出內部的光。等級越高，晶核越大、越亮。</td></tr>
+  <tr><td class="k">③ 泊位</td><td>探索者的席位，數量＝等級（Lv.1 一個，Lv.5 五個）。</td><td>塔身中段一圈凹入的平台或壁龕，每個泊位底下有一道萊姆光條。<b>從畫面上要能數得出數量</b>，這是玩家判斷等級最直接的方式。</td></tr>
+  <tr><td class="k">④ 光橋口</td><td>光橋從這裡射出（白皮書：「沒有光柱」，所以平常不發射）。</td><td>晶核正下方的一個圓形開口，內部微亮，邊緣有刻度環。平常是待命狀態，沒有光柱射出。</td></tr>
+</table>
+</div>
+</div>
+
+<h3>3.3 鏡頭：從下往上仰視</h3>
+<div class="figure">
+<svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <path d="M10 160 H330" stroke="#6b6e68"/>
+  <rect x="250" y="20" width="30" height="140" fill="#2b2d30"/>
+  <circle cx="40" cy="150" r="5" fill="#111511"/>
+  <path d="M40 150 L265 20 M40 150 L280 160" stroke="#4f7a00" stroke-dasharray="4 3"/>
+  <path d="M40 150 L270 90" stroke="#c9ff55" stroke-width="2"/>
+  <path d="M80 150 A 40 40 0 0 0 78 130" fill="none" stroke="#a14a00"/>
+  <rect x="236" y="150" width="3" height="10" fill="#111511"/>
+  <g font-size="10" fill="#111511">
+    <text x="20" y="178">相機高度：人眼高度或更低（約 1–2 m）</text>
+    <text x="90" y="138" fill="#a14a00">仰角 15–30°</text>
+    <text x="218" y="178">尺度人物</text>
+    <text x="345" y="24" font-weight="700">鏡頭規格</text>
+    <text x="345" y="42">● 相機在塔基附近的地面，往上仰</text>
+    <text x="345" y="58">● 仰角：Lv.1 約 15°，Lv.5 約 30°</text>
+    <text x="345" y="74">● 等效焦距 18–28 mm（廣角），</text>
+    <text x="345" y="88">　垂直線往上收斂</text>
+    <text x="345" y="104">● 3/4 角度：塔身轉 25–35°，</text>
+    <text x="345" y="118">　看得到兩個立面和泊位的弧形</text>
+    <text x="345" y="134">● 地平線在畫面下方 10–20%</text>
+    <text x="345" y="150">● 塔頂接近但不碰到上方 140 px</text>
+    <text x="345" y="166">● 五張圖的仰角方向、光向一致</text>
+  </g>
+</svg>
+<div class="cap">圖 3-2　側面示意：相機低、往上仰，讓塔的垂直線往上收斂。</div>
+</div>
+
+<h4>讓它「顯得巨大」的五個手法</h4>
+<table>
+  <tr><th style="width:30mm">手法</th><th>具體做法</th></tr>
+  <tr><td class="k">尺度參考</td><td>塔基旁放一位<b>極小</b>的探索者剪影（約佔畫面高度 2–3%），或一道人可以走進去的門。沒有尺度參考，再高的塔看起來都像模型。</td></tr>
+  <tr><td class="k">大氣透視</td><td>塔的上半部被薄霧或星光的散射稍微淡化，越高越淡、越偏冷色。人眼會把「看起來比較淡」解讀為「比較遠」，塔就會顯得更高。</td></tr>
+  <tr><td class="k">收斂的垂直線</td><td>廣角仰視讓塔身的邊線往上方收斂。塔身的分節、裂隙、刻度線都要順著這個透視畫，強化方向感。</td></tr>
+  <tr><td class="k">裁切基座</td><td>Lv.3 以上，塔基的一部分被畫面下緣或前景岩石裁掉，暗示「畫面裝不下」。但泊位必須完整可見。</td></tr>
+  <tr><td class="k">細節的密度梯度</td><td>近處（塔基）細節最多：石塊的接縫、磨損、刻文；遠處（塔頂）細節變簡、變成剪影。這是真實大型建築的視覺特徵，也是生圖最容易做錯的地方（到處都一樣清楚）。</td></tr>
+</table>
+
+<h3>3.4 五張光塔的設計</h3>
+<p>等級在鑄造時決定、不能升級（白皮書第 4.2 節），所以每一個等級就是一張完整的插圖。等級之間要像「同一個建築傳統、不同的規模」。</p>
+<table>
+  <tr><th style="width:18mm">等級</th><th style="width:16mm">稀有度</th><th>規模與造型</th><th style="width:30mm">晶核與光</th><th style="width:24mm">鏡頭</th></tr>
+  <tr><td class="k">Lv.1</td><td>微光</td><td>一根分成兩段的古石巨碑，像荒原上的界碑。1 個泊位在中段一側。石材粗糙、有青苔般的暗色礦斑。周圍是空曠的岩地。</td><td>小晶核，透出微光；整張圖發光面積約 2%</td><td>仰 15°，塔身轉 25°</td></tr>
+  <tr><td class="k">Lv.2</td><td>輝脈</td><td>三段分體，段與段之間懸空、以光脈相連。2 個泊位對稱在兩側。塔基開始有階梯和石台。</td><td>晶核較大，石縫中有細細的萊姆光脈往下流</td><td>仰 18°</td></tr>
+  <tr><td class="k">Lv.3</td><td>澄晶</td><td>四段分體，中段環繞一圈石環，3 個泊位分布在石環上。塔基被前景岩石裁掉一部分。周圍出現小型附屬石碑。</td><td>晶核半透明可見內部結構，光從裂隙射出細光束</td><td>仰 22°</td></tr>
+  <tr><td class="k">Lv.4</td><td>稜光</td><td>五段分體，上下段之間懸浮著碎石塊（像被光托住）。4 個泊位環繞，每個泊位有自己的小型拱門。塔身表面刻滿星圖紋路。塔頂穿入雲層或星雲。</td><td>晶核大而亮，邊緣有稜彩色散；懸浮碎石的邊緣被照亮</td><td>仰 26°，略傾斜 3°</td></tr>
+  <tr><td class="k">Lv.5</td><td>曜核</td><td>大教堂尺度：主塔加上兩座較矮的副碑環繞，主塔分成六段以上，塔頂超出畫面上緣、被卡框蓋住（破框）。5 個泊位形成一個完整的光環。基座是巨大的階梯平台，尺度人物極小。</td><td>晶核白熱，周圍空氣扭曲；整張圖發光面積約 25–30%，但仍然沒有光柱</td><td>仰 30°，極廣角</td></tr>
+    </table>
+
+<h3>3.5 光與背景</h3>
+<ul>
+  <li><b>主光</b>：來自畫面外上方的 ROVYN CORE（萊姆偏白），從塔的一側斜照，塔身一邊亮、一邊在陰影裡，形成強烈的立體感。五張圖的主光方向相同（建議從畫面右上方來）。</li>
+  <li><b>晶核的光</b>是第二光源，照亮泊位和近處的石面。</li>
+  <li><b>背景</b>：深空與星雲，依稀有度升級（第 02 章訊號 ⑤）。Lv.1 是單純的暗色星空；Lv.5 背景有明顯的光源與光橋遠景。</li>
+  <li><b>地面</b>：下方 300 px 是程式放資訊的區域，要畫成暗色的岩地、階梯陰影或雲海。</li>
+</ul>
+
+<h3>3.6 提示詞（以 Lv.3 為例）</h3>
+<div class="prompt"><span class="lbl">光塔共用段落（每張都貼）</span>an ancient monumental beacon spire made of segmented weathered dark basalt slabs, the segments
+separated by narrow gaps, a giant crystal core embedded in the upper section glowing lime green
+(#C9FF55) through cracks in the stone, a three-pronged empty cradle at the very top with a small
+lime light at each prong tip, a circular dormant aperture below the crystal with engraved rings,
+no light beam, no light pillar,
+extreme low angle shot from the ground looking up, wide angle lens, strong converging verticals,
+three-quarter view, horizon line very low in the frame, a tiny lone figure at the base for scale,
+atmospheric haze making the upper part paler, deep space sky with faint nebula,
+key light from upper right, cinematic, monumental, awe, ultra detailed stone texture, 8k</div>
+<div class="prompt"><span class="lbl">Lv.3 段落</span>four stacked segments, a stone ring around the middle section carrying exactly three glowing
+recessed berth platforms evenly spaced and clearly visible, small auxiliary monoliths around the
+base, the base partly cropped by dark foreground rocks, camera tilted up 22 degrees</div>
+<div class="prompt"><span class="lbl">負面提示詞</span>light beam, light pillar, laser, text, numbers, logo, front orthographic view, symmetrical
+centered elevation, eye level, isometric, miniature, toy, plastic, castle, church cross, modern
+skyscraper, sci-fi metal tower, neon, oversaturated, cartoon, people crowd, watermark</div>
+
+<h3>3.7 驗收清單</h3>
+<ul class="check">
+  <li>鏡頭明顯是從下往上仰視，垂直線往上收斂；不是正面立面圖。</li>
+  <li>泊位數量和等級相同，而且在 128 px 縮圖裡數得出來。</li>
+  <li>稜鏡座是空的三爪托座；沒有光柱、光束射出。</li>
+  <li>有尺度參考（極小的人物或門），塔看起來巨大，不像模型。</li>
+  <li>塔頂比塔基淡、細節比塔基少（大氣透視）。</li>
+  <li>五張的主光方向、鏡頭方向一致，排在一起像同一個世界。</li>
+  <li>下方 300 px 夠暗，可以放文字。</li>
+  <li>縮圖測試：五張縮到 128 px，能依規模排出等級。</li>
+</ul>
+</section>
+
+<!-- ============================================================ 04 -->
+<section class="chap">
+<div class="asset-head"><span class="pri">五階</span><div class="id">SEEKER · 探索者</div><div class="nm">探索者：越深入光，越接近光</div><div class="one">最大宗的 NFT（每副牌組 10,000 位，10 次航程後歸航）。五個稀有度是五種完全不同的存在。</div></div>
+
+<h3>4.1 新的設計概念</h3>
+<div class="quote">潛進深空的方式不只一種。最普通的是派出探光機；勇敢的人穿上潛光服親自下潛；有些人讓晶核長進身體裡；有些人潛得太深，身體開始化為光；而最深處回來的，已經不再是人，而是光本身。</div>
+<p>這個概念把五個稀有度變成一條<b>從機械到純光的進化路線</b>。它直接呼應遊戲的核心句「把第一道光帶回來」：稀有度越高，探索者越接近核光本身。玩家不需要讀任何說明，看外觀就能感覺到哪一張「更接近光」，也就是更稀有。</p>
+
+<div class="ladder">
+  <div class="h">職階</div><div class="h r0">微光</div><div class="h r1">輝脈</div><div class="h r2">澄晶</div><div class="h r3">稜光</div><div class="h r4">曜核</div>
+  <div class="h">名稱（暫定）</div><div>探光機<br>Probe</div><div>潛光員<br>Diver</div><div>晶甲衛<br>Warden</div><div>稜光行者<br>Wayfarer</div><div>曜核之子<br>Radiant</div>
+  <div class="h">本質</div><div>自動機械</div><div>穿潛光服的人（不露臉）</div><div>晶體強化的重甲</div><div>半化為光的存在</div><div>純光構成的存在</div>
+  <div class="h">輪廓</div><div>小、低、圓潤，多足或懸浮</div><div>人形、修長、背負纜線</div><div>寬肩、厚重、晶刺</div><div>人形但肢體部分是光，有光翼或光袍</div><div>巨大、對稱、光環，人形只剩輪廓</div>
+  <div class="h">材質</div><div>啞光金屬、磨損塗層</div><div>強化織布、陶瓷護甲、玻璃面罩</div><div>黑色重甲＋半透明晶體</div><div>破碎的陶瓷外殼＋光</div><div>儀式性的骨白碎殼＋白熱光</div>
+  <div class="h">取景</div><div>全身，貼近拍攝</div><div>膝上</div><div>膝上</div><div>腰上，局部特寫</div><div>滿版、破框</div>
+</div>
+
+<h3>4.2 為什麼不用人臉</h3>
+<ul>
+  <li><b>品質</b>：AI 生圖的瑕疵集中在眼睛和臉；同一個角色在多張圖之間也很難保持一致。拿掉臉，就拿掉了最大的廉價感來源。</li>
+  <li><b>可讀性</b>：年齡、膚色、五官差異在 128 px 縮圖裡幾乎看不出來；輪廓、發光量、姿勢的差異則一眼就看得到。</li>
+  <li><b>公關風險</b>：把人種和年齡排成稀有度高低，會被解讀為某些人比較「高級」。拿掉人臉也一併解決這個問題。</li>
+  <li><b>世界觀</b>：觀測站的人本來就戴面具（Signal-Keeper 的 MASK 是「過濾核光的觀測面罩，和探索者頭盔同一系譜」，白皮書第 3.3 節）。在深空裡露臉本來就不合理。</li>
+  <li><b>代入感</b>：沒有臉的角色，玩家比較容易把自己投射進去，這也是頭盔角色在遊戲裡常見的原因。</li>
+</ul>
+</section>
+
+<!-- ============================================================ 05 -->
+<section class="chap">
+<h2><span class="num">05</span>五個職階的詳細設計</h2>
+
+<div class="card" style="margin-bottom:4mm">
+<div class="s">微光 GLIMMER · 機率 50% · 光度 20–30</div><div class="t">探光機 Probe</div>
+<p><b>敘事</b>：觀測站大量製造的自動探測機。它們是潛光的主力，便宜、可靠、數量多。每一台都有自己的編號和小小的個性。</p>
+<p><b>造型</b>：膝蓋高度的小型機械，約一顆大西瓜到小冰箱的大小。四種底盤：三足步行、四足步行、懸浮球體、履帶。機身是啞光的炭灰金屬，有刮痕和褪色的編號塗裝（不能有可讀的文字或數字，用條紋和色塊表示）。前方一顆圓形光學鏡頭，是它的「眼睛」，也是唯一明顯的發光點。背上一個小型收光槽。</p>
+<p><b>姿勢組</b>：①站定待命、鏡頭微微抬起看向觀眾；②側身走動中；③俯身用機械臂在地面採集光塵。</p>
+<p><b>鏡頭</b>：平視，相機貼近地面、靠近機器拍攝，全身入鏡，主體佔畫面高度 65–70%（機器本身小，所以要靠近拍，讓它塞滿畫面）。</p>
+<p><b>要讓玩家感覺</b>：可愛、可靠、普通。是「我還想抽更好的」的起點，但本身不廉價。</p>
+</div>
+
+<div class="card" style="margin-bottom:4mm">
+<div class="s">輝脈 VEIN · 機率 28% · 光度 32–45</div><div class="t">潛光員 Diver</div>
+<p><b>敘事</b>：穿上潛光服、親自順著光橋下潛的人。潛光服的設計參考深海潛水服：要抵抗深空的黑暗與壓力，背後有一條光纜連回光塔，萬一光橋中斷，光纜能把人拉回來。</p>
+<p><b>造型</b>：修長的人形。圓形或半球形的頭盔，正面是一整片深色玻璃面罩（<b>看不到臉</b>，只看到面罩內側幾條萊姆色的介面光）。潛光服是強化織布加上陶瓷護甲片，關節處有蛇腹結構。背後一個圓柱形收光器，接出一條發光的光纜，往畫面外延伸（指向光塔的方向）。手是厚重的手套。</p>
+<p><b>姿勢組</b>：①站在光橋起點，一手握住光纜，準備出發；②單膝跪地，檢查手上的收光器；③轉身回望，光纜在身後揚起。</p>
+<p><b>鏡頭</b>：微仰 5–10°，膝上取景，主體佔畫面高度 70–75%，背後的光纜延伸出畫面。</p>
+<p><b>辨識重點</b>：發光的光纜。這是輝脈的招牌元素，第一眼就和微光的機械區分開。</p>
+</div>
+
+<div class="card" style="margin-bottom:4mm">
+<div class="s">澄晶 CLEAR · 機率 15% · 光度 48–68</div><div class="t">晶甲衛 Warden</div>
+<p><b>敘事</b>：讓晶核長進身體裡的人。他們的護甲和晶體融合在一起，可以潛到更深、更危險的地方。</p>
+<p><b>造型</b>：比潛光員更寬、更厚重的重甲，肩膀和背部長出半透明的晶刺，晶體內部透出光。頭盔是有稜角的晶體面罩，像切割過的寶石。胸口嵌著一塊晶核。一手持一面晶體盾，或一根晶體長杖（不是武器，是收光與導光的工具）。</p>
+<p><b>姿勢組</b>：①從光橋上跳下、剛著地，單膝與單手撐地，晶體碎片飛散；②持盾站立，身體轉向側面，盾面反射光；③舉起晶杖，杖頂的晶體聚光。</p>
+<p><b>鏡頭</b>：仰視 10–20°，膝上取景，主體佔畫面高度 75–85%。</p>
+<p><b>辨識重點</b>：晶體的透光。光從身體內部透出，而不是只有表面的光點。</p>
+</div>
+
+<div class="card" style="margin-bottom:4mm">
+<div class="s">稜光 SPECTRAL · 機率 6% · 光度 75–100</div><div class="t">稜光行者 Wayfarer</div>
+<p><b>敘事</b>：潛得太深的人。他們的身體開始化為光，護甲變成一層破碎的外殼，裂縫中透出的是光本身。他們已經不需要光橋，可以自己在深空中行走。</p>
+<p><b>造型</b>：人形，但一部分肢體（例如一隻手臂、雙腿的下半段）完全由光構成。剩下的是骨白色的陶瓷外殼，佈滿裂紋，裂紋裡是光。頭部是光滑、沒有任何開口的陶瓷殼，只有一道細長的光縫。背後展開由折射光構成的光翼或光袍（像稜鏡分光，邊緣有稜彩色散）。</p>
+<p><b>姿勢組</b>：①懸浮在半空，光翼完全展開，一手伸向觀眾；②側身在虛空中行走，腳下每一步都留下光的足跡；③回頭，光袍向後飄散成光點。</p>
+<p><b>鏡頭</b>：仰視 20–30°，略微傾斜（荷蘭角 3–5°），腰上取景或局部特寫，主體佔畫面高度 85–90%。</p>
+<p><b>辨識重點</b>：「光構成的身體部位」與稜彩色散。這是第一個「不完全是實體」的職階。</p>
+</div>
+
+<div class="card" style="margin-bottom:4mm">
+<div class="s">曜核 RADIANT · 機率 1% · 光度 120–160</div><div class="t">曜核之子 Radiant</div>
+<p><b>敘事</b>：從最深處回來的存在。沒有人知道他們曾經是什麼。他們是核光的一部分，帶著儀式性的外殼，像是為了讓凡人能夠直視而存在。</p>
+<p><b>造型</b>：巨大、近乎對稱的人形輪廓，本體是白熱的光。外面包覆著幾片骨白色的儀式性碎殼（肩、胸、頭冠），碎殼與光之間有空隙。頭部是一個光環或一頂光冠，沒有臉。周圍有緩慢旋轉的軌道碎片（呼應 Signal-Keeper 的 ORBIT）。</p>
+<p><b>姿勢組</b>：①降臨：從上方緩緩降下，雙臂張開；②沉思：雙手在胸前合攏，中間懸浮一顆小光核；③注視：俯視觀眾（相機在極低處），光從背後放射。</p>
+<p><b>鏡頭</b>：極低角度仰視 30° 以上，或極具戲劇性的構圖；滿版，頭冠和光可以超出卡框（由程式做破框）。</p>
+<p><b>星紋背景</b>：曜核的 <code>variant</code> 1–6 對應 6 款星紋背景（初光原點、七星冠穹、蝕心深空、流星航痕、極光帷幕、蝕環日冕），這部分沿用原設定。</p>
+<p><b>辨識重點</b>：整張卡最亮的區域是角色本身，而且大到超出畫面。抽到的瞬間就要讓人屏息。</p>
+</div>
+
+<h3>5.1 剪影對照</h3>
+<div class="figure">
+<svg viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK TC, sans-serif">
+  <g fill="#111511">
+    <rect x="10" y="10" width="90" height="120" fill="#f4f7ee"/><ellipse cx="55" cy="110" rx="20" ry="13"/><rect x="38" y="118" width="4" height="10"/><rect x="68" y="118" width="4" height="10"/>
+    <rect x="112" y="10" width="90" height="120" fill="#f4f7ee"/><rect x="146" y="58" width="22" height="64" rx="8"/><circle cx="157" cy="52" r="10"/><path d="M168 70 Q 190 60 202 30" stroke="#111511" stroke-width="3" fill="none"/>
+    <rect x="214" y="10" width="90" height="120" fill="#f4f7ee"/><path d="M234 130 L240 52 L250 40 L268 40 L278 52 L284 130 Z"/><path d="M240 52 L230 34 M278 52 L290 32 M259 40 L259 22" stroke="#111511" stroke-width="5"/>
+    <rect x="316" y="10" width="90" height="120" fill="#f4f7ee"/><path d="M350 130 L352 46 L366 34 L380 46 L382 130 Z"/><path d="M352 60 Q 320 40 318 14 M380 60 Q 412 40 404 14" stroke="#111511" stroke-width="6" fill="none"/>
+    <rect x="418" y="10" width="92" height="120" fill="#f4f7ee"/><path d="M432 130 L440 40 L464 20 L488 40 L496 130 Z"/><circle cx="464" cy="20" r="16" fill="none" stroke="#111511" stroke-width="4"/><path d="M440 50 L418 40 M488 50 L510 40" stroke="#111511" stroke-width="6"/>
+  </g>
+  <g font-size="10" fill="#111511" text-anchor="middle">
+    <text x="55" y="146">微光：小、低、寬</text><text x="157" y="146">輝脈：修長＋光纜</text><text x="259" y="146">澄晶：寬肩＋晶刺</text><text x="361" y="146">稜光：光翼展開</text><text x="464" y="146">曜核：滿版＋光環</text>
+  </g>
+  <text x="10" y="164" font-size="9" fill="#4a4f47">示意：只表達五階剪影的「尺度、外形、方向」差異，不是造型設計。實際造型以設定稿為準。</text>
+</svg>
+<div class="cap">圖 5-1　剪影測試的目標。五階剪影並排時，尺度和外形要一眼可分。</div>
+</div>
+
+<h3>5.2 屬性怎麼表現</h3>
+<p>原設計的 B 層「光紋」要為 6 屬性 × 5 稀有度畫 30 張圖。新設計改為程式處理，並且讓屬性直接出現在角色身上：</p>
+<ul>
+  <li><b>光紋遮罩</b>：每一張探索者插圖，額外交付一張灰階遮罩，標出角色身上「屬性光」的位置（光纜、晶體、光翼、面罩介面光等）。程式依屬性把這些地方染成對應的屬性色（曦光 <code>#FFD27A</code>、霧光 <code>#A9C4C2</code>、晶光 <code>#7DE6FF</code>、熾光 <code>#FF7A45</code>、雷光 <code>#B28CFF</code>、淵光 <code>#5B6CFF</code>）。</li>
+  <li><b>屬性徽記位</b>：每一張插圖在角色身上預留一個平面位置（肩甲、胸板或收光器側面），程式把屬性圖示（介面美術需求書 A5）以正確的透視貼上去。</li>
+  <li><b>核光萊姆照舊</b>：角色的主光（眼鏡頭、晶核）維持萊姆色，屬性色只在光紋遮罩的範圍內出現，避免整張圖變成彩虹。</li>
+</ul>
+<p>這樣一張插圖可以呈現六種屬性，<b>同一張插圖的六個屬性版本看起來是同一個角色換了光</b>，玩家也能一眼看出屬性。</p>
+</section>
+
+<!-- ============================================================ 06 -->
+<section class="chap">
+<h2><span class="num">06</span>探索者的圖片結構：從 7 層合成改為設計好的角色</h2>
+
+<h3>6.1 為什麼改</h3>
+<p>原設計（ART-ASSETS.md 第 1 節）是 7 層隨機合成：背景、光紋、背部、下裝、上裝、頭盔、手持物。這是頭像類 NFT（PFP）的做法，目的是讓每一張都獨一無二。但它和你要的效果衝突：</p>
+<table>
+  <tr><th style="width:44mm">7 層合成的限制</th><th>結果</th></tr>
+  <tr><td>所有圖層必須對齊同一個身體範本</td><td>只能是同一個姿勢、同一個鏡頭，通常是正面站立的全身照。這就是「一定要全身照、沒有動作、沒有鏡頭視角」的原因。</td></tr>
+  <tr><td>部件隨機組合，沒有人看過最終成品</td><td>無法保證每一個組合都好看；AI 生成的部件風格也很難彼此一致。</td></tr>
+  <tr><td>打光無法跟著組合調整</td><td>上裝、下裝、頭盔各自的光影對不上，看起來像紙娃娃。</td></tr>
+</table>
+<p>而 Lightdive 的探索者<b>不是頭像收藏品，而是遊戲單位</b>：它們 10 次航程後就會歸航燒毀，玩家大約每 10 天就要抽新的（白皮書第 4.6 節）。這更接近卡牌遊戲的卡片：同一種卡大家拿到的是同一張圖，價值來自稀有度和數值，而不是獨一無二的外觀。CryptoMines 的工人也是按稀有度分級的遊戲單位。</p>
+
+<h3>6.2 新的結構</h3>
+<table>
+  <tr><th>稀有度</th><th class="n">角色插圖</th><th>dna 的用途</th><th>每一位的差異來源</th></tr>
+  <tr><td class="k">微光</td><td class="n">4</td><td>從 4 張中挑 1 張（4 種底盤）</td><td rowspan="5">屬性色（光紋遮罩）、屬性徽記、光度數值、程式依 dna 產生的呼號（例如「PRB-0417」），以及卡框上的序號</td></tr>
+  <tr><td class="k">輝脈</td><td class="n">4</td><td>從 4 張中挑 1 張</td></tr>
+  <tr><td class="k">澄晶</td><td class="n">3</td><td>從 3 張中挑 1 張</td></tr>
+  <tr><td class="k">稜光</td><td class="n">3</td><td>從 3 張中挑 1 張</td></tr>
+  <tr><td class="k">曜核</td><td class="n">3</td><td>從 3 張中挑 1 張；<code>variant</code> 決定 6 款星紋背景之一</td></tr>
+  <tr><td colspan="2"><b>合計</b></td><td colspan="2"><b>17 張完整插圖</b>（每張附光紋遮罩、徽記位座標）＋曜核 6 款星紋背景＋各稀有度背景 4 張（微光到稜光）</td></tr>
+</table>
+<p>每張插圖的姿勢從第 05 章的姿勢組中選一個，同一稀有度內的幾張用不同的姿勢和造型。數量比原本的 66 個圖層少，但<b>每一張都是完整構圖、單獨修過的成品</b>。這是品質提升的關鍵：把力氣花在 17 張好圖，而不是 66 個要碰運氣組合的零件。</p>
+<div class="box warn">
+  <h4>重複率</h4>
+  <p>一副牌組的 5,000 位微光探索者只會有 4 種插圖（再乘上 6 種屬性色）。這是刻意的取捨，和卡牌遊戲相同。如果希望更多變化，可以在第一季後加開新的插圖（新賽季的新外觀，白皮書第 7.5 節已預留「新季可以推出新的特別款、星紋、座標和牌組外觀」）。</p>
+</div>
+
+<h3>6.3 每張探索者插圖的交付</h3>
+<div class="spec">
+  <div>角色</div><div><code>seeker_{稀有度1-5}_{編號}_char.png</code>：1024×1366，透明背景，角色本體（含萊姆主光，不含大範圍光暈）</div>
+  <div>光紋遮罩</div><div><code>…_attr_mask.png</code>：同尺寸，灰階，白色＝屬性光的位置與強度</div>
+  <div>發光層</div><div><code>…_glow.png</code>：同尺寸，黑底，萊姆主光與白熱部分，供程式做呼吸與 bloom</div>
+  <div>背景</div><div><code>seeker_bg_{稀有度1-4}.png</code>、<code>seeker_bg_radiant_{1-6}.png</code>：1024×1366，不透明，鏡頭角度與該稀有度一致</div>
+  <div>錨點</div><div>log 中記錄：屬性徽記位的四個角座標、角色的主光源位置</div>
+  <div>母檔</div><div>2048×2732 PSD</div>
+</div>
+</section>
+
+<!-- ============================================================ 07 -->
+<section class="chap">
+<h2><span class="num">07</span>製作流程：避開 AI 感的方法</h2>
+
+<h3>7.1 建議流程</h3>
+<table>
+  <tr><th style="width:8mm">#</th><th style="width:34mm">步驟</th><th>內容</th><th style="width:22mm">負責</th></tr>
+  <tr><td class="n">1</td><td>設定稿</td><td>每個職階先做一張設定稿：正、側、背三視圖與部件說明，像 Signal-Keeper 的四視圖。之後所有出圖都附上設定稿當參考圖。</td><td>你</td></tr>
+  <tr><td class="n">2</td><td>構圖草模</td><td>依本文件的鏡頭規格，用簡單的幾何方塊排出構圖：相機位置、仰角、主體大小、地平線。光塔特別需要這一步，才能讓五張的透視一致。</td><td>開發端可做（Blender 灰模，只作構圖參考，不作為成品）</td></tr>
+  <tr><td class="n">3</td><td>受控生成</td><td>用構圖草模的深度圖或線稿控制生成（多數工具稱為 ControlNet、結構參考或圖生圖），再加上設定稿當角色參考。不要只靠文字提示詞。</td><td>你</td></tr>
+  <tr><td class="n">4</td><td>挑選</td><td>每張圖至少生 20–40 張候選，依第 02 章的五個訊號和驗收清單挑選。</td><td>你</td></tr>
+  <tr><td class="n">5</td><td>修圖</td><td>補清楚的結構線、修正錯誤的部件（多出來的手指、不合理的接縫）、統一色調、加磨損與細節。<b>這一步是 AI 圖和專業圖的分水嶺</b>，不能省。</td><td>你</td></tr>
+  <tr><td class="n">6</td><td>拆層</td><td>依交付規格拆出角色、發光層、光紋遮罩。</td><td>你</td></tr>
+  <tr><td class="n">7</td><td>系列審查</td><td>同一批全部排成一張總覽，做縮圖、灰階、剪影三個測試。開發端放進遊戲後回傳實機截圖。</td><td>你＋開發端</td></tr>
+</table>
+
+<h3>7.2 另一條路線：3D 模型＋統一燈光渲染</h3>
+<p>CryptoMines 的質感來自 3D 模型（第 1.2 節）。如果 AI 2D 的成品達不到要求，可以改走這條路：</p>
+<table>
+  <tr><th style="width:8mm">#</th><th style="width:34mm">步驟</th><th>內容</th><th style="width:22mm">負責</th></tr>
+  <tr><td class="n">1</td><td>取得模型</td><td>依設定稿取得高品質的 3D 模型：向 3D 美術委託、從素材商店購買可商用的科幻角色或裝甲套件再改造，或用 AI 圖轉 3D（例如 NVIDIA Trellis）產生後由美術清理。</td><td>你（或外包）</td></tr>
+  <tr><td class="n">2</td><td>統一燈光與鏡頭</td><td>建立一套固定的攝影棚：主光、輪廓光、背景色調、相機高度、仰角與焦距，全部參數化。17 張探索者和 5 張光塔都用同一套設定渲染，一致性由程式保證。</td><td>開發端（Blender 自動渲染）</td></tr>
+  <tr><td class="n">3</td><td>分層輸出</td><td>同一次渲染直接輸出角色、發光層、光紋遮罩，不需要手工拆層，而且像素完全對齊。</td><td>開發端</td></tr>
+  <tr><td class="n">4</td><td>後製</td><td>調色、加景深與氛圍。</td><td>你＋開發端</td></tr>
+</table>
+<p class="small">這條路線的關鍵是第 1 步的模型品質。開發端可以負責燈光、鏡頭、批次渲染和分層，但建模本身需要 3D 美術或可商用的素材。兩條路線可以混用，例如光塔走 3D、探索者走 AI 2D。</p>
+
+<h3>7.3 系列一致性規則</h3>
+<ul>
+  <li><b>同一個工具、同一個模型版本</b>做完一整個系列。中途換工具，風格會跑掉。</li>
+  <li><b>固定的光向</b>：主光一律從畫面右上方來，輪廓光從左後方來。</li>
+  <li><b>固定的色票</b>：沿用介面美術需求書第 2.5 節，萊姆光不超過該稀有度的發光面積上限。</li>
+  <li><b>固定的提示詞段落</b>：每個職階有一段「角色設定段落」，出圖時一字不改，只改姿勢段落（和 Signal-Keeper 的做法相同）。</li>
+</ul>
+</section>
+
+<!-- ============================================================ 08 -->
+<section class="chap">
+<h2><span class="num">08</span>對文件與程式的影響，以及需要的決定</h2>
+
+<h3>8.1 合約</h3>
+<p><b>不需要修改。</b><code>rarity</code>、<code>trait</code>、<code>variant</code>、<code>dna</code> 的定義全部沿用。光度、航程、牌組數量等遊戲數值完全不受影響。</p>
+
+<h3>8.2 要更新的文件</h3>
+<table>
+  <tr><th>文件</th><th>位置</th><th>要改的內容</th></tr>
+  <tr><td>白皮書 v1.0</td><td>第 3.2 節、第 5.1 節、第 6.3 節、第 10 章</td><td>「7 層圖層肖像」「7 層外觀依稀有度從素材池隨機組合」「Metadata 產生器：合成 7 層探索者肖像」改為新的插圖結構；美術需求數量更新</td></tr>
+  <tr><td>ART-ASSETS.md</td><td>第 1、2 節</td><td>探索者改為 17 張插圖＋遮罩＋背景；光塔加上鏡頭與功能部件規格</td></tr>
+  <tr><td>《NFT 世界觀與故事 v3》</td><td>第 3 節（文案組）</td><td>探索者的視覺設定改為五個職階；拿掉年齡、人種與稀有度的對應</td></tr>
+</table>
+
+<h3>8.3 要更新的程式（開發端）</h3>
+<ul>
+  <li>Metadata 產生器：依 <code>dna</code> 選插圖、依 <code>trait</code> 套屬性色、依 <code>variant</code> 選星紋背景、產生呼號。</li>
+  <li>卡框與稀有度特效（第 02 章「程式加的」那一列）。</li>
+</ul>
+
+<h3>8.4 需要你決定的事</h3>
+<table>
+  <tr><th>#</th><th>決定</th><th>建議</th></tr>
+  <tr><td class="n">1</td><td>是否採用五職階（機械 → 純光）的探索者概念</td><td>採用</td></tr>
+  <tr><td class="n">2</td><td>探索者是否從 7 層合成改為設計好的插圖（17 張）</td><td>採用；第二季再加開新插圖</td></tr>
+  <tr><td class="n">3</td><td>五個職階的正式名稱（探光機、潛光員、晶甲衛、稜光行者、曜核之子是暫定）</td><td>交給文案組，四種語言一起定</td></tr>
+  <tr><td class="n">4</td><td>光塔的主光方向（建議右上）與仰角範圍（15–30°）</td><td>採用建議值，先做 Lv.1 和 Lv.5 兩張確認兩端</td></tr>
+  <tr><td class="n">5</td><td>是否要開發端做構圖草模</td><td>光塔要做（五張透視一致很重要）；探索者視需要</td></tr>
+</table>
+
+<div class="box key">
+  <h4>建議的第一步</h4>
+  <p>先做「兩端」：光塔 Lv.1 和 Lv.5、探索者微光和曜核各一張。兩端對了，中間三階只是插值；兩端不對，做完全部再改的成本最高。這四張完成後放進遊戲，用縮圖、灰階、剪影三個測試確認方向，再量產其餘的圖。</p>
+</div>
+
+<h3>8.5 參考資料</h3>
+<p class="src">
+Card Rarity Systems: How to Implement Them in Your TCG — https://www.hicreategames.com/card-rarity-systems-how-to-implement-them-in-your-tcg/<br>
+Riftbound Rarity Guide — https://www.eneba.com/hub/collectibles/riftbound-rarity-guide/<br>
+Gacha Art Base: Poses, Templates & Drawing Tips — https://skyryedesign.com/art/gacha-art-base/<br>
+Night Sky Gacha Backgrounds — https://journals.fugusau.edu.ng/night-sky-gacha-background/<br>
+Hearthstone Wiki: Quality — https://hearthstone.wiki.gg/wiki/Quality ；Diamond card — https://hearthstone.wiki.gg/wiki/Diamond_card ；Elite — https://hearthstone.wiki.gg/wiki/Elite<br>
+Gods Unchained: Review and Beginner's Guide (Decrypt) — https://decrypt.co/48379/gods-unchained-review-and-beginners-guide<br>
+Amplifying The Uncanny (arXiv:2002.06890) — https://arxiv.org/pdf/2002.06890<br>
+itch.io developer discussion on AI art consistency — https://itch.io/post/9142172<br>
+Low angle (Morphic glossary) — https://morphic.com/ai-glossary/low-angle ；Worm's eye view shot — https://morphic.com/resources/shots/worms-eye-view-shot<br>
+CryptoMines (CoinMarketCap) — https://coinmarketcap.com/currencies/cryptomines/ ；Cryptory guide — https://en.cryptory.net/post/cryptomines-scifi-nft-game-guide-for-beginners/<br>
+RovynCore repo：packages/contracts/lightdive/LightdiveNFT.sol、docs/lightdive/Lightdive-Whitepaper-v1.0.pdf、docs/lightdive/ART-ASSETS.md
+</p>
+</section>
+
+</body>
+</html>

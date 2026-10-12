@@ -16,11 +16,11 @@ interface IBurnableERC20 {
 
 /// @notice Sells Lightdive NFTs for RVYN with deck draws.
 /// Each kind is drawn from a deck with an exact number of cards per rarity (and, for Radiant
-/// cards, per special edition / signature background; for prisms, per beam). A card drawn is gone;
+/// seekers, per signature background; for prisms, per beam). A card drawn is gone;
 /// when a deck is empty the next one opens with the same composition. The live odds are therefore
 /// `left / remaining` and can be read from `deckOf`.
 /// Minting is two-step: `requestMint` takes payment, `fulfill` (callable by anyone) draws the cards
-/// once the hour's randomness is revealed.
+/// once the request slot's randomness is revealed (about a minute later).
 /// @dev Candidate, unaudited.
 contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -35,7 +35,6 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
         uint32 number;
         uint32 remaining;
         uint32[5] rarityLeft;
-        uint32[2] specialLeft; // Radiant spire / prism special editions
         uint32 signatureLeft; // Radiant seeker signature backgrounds
         uint32[3][5] beamLeft; // prisms only: per rarity, per beam (wide, focused, needle)
     }
@@ -44,7 +43,7 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
         address player;
         uint8 kind;
         uint16 qty;
-        uint64 hour;
+        uint64 slot;
         bool fulfilled;
         bytes32 entropy;
     }
@@ -71,11 +70,10 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
     uint16[5] internal PRISM_LUM = [10, 20, 32, 48, 70];
     uint16[5] internal SEEKER_LUM_LO = [20, 32, 48, 75, 120];
     uint16[5] internal SEEKER_LUM_HI = [30, 45, 68, 100, 160];
-    uint16 public constant SPECIAL_BONUS_BP = 400; // special editions: +4% luminance
 
     event TreasurySet(address treasury);
     event SpireSaleOpened(uint256 start);
-    event MintRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 hour, uint256 paid, uint256 discount);
+    event MintRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 slot, uint256 paid, uint256 discount);
     event MintFulfilled(uint256 indexed requestId, bool fallbackUsed);
     event DeckOpened(uint8 indexed kind, uint32 number);
 
@@ -139,8 +137,8 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
     function requestMint(uint8 kind, uint16 qty) external whenNotPaused nonReentrant returns (uint256 id) {
         if (kind > SEEKER) revert BadKind();
         if (qty == 0 || qty > maxPerTx(kind)) revert BadQuantity();
-        uint64 hour = beacon.currentHour();
-        if (!beacon.hasCommitment(hour)) revert NoRandomnessScheduled();
+        uint64 slot = beacon.currentSlot();
+        if (!beacon.hasCommitment(slot)) revert NoRandomnessScheduled();
 
         if (kind == SPIRE) {
             if (spireSaleStart == 0 || block.timestamp < spireSaleStart) revert SaleClosed();
@@ -161,18 +159,18 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
             player: msg.sender,
             kind: kind,
             qty: qty,
-            hour: hour,
+            slot: slot,
             fulfilled: false,
             entropy: keccak256(abi.encode(blockhash(block.number - 1), msg.sender, id))
         }));
-        emit MintRequested(id, msg.sender, kind, qty, hour, total, discount);
+        emit MintRequested(id, msg.sender, kind, qty, slot, total, discount);
     }
 
     /// @notice Draws and mints the cards of a request. Anyone may call it once randomness is ready.
     function fulfill(uint256 id) external nonReentrant {
         Request storage req = _requests[id];
         if (req.fulfilled) revert AlreadyFulfilled();
-        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(req.hour, req.entropy);
+        (bool ready, bool fallbackUsed, uint256 r) = beacon.randomFor(req.slot, req.entropy);
         if (!ready) revert NotReady();
         req.fulfilled = true;
         pending[req.kind] -= req.qty;
@@ -224,10 +222,8 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
         d.remaining = deckSize[kind];
         if (kind == SPIRE) {
             d.rarityLeft = [uint32(1440), 870, 450, 210, 30];
-            d.specialLeft = [uint32(3), 2]; // The Hollow Spire, Genesis Spire
         } else if (kind == PRISM) {
             d.rarityLeft = [uint32(3000), 1680, 900, 360, 60];
-            d.specialLeft = [uint32(6), 4]; // Echo Prism, Tear of the Core
             for (uint256 r; r < 5; ++r) {
                 uint32 n = d.rarityLeft[r];
                 uint32 wide = n * 4000 / 10_000;
@@ -296,19 +292,7 @@ contract LightdiveMinter is Ownable2Step, Pausable, ReentrancyGuard {
         }
 
         uint256 base = kind == SPIRE ? SPIRE_LUM[rarity] : PRISM_LUM[rarity];
-        uint256 lum = base * (90 + (u2 >> 64) % 21) / 100; // base +/- 10%
-        if (rarity == 4) {
-            uint256 x = u3 % radiantLeftBefore;
-            if (x < d.specialLeft[0]) {
-                d.specialLeft[0] -= 1;
-                a.variant = 1;
-            } else if (x < uint256(d.specialLeft[0]) + d.specialLeft[1]) {
-                d.specialLeft[1] -= 1;
-                a.variant = 2;
-            }
-            if (a.variant != 0) lum = lum * (10_000 + SPECIAL_BONUS_BP) / 10_000;
-        }
-        a.luminance = uint16(lum);
+        a.luminance = uint16(base * (90 + (u2 >> 64) % 21) / 100); // base +/- 10%
         a.trait = kind == SPIRE ? rarity + 1 : _pick3(d.beamLeft[rarity], u2);
     }
 }

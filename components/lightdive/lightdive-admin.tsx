@@ -28,8 +28,8 @@ const A = {
   supply: c("Supply and decks", "數量與牌組", "数量与牌组", "수량과 덱"),
   lowerCap: c("Lower live cap", "調低流通上限", "调低流通上限", "유통 상한 낮추기"),
   signal: c("Randomness signal", "隨機數訊號", "随机数信号", "무작위 신호"),
-  scheduled: c("hours ahead committed", "小時已預先承諾", "小时已预先承诺", "시간 사전 커밋"),
-  unrevealed: c("finished hours not revealed (last 6)", "最近 6 小時未揭曉", "最近 6 小时未揭晓", "최근 6시간 미공개"),
+  scheduled: c("days committed (today and the next two)", "天已預先承諾（今天與之後兩天）", "天已预先承诺（今天与之后两天）", "일 사전 커밋 (오늘과 이후 이틀)"),
+  unrevealed: c("latest revealed minute today (UTC)", "今天最後揭曉的分鐘（UTC）", "今天最后揭晓的分钟（UTC）", "오늘 마지막 공개 분 (UTC)"),
   operator: c("Operator", "營運者", "运营者", "운영자"),
   params: c("Parameters", "參數", "参数", "파라미터"),
   emission: c("Daily release (bp)", "每日釋出（bp）", "每日释放（bp）", "일일 방출 (bp)"),
@@ -64,7 +64,7 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
   const [pending, setPending] = useState<{ address: Address; abi: Abi; pendingOwner: Address }[]>([]);
   const [operator, setOperator] = useState<Address | null>(null);
   const [ahead, setAhead] = useState(0);
-  const [unrevealed, setUnrevealed] = useState(0);
+  const [lastReveal, setLastReveal] = useState<string>("—");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ emission: "", cap: "", p0: "", p1: "", p2: "", fund: "", capKind: "0", capValue: "" });
 
@@ -86,18 +86,14 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
       setPending(owned.map(([address, abi], i) => ({ address, abi, pendingOwner: pendingOwners[i] }))
         .filter((x) => x.pendingOwner !== "0x0000000000000000000000000000000000000000"));
       setOperator(op as Address);
-      const future = await Promise.all(Array.from({ length: 48 }, (_, i) =>
-        client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "hasCommitment", args: [ov.hour + BigInt(i + 1)] })));
-      setAhead(future.filter(Boolean).length);
-      const past = await Promise.all(Array.from({ length: 6 }, async (_, i) => {
-        const h = ov.hour - BigInt(i + 1);
-        const [has, rev] = await Promise.all([
-          client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "hasCommitment", args: [h] }),
-          client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "revealed", args: [h] }),
-        ]);
-        return Boolean(has) && !rev;
-      }));
-      setUnrevealed(past.filter(Boolean).length);
+      // One hash chain per UTC day: the operator keeps today and the next two committed.
+      const today = Number(ov.slot / 1440n);
+      const chains = (await Promise.all([0, 1, 2].map((i) =>
+        client.readContract({ address: k.beacon, abi: ABI.RandomnessBeacon, functionName: "chainOf", args: [today + i] })))) as [`0x${string}`, `0x${string}`, number][];
+      setAhead(chains.filter(([anchor]) => BigInt(anchor) !== 0n).length);
+      // Reveals happen only when a mint or dive waits, so an old value here just means a quiet day.
+      const knownPlusOne = Number(chains[0][2]);
+      setLastReveal(knownPlusOne === 0 ? "—" : `${String(Math.floor((knownPlusOne - 1) / 60)).padStart(2, "0")}:${String((knownPlusOne - 1) % 60).padStart(2, "0")}`);
     } catch (e) {
       toast.error((e as Error).message.slice(0, 200));
     }
@@ -169,9 +165,9 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
 
           <section className="ld-card">
             <h3>{t(A.signal)}</h3>
-            <p className="ld-mono">hour {String(o.hour)}</p>
-            <p><b className={ahead < 6 ? "ld-warn" : ""}>{ahead}/48</b> {t(A.scheduled)}</p>
-            <p><b className={unrevealed > 1 ? "ld-warn" : ""}>{unrevealed}</b> {t(A.unrevealed)}</p>
+            <p className="ld-mono">slot {String(o.slot)}</p>
+            <p><b className={ahead < 2 ? "ld-warn" : ""}>{ahead}/3</b> {t(A.scheduled)}</p>
+            <p><b>{lastReveal}</b> {t(A.unrevealed)}</p>
             <p className="ld-mono ld-dim">{t(A.operator)} {operator}</p>
           </section>
 
