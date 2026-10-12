@@ -25,7 +25,7 @@ contract LightdiveNFT is IERC721, IERC721Metadata, IERC721Errors, ERC2981, Ownab
         uint8 kind; // SPIRE, PRISM, SEEKER
         uint8 rarity; // 0 Glimmer .. 4 Radiant (internal: common .. mythic)
         uint8 trait; // spire: level 1-5; prism: beam 0-2; seeker: light attribute 0-5
-        uint8 variant; // 0 standard; spire/prism: special edition 1-2; seeker: signature background 1-6
+        uint8 variant; // 0 standard; seeker: signature background 1-6 (spires and prisms are always 0)
         uint16 luminance;
         uint16 voyagesLeft;
         uint32 deck; // deck number the NFT was drawn from

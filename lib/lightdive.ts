@@ -65,7 +65,7 @@ export type Attributes = {
   dna: bigint;
 };
 export type Nft = { id: bigint; attributes: Attributes };
-export type Deck = { number: number; remaining: number; rarityLeft: readonly number[]; specialLeft: readonly number[]; signatureLeft: number; beamLeft: readonly (readonly number[])[] };
+export type Deck = { number: number; remaining: number; rarityLeft: readonly number[]; signatureLeft: number; beamLeft: readonly (readonly number[])[] };
 export type Team = { spire: Nft; prism: Nft | null; seekers: Nft[]; luminance: bigint; lastDiveDay: number | null };
 export type DiveRecord = {
   id: bigint;

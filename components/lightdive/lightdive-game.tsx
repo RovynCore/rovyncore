@@ -13,7 +13,7 @@ import {
 } from "@/lib/lightdive";
 import {
   ATTRIBUTE, ATTRIBUTE_COLOR, BEAM, DEPTH, KIND_NAME, LOG_LINE, OUTCOME, RARITY, RARITY_COLOR, SIGNATURE,
-  SPECIAL_PRISM, SPECIAL_SPIRE, T, type Copy,
+  T, type Copy,
 } from "@/lib/lightdive-copy";
 import "./lightdive.css";
 
@@ -365,7 +365,7 @@ function TeamCard({ c, t, team, overview, busy, send }: {
       <header>
         <Glyph kind={KIND.spire} rarity={s.rarity} />
         <div>
-          <h3>{s.variant ? t(SPECIAL_SPIRE[s.variant - 1]) : t(KIND_NAME[KIND.spire])} #{String(team.spire.id)}</h3>
+          <h3>{t(KIND_NAME[KIND.spire])} #{String(team.spire.id)}</h3>
           <p className="ld-mono">{t(RARITY[s.rarity])} · Lv.{s.trait} · {t(T.voyages)} {s.voyagesLeft}</p>
         </div>
         <strong className="ld-lum">{lum}<small>{t(T.totalLum)}</small></strong>
@@ -409,8 +409,7 @@ function Vault({ t, nfts, teams }: { t: (v: Copy) => string; nfts: Nft[]; teams:
       <div className="ld-vault">
         {all.map((n) => {
           const a = n.attributes;
-          const name = a.kind === KIND.spire && a.variant ? t(SPECIAL_SPIRE[a.variant - 1])
-            : a.kind === KIND.prism && a.variant ? t(SPECIAL_PRISM[a.variant - 1]) : t(KIND_NAME[a.kind]);
+          const name = t(KIND_NAME[a.kind]);
           const detail = a.kind === KIND.spire ? `Lv.${a.trait}` : a.kind === KIND.prism ? t(BEAM[a.trait]) : t(ATTRIBUTE[a.trait]);
           return (
             <article key={String(n.id)} className="ld-nft" style={{ ["--rc" as string]: RARITY_COLOR[a.rarity] }}>
@@ -418,7 +417,6 @@ function Vault({ t, nfts, teams }: { t: (v: Copy) => string; nfts: Nft[]; teams:
               <h4>{name} <span className="ld-mono">#{String(n.id)}</span></h4>
               <p>{t(RARITY[a.rarity])} · {detail}</p>
               <p className="ld-mono">{t(T.luminance)} {a.luminance} · {t(T.voyages)} {a.voyagesLeft}</p>
-              {a.variant > 0 && a.kind !== KIND.seeker && <span className="ld-chip">{t(T.special)}</span>}
               {a.variant > 0 && a.kind === KIND.seeker && <span className="ld-chip">{t(T.signature)} · {t(SIGNATURE[a.variant - 1])}</span>}
             </article>
           );

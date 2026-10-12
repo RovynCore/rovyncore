@@ -3254,19 +3254,6 @@
   },
   {
    "inputs": [],
-   "name": "SPECIAL_BONUS_BP",
-   "outputs": [
-    {
-     "internalType": "uint16",
-     "name": "",
-     "type": "uint16"
-    }
-   ],
-   "stateMutability": "view",
-   "type": "function"
-  },
-  {
-   "inputs": [],
    "name": "SPIRE",
    "outputs": [
     {
@@ -3337,11 +3324,6 @@
        "internalType": "uint32[5]",
        "name": "rarityLeft",
        "type": "uint32[5]"
-      },
-      {
-       "internalType": "uint32[2]",
-       "name": "specialLeft",
-       "type": "uint32[2]"
       },
       {
        "internalType": "uint32",

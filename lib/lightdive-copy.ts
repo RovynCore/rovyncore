@@ -29,8 +29,6 @@ export const ATTRIBUTE: Copy[] = [
   c("Abysslight", "淵光", "渊光", "심연빛"),
 ];
 export const ATTRIBUTE_COLOR = ["#ffd98a", "#dde6ee", "#7fd3ff", "#ff6a3d", "#a97cff", "#1fa59a"];
-export const SPECIAL_SPIRE: Copy[] = [c("The Hollow Spire", "空心塔", "空心塔", "텅 빈 심장의 탑"), c("Genesis Spire", "創世塔", "创世塔", "창세의 탑")];
-export const SPECIAL_PRISM: Copy[] = [c("Echo Prism", "回聲稜鏡", "回声棱镜", "메아리 프리즘"), c("Tear of the Core", "核心之淚", "核心之泪", "코어의 눈물")];
 export const SIGNATURE: Copy[] = [
   c("Origin of First Light", "初光原點", "初光原点", "첫 빛의 기원"),
   c("Seven-Star Crown", "七星冠穹", "七星冠穹", "칠성의 관"),
@@ -111,7 +109,6 @@ export const T = {
   empty: c("Nothing here yet.", "這裡還沒有東西。", "这里还没有东西。", "아직 아무것도 없습니다."),
   voyages: c("Voyages left", "剩餘航程", "剩余航程", "남은 항해"),
   luminance: c("Luminance", "光度", "光度", "광도"),
-  special: c("Special Edition", "特別款", "特别款", "스페셜 에디션"),
   signature: c("Signature", "星紋", "星纹", "시그니처"),
   settleAll: c("Settle ready dives", "結算可結算的航程", "结算可结算的航程", "정산 가능한 항해 정산"),
   pending: c("In progress", "航行中", "航行中", "항해 중"),

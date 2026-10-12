@@ -229,6 +229,31 @@ test("mint: decks keep exact counts and the live cap holds", async () => {
   } finally { await w.done(); }
 });
 
+test("mint: spires and prisms have no special editions", async () => {
+  const w = await world();
+  try {
+    await w.commitAhead(400);
+    await w.ok(w.minter, "LightdiveMinter", "openSpireSale", [0n]);
+    await w.warpTo((await w.now()) + 49 * HOUR);
+    const ids = [];
+    for (let i = 0; i < 5; i++) ids.push(...(await w.mint(w.alice, SPIRE, 3)));
+    for (let i = 0; i < 4; i++) ids.push(...(await w.mint(w.alice, PRISM, 5)));
+    const spireLum = [40, 70, 110, 160, 230];
+    const prismLum = [10, 20, 32, 48, 70];
+    for (const id of ids) {
+      const a = await w.attrs(id);
+      assert.equal(a.variant, 0, "no special edition");
+      const base = (a.kind === SPIRE ? spireLum : prismLum)[a.rarity];
+      assert.ok(a.luminance >= Math.floor(base * 0.9) && a.luminance <= Math.floor(base * 1.1), "luminance is base +/- 10%, no bonus");
+      if (a.kind === SPIRE) assert.equal(a.trait, a.rarity + 1);
+    }
+    for (const kind of [SPIRE, PRISM]) {
+      const deck = await w.read(w.minter, "LightdiveMinter", "deckOf", [kind]);
+      assert.equal(deck.specialLeft, undefined, "the deck has no special-edition counters");
+    }
+  } finally { await w.done(); }
+});
+
 /** A Lv.1+ spire, optionally a prism, and seekers owned by `who`, minted in one go. */
 async function crew(w, who, seekers) {
   await w.ok(w.minter, "LightdiveMinter", "openSpireSale", [0n]).catch(() => {});
