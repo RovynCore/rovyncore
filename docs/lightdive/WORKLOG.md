@@ -146,9 +146,30 @@ PR：[RovynCore/rovyncore#1](https://github.com/RovynCore/rovyncore/pull/1)，�
 - 測試：新增「光塔與稜鏡沒有特別款」，`npm run test:lightdive` 9 項全數通過。
 - 文件：白皮書第 4.5、5.1、5.2、6.3、7.5、10、13 章與附錄 A 同步修改，決策紀錄新增第 16 項；ART-ASSETS 美術最低張數改為 93。
 
-### 3. 待辦
+### 3. 測試網重新部署（2026-10-12）
+
+部署區塊 133677672，地址記在 `packages/web3/lightdive.json`。舊的部署（區塊 130017649）停用，上面的測試 NFT 和 tRVYN 不轉移。
+
+| 合約 | 地址 |
+|---|---|
+| tRVYN（測試幣） | `0xe6ef63215a44ae735e65b3974eb4bbabb447dbbd` |
+| LightdiveConfig | `0xdc80e05dcfd0c40403a9fed83564f9426527abe8` |
+| LightdiveNFT | `0x317cce0cd9ae0bd370edbd88e47d4bce7fb8464d` |
+| RandomnessBeacon | `0xc3109e96d1b91218ff13168a17898e4f659f3002` |
+| CoreLightPool | `0xe078cf9895852a537efd436334adf1c8cccd2701` |
+| LightdiveMinter | `0x530e48e0cc7fa8eabca2ff1162de624c787f9c13` |
+| Expedition | `0x5a8cb0ae722e56039014159df1a67b7c810bd9bd` |
+
+- 核光池已注入 1,000,000 tRVYN；光塔已開賣（開賣後 48 小時內每錢包最多 3 座）。
+- 營運金庫與版稅收款：`0xEE4C435b9207bA5bB5f4860156409Ae78032ff6e`。
+- 其餘 9,000,000 tRVYN 與 6 個合約的管理權已轉向同一地址，**需在 `/admin/lightdive` 按「接受」才生效**。
+- 隨機數營運錢包沿用 `0xe36Da1C038F9b6B06688df7d60A6358586F06C90`，GitHub secrets 不用改。部署時沒有預先承諾隨機數（營運私鑰只在 GitHub secrets 裡），由營運排程補上。
+- 部署錢包 `0x985B3219D55737C65140cf0e948fBd0690636a62` 是在雲端工作環境產生的臨時測試網錢包，私鑰沒有保存，工作環境關閉後遺失；管理權已轉出，不影響控制權。
+
+### 4. 待辦
 
 | 事項 | 負責 |
 |---|---|
-| 測試網重新部署：`deckOf` 的回傳結構改變，網站已改用新的 ABI，在重新部署前測試網的牌組資訊會讀錯。步驟見 `README.md` 的 Testnet runbook（`npm run lightdive:deploy`），完成後提交新的 `packages/web3/lightdive.json`，並在 `/admin/lightdive` 重新接受管理權 | 老闆（需要私鑰） |
+| 在 `/admin/lightdive` 接受 6 個合約的管理權 | 老闆 |
+| 合併本分支到 main 並發布網站：正式網站與每 15 分鐘的營運排程都讀 main 上的 `lightdive.json`，合併前網站仍指向舊部署 | 老闆 |
 | 確認 NFT 美術設計書 v2.1 第 08 章的決定 | 老闆 |
