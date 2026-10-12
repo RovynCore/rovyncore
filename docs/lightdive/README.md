@@ -57,7 +57,7 @@ Everything below runs from a maintainer's own terminal. Private keys are read fr
      npx wrangler secret put OPERATOR_PRIVATE_KEY -c workers/lightdive-operator/wrangler.jsonc
      npx wrangler secret put LIGHTDIVE_SEED_SECRET -c workers/lightdive-operator/wrangler.jsonc
      ```
-     The Worker bundles `packages/web3/lightdive.json`, so redeploy it after every contract deployment.
+     Or let GitHub do it: `.github/workflows/lightdive-operator-deploy.yml` deploys the Worker and copies the operator secrets in (repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` needed). It runs by hand or whenever the deployment file changes on `main`, because the Worker bundles `packages/web3/lightdive.json` and must be redeployed after every contract deployment.
    - Backup: `.github/workflows/lightdive-operator.yml` every five minutes on `main` (repository secrets `LIGHTDIVE_OPERATOR_PRIVATE_KEY`, `LIGHTDIVE_SEED_SECRET`).
    - Local: `OPERATOR_PRIVATE_KEY=0x... LIGHTDIVE_SEED_SECRET=0x<64 random hex> npm run lightdive:operator -- --watch`
 
