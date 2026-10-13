@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ganache from "ganache";
 import { createPublicClient, createWalletClient, custom, defineChain, parseEther, keccak256, encodeAbiParameters } from "viem";
-import { tick, chainFor as operatorChain } from "../scripts/lightdive-operator-core.mjs";
+import { tick, seedAt, chainFor as operatorChain } from "../scripts/lightdive-operator-core.mjs";
 
 const A = JSON.parse(fs.readFileSync("packages/contracts/lightdive/artifacts/contracts.json", "utf8"));
 A.LaunchToken = JSON.parse(fs.readFileSync("packages/contracts/v2/artifacts/contracts.json", "utf8")).LaunchToken;
@@ -227,6 +227,7 @@ test("operator: commits days ahead and reveals only the slots that requests wait
     const [known, seed] = await w.read(w.beacon, "RandomnessBeacon", "seedOf", [BigInt(reqSlot)]);
     assert.ok(known);
     assert.equal(seed, operatorChain(secret, Math.floor(reqSlot / SLOTS_PER_DAY)).v[reqSlot % SLOTS_PER_DAY]);
+    assert.equal(seedAt(secret, Math.floor(reqSlot / SLOTS_PER_DAY), reqSlot % SLOTS_PER_DAY), seed);
     await w.ok(w.minter, "LightdiveMinter", "fulfill", [id], w.stranger);
     assert.deepEqual(await run(), [], "already revealed");
   } finally { await w.done(); }
