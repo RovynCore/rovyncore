@@ -10,6 +10,7 @@ import { keccak256, encodeAbiParameters, parseAbiItem } from "viem";
 export const SLOT_SECONDS = 60;
 export const SLOTS_PER_DAY = 1440;
 export const DAYS_AHEAD = 2; // commit today plus this many days
+const ZERO = `0x${"0".repeat(64)}`;
 const MAX_LOG_SPAN = 99_000n; // the public RPC allows 100,000 blocks per log query
 
 const MINT_REQUESTED = parseAbiItem(
@@ -26,6 +27,23 @@ export function chainFor(secret, day) {
   for (let i = SLOTS_PER_DAY - 2; i >= 0; i--) v[i] = keccak256(v[i + 1]);
   return { v, anchor: keccak256(v[0]) };
 }
+
+/** v[index] of one day, hashing only from the top of the chain down to it. */
+export function seedAt(secret, day, index) {
+  let x = keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint32" }], [secret, day]));
+  for (let i = SLOTS_PER_DAY - 1; i > index; i--) x = keccak256(x);
+  return x;
+}
+
+// Hashing a whole day takes 15-20 ms of CPU, more than a free-plan Worker run may use, so a pass
+// hashes only when it must: once a day to commit, and per reveal only down to the slot revealed.
+// Anchors are kept for the life of the isolate.
+const anchors = new Map();
+const anchorFor = (secret, day) => {
+  const key = `${secret}:${day}`;
+  if (!anchors.has(key)) anchors.set(key, keccak256(seedAt(secret, day, 0)));
+  return anchors.get(key);
+};
 
 /**
  * One operator pass. `lookbackBlocks` bounds how far back it looks for waiting requests.
@@ -44,11 +62,6 @@ export async function tick({ client, wallet, deployment, abi, secret, lookbackBl
     const receipt = await client.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") throw new Error(`${functionName} failed: ${hash}`);
   };
-  const chains = new Map();
-  const chain = (day) => {
-    if (!chains.has(day)) chains.set(day, chainFor(secret, day));
-    return chains.get(day);
-  };
 
   const now = Number(await read("currentSlot"));
   const today = Math.floor(now / SLOTS_PER_DAY);
@@ -56,11 +69,9 @@ export async function tick({ client, wallet, deployment, abi, secret, lookbackBl
   // 1. Commit today and the days ahead that have no anchor yet.
   for (let day = today; day <= today + DAYS_AHEAD; day++) {
     const [anchor] = await read("chainOf", [day]);
-    if (anchor === `0x${"0".repeat(64)}`) {
-      await write("commit", [day, chain(day).anchor]);
+    if (anchor === ZERO) {
+      await write("commit", [day, anchorFor(secret, day)]);
       done.push(`committed day ${day}`);
-    } else if (anchor !== chain(day).anchor) {
-      done.push(`day ${day}: anchor was not made with this secret`);
     }
   }
 
@@ -88,8 +99,9 @@ export async function tick({ client, wallet, deployment, abi, secret, lookbackBl
     const [known] = await read("seedOf", [BigInt(slot)]);
     if (known) continue;
     const [anchor] = await read("chainOf", [day]);
-    if (anchor !== chain(day).anchor) continue;
-    await write("reveal", [BigInt(slot), chain(day).v[slot % SLOTS_PER_DAY]]);
+    if (anchor === ZERO) continue;
+    // A wrong secret makes the simulated reveal revert, so it surfaces as an error.
+    await write("reveal", [BigInt(slot), seedAt(secret, day, slot % SLOTS_PER_DAY)]);
     done.push(`revealed slot ${slot}`);
   }
   return done;
