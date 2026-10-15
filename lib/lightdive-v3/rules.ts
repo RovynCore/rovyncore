@@ -240,9 +240,14 @@ export type DivePlan = {
 
 /** Everything that decides one dive, in the rulebook's order: base table, star event, overflow, choice. */
 export function planDive(t: TeamInput, d: Destination, sky: Sky, choice: Choice = "none"): DivePlan {
-  const power = teamPower(t);
+  return planOf({ power: teamPower(t), bonus: attunement(t, sky.lights[d.id]), beam: t.prism?.beam ?? 1 }, d, sky, choice);
+}
+
+/** The same plan from a dive's recorded numbers (power, attunement and beam, as Expedition3 stores them). */
+export function planOf(team: { power: number; bonus: number; beam: Beam }, d: Destination, sky: Sky, choice: Choice = "none"): DivePlan {
+  const { power } = team;
   const event = sky.events.get(d.id);
-  let risk = (t.prism?.beam ?? 1) as number;
+  let risk = team.beam as number;
   // basis points throughout, as LightdiveConfig3.plan
   let levyBp = Math.round(d.levy * 10000), coefBp = d.coefBp, wear2 = d.wear2, wear3 = d.wear3;
   if (event === "storm") { risk += 1; levyBp = Math.max(0, levyBp - 200); }
@@ -261,7 +266,7 @@ export function planDive(t: TeamInput, d: Destination, sky: Sky, choice: Choice 
     base[names.indexOf("normal")][0] += cut;
   }
   const table = choiceTable(base, choice);
-  return { destination: d, power, bonus: attunement(t, sky.lights[d.id]), risk: r, table, names, coef: coefBp / 10000, coefBp, levy: levyBp / 10000, wear2, wear3, event };
+  return { destination: d, power, bonus: team.bonus, risk: r, table, names, coef: coefBp / 10000, coefBp, levy: levyBp / 10000, wear2, wear3, event };
 }
 
 export type DiveResult = { outcome: Outcome; tier: number; multX100: number; wear: number };

@@ -9,7 +9,7 @@ import {
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { calm } from "./settings";
-import { divesOn, otherDives, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
+import { divesOn, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
 import { CIRCLED, ERROR, OUTCOME, OUTCOME_TONE, SLOT, STAR } from "./copy";
 import { tl } from "@/lib/lightdive-v3/i18n";
 
@@ -46,15 +46,14 @@ export function Dispatch({ sim, onClose, onDeparted }: { sim: Sim; onClose: () =
   const [pick, setPick] = useState<Record<number, number>>(() => Object.fromEntries(rows.filter((r) => !r.busy && !r.full && r.best >= 0).slice(0, left).map((r) => [r.spire, r.best])));
   const [msg, setMsg] = useState<string | null>(null);
   const chosen = Object.entries(pick).filter(([, d]) => d >= 0);
-  const go = () => {
+  const go = async () => {
     const errors: string[] = [];
-
-    for (const [spire, dest] of chosen) {
-      const r = sim.dive(Number(spire), dest);
+    const results = await sim.diveMany(chosen.map(([spire, dest]) => ({ spire: Number(spire), dest })));
+    results.forEach((r, i) => {
       if (r.error) errors.push(ERROR[r.error]);
-      else onDeparted(r.id!, r.card, dest);
-    }
-    if (errors.length) setMsg(errors.join(" "));
+      else onDeparted(r.id!, r.card, chosen[i][1]);
+    });
+    if (errors.length) setMsg([...new Set(errors)].join(" "));
     else onClose();
   };
   return (
@@ -98,7 +97,7 @@ export function Ranking({ sim }: { sim: Sim }) {
   const startOfDay = sim.today * 86_400_000;
   const hours = Math.max(1, Math.ceil((sim.now - startOfDay) / 3_600_000));
   const bucket = Math.floor(sim.now / 60_000);
-  const others = useMemo(() => otherDives(bucket * 60_000, 400, hours), [bucket, hours]);
+  const others = useMemo(() => sim.feed(bucket * 60_000, 400, hours), [sim, bucket, hours]);
   const rows = [
     ...others.filter((o) => o.at >= startOfDay && o.outcome).map((o) => ({ id: o.id, who: o.who, dest: o.dest, mult: o.mult ?? 0, outcome: o.outcome!, me: false })),
     ...divesOn(s, sim.today).filter((d) => d.result).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, mult: d.result!.multX100, outcome: d.result!.outcome as string, me: true })),
@@ -191,7 +190,7 @@ export function ShareButtons({ d }: { d: SimDive }) {
 /** A banner when anyone (simulated others in the preview) brings back a legend or great result. */
 export function Broadcast({ sim }: { sim: Sim }) {
   const bucket = Math.floor(sim.now / 15_000);
-  const latest = useMemo(() => otherDives(bucket * 15_000, 30, 2).filter((o) => o.outcome === "legend" || (o.outcome === "great" && (o.mult ?? 0) >= 280)), [bucket]);
+  const latest = useMemo(() => sim.feed(bucket * 15_000, 30, 2).filter((o) => o.outcome === "legend" || (o.outcome === "great" && (o.mult ?? 0) >= 280)), [sim, bucket]);
   const [shown, setShown] = useState<string | null>(null);
   const [seen] = useState(() => new Set(latest.map((o) => o.id)));
   const fresh = latest.find((o) => !seen.has(o.id) && sim.now - o.at < 10 * 60_000);

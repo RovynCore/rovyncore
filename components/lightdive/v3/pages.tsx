@@ -17,7 +17,7 @@ import {
 } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 
-export type View = "lobby" | "dive" | "plain" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
+export type View = "lobby" | "dive" | "plain" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
 const DAY = 86_400_000;
 
 const alive = (n: SimNft) => !n.homeAt;
@@ -32,7 +32,12 @@ export function rovynPool(sim: Sim): readonly string[] {
   if (s.dives.some((d) => d.pending)) return r.collect;
   if (s.dives.some((d) => deciding(d, sim.now))) return r.eventPending;
   const used = divesOn(s, sim.today).length;
-  if (used < DIVES_PER_DAY) return r.recommend;
+  if (used < DIVES_PER_DAY) {
+    // lines that name a destination need a team that can reach one
+    const reach = s.teams.some((t) => t.seekers.length && teamPower(teamInput(s, t)) >= DESTINATIONS[0].threshold);
+    const lines = reach ? r.recommend : r.recommend.filter((l) => !l.includes("{目的地}"));
+    return lines.length ? lines : r.idle;
+  }
   // with the fee already at 0, the lines that quote a fee or a wait make no sense
   if (s.credit > 0.5) return claimFee((sim.now - s.lastClaimAt) / DAY) > 0 ? r.claim : r.claim.filter((l) => !l.includes("{天}") && !l.includes("{費}"));
   return r.idle;

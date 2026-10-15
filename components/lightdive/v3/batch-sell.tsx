@@ -4,12 +4,12 @@
 // passing cards they no longer use to others). On chain this is one LightdiveMarket3.listMany transaction, up to
 // LIST_BATCH cards, after a one-time approval of the market for the player's cards. Each card keeps its own price;
 // the default is the same reference the single sell dialog uses. Nothing here judges whether a price is a good deal.
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Tags } from "lucide-react";
 import { LIST_BATCH, MARKET_TAX, PRICE, TAX_TO_POOL, type Kind } from "@/lib/lightdive-v3/rules";
 import { NftArt } from "../game/art";
 import { idleCards, type Sim } from "./sim";
-import { averagePrice, othersListings } from "./market-data";
+import { averagePrice } from "./market-data";
 import { Modal, RarityTag, Tile, Trait, Voyages } from "./kit";
 import { ERROR, KIND, RARITY_COLOR, fmt } from "./copy";
 import { play } from "./audio";
@@ -19,7 +19,7 @@ export function BatchSell({ sim, picked, onClose, onDone }: { sim: Sim; picked?:
   const s = sim.state!;
   // the cards on offer are fixed when the dialog opens, so a card listed or moved elsewhere doesn't jump around
   const [cards] = useState(() => idleCards(s).sort((a, b) => a.kind - b.kind || b.rarity - a.rarity || b.power - a.power));
-  const market = useMemo(() => othersListings(sim.now, s.sold ?? []), [sim.now, s.sold]);
+  const market = sim.market;
   const [prices, setPrices] = useState<Record<number, number>>(() =>
     Object.fromEntries(cards.map((n) => [n.id, Math.round(averagePrice(market, n.kind, n.rarity)?.average ?? PRICE[n.kind as Kind])])));
   const [on, setOn] = useState<Set<number>>(() => new Set((picked ?? []).filter((id) => cards.some((n) => n.id === id)).slice(0, LIST_BATCH)));
@@ -32,8 +32,8 @@ export function BatchSell({ sim, picked, onClose, onDone }: { sim: Sim; picked?:
     if (next.has(id)) next.delete(id); else if (next.size < LIST_BATCH) next.add(id);
     return next;
   });
-  const go = () => {
-    const e = sim.listMany(chosen.map((n) => ({ id: n.id, price: prices[n.id] })));
+  const go = async () => {
+    const e = await sim.listMany(chosen.map((n) => ({ id: n.id, price: prices[n.id] })));
     if (e) { setError(ERROR[e]); return; }
     play("claim");
     onDone(tl("已上架 {0} 張卡，總價 {1} $RVYN。", { 0: chosen.length, 1: fmt(total) }));

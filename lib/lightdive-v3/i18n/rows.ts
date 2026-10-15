@@ -18,5 +18,6 @@ import { PUNCT } from "./punct";
 import { IDLE } from "./idle";
 import { NEXT } from "./next";
 import { ALERTS } from "./alerts";
+import { LIVE } from "./live";
 
-export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS];
+export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS, LIVE];

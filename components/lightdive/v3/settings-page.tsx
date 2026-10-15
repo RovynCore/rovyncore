@@ -84,17 +84,17 @@ export function Settings({ sim, muted, toggleMute, musicOn, toggleMusic }: { sim
             <span><b>{tl("重新看新手引導")}</b><small>{tl("下次打開潛光頁時，從星圖開始重新帶一次。")}</small></span>
             <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => { try { localStorage.removeItem(COACH_KEY); } catch {} setMsg(tl("新手引導已重置，到潛光頁就會出現。")); play("toggle"); }}>{tl("重置引導")}</button>
           </div>
-          <div className="v3-setrow">
+          {sim.reset && <div className="v3-setrow">
             <span><b>{tl("重置預覽資料")}</b><small>{tl("清掉這台裝置上的預覽進度（卡片、隊伍、紀錄），回到剛開始的狀態。只影響預覽，不影響鏈上任何東西。")}</small></span>
             {resetting ? (
               <span className="v3-setrow__confirm">
                 <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => setResetting(false)}>{tl("取消")}</button>
-                <button type="button" className="hud-btn hud-btn--danger hud-btn--sm" onClick={() => { sim.reset(); setResetting(false); setMsg(tl("預覽資料已重置。")); }}>{tl("確定重置")}</button>
+                <button type="button" className="hud-btn hud-btn--danger hud-btn--sm" onClick={() => { sim.reset?.(); setResetting(false); setMsg(tl("預覽資料已重置。")); }}>{tl("確定重置")}</button>
               </span>
             ) : (
               <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => setResetting(true)}>{tl("重置…")}</button>
             )}
-          </div>
+          </div>}
         </section>
       </div>
     </div>

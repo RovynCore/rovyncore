@@ -35,7 +35,8 @@ const PITCH: Record<Kind, string> = localized({
   1: "裝在光塔頂端，決定隊伍的風險風格：廣域求穩、聚焦標準、針芒求搏。",
   2: "坐上光塔出發的人。六種光紋，和目的地同頻時帶回更多。",
 });
-const PULLS = [1, 5, 10];
+/** Cards per summon, as LightdiveMinter3.maxPerTx allows: spires 3, prisms 5, seekers 10. */
+const PULLS: Record<Kind, number[]> = { 0: [1, 3], 1: [1, 5], 2: [1, 5, 10] };
 const STEP = 420;
 
 type Pull = { id: number; kind: Kind; qty: number };
@@ -46,8 +47,8 @@ export function Summon({ sim }: { sim: Sim }) {
   const [hidden, setHidden] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [inspect, setInspect] = useState<number | null>(null);
-  const start = (kind: Kind, qty: number) => {
-    const r = sim.mint(kind, qty);
+  const start = async (kind: Kind, qty: number) => {
+    const r = await sim.mint(kind, qty);
     if (r.error || r.id === undefined) { setMsg(ERROR[r.error ?? "balance"]); return; }
     setMsg(null);
     setPull({ id: r.id, kind, qty });
@@ -107,6 +108,7 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
   const mine = s.nfts.filter((n) => n.kind === kind && owned(n));
   const top = mine.reduce((a, n) => Math.max(a, n.rarity), -1);
   const art = BANNER_ART[kind];
+  const price = sim.chain?.prices[kind] || PRICE[kind]; // the live price on chain (it may move within its bounds)
   return (
     <section className={`v3-banner k${kind}`} style={{ ["--accent" as string]: ACCENT[kind], ["--photo" as string]: `url(${BANNER_PHOTO[kind]})` }}>
       <div className="v3-banner__art">
@@ -130,7 +132,7 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
       <div className="v3-banner__side">
         <div className="v3-banner__price">
           <small>{tl("單抽價格")}</small>
-          <b>{fmt(PRICE[kind])}</b><em>$RVYN</em>
+          <b>{fmt(price)}</b><em>$RVYN</em>
           <span>{tl("每天依流動池均價調整，範圍 {0}", { 0: PRICE[kind] * PRICE_FLOOR })}–{PRICE[kind] * PRICE_CEILING}</span>
         </div>
         <ul className="v3-droprates">
@@ -144,10 +146,10 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
           ))}
         </ul>
         <div className="v3-banner__pulls">
-          {PULLS.map((q) => (
-            <button key={q} type="button" className={`v3-pullbtn${q > 1 ? " is-multi" : ""}`} disabled={busy || s.balance < PRICE[kind] * q} onClick={() => onPull(q)}>
+          {PULLS[kind].map((q) => (
+            <button key={q} type="button" className={`v3-pullbtn${q > 1 ? " is-multi" : ""}`} disabled={busy || s.balance < price * q} onClick={() => onPull(q)}>
               <span>{tl("召喚 ×{0}", { 0: q })}</span>
-              <small>{fmt(PRICE[kind] * q)} $RVYN</small>
+              <small>{fmt(price * q)} $RVYN</small>
             </button>
           ))}
         </div>
@@ -233,7 +235,7 @@ function PullScreen({ sim, pull, onInspect, onHide, onDone, onAgain }: { sim: Si
   const allOpen = cards.length > 0 && cards.every((n) => open.has(n.id));
   const progress = req ? Math.min(1, (sim.now - req.at) / Math.max(1, req.revealAt - req.at)) : 1;
   const counts = [4, 3, 2, 1, 0].map((r) => ({ r, c: cards.filter((n) => n.rarity === r).length })).filter((x) => x.c);
-  const cost = PRICE[pull.kind] * pull.qty;
+  const cost = (sim.chain?.prices[pull.kind] || PRICE[pull.kind]) * pull.qty;
   const phaseName = !ready ? "charge" : phase;
   useEffect(() => {
     pending.current.progress = progress;

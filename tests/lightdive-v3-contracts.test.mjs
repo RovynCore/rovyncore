@@ -542,3 +542,39 @@ test("market: listMany lists up to 20 idle cards in one transaction, all or noth
     await w.done();
   }
 });
+
+test("TestRVYN (testnet only): the faucet gives once per period, the owner mints and bounds the faucet, anyone can burn", async () => {
+  const provider = ganache.provider({ logging: { quiet: true }, wallet: { totalAccounts: 3, defaultBalance: 100 }, chain: { chainId: 31337, hardfork: "shanghai" } });
+  const chain = defineChain({ id: 31337, name: "Local", nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: ["http://localhost"] } } });
+  const client = createPublicClient({ chain, transport: custom(provider), cacheTime: 0 });
+  const wallet = createWalletClient({ chain, transport: custom(provider) });
+  const [owner, player, other] = await wallet.getAddresses();
+  try {
+    const hash = await wallet.deployContract({ account: owner, abi: A.TestRVYN.abi, bytecode: A.TestRVYN.bytecode, args: [owner], gas: 5_000_000n });
+    const token = (await client.waitForTransactionReceipt({ hash })).contractAddress;
+    const send = async (account, fn, args = []) => (await client.waitForTransactionReceipt({ hash: await wallet.writeContract({ account, address: token, abi: A.TestRVYN.abi, functionName: fn, args, gas: 500_000n }) })).status;
+    const read = (fn, args = []) => client.readContract({ address: token, abi: A.TestRVYN.abi, functionName: fn, args });
+    const warp = async (s) => { await provider.request({ method: "evm_increaseTime", params: [s] }); await provider.request({ method: "evm_mine", params: [] }); };
+
+    assert.equal(await read("symbol"), "tRVYN");
+    assert.equal(await read("nextDripAt", [player]), 0n, "a new wallet may take at once");
+    assert.equal(await send(player, "drip"), "success");
+    assert.equal(await read("balanceOf", [player]), E("1000"));
+    assert.equal(await send(player, "drip"), "reverted", "not twice a day");
+    await warp(DAY);
+    assert.equal(await send(player, "drip"), "success", "again a day later");
+    assert.equal(await read("balanceOf", [player]), E("2000"));
+
+    assert.equal(await send(player, "mint", [player, E("1")]), "reverted", "only the owner mints");
+    assert.equal(await send(owner, "mint", [other, E("5")]), "success");
+    assert.equal(await send(player, "setDrip", [E("1"), 3600]), "reverted", "only the owner sets the faucet");
+    assert.equal(await send(owner, "setDrip", [E("100001"), 3600]), "reverted", "at most 100,000 per drip");
+    assert.equal(await send(owner, "setDrip", [E("500"), 600]), "reverted", "at least an hour apart");
+    assert.equal(await send(owner, "setDrip", [E("500"), 3600]), "success");
+
+    assert.equal(await send(other, "burn", [E("2")]), "success", "burnable, as the game needs");
+    assert.equal(await read("balanceOf", [other]), E("3"));
+  } finally {
+    await provider.disconnect();
+  }
+});

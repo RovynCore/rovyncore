@@ -5,7 +5,6 @@
 import { useState } from "react";
 import { ODDS_BP, seeded, type Kind } from "@/lib/lightdive-v3/rules";
 import { type Sim } from "./sim";
-import { othersListings } from "./market-data";
 import { RarityGem } from "./kit";
 import { KIND, RARITY_COLOR, TIER, ago, clock, fmt } from "./copy";
 import { tl, localized } from "@/lib/lightdive-v3/i18n";
@@ -61,8 +60,7 @@ const DU_LINES = localized([
 
 export function DockKeeper({ sim }: { sim: Sim }) {
   const [i, setI] = useState(0);
-  const day = Math.floor(sim.now / 86_400_000);
-  const today = othersListings(day * 86_400_000 + 86_399_000, sim.state!.sold ?? []);
+  const today = sim.market;
   const listed = today.filter((l) => l.listedAt <= sim.now).length;
   const sales = (sim.state!.sales ?? []).length;
   return (

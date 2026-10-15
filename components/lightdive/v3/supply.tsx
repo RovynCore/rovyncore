@@ -4,7 +4,7 @@
 // how many are on the market and how many sit unused. Cards that sit unused keep their place under the cap until they
 // come home, so the split is shown as plain facts. Blocks, not bars (UI rule): ten blocks per kind, one per tenth.
 import { ALIVE_CAP, type Kind } from "@/lib/lightdive-v3/rules";
-import { othersListings, simulatedSupply, type Supply } from "./market-data";
+import type { Supply } from "./market-data";
 import type { Sim } from "./sim";
 import { KIND } from "./copy";
 import { tl } from "@/lib/lightdive-v3/i18n";
@@ -13,12 +13,11 @@ const ACCENT: Record<Kind, string> = { 0: "#f0c766", 1: "#7fd3ff", 2: "#c9ff55" 
 
 export function CardSupply({ sim }: { sim: Sim }) {
   const s = sim.state!;
-  const day = Math.floor(sim.now / 86_400_000);
-  const market = othersListings(sim.now, s.sold ?? []);
+  const market = sim.market;
   const mine = s.listings ?? [];
   const listed = ([0, 1, 2] as Kind[]).map((k) =>
     market.filter((l) => l.kind === k).length + mine.filter((l) => s.nfts.find((n) => n.id === l.nftId)?.kind === k).length) as [number, number, number];
-  const supply = simulatedSupply(day, listed);
+  const supply = sim.supply(listed);
   return (
     <section className="v3-supply" aria-labelledby="v3-supply-title">
       <header>

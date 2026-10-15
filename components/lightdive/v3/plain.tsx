@@ -99,10 +99,10 @@ export function Plain({ sim, go }: { sim: Sim; go: (v: View) => void }) {
     try { sessionStorage.setItem(TEAM_KEY, String(id)); } catch {}
     play("click");
   };
-  const apply = (t: SimTeam) => {
+  const apply = async (t: SimTeam) => {
     if (busy) return;
     const v = teamPower(teamInput(s, t)) - power;
-    const e = sim.setTeam(t);
+    const e = await sim.setTeam(t);
     setMsg(e ? ERROR[e] : null);
     if (!e && v) setDelta((p) => ({ v, k: (p?.k ?? 0) + 1 }));
   };
@@ -274,13 +274,13 @@ export function Plain({ sim, go }: { sim: Sim; go: (v: View) => void }) {
       )}
       {picking && (
         <Picker sim={sim} team={team} spire={spire} slot={picking} onClose={() => setPicking(null)}
-          onPick={(n, from) => {
-            if (from) sim.setTeam({ ...from, prism: from.prism === n.id ? undefined : from.prism, seekers: from.seekers.filter((x) => x !== n.id) });
-            if (picking.kind === 1) apply({ ...team, prism: n.id });
+          onPick={async (n, from) => {
+            if (from) await sim.setTeam({ ...from, prism: from.prism === n.id ? undefined : from.prism, seekers: from.seekers.filter((x) => x !== n.id) });
+            if (picking.kind === 1) void apply({ ...team, prism: n.id });
             else {
               const list = [...team.seekers];
               if (picking.index < list.length) list[picking.index] = n.id; else list.push(n.id);
-              apply({ ...team, seekers: list });
+              void apply({ ...team, seekers: list });
             }
             play("click");
             setPicking(null);

@@ -5,6 +5,7 @@ import { Address } from "@/components/rv/ui";
 import Link from "@/components/site-link";
 import { useLanguage } from "@/components/language-provider";
 import { RvynHealthPanel } from "@/components/rvyn-health-panel";
+import { useLiveSupply } from "@/components/lightdive/v3/supply-live";
 import type { Locale } from "@/lib/translations";
 
 type Copy = Record<Locale, string>;
@@ -49,7 +50,7 @@ const copy = {
   report: { en: "Found a security issue? Email via the contact in /.well-known/security.txt or message @RovynCORE on X.", "zh-Hant": "發現安全問題？請見 /.well-known/security.txt，或在 X 私訊 @RovynCORE。", "zh-Hans": "发现安全问题？请见 /.well-known/security.txt，或在 X 私信 @RovynCORE。", ko: "보안 문제를 발견하셨나요? /.well-known/security.txt를 확인하거나 X에서 @RovynCORE에 메시지를 보내세요." },
   source: { en: "Source code on GitHub (MIT)", "zh-Hant": "GitHub 原始碼（MIT）", "zh-Hans": "GitHub 源码（MIT）", ko: "GitHub 소스 코드 (MIT)" },
   supplyTitle: { en: "Lightdive v3 cards in play", "zh-Hant": "潛光遠征 v3 卡片數量", "zh-Hans": "潜光远征 v3 卡片数量", ko: "라이트다이브 v3 카드 수량" },
-  supplyBody: { en: "Each of the three Lightdive v3 card kinds has a cap on how many can exist at once: 3,000 spires, 6,000 prisms and 12,000 seekers. Docked and listed cards count; a place frees up only when a card comes home. Once the contracts are deployed, this table will read from the chain how many of each kind exist, how many are on teams and how many are listed on the market, so anyone can see how many places are held by cards nobody is using.", "zh-Hant": "潛光遠征 v3 的三種卡，同時存在的數量都有上限：光塔 3,000、稜鏡 6,000、探索者 12,000。停泊中和上架中的卡也算在內，卡歸航後名額才會空出。合約部署後，這張表會直接從鏈上讀取每種卡存在幾張、幾張在隊伍上、幾張在市集上架，讓所有人都看得到有多少名額被沒有在使用的卡佔著。", "zh-Hans": "潜光远征 v3 的三种卡，同时存在的数量都有上限：光塔 3,000、棱镜 6,000、探索者 12,000。停泊中和上架中的卡也算在内，卡归航后名额才会空出。合约部署后，这张表会直接从链上读取每种卡存在几张、几张在队伍上、几张在市集上架，让所有人都看得到有多少名额被没有在使用的卡占着。", ko: "라이트다이브 v3의 세 가지 카드는 동시에 존재할 수 있는 수량에 상한이 있습니다: 광탑 3,000, 프리즘 6,000, 탐색자 12,000. 정박 중이거나 등록된 카드도 포함되며, 카드가 귀항해야 자리가 비워집니다. 컨트랙트가 배포되면 이 표는 종류별로 존재하는 수, 팀에 있는 수, 마켓에 등록된 수를 체인에서 직접 읽어, 사용되지 않는 카드가 차지한 자리를 누구나 볼 수 있게 합니다." },
+  supplyBody: { en: "Each of the three Lightdive v3 card kinds has a cap on how many can exist at once: 3,000 spires, 6,000 prisms and 12,000 seekers. Docked and listed cards count; a place frees up only when a card comes home. This table reads from the chain how many of each kind exist, how many are on teams and how many are listed on the market, so anyone can see how many places are held by cards nobody is using.", "zh-Hant": "潛光遠征 v3 的三種卡，同時存在的數量都有上限：光塔 3,000、稜鏡 6,000、探索者 12,000。停泊中和上架中的卡也算在內，卡歸航後名額才會空出。這張表直接從鏈上讀取每種卡存在幾張、幾張在隊伍上、幾張在市集上架，讓所有人都看得到有多少名額被沒有在使用的卡佔著。", "zh-Hans": "潜光远征 v3 的三种卡，同时存在的数量都有上限：光塔 3,000、棱镜 6,000、探索者 12,000。停泊中和上架中的卡也算在内，卡归航后名额才会空出。这张表直接从链上读取每种卡存在几张、几张在队伍上、几张在市集上架，让所有人都看得到有多少名额被没有在使用的卡占着。", ko: "라이트다이브 v3의 세 가지 카드는 동시에 존재할 수 있는 수량에 상한이 있습니다: 광탑 3,000, 프리즘 6,000, 탐색자 12,000. 정박 중이거나 등록된 카드도 포함되며, 카드가 귀항해야 자리가 비워집니다. 이 표는 종류별로 존재하는 수, 팀에 있는 수, 마켓에 등록된 수를 체인에서 직접 읽어, 사용되지 않는 카드가 차지한 자리를 누구나 볼 수 있게 합니다." },
   supplyKind: { en: "Card", "zh-Hant": "種類", "zh-Hans": "种类", ko: "종류" },
   supplyCap: { en: "Cap", "zh-Hant": "上限", "zh-Hans": "上限", ko: "상한" },
   supplyAlive: { en: "In existence", "zh-Hant": "存在", "zh-Hans": "存在", ko: "존재" },
@@ -59,12 +60,14 @@ const copy = {
   supplySpire: { en: "Spires", "zh-Hant": "光塔", "zh-Hans": "光塔", ko: "광탑" },
   supplyPrism: { en: "Prisms", "zh-Hant": "稜鏡", "zh-Hans": "棱镜", ko: "프리즘" },
   supplySeeker: { en: "Seekers", "zh-Hant": "探索者", "zh-Hans": "探索者", ko: "탐색자" },
-  supplyStatus: { en: "Lightdive v3 contracts are not deployed yet (unaudited). No figures until they are.", "zh-Hant": "潛光遠征 v3 合約尚未部署（未經審計），部署前沒有數字。", "zh-Hans": "潜光远征 v3 合约尚未部署（未经审计），部署前没有数字。", ko: "라이트다이브 v3 컨트랙트는 아직 배포되지 않았습니다(감사 미실시). 배포 전에는 수치가 없습니다." },
+  supplyStatus: { en: "Figures from the Lightdive testnet (test tokens with no value; contracts not audited). They are replaced by mainnet figures when the game launches on mainnet.", "zh-Hant": "數字來自潛光遠征測試網（測試幣沒有價值；合約未經審計）。遊戲上正式網後，會換成正式網的數字。", "zh-Hans": "数字来自潜光远征测试网（测试币没有价值；合约未经审计）。游戏上正式网后，会换成正式网的数字。", ko: "수치는 라이트다이브 테스트넷에서 가져옵니다(가치 없는 테스트 토큰, 컨트랙트 미감사). 게임이 메인넷에 출시되면 메인넷 수치로 바뀝니다." },
+  supplyMainnet: { en: "Figures from Lightdive on Robinhood Chain mainnet. The contracts are not audited.", "zh-Hant": "數字來自 Robinhood Chain 正式網上的潛光遠征。合約未經審計。", "zh-Hans": "数字来自 Robinhood Chain 正式网上的潜光远征。合约未经审计。", ko: "Robinhood Chain 메인넷의 라이트다이브 수치입니다. 컨트랙트는 감사를 받지 않았습니다." },
   legal: { en: "Legal notice", "zh-Hant": "法律聲明", "zh-Hans": "法律声明", ko: "법적 고지" },
 } satisfies Record<string, Copy>;
 
-// Lightdive v3 caps (LightdiveNFT3.maxAlive). `null` figures until the contracts are deployed; then alive comes from
-// LightdiveNFT3.alive(kind), listed from the market's escrow and on-teams from the Locked events.
+// Lightdive v3 caps (LightdiveNFT3.maxAlive). The live figures come from the deployment the game plays on
+// (components/lightdive/v3/supply-live.ts): alive from LightdiveNFT3.alive(kind), listed from the market, on-teams from
+// the Locked events.
 const supply = [
   { name: copy.supplySpire, cap: 3000 },
   { name: copy.supplyPrism, cap: 6000 },
@@ -84,6 +87,7 @@ const rows = [
 export default function TransparencyPage() {
   const { locale } = useLanguage();
   const t = (value: Copy) => value[locale];
+  const live = useLiveSupply();
   return (
     <main>
       <section className="rv-pagehead">
@@ -127,20 +131,24 @@ export default function TransparencyPage() {
             <table className="rv-table">
               <thead><tr><th>{t(copy.supplyKind)}</th><th>{t(copy.supplyCap)}</th><th>{t(copy.supplyAlive)}</th><th>{t(copy.supplyTeam)}</th><th>{t(copy.supplyListed)}</th><th>{t(copy.supplyOther)}</th></tr></thead>
               <tbody>
-                {supply.map((row) => (
-                  <tr key={row.cap}>
-                    <td data-label={t(copy.supplyKind)}><strong>{t(row.name)}</strong></td>
-                    <td data-label={t(copy.supplyCap)}>{row.cap.toLocaleString("en-US")}</td>
-                    <td data-label={t(copy.supplyAlive)}>—</td>
-                    <td data-label={t(copy.supplyTeam)}>—</td>
-                    <td data-label={t(copy.supplyListed)}>—</td>
-                    <td data-label={t(copy.supplyOther)}>—</td>
-                  </tr>
-                ))}
+                {supply.map((row, k) => {
+                  const n = (v: number | undefined) => (live && v !== undefined ? v.toLocaleString("en-US") : "—");
+                  const other = live ? live.alive[k] - live.onTeam[k] - live.listed[k] : undefined;
+                  return (
+                    <tr key={row.cap}>
+                      <td data-label={t(copy.supplyKind)}><strong>{t(row.name)}</strong></td>
+                      <td data-label={t(copy.supplyCap)}>{(live?.maxAlive[k] ?? row.cap).toLocaleString("en-US")}</td>
+                      <td data-label={t(copy.supplyAlive)}>{n(live?.alive[k])}</td>
+                      <td data-label={t(copy.supplyTeam)}>{n(live?.onTeam[k])}</td>
+                      <td data-label={t(copy.supplyListed)}>{n(live?.listed[k])}</td>
+                      <td data-label={t(copy.supplyOther)}>{n(other === undefined ? undefined : Math.max(0, other))}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <span className="rv-pill rv-pill--warn" style={{ whiteSpace: "normal", height: "auto", padding: "5px 11px", lineHeight: 1.35, justifySelf: "start" }}>{t(copy.supplyStatus)}</span>
+          <span className="rv-pill rv-pill--warn" style={{ whiteSpace: "normal", height: "auto", padding: "5px 11px", lineHeight: 1.35, justifySelf: "start" }}>{t(live && !live.testnet ? copy.supplyMainnet : copy.supplyStatus)}</span>
         </div>
       </section>
 

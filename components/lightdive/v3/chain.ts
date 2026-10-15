@@ -13,7 +13,23 @@ export const ROYALTY = "5%（ERC-2981，外部市場）";
 
 const hex = (r: () => number, n: number) => Array.from({ length: n }, () => Math.floor(r() * 16).toString(16)).join("");
 
-export function chainOf(n: Pick<SimNft, "id" | "kind" | "rarity">) {
+/** On-chain facts of a card as the NFT detail shows them; a value the live game cannot know yet is null. */
+export type ChainFacts = {
+  tokenId: number;
+  contract: string;
+  owner: string;
+  standard: string;
+  chain: string;
+  mintBlock: number | null;
+  mintTx: string | null;
+  dna: string | null;
+  deck: number | null;
+  tokenUri: string | null;
+  royalty: string;
+  explorer: string | null;
+};
+
+export function chainOf(n: Pick<SimNft, "id" | "kind" | "rarity">): ChainFacts {
   const r = seeded(n.id * 2654435761 + n.kind * 97 + n.rarity);
   const block = 1_048_576 + n.id * 137 + Math.floor(r() * 90);
   return {
@@ -28,6 +44,7 @@ export function chainOf(n: Pick<SimNft, "id" | "kind" | "rarity">) {
     deck: 1 + Math.floor(n.id / 400),
     tokenUri: `https://rovyncore.com/api/lightdive/nft/${n.id}`,
     royalty: ROYALTY,
+    explorer: null,
   };
 }
 

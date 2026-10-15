@@ -3,7 +3,7 @@
 // Preview mode for rules v3: the whole game runs in this browser on simulated state, saved in localStorage.
 // Nothing here sends a transaction or touches a wallet. Rewards use a fixed simulated rate and are credited
 // at the reveal so the loop can be tried in minutes.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DECISION_AT, DECISION_CLOSE_MS, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, DOCK_DAYS, MAX_TEAMS, VOYAGE_MINUTES, EVENT_CHANCE, ODDS_BP, POWER, PRICE, RENEW_SHARE, VOYAGES,
   EMISSION, basePoints, claimFee, dailyRate, planDive, resolve, seeded, skyOf, teamPower,
@@ -11,7 +11,8 @@ import {
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { LIST_BATCH, MARKET_TAX } from "@/lib/lightdive-v3/rules";
-import { averagePrice, othersListings, type Listing } from "./market-data";
+import { averagePrice, othersListings, simulatedSupply, type Listing, type Supply } from "./market-data";
+import { chainOf, type ChainFacts } from "./chain";
 import { tl } from "@/lib/lightdive-v3/i18n";
 
 const KEY = "lightdive:preview:v3";
@@ -74,6 +75,7 @@ export type SimDive = {
   pending?: boolean; // revealed, waiting for the player to collect it
   collectedAt?: number;
   log?: string;
+  rate?: number; // live game: the rate fixed for the dive's day ($RVYN per point of Lightdust)
 };
 export type MintRequest = { id: number; kind: Kind; qty: number; at: number; revealAt: number; paid: number };
 /** A revealed summon, kept for the summon history: the request and the ids of the cards it gave. */
@@ -178,9 +180,53 @@ export const decisionAt = (d: SimDive) => d.at + (d.revealAt - d.at) * DECISION_
 export const decisionCloseAt = (d: SimDive) => d.revealAt - DECISION_CLOSE_MS;
 export const deciding = (d: SimDive, now: number) => !d.result && d.card !== undefined && !d.choice && now >= decisionAt(d) && now < decisionCloseAt(d);
 
-export type Sim = ReturnType<typeof useSim>;
+export type ActResult = { error: string | null; id?: number; card?: number };
+export type FeedRow = { id: string; who: string; dest: number; outcome?: string; mult?: number; at: number; choice?: string };
 
-export function useSim() {
+/** What every page plays with: the preview (useSim, simulated in this browser) or the live game (useChain, the v3
+ *  contracts). Actions are async because on chain they wait for the wallet and the transaction. */
+export type Game = {
+  mode: "preview" | "chain";
+  state: SimState | null;
+  now: number;
+  today: number;
+  sky: ReturnType<typeof skyOf>;
+  rate: number;
+  rateYesterday: number;
+  pool: number;
+  /** The rate that applied to dives of a given UTC day. */
+  rateOn: (day: number) => number;
+  /** Other players' cards on the market now. */
+  market: Listing[];
+  supply: (listed: [number, number, number]) => [Supply, Supply, Supply];
+  /** Everyone's recent dives (the live log). */
+  feed: (now: number, count?: number, hours?: number) => FeedRow[];
+  chainOf: (n: Pick<SimNft, "id" | "kind" | "rarity">) => ChainFacts;
+  dive: (spire: number, dest: number) => Promise<ActResult>;
+  /** Several teams at once (one transaction on chain); one result per team, in order. */
+  diveMany: (teams: { spire: number; dest: number }[]) => Promise<ActResult[]>;
+  choose: (diveId: number, choice: Choice) => Promise<void>;
+  collect: (ids?: number[]) => Promise<number>;
+  setTeam: (team: SimTeam) => Promise<string | null>;
+  nameTeam: (spire: number, name: string) => void;
+  mint: (kind: Kind, qty: number) => Promise<ActResult>;
+  renew: (id: number) => Promise<string | null>;
+  sendHome: (id: number) => Promise<void>;
+  claim: () => Promise<void>;
+  listNft: (id: number, price: number) => Promise<string | null>;
+  listMany: (items: { id: number; price: number }[]) => Promise<string | null>;
+  unlist: (id: number) => Promise<void>;
+  buy: (l: Listing) => Promise<ActResult>;
+  /** Preview tools. */
+  hurry?: (id: number, ms: number) => void;
+  skipDay?: () => void;
+  reset?: () => void;
+  /** Live game only: wallet, faucet, transactions and drafts. */
+  chain?: import("./use-chain").ChainExtras;
+};
+export type Sim = Game;
+
+export function useSim(): Game {
   const [state, setState] = useState<SimState | null>(null);
   const [now, setNow] = useState(0);
   const ref = useRef<SimState | null>(null);
@@ -482,7 +528,20 @@ export function useSim() {
     });
   }, [now, commit]);
 
-  return { state, now, today, sky, rate, rateYesterday, pool, dive, choose, collect, hurry, setTeam, nameTeam, mint, renew, sendHome, claim, reset, skipDay, listNft, listMany, unlist, buy };
+  const sold = state?.sold;
+  const market = useMemo(() => othersListings(today * DAY + DAY - 1000, sold ?? []), [today, sold]);
+  const a = <A extends unknown[], R>(f: (...args: A) => R) => async (...args: A) => f(...args);
+  return {
+    mode: "preview", state, now, today, sky, rate, rateYesterday, pool,
+    rateOn: rateOf,
+    market,
+    supply: (listed: [number, number, number]) => simulatedSupply(today, listed),
+    feed: otherDives,
+    chainOf,
+    dive: a(dive), diveMany: async (teams) => teams.map((t) => dive(t.spire, t.dest)), choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
+    claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),
+    hurry, reset, skipDay,
+  } satisfies Game;
 }
 
 /** Reveals one dive: draws the result and spends voyages (docking NFTs that run out). The reward waits for collect(). */

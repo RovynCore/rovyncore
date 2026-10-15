@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Lightdive Testnet",
-  description: "RovynCore: Lightdive test version on Robinhood Chain testnet. Test tokens only; contracts not audited.",
+  title: "Lightdive",
+  description: "RovynCore: Lightdive, a card expedition game on Robinhood Chain played with RVYN. Now open on the testnet with test tokens that have no value; the contracts are not audited.",
   alternates: { canonical: "/game/lightdive" },
-  // Not announced yet: keep the testnet build out of search results.
-  robots: { index: false, follow: false },
 };
 
 export default function LightdiveLayout({ children }: Readonly<{ children: React.ReactNode }>) {

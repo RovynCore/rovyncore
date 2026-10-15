@@ -2,7 +2,7 @@
 
 // Market: browse like a shop (art, rarity, numbers, price), open an item for the full detail, buy or manage
 // your own listings. Preview mode: other sellers and purchases are simulated with test RVYN.
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ShoppingCart, Tags } from "lucide-react";
 import { DESTINATIONS, MARKET_TAX, POWER, TAX_TO_POOL, VOYAGES, type Kind } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
@@ -12,8 +12,8 @@ import { idleCards, owned, type Sim } from "./sim";
 import { BatchSell } from "./batch-sell";
 import { NftDetail } from "./assets";
 import type { View } from "./pages";
-import { NFT_CONTRACT, short } from "./chain";
-import { othersListings, type Listing } from "./market-data";
+import { short } from "./chain";
+import type { Listing } from "./market-data";
 import { Modal, RarityGem, RarityTag, Tile, Trait, Voyages, traitName } from "./kit";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, ago, fmt } from "./copy";
 import { play } from "./audio";
@@ -38,8 +38,7 @@ export function Market({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   const [inspect, setInspect] = useState<number | null>(null);
   const [batch, setBatch] = useState(false);
   const idle = idleCards(s).length;
-  const day = Math.floor(sim.now / 86_400_000);
-  const others = useMemo(() => othersListings(day * 86_400_000 + 86_399_000, s.sold ?? []), [day, s.sold]);
+  const others = sim.market;
   const mineListings: Listing[] = (s.listings ?? []).flatMap((l) => {
     const n = s.nfts.find((x) => x.id === l.nftId && owned(x));
     return n ? [{ id: -n.id, nftId: n.id, kind: n.kind, rarity: n.rarity, power: n.power, trait: n.trait, voyages: n.voyages, renewed: n.renewed, price: l.price, seller: tl("你"), listedAt: l.at, mine: true }] : [];
@@ -152,8 +151,8 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lo, hi] = POWER[l.kind][l.rarity];
-  const buy = () => {
-    const r = sim.buy(l);
+  const buy = async () => {
+    const r = await sim.buy(l);
     if (r.error || r.id === undefined) { setError(ERROR[r.error ?? "balance"]); return; }
     play("summon");
     onMsg(tl("買到了 {0}{1}（戰力 {2}），已放進你的{3}。", { 0: TIER[l.rarity], 1: KIND[l.kind], 2: l.power, 3: KIND[l.kind] }));
@@ -166,7 +165,7 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
         <h3>{tl("鏈上資料")}</h3>
         <dl>
           <div><dt>Token ID</dt><dd>#{l.mine ? l.nftId : l.id}</dd></div>
-          <div><dt>{tl("合約")}</dt><dd title={NFT_CONTRACT}>{short(NFT_CONTRACT)}</dd></div>
+          <div><dt>{tl("合約")}</dt><dd title={sim.chainOf(l).contract}>{short(sim.chainOf(l).contract)}</dd></div>
           <div><dt>{tl("賣家")}</dt><dd title={l.seller}>{l.mine ? tl("你") : short(l.seller)}</dd></div>
           <div><dt>{tl("上架時間")}</dt><dd>{ago(sim.now - l.listedAt)}</dd></div>
           <div><dt>{tl("標準")}</dt><dd>{tl("ERC-721（RVDIV）")}</dd></div>
@@ -196,7 +195,7 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
       <footer className="v3-nftdetail__actions v3-buybar">
         <div className="v3-buybar__price"><small>{tl("售價")}</small><b>{fmt(l.price)}</b><em>$RVYN</em></div>
         {l.mine ? (
-          <button type="button" className="hud-btn hud-btn--ghost" onClick={() => { sim.unlist(l.nftId!); onMsg(tl("已取消上架。")); onClose(); }}>{tl("取消上架")}</button>
+          <button type="button" className="hud-btn hud-btn--ghost" onClick={async () => { await sim.unlist(l.nftId!); onMsg(tl("已取消上架。")); onClose(); }}>{tl("取消上架")}</button>
         ) : confirm ? (
           <>
             <span className="v3-dockinfo">{tl("付款 {0} $RVYN，賣家實收 {1}（5% 交易稅，{2}% 回核光池）。", { 0: fmt(l.price), 1: fmt(l.price * (1 - MARKET_TAX)), 2: Math.round(TAX_TO_POOL * 100) })}</span>

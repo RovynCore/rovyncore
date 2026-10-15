@@ -1,0 +1,13 @@
+{
+  "chainId": 46630,
+  "deploymentBlock": 135987295,
+  "testToken": true,
+  "rvyn": "0x744b6957d9f02d89c7b1da6126f5aa21e297743b",
+  "rng": "0xb014c863c4f097286a34500f1f8e5fd44475a146",
+  "config": "0x1ba192cfa1c9307c4e6899adb3cb8c8890f024ed",
+  "nft": "0x67dddbe9167d9108c50efb6d916bbc805dcfebc4",
+  "pool": "0x398643d2d06b8978a137e5b020b8812bd2679be6",
+  "minter": "0xfa651b0d466af81ab0299e7b664aa1d600d63736",
+  "expedition": "0xfe5336001dcdd7660b3c7ce1e131ddf2f5de4c2c",
+  "market": "0x5e3d03bfe72808b1e3a06c2a96e29e7cc389e5a7"
+}

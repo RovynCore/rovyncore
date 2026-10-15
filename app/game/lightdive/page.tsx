@@ -1,7 +1,7 @@
 "use client";
 
-import { LightdiveGame } from "@/components/lightdive/game/game";
+import { LightdiveLive } from "@/components/lightdive/v3/live";
 
 export default function LightdivePage() {
-  return <LightdiveGame />;
+  return <LightdiveLive />;
 }

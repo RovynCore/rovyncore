@@ -167,7 +167,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
         <div className="v3-voyage__progress" style={{ ["--k" as string]: k, ["--d" as string]: (decisionAt(d) - d.at) / span }}>
           <i />
           <span>{d.result ? tl("已揭曉") : open ? tl("抉擇中 · 揭曉前 1 分鐘截止") : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</span>
-          {!d.result && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => sim.hurry(d.id, 60_000)} title={tl("預覽用：讓這趟航行往前 1 分鐘")}><FastForward aria-hidden="true" />{tl("快轉 1 分鐘")}</button>}
+          {!d.result && sim.hurry && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => sim.hurry?.(d.id, 60_000)} title={tl("預覽用：讓這趟航行往前 1 分鐘")}><FastForward aria-hidden="true" />{tl("快轉 1 分鐘")}</button>}
         </div>
         <Crew sim={sim} d={d} />
         {d.result && arriving ? <p className="v3-voyage__signal"><i /><i /><i />{tl("光橋抵達{0}，訊號回傳中…", { 0: destName(d.dest) })}</p> : d.result ? <Outcome d={d} onCollect={collect} /> : <Odds d={d} />}
@@ -369,7 +369,7 @@ function Odds({ d }: { d: SimDive }) {
   const names = p.names ?? [];
   const empty = p.table[0][0] / 100;
   const big = p.table.reduce((a, [prob], i) => a + (names[i] === "great" || names[i] === "legend" ? prob : 0), 0) / 100;
-  const base = basePoints(p) * rateOf(Math.floor(d.at / DAY));
+  const base = basePoints(p) * (d.rate ?? rateOf(Math.floor(d.at / DAY)));
   return (
     <dl className="v3-voyage__odds">
       <div><dt>{tl("基礎收益")}</dt><dd>{fmt(base * (1 - p.levy))}<small>{tl("$RVYN · 再乘上揭曉倍率")}</small></dd></div>
@@ -383,7 +383,7 @@ function Odds({ d }: { d: SimDive }) {
 /** After the reveal: the outcome, the multiplier and the reward rolling up, and the collect button. */
 function Outcome({ d, onCollect }: { d: SimDive; onCollect: (el: Element) => void }) {
   const r = d.result!;
-  const base = basePoints(d.plan) * rateOf(Math.floor(d.at / DAY));
+  const base = basePoints(d.plan) * (d.rate ?? rateOf(Math.floor(d.at / DAY)));
   return (
     <div className={`v3-voyage__outcome is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome] }}>
       <div>

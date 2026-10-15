@@ -13,7 +13,7 @@ import {
   type Choice, type DivePlan,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
-import { deciding, divesOn, otherDives, teamInput, teamName, teamOut, type Sim, type SimDive, type SimState } from "./sim";
+import { deciding, divesOn, teamInput, teamName, teamOut, type Sim, type SimDive, type SimState } from "./sim";
 import { VoyageLog } from "./voyage";
 import { flyLight } from "./kit";
 import { fxQuality } from "./settings";
@@ -71,8 +71,8 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const [arrived, setArrived] = useState<number | null>(null);
   const arriving = !!revealed && watch === revealed.id && arrived !== revealed.id;
   const waiting = s.dives.filter((d) => d.pending);
-  const collectOne = (d: SimDive) => {
-    sim.collect([d.id]);
+  const collectOne = async (d: SimDive) => {
+    await sim.collect([d.id]);
     play("claim");
     const where = spotOf(d.dest);
     if (where) {
@@ -84,27 +84,27 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
     say(pool[d.id % pool.length]);
   };
   // Collect every waiting result at once; Rovyn sums them up.
-  const collectAll = () => {
+  const collectAll = async () => {
     if (!waiting.length) return;
     setSeenUpTo(Math.max(seenUpTo, ...waiting.map((d) => d.id)));
-    const total = sim.collect();
+    const total = await sim.collect();
     play("claim");
     const best = waiting.reduce((a, d) => (d.result!.multX100 > a.result!.multX100 ? d : a));
     say(tl("{0} 道光橋的光都收下了，一共 {1}，最好的一趟是 ×{2}。", { 0: waiting.length, 1: fmt(total), 2: (best.result!.multX100 / 100).toFixed(2) }));
   };
-  const closeReveal = (collectIt: boolean) => {
+  const closeReveal = async (collectIt: boolean) => {
     if (!revealed) return;
     setSeenUpTo(revealed.id);
-    if (collectIt) collectOne(revealed);
+    if (collectIt) await collectOne(revealed);
   };
 
   const pending = s.dives.filter((d) => !d.result);
   const [notice, setNotice] = useState<string | null>(null);
   // Same team, same destination, one more ticket.
-  const again = () => {
+  const again = async () => {
     if (!revealed) return;
-    closeReveal(true);
-    const r = sim.dive(revealed.spire, revealed.dest);
+    await closeReveal(true);
+    const r = await sim.dive(revealed.spire, revealed.dest);
     if (r.error) { setNotice(ERROR[r.error]); setCluster(DESTINATIONS[revealed.dest].cluster); setDest(revealed.dest); return; }
     setNotice(null);
     departed(r.id!, r.card, revealed.dest);
@@ -437,9 +437,9 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
   const plan: DivePlan | null = useMemo(() => (team ? planDive(teamInput(s, team), d, sim.sky) : null), [team, s, d, sim.sky]);
   const light = sim.sky.lights[id];
   const ev = sim.sky.events.get(id);
-  const go = () => {
+  const go = async () => {
     if (pick === null) return;
-    const r = sim.dive(pick, id);
+    const r = await sim.dive(pick, id);
     if (r.error) { setError(ERROR[r.error]); return; }
     if (r.id !== undefined) onDeparted(r.id, r.card, id);
     const lines = TEXTS.departures[d.cluster];
@@ -606,7 +606,7 @@ function LiveLog({ sim }: { sim: Sim }) {
   const [tab, setTab] = useState<"all" | "mine" | "rank">("all");
   const mine = tab === "mine";
   const bucket = Math.floor(sim.now / 30_000);
-  const others = useMemo(() => otherDives(bucket * 30_000), [bucket]);
+  const others = useMemo(() => sim.feed(bucket * 30_000), [sim, bucket]);
   const own = s.dives.slice(-20).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, outcome: d.result?.outcome, mult: d.result?.multX100, at: d.at, choice: d.choice, me: true }));
   const items = [...own, ...(mine ? [] : others.map((o) => ({ ...o, me: false })))].sort((a, b) => b.at - a.at).slice(0, 30);
   const todayCount = others.filter((o) => Math.floor(o.at / 86_400_000) === sim.today).length + divesOn(s, sim.today).length;

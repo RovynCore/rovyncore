@@ -11,7 +11,7 @@ import type { Locale } from "@/lib/translations";
 type C = Record<Locale, string>;
 const L = {
   game: { en: "Game", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
-  soon: { en: "Soon", "zh-Hant": "即將", "zh-Hans": "即将", ko: "예정" },
+  soon: { en: "Testnet", "zh-Hant": "測試網", "zh-Hans": "测试网", ko: "테스트넷" }, // Lightdive is open on the testnet
   tools: { en: "Tools", "zh-Hant": "工具", "zh-Hans": "工具", ko: "도구" },
   launchpad: { en: "Launchpad", "zh-Hant": "發射台", "zh-Hans": "发射台", ko: "런치패드" },
   records: { en: "Onchain Records", "zh-Hant": "鏈上紀錄", "zh-Hans": "链上记录", ko: "온체인 기록" },

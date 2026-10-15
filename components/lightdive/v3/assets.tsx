@@ -2,15 +2,15 @@
 
 // Asset pages (spires, prisms, seekers): a clear card wall, and an NFT detail with on-chain data on the left,
 // the art in the middle and in-game data on the right. Listing opens a sell dialog with market references.
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Anchor, ExternalLink, Store, Tag } from "lucide-react";
 import { DESTINATIONS, MARKET_TAX, POWER, PRICE, RENEW_SHARE, TAX_TO_POOL, VOYAGES, type Kind } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { NftArt } from "../game/art";
 import { PageHead } from "../game/hud";
 import { owned, teamName, type Sim, type SimNft } from "./sim";
-import { chainOf, short } from "./chain";
-import { averagePrice, othersListings } from "./market-data";
+import { short } from "./chain";
+import { averagePrice } from "./market-data";
 import { Modal, RarityGem, RarityTag, Tile, Trait, Voyages, traitName } from "./kit";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, fmt } from "./copy";
 import { play } from "./audio";
@@ -113,7 +113,8 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
   const n = s.nfts.find((x) => x.id === id);
   const [selling, setSelling] = useState(false);
   if (!n) return null;
-  const c = chainOf(n);
+  const c = sim.chainOf(n);
+  const live = sim.mode === "chain";
   const team = teamOf(sim, n.id);
   const w = whereOf(sim, n);
   const [lo, hi] = POWER[n.kind][n.rarity];
@@ -131,14 +132,16 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
           <div><dt>{tl("擁有者")}</dt><dd title={c.owner}>{tl("{0}（你）", { 0: short(c.owner) })}</dd></div>
           <div><dt>{tl("鏈")}</dt><dd>{c.chain}</dd></div>
           <div><dt>{tl("標準")}</dt><dd>{c.standard}</dd></div>
-          <div><dt>{tl("鑄造區塊")}</dt><dd>{c.mintBlock.toLocaleString()}</dd></div>
-          <div><dt>{tl("鑄造交易")}</dt><dd title={c.mintTx}>{short(c.mintTx, 10, 6)}</dd></div>
-          <div><dt>{tl("牌組")}</dt><dd>{tl("第 {0} 副", { 0: c.deck })}</dd></div>
-          <div><dt>DNA</dt><dd>{c.dna}</dd></div>
+          {c.mintBlock !== null && <div><dt>{tl("鑄造區塊")}</dt><dd>{c.mintBlock.toLocaleString()}</dd></div>}
+          {c.mintTx && <div><dt>{tl("鑄造交易")}</dt><dd title={c.mintTx}>{short(c.mintTx, 10, 6)}</dd></div>}
+          {c.deck !== null && <div><dt>{tl("牌組")}</dt><dd>{tl("第 {0} 副", { 0: c.deck })}</dd></div>}
+          {c.dna && <div><dt>DNA</dt><dd>{c.dna}</dd></div>}
           <div><dt>{tl("版稅")}</dt><dd>{c.royalty}</dd></div>
         </dl>
-        <p className="v3-nftdetail__note">{tl("預覽模式：鏈上資料為模擬，v3 合約部署後會換成真實資料。")}</p>
-        <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" disabled title={tl("合約部署後開放")}><ExternalLink aria-hidden="true" />{tl("在區塊瀏覽器查看")}</button>
+        {!live && <p className="v3-nftdetail__note">{tl("預覽模式：鏈上資料為模擬，v3 合約部署後會換成真實資料。")}</p>}
+        {c.explorer
+          ? <a className="hud-btn hud-btn--ghost hud-btn--sm" href={c.explorer} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" />{tl("在區塊瀏覽器查看")}</a>
+          : <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" disabled title={tl("合約部署後開放")}><ExternalLink aria-hidden="true" />{tl("在區塊瀏覽器查看")}</button>}
       </section>
 
       <section className="v3-nftdetail__hero" style={{ ["--rc" as string]: RARITY_COLOR[n.rarity] }}>
@@ -172,12 +175,12 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
         {n.dockedAt !== undefined && (
           <>
             <span className="v3-dockinfo"><Anchor aria-hidden="true" />{tl("停泊中，剩 {0} 天", { 0: Math.max(0, 7 - Math.floor((sim.now - n.dockedAt) / DAY)) })}</span>
-            {!n.renewed && <button type="button" className="hud-btn hud-btn--gold" onClick={() => { const e = sim.renew(n.id); onMsg(e ? ERROR[e] : tl("{0} #{1} 續航完成。", { 0: KIND[n.kind], 1: n.id })); onClose(); }}>{tl("續航（{0} $RVYN）", { 0: fmt(PRICE[n.kind] * RENEW_SHARE) })}</button>}
-            <button type="button" className="hud-btn hud-btn--ghost" onClick={() => { sim.sendHome(n.id); onClose(); }}>{tl("讓它歸航")}</button>
+            {!n.renewed && <button type="button" className="hud-btn hud-btn--gold" onClick={async () => { const e = await sim.renew(n.id); onMsg(e ? ERROR[e] : tl("{0} #{1} 續航完成。", { 0: KIND[n.kind], 1: n.id })); onClose(); }}>{tl("續航（{0} $RVYN）", { 0: fmt(sim.chain?.renewPrices[n.kind] ?? PRICE[n.kind] * RENEW_SHARE) })}</button>}
+            {(!live || sim.now - n.dockedAt >= 7 * DAY) && <button type="button" className="hud-btn hud-btn--ghost" onClick={async () => { await sim.sendHome(n.id); onClose(); }}>{tl("讓它歸航")}</button>}
           </>
         )}
         {w === "listed" ? (
-          <button type="button" className="hud-btn hud-btn--ghost" onClick={() => { sim.unlist(n.id); onMsg(tl("#{0} 已取消上架。", { 0: n.id })); onClose(); }}>{tl("取消上架")}</button>
+          <button type="button" className="hud-btn hud-btn--ghost" onClick={async () => { await sim.unlist(n.id); onMsg(tl("#{0} 已取消上架。", { 0: n.id })); onClose(); }}>{tl("取消上架")}</button>
         ) : w === "idle" ? (
           <button type="button" className="hud-btn hud-btn--primary" onClick={() => setSelling(true)}><Store aria-hidden="true" />{tl("上架市集")}</button>
         ) : w === "team" ? (
@@ -193,13 +196,12 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
 
 /** Listing a card: market reference for the same kind and rarity, your price, and what you receive. */
 function SellDialog({ sim, n, onClose, onDone }: { sim: Sim; n: SimNft; onClose: () => void; onDone: (m: string) => void }) {
-  const market = useMemo(() => othersListings(sim.now, sim.state!.sold ?? []), [sim.now, sim.state]);
-  const ref = averagePrice(market, n.kind, n.rarity);
+  const ref = averagePrice(sim.market, n.kind, n.rarity);
   const [price, setPrice] = useState(() => (ref ? Math.round(ref.average) : PRICE[n.kind]));
   const [error, setError] = useState<string | null>(null);
   const tax = price * MARKET_TAX;
-  const go = () => {
-    const e = sim.listNft(n.id, price);
+  const go = async () => {
+    const e = await sim.listNft(n.id, price);
     if (e) { setError(ERROR[e]); return; }
     play("claim");
     onDone(tl("{0} #{1} 已上架，價格 {2} $RVYN。", { 0: KIND[n.kind], 1: n.id, 2: fmt(price) }));

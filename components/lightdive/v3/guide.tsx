@@ -140,7 +140,7 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
         )}
       </section>
 
-      <p className="v3-muted"><button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => { if (window.confirm(tl("重置預覽資料？目前的卡片和紀錄會清掉。"))) sim.reset(); }}><RotateCcw aria-hidden="true" />{tl("重置預覽資料")}</button></p>
+      {sim.reset && <p className="v3-muted"><button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => { if (window.confirm(tl("重置預覽資料？目前的卡片和紀錄會清掉。"))) sim.reset?.(); }}><RotateCcw aria-hidden="true" />{tl("重置預覽資料")}</button></p>}
     </div>
   );
 }
