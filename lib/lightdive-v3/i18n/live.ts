@@ -80,4 +80,40 @@ LIGHTDIVE · 測試網|LIGHTDIVE · TESTNET|LIGHTDIVE · 测试网|LIGHTDIVE · 
 購買 #{0}|Buy #{0}|购买 #{0}|#{0} 구매
 儲存隊伍 光塔 #{0}|Save team: Spire #{0}|储存队伍 光塔 #{0}|팀 저장: 광탑 #{0}
 解散隊伍 光塔 #{0}|Disband team: Spire #{0}|解散队伍 光塔 #{0}|팀 해산: 광탑 #{0}
-領取測試 $RVYN|Get test $RVYN|领取测试 $RVYN|테스트 $RVYN 받기`;
+領取測試 $RVYN|Get test $RVYN|领取测试 $RVYN|테스트 $RVYN 받기
+上架期間卡片由市集合約保管，取消上架就會回到你的錢包。|While listed, the card is held by the market contract; delist it and it returns to your wallet.|上架期间卡片由市集合约保管，取消上架就会回到你的钱包。|등록 중에는 마켓 컨트랙트가 카드를 보관하며, 등록을 취소하면 지갑으로 돌아옵니다.
+市集合約會用一筆交易全部上架（第一次需要授權市集合約保管你的卡）。|The market contract lists them all in one transaction (the first time, you approve it to hold your cards).|市集合约会用一笔交易全部上架（第一次需要授权市集合约保管你的卡）。|마켓 컨트랙트가 거래 한 건으로 모두 등록합니다(처음에는 카드 보관 권한을 승인해야 합니다).
+ROVYN CORE · 潛光遠征測試網（測試幣，沒有價值）|ROVYN CORE · Lightdive testnet (test tokens, no value)|ROVYN CORE · 潜光远征测试网（测试币，没有价值）|ROVYN CORE · 라이트다이브 테스트넷(테스트 토큰, 가치 없음)
+還沒有人召喚。|No one has summoned yet.|还没有人召唤。|아직 소환한 사람이 없습니다.
+目前價格：光塔 {0} · 稜鏡 {1} · 探索者 {2} $RVYN|Current prices: Spire {0} · Prism {1} · Seeker {2} $RVYN|目前价格：光塔 {0} · 棱镜 {1} · 探索者 {2} $RVYN|현재 가격: 광탑 {0} · 프리즘 {1} · 탐색자 {2} $RVYN
+說明|How it works|说明|안내
+領測試 $RVYN|Get test $RVYN|领测试 $RVYN|테스트 $RVYN 받기
+· 第一步|· First step|· 第一步|· 첫 단계
+連接錢包，開始潛光|Connect a wallet and start diving|连接钱包，开始潜光|지갑을 연결하고 다이브를 시작하세요
+卡片、隊伍和收益都記在你的錢包。這是測試網：用沒有價值的測試幣遊玩。|Your cards, teams and rewards all belong to your wallet. This is the testnet: you play with test tokens that have no value.|卡片、队伍和收益都记在你的钱包。这是测试网：用没有价值的测试币游玩。|카드, 팀, 보상은 모두 지갑에 기록됩니다. 테스트넷이므로 가치 없는 테스트 토큰으로 플레이합니다.
+切換到 {0}|Switch to {0}|切换到 {0}|{0}(으)로 전환
+遊戲在這條鏈上，錢包要在同一條鏈才能交易。|The game runs on this chain; your wallet must be on it to send transactions.|游戏在这条链上，钱包要在同一条链才能交易。|게임은 이 체인에서 돌아갑니다. 거래하려면 지갑도 같은 체인에 있어야 합니다.
+先領一點手續費用的測試 ETH|First, get a little test ETH for fees|先领一点手续费用的测试 ETH|먼저 수수료용 테스트 ETH를 조금 받으세요
+每筆交易都要一點點手續費。到 Robinhood 測試網水龍頭免費領取，再回來領測試 $RVYN。|Every transaction needs a tiny fee. Get test ETH free from a Robinhood testnet faucet, then come back for test $RVYN.|每笔交易都要一点点手续费。到 Robinhood 测试网水龙头免费领取，再回来领测试 $RVYN。|모든 거래에는 소량의 수수료가 필요합니다. Robinhood 테스트넷 파우셋에서 무료로 받은 뒤 돌아와 테스트 $RVYN을 받으세요.
+領取方式|Where to get it|领取方式|받는 방법
+· 第二步|· Second step|· 第二步|· 두 번째 단계
+領 {0} 測試 $RVYN|Get {0} test $RVYN|领 {0} 测试 $RVYN|테스트 $RVYN {0}개 받기
+召喚光塔和探索者都用 $RVYN。測試幣每 24 小時可以領一次，沒有價值。|Spires and seekers are summoned with $RVYN. Test tokens can be claimed every 24 hours and have no value.|召唤光塔和探索者都用 $RVYN。测试币每 24 小时可以领一次，没有价值。|광탑과 탐색자는 $RVYN으로 소환합니다. 테스트 토큰은 24시간마다 받을 수 있으며 가치가 없습니다.
+· 光橋回來了|· The bridge is back|· 光桥回来了|· 빛다리가 돌아왔어요
+{0} 趟結果等你收取|{0} result(s) waiting for you|{0} 趟结果等你收取|결과 {0}건이 수령을 기다립니다
+一共 {0} $RVYN。收取後才會進金庫，隊伍也才能再出發。|{0} $RVYN in all. Collect it to put it in the treasury and let the team dive again.|一共 {0} $RVYN。收取后才会进金库，队伍也才能再出发。|모두 {0} $RVYN입니다. 수령해야 금고에 들어가고 팀도 다시 출발할 수 있습니다.
+全部收取|Collect all|全部收取|모두 수령
+先看結果|See the results first|先看结果|결과 먼저 보기
+· 航行中|· Under way|· 航行中|· 항해 중
+{0} 支隊伍在光橋上|{0} team(s) on the bridge|{0} 支队伍在光桥上|팀 {0}개가 빛다리 위에 있습니다
+{0} 後揭曉第一趟。揭曉後回來收取。|The first one is revealed in {0}. Come back then to collect.|{0} 后揭晓第一趟。揭晓后回来收取。|첫 결과는 {0} 후 공개됩니다. 공개되면 돌아와 수령하세요.
+看航行|Watch the voyage|看航行|항해 보기
+未儲存|Unsaved|未储存|저장 안 됨
+所有觀測者的光橋，直接讀取鏈上紀錄。|Every observer's light bridges, read straight from the chain.|所有观测者的光桥，直接读取链上记录。|모든 관측자의 빛다리를 체인에서 직접 읽어 옵니다.
+下一步：召喚探索者|Next: summon seekers|下一步：召唤探索者|다음: 탐색자 소환
+下一步：召喚光塔|Next: summon a spire|下一步：召唤光塔|다음: 광탑 소환
+下一步：到碑原組隊|Next: build a team on the Stele Plain|下一步：到碑原组队|다음: 비석 평원에서 팀 구성
+合約設定的價格，只能在 {0}–{1} 之間、每天最多調 10%|Set by the contract; it can only move within {0}–{1}, at most 10% a day|合约设定的价格，只能在 {0}–{1} 之间、每天最多调 10%|컨트랙트가 정한 가격으로, {0}–{1} 범위에서 하루 최대 10%만 조정됩니다
+數字直接讀取鏈上：存在的張數、在隊伍上和市集上架的張數。|Read straight from the chain: cards in existence, on teams and listed on the market.|数字直接读取链上：存在的张数、在队伍上和市集上架的张数。|체인에서 직접 읽은 수치입니다: 존재하는 카드, 팀에 있는 카드, 마켓에 등록된 카드.
+鏈上即時餘額|Live balance on chain|链上即时余额|체인 실시간 잔액
+出發時會自動一起儲存，也可以現在先存。每支隊伍一筆交易。|They are saved automatically when the team departs, or save them now. One transaction per team.|出发时会自动一起储存，也可以现在先存。每支队伍一笔交易。|팀이 출발할 때 자동으로 함께 저장되며, 지금 저장해도 됩니다. 팀마다 거래 1건입니다.`;

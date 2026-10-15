@@ -21,8 +21,8 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readWorld, roundTime,
-  type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type World,
+  drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWorld, roundTime,
+  type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type World,
 } from "@/lib/lightdive-v3/onchain";
 import type { Listing, Supply } from "./market-data";
 import type { Game, MintRequest, PullRecord, SimDive, SimNft, SimState, SimTeam } from "./sim";
@@ -97,7 +97,7 @@ const riskOf = (beam: number, dest: number, day: number) => {
 };
 
 type Prediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; signature: Hex };
-type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; onTeam: [number, number, number] };
+type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[] };
 
 function readNames(): Record<number, string> {
   try { return JSON.parse(localStorage.getItem(NAMES_KEY) ?? "{}"); } catch { return {}; }
@@ -139,11 +139,12 @@ export function useChain(): Game {
         // when it is close to the wall clock (drand itself runs on wall-clock time)
         const skew = world.now * 1000 - Date.now();
         offset.current = Math.abs(skew) < 120_000 ? skew : 0;
-        const [player, market, feed, onTeam, chainId] = await Promise.all([
+        const [player, market, feed, onTeam, summons, chainId] = await Promise.all([
           account ? readPlayer(ctx, account, world, G.testToken) : Promise.resolve(null),
           readMarket(ctx),
           readFeed(ctx).catch(() => []),
           readOnTeam(ctx).catch(() => [0, 0, 0] as [number, number, number]),
+          readRecentSummons(ctx).catch(() => [] as RecentSummon[]),
           account ? platform.walletProvider().request({ method: "eth_chainId" }).then(Number).catch(() => null) : Promise.resolve(null),
         ]);
         // results already decided by drand but not collected yet
@@ -156,7 +157,7 @@ export function useChain(): Game {
             predictions.current.set(Number(d.id), { tier: p.tier, multX100: p.multX100, wear: p.wear, reward: p.reward, levy: p.levy, signature: sig });
           }));
         }
-        setData({ world, player, market, feed, onTeam });
+        setData({ world, player, market, feed, onTeam, summons });
         setWalletChain(chainId);
         setFailed(false);
       } catch (e) {
@@ -389,10 +390,19 @@ export function useChain(): Game {
     return { error: null, id };
   }, [data, p, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Every unsaved team change as transactions: teams taken apart first, so cards moving between teams are free when
+   *  the team they join is set. */
+  const draftSteps = (): TxStep[] => {
+    const entries = Object.entries(drafts);
+    const order = [...entries.filter(([, t]) => !t), ...entries.filter(([, t]) => t)];
+    return order.map(([spire, t]) => (t
+      ? step(tl("儲存隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "setTeam", [BigInt(spire), BigInt(t.prism ?? 0), t.seekers.map(BigInt)])
+      : step(tl("解散隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "disband", [BigInt(spire)])));
+  };
+
   const dive = useCallback(async (spire: number, dest: number) => {
     const e = ready();
     if (e) return { error: e };
-    if (spire in drafts) return { error: "unsaved" };
     const st = state!;
     const team = st.teams.find((t) => t.spire === spire);
     if (!team || !team.seekers.length) return { error: "noTeam" };
@@ -400,8 +410,11 @@ export function useChain(): Game {
     if ((p!.teams.find((t) => Number(t.spire) === spire)?.divesToday ?? 0) >= 3) return { error: "teamLimit" };
     if (st.dives.some((d) => d.spire === spire && !d.result)) return { error: "onBridge" };
     if (st.dives.some((d) => d.spire === spire && d.pending)) return { error: "uncollected" };
-    const { receipts, error } = await run([step(tl("派隊伍出發"), c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest])]);
+    // unsaved team changes are saved in the same go, right before the team departs
+    const save = draftSteps();
+    const { receipts, error } = await run([...save, step(tl("派隊伍出發"), c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest])]);
     if (!receipts) return { error };
+    if (save.length) setDrafts({});
     const id = Number(logArgs(receipts, A.Expedition3, "Dived")[0]?.diveId);
     return { error: null, id, card: cardOf(id, dest) };
   }, [state, data, p, c, A, run, drafts]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -411,15 +424,16 @@ export function useChain(): Game {
     if (e) return list.map(() => ({ error: e }));
     const st = state!;
     const blocked = (spire: number) =>
-      spire in drafts ? "unsaved"
-        : !st.teams.find((t) => t.spire === spire)?.seekers.length ? "noTeam"
+      !st.teams.find((t) => t.spire === spire)?.seekers.length ? "noTeam"
           : st.dives.some((d) => d.spire === spire && !d.result) ? "onBridge"
             : st.dives.some((d) => d.spire === spire && d.pending) ? "uncollected" : null;
     const errors = list.map((t) => blocked(t.spire));
     const go = list.filter((_, i) => !errors[i]);
     if (go.length > 3 - p!.passesUsed) return list.map(() => ({ error: "noTickets" }));
     if (!go.length) return errors.map((error) => ({ error }));
-    const { receipts, error } = await run([step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest)])]);
+    const saves = draftSteps();
+    const { receipts, error } = await run([...saves, step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest)])]);
+    if (receipts && saves.length) setDrafts({});
     const ids = receipts ? logArgs(receipts, A.Expedition3, "Dived").map((x) => Number(x.diveId)) : [];
     let k = 0;
     return list.map((t, i) => {
@@ -525,14 +539,8 @@ export function useChain(): Game {
   }, [state, p]);
   const saveTeams = useCallback(async () => {
     if (ready()) return ready();
-    const entries = Object.entries(drafts);
-    if (entries.some(([, t]) => t && !t.seekers.length)) return "needSeeker";
-    // take apart first, so cards moving between teams are free when the new team is set
-    const order = [...entries.filter(([, t]) => !t), ...entries.filter(([, t]) => t)];
-    const steps: TxStep[] = order.map(([spire, t]) => (t
-      ? step(tl("儲存隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "setTeam", [BigInt(spire), BigInt(t.prism ?? 0), t.seekers.map(BigInt)])
-      : step(tl("解散隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "disband", [BigInt(spire)])));
-    const { error } = await run(steps);
+    if (Object.values(drafts).some((t) => t && !t.seekers.length)) return "needSeeker";
+    const { error } = await run(draftSteps());
     if (!error) setDrafts({});
     return error;
   }, [drafts, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -581,6 +589,7 @@ export function useChain(): Game {
     market,
     supply,
     feed: (_now: number, count = 18) => feedRows.slice(0, count),
+    summons: (data?.summons ?? []).map((x) => ({ id: Number(x.id), who: account && x.who.toLowerCase() === account.toLowerCase() ? tl("你") : `${x.who.slice(0, 6)}…${x.who.slice(-4)}`, kind: x.kind as Kind, rarity: x.rarity, at: x.at * 1000 })),
     chainOf: (n) => {
       const raw = data?.player?.cards.find((x) => Number(x.id) === n.id);
       return {

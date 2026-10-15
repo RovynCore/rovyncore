@@ -88,7 +88,7 @@ export function BatchSell({ sim, picked, onClose, onDone }: { sim: Sim; picked?:
         <button type="button" className="hud-btn hud-btn--ghost" onClick={onClose}>{tl("取消")}</button>
         <button type="button" className="hud-btn hud-btn--primary" onClick={go} disabled={!chosen.length || chosen.some((n) => !(prices[n.id] > 0))}>{tl("確認上架（{0} 張）", { 0: chosen.length })}</button>
       </div>
-      <p className="v3-nftdetail__note">{tl("正式版會用市集合約一次簽名上架（第一次需要授權市集合約保管你的卡）。預覽模式：上架與成交都是模擬的。")}</p>
+      <p className="v3-nftdetail__note">{sim.mode === "preview" ? tl("正式版會用市集合約一次簽名上架（第一次需要授權市集合約保管你的卡）。預覽模式：上架與成交都是模擬的。") : tl("市集合約會用一筆交易全部上架（第一次需要授權市集合約保管你的卡）。")}</p>
     </Modal>
   );
 }

@@ -614,10 +614,10 @@ function LiveLog({ sim }: { sim: Sim }) {
     <aside className="hud-live" aria-label={tl("即時探索日誌")}>
       <header>
         <span className="hud-kicker">{tl("即時探索日誌")}</span>
-        <p>{tl("所有觀測者的光橋。預覽模式：其他人的動態是模擬的。")}</p>
+        <p>{sim.mode === "preview" ? tl("所有觀測者的光橋。預覽模式：其他人的動態是模擬的。") : tl("所有觀測者的光橋，直接讀取鏈上紀錄。")}</p>
         <div className="hud-live__stats">
           <span><small>{tl("今天出發")}</small><b>{todayCount}</b></span>
-          <span><small>{tl("最高倍率")}</small><b>×{(Math.max(100, ...items.map((i) => i.mult ?? 0)) / 100).toFixed(2)}</b></span>
+          <span><small>{tl("最高倍率")}</small><b>{items.some((i) => i.mult !== undefined) ? `×${(Math.max(...items.map((i) => i.mult ?? 0)) / 100).toFixed(2)}` : "—"}</b></span>
         </div>
         <div className="hud-seg" role="group">
           <button type="button" className={tab === "all" ? "is-on" : ""} onClick={() => setTab("all")}>{tl("全部")}</button>

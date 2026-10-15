@@ -42,6 +42,7 @@ import {
   shortAddress,
   type PlatformConfig,
 } from "@/packages/web3/config";
+import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
   COMMON_WALLETS,
   type WalletBrand,
@@ -232,10 +233,16 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(() => void refresh({ silent: true }), 45000);
     return () => clearInterval(interval);
   }, []);
+  /** The chain a wallet belongs on for this page: the live Lightdive game plays on its own deployment's chain (the
+   *  testnet until the mainnet switch), every other page on the platform's chain. */
+  function homeChain() {
+    if (typeof window !== "undefined" && window.location.pathname.replace(/\/$/, "") === "/game/lightdive") return gameChain(true).chain;
+    return CHAINS[config.chainId];
+  }
   async function connect() {
     setWalletOpen(true);
     try {
-      const connected = await walletSession.connect(CHAINS[config.chainId]);
+      const connected = await walletSession.connect(homeChain());
       setWalletOpen(false);
       return connected;
     } catch (cause) {
@@ -415,20 +422,22 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
             <>
               <code className="rv-mono" style={{ overflowWrap: "anywhere" }}>{account}</code>
               <p className="rv-small">
-                {chain === config.chainId
-                  ? CHAINS[config.chainId].name
+                {chain === homeChain().id
+                  ? homeChain().name
                   : tr("錢包目前在其他網路")}
               </p>
-              <button
-                className="rv-btn rv-btn--secondary"
-                disabled={walletSession.busy}
-                onClick={() =>
-                  ensureNetwork().catch((e) => toast.error(message(e)))
-                }
-              >
-                {tr("切換至")}
-                {CHAINS[config.chainId].name}
-              </button>
+              {chain !== homeChain().id && (
+                <button
+                  className="rv-btn rv-btn--secondary"
+                  disabled={walletSession.busy}
+                  onClick={() =>
+                    walletSession.switchChain(homeChain()).catch((e) => toast.error(message(e)))
+                  }
+                >
+                  {tr("切換至")}
+                  {homeChain().name}
+                </button>
+              )}
               <button
                 className="rv-btn rv-btn--secondary"
                 disabled={walletSession.busy}

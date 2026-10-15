@@ -159,7 +159,8 @@ async function drawCard(d: SimDive): Promise<HTMLCanvasElement> {
   g.fillStyle = "#eaf3e1"; g.font = "500 28px sans-serif";
   wrap(g, tl("「{0}」", { 0: d.log }), 70, 490, 720, 40);
   g.fillStyle = "#66745f"; g.font = "500 20px sans-serif";
-  g.fillText(tl("ROVYN CORE · 測試版（預覽模式，結果為模擬）"), 70, 590);
+  const preview = typeof window !== "undefined" && window.location.pathname.includes("/preview");
+  g.fillText(preview ? tl("ROVYN CORE · 測試版（預覽模式，結果為模擬）") : tl("ROVYN CORE · 潛光遠征測試網（測試幣，沒有價值）"), 70, 590);
   return c;
 }
 

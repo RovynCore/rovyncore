@@ -18,7 +18,8 @@ import { RarityGem, RarityTag, Trait, Voyages, traitName } from "./kit";
 import { NftDetail } from "./assets";
 import { CardSupply } from "./supply";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, clock, fmt } from "./copy";
-import { tl, localized } from "@/lib/lightdive-v3/i18n";
+import { gap, tl, localized } from "@/lib/lightdive-v3/i18n";
+import type { View } from "./pages";
 
 /** Banner art per kind. Drop the final images into public/lightdive/summon/ and set the paths here;
  *  until then each banner is composed from its top cards over a Hubble photo. */
@@ -41,7 +42,7 @@ const STEP = 420;
 
 type Pull = { id: number; kind: Kind; qty: number };
 
-export function Summon({ sim }: { sim: Sim }) {
+export function Summon({ sim, go }: { sim: Sim; go?: (v: View) => void }) {
   const s = sim.state!;
   const [pull, setPull] = useState<Pull | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -56,6 +57,14 @@ export function Summon({ sim }: { sim: Sim }) {
     play("summon");
   };
   const ready = pull && !s.mints.some((m) => m.id === pull.id);
+  // What a new player needs next after a pull: the other half of a team, then the Stele Plain.
+  const usable = (k: Kind) => s.nfts.filter((n) => n.kind === k && owned(n) && n.dockedAt === undefined && n.listed === undefined);
+  const onTeam = (id: number) => s.teams.some((t) => t.spire === id || t.prism === id || t.seekers.includes(id));
+  const toBanner = (k: Kind) => () => window.setTimeout(() => document.getElementById(`v3-banner-${k}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  const nextStep = !usable(2).length && usable(0).length ? { label: tl("下一步：召喚探索者"), act: toBanner(2) }
+    : !usable(0).length && usable(2).length ? { label: tl("下一步：召喚光塔"), act: toBanner(0) }
+      : go && usable(0).some((n) => !onTeam(n.id)) && usable(2).some((n) => !onTeam(n.id)) ? { label: tl("下一步：到碑原組隊"), act: () => go("plain") }
+        : null;
   const recent = s.nfts.filter((n) => n.mint !== undefined).slice(-12).reverse();
   return (
     <div className="hud-page v3-summonpage">
@@ -94,6 +103,7 @@ export function Summon({ sim }: { sim: Sim }) {
         <PullScreen key={pull.id} sim={sim} pull={pull}
           onInspect={setInspect}
           onHide={() => setHidden(true)}
+          next={nextStep}
           onDone={() => setPull(null)}
           onAgain={() => { const p = pull; setPull(null); start(p.kind, p.qty); }} />
       )}
@@ -110,7 +120,7 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
   const art = BANNER_ART[kind];
   const price = sim.chain?.prices[kind] || PRICE[kind]; // the live price on chain (it may move within its bounds)
   return (
-    <section className={`v3-banner k${kind}`} style={{ ["--accent" as string]: ACCENT[kind], ["--photo" as string]: `url(${BANNER_PHOTO[kind]})` }}>
+    <section id={`v3-banner-${kind}`} className={`v3-banner k${kind}`} style={{ ["--accent" as string]: ACCENT[kind], ["--photo" as string]: `url(${BANNER_PHOTO[kind]})` }}>
       <div className="v3-banner__art">
         {art ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -133,7 +143,7 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
         <div className="v3-banner__price">
           <small>{tl("單抽價格")}</small>
           <b>{fmt(price)}</b><em>$RVYN</em>
-          <span>{tl("每天依流動池均價調整，範圍 {0}", { 0: PRICE[kind] * PRICE_FLOOR })}–{PRICE[kind] * PRICE_CEILING}</span>
+          <span>{sim.chain ? tl("合約設定的價格，只能在 {0}–{1} 之間、每天最多調 10%", { 0: PRICE[kind] * PRICE_FLOOR, 1: PRICE[kind] * PRICE_CEILING }) : <>{tl("每天依流動池均價調整，範圍 {0}", { 0: PRICE[kind] * PRICE_FLOOR })}–{PRICE[kind] * PRICE_CEILING}</>}</span>
         </div>
         <ul className="v3-droprates">
           {[4, 3, 2, 1, 0].map((r) => (
@@ -160,7 +170,7 @@ function Banner({ sim, kind, busy, onPull }: { sim: Sim; kind: Kind; busy: boole
 }
 
 /** The pull itself, full screen. */
-function PullScreen({ sim, pull, onInspect, onHide, onDone, onAgain }: { sim: Sim; pull: Pull; onInspect: (id: number) => void; onHide: () => void; onDone: () => void; onAgain: () => void }) {
+function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { sim: Sim; pull: Pull; next?: { label: string; act: () => void } | null; onInspect: (id: number) => void; onHide: () => void; onDone: () => void; onAgain: () => void }) {
   const s = sim.state!;
   const req = s.mints.find((m) => m.id === pull.id);
   const cards = s.nfts.filter((n) => n.mint === pull.id);
@@ -297,7 +307,7 @@ function PullScreen({ sim, pull, onInspect, onHide, onDone, onAgain }: { sim: Si
                   <span className="v3-pcard__front">
                     <span className="v3-pcard__top"><RarityTag rarity={n.rarity} compact /><small>#{n.id}</small></span>
                     <span className="v3-pcard__art"><NftArt a={{ kind: n.kind, rarity: n.rarity, trait: n.trait, variant: 0 }} /></span>
-                    <b className="v3-pcard__name">{TIER[n.rarity]}{KIND[n.kind]}</b>
+                    <b className="v3-pcard__name">{TIER[n.rarity]}{gap()}{KIND[n.kind]}</b>
                     <span className="v3-pcard__pw"><small>{tl("戰力")}</small><b>{n.power}</b></span>
                     <Trait n={n} />
                   </span>
@@ -316,7 +326,8 @@ function PullScreen({ sim, pull, onInspect, onHide, onDone, onAgain }: { sim: Si
               <ul>{counts.map(({ r, c }) => <li key={r} style={{ ["--rc" as string]: RARITY_COLOR[r] }}><RarityGem rarity={r} size={18} /><b>{TIER[r]}</b> ×{c}</li>)}</ul>
               <div>
                 <button type="button" className="hud-btn hud-btn--ghost" disabled={s.balance < cost} onClick={onAgain}>{tl("再召喚 ×{0}（{1} $RVYN）", { 0: pull.qty, 1: cost })}</button>
-                <button type="button" className="hud-btn hud-btn--primary" onClick={onDone}>{tl("收下")}</button>
+                <button type="button" className={`hud-btn ${next ? "hud-btn--ghost" : "hud-btn--primary"}`} onClick={onDone}>{tl("收下")}</button>
+                {next && <button type="button" className="hud-btn hud-btn--primary" onClick={() => { onDone(); next.act(); }}>{next.label}</button>}
               </div>
             </footer>
           )}

@@ -34,6 +34,7 @@ function statusOf(sim: Sim, spire: number): Status {
   if (s.dives.some((d) => d.spire === spire && d.pending)) return { label: tl("待收取"), tone: "busy" };
   if (!team) return s.teams.length >= MAX_TEAMS ? { label: tl("隊伍已滿"), tone: "done" } : { label: tl("未組隊"), tone: "empty" };
   if (!team.seekers.length) return { label: tl("缺探索者"), tone: "empty" };
+  if (sim.chain?.drafts.includes(spire)) return { label: tl("未儲存"), tone: "empty" }; // live game: saved with the dive or the save bar
   const today = divesOn(s, sim.today).filter((d) => d.spire === spire).length;
   if (today >= DIVES_PER_TEAM_PER_DAY) return { label: tl("今天已滿"), tone: "done" };
   return { label: tl("可出發"), tone: "go" };

@@ -86,7 +86,7 @@ export function Modal({ label, onClose, children, className }: { label: string; 
 
 /** What makes the card a spire, prism or seeker: berths, beam or light. */
 export function Trait({ n }: { n: Pick<SimNft, "kind" | "trait"> }) {
-  if (n.kind === 0) return <span className="v3-trait">{n.trait} {tl("泊位")}</span>;
+  if (n.kind === 0) return <span className="v3-trait">{tl("{0} 泊位", { 0: n.trait })}</span>;
   if (n.kind === 1) return <span className="v3-trait">{BEAM[n.trait]} · {BEAM_HINT[n.trait]}</span>;
   return <span className="v3-trait" style={{ color: LIGHT_COLOR[n.trait] }}>● {LIGHT[n.trait]}</span>;
 }

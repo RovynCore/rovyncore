@@ -27,7 +27,7 @@ export function CardSupply({ sim }: { sim: Sim }) {
       <div className="v3-supply__grid">
         {([0, 1, 2] as Kind[]).map((k) => <KindSupply key={k} kind={k} v={supply[k]} />)}
       </div>
-      <p className="v3-nftdetail__note">{tl("預覽模式：數字是模擬的。合約部署後會直接讀取鏈上的數量。")}</p>
+      <p className="v3-nftdetail__note">{sim.mode === "preview" ? tl("預覽模式：數字是模擬的。合約部署後會直接讀取鏈上的數量。") : tl("數字直接讀取鏈上：存在的張數、在隊伍上和市集上架的張數。")}</p>
     </section>
   );
 }

@@ -277,6 +277,43 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
     </ol>
   );
 
+  // What has to happen first, in order: the wallet (live game), results to collect, teams still on the bridge.
+  const ch = sim.chain;
+  const hero = (kicker: string, title: string, lead: string, cta: React.ReactNode) => (
+    <div className="v3-route-hero">
+      <span className="hud-kicker"><GameIcon name="signal" />{date} {kicker}</span>
+      <h1>{title}</h1>
+      <p className="v3-route-hero__lead">{lead}</p>
+      <div className="v3-route-hero__go">{cta}</div>
+      {path}
+    </div>
+  );
+  const btn = (label: string, icon: IconName, onClick: () => void, disabled = false) => (
+    <button type="button" className="hud-btn hud-btn--primary v3-route-hero__btn" onClick={onClick} disabled={disabled}><GameIcon name={icon} />{label}</button>
+  );
+  if (ch?.ready && ch.loaded) {
+    const busy = !!ch.tx?.running;
+    if (!ch.account) return hero(tl("· 第一步"), tl("連接錢包，開始潛光"), tl("卡片、隊伍和收益都記在你的錢包。這是測試網：用沒有價值的測試幣遊玩。"), btn(tl("連接錢包"), "rvyn", () => void ch.join()));
+    if (ch.wrongChain) return hero(tl("· 第一步"), tl("切換到 {0}", { 0: ch.chainName }), tl("遊戲在這條鏈上，錢包要在同一條鏈才能交易。"), btn(tl("切換網路"), "rvyn", () => void ch.switchNetwork()));
+    if (ch.eth === 0) return hero(tl("· 第一步"), tl("先領一點手續費用的測試 ETH"), tl("每筆交易都要一點點手續費。到 Robinhood 測試網水龍頭免費領取，再回來領測試 $RVYN。"), btn(tl("領取方式"), "rvyn", () => go("faucet")));
+    if (ch.drip && s.balance < 20 && !s.nfts.some(owned)) {
+      const wait = Math.max(0, ch.drip.nextAt - sim.now);
+      return hero(tl("· 第二步"), tl("領 {0} 測試 $RVYN", { 0: fmt(ch.drip.amount, 0) }), tl("召喚光塔和探索者都用 $RVYN。測試幣每 24 小時可以領一次，沒有價值。"),
+        btn(wait ? tl("{0} 後可以再領", { 0: clock(wait) }) : tl("領取 {0} tRVYN", { 0: fmt(ch.drip.amount, 0) }), "claim", () => void ch.drip!.run(), busy || wait > 0));
+    }
+  }
+  const waiting = s.dives.filter((d) => d.pending);
+  if (waiting.length) {
+    const total = waiting.reduce((a, d) => a + (d.reward ?? 0), 0);
+    return hero(tl("· 光橋回來了"), tl("{0} 趟結果等你收取", { 0: waiting.length }), tl("一共 {0} $RVYN。收取後才會進金庫，隊伍也才能再出發。", { 0: fmt(total) }),
+      <>{btn(waiting.length > 1 ? tl("全部收取") : tl("收取結果"), "claim", () => void sim.collect(), !!ch?.tx?.running)}<button type="button" className="hud-btn hud-btn--ghost" onClick={() => go("dive")}>{tl("先看結果")}</button></>);
+  }
+  const onBridge = s.dives.filter((d) => !d.result);
+  if (onBridge.length && !ready.length) {
+    const first = Math.min(...onBridge.map((d) => d.revealAt));
+    return hero(tl("· 航行中"), tl("{0} 支隊伍在光橋上", { 0: onBridge.length }), tl("{0} 後揭曉第一趟。揭曉後回來收取。", { 0: clock(Math.max(0, first - sim.now)) }), btn(tl("看航行"), "expedition", () => go("dive")));
+  }
+
   if (!team || !pick) {
     const usable = (k: number) => s.nfts.some((n) => n.kind === k && owned(n) && n.dockedAt === undefined && n.listed === undefined);
     const toPlain = !team ? usable(0) && usable(2) : true;

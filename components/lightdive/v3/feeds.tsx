@@ -7,7 +7,7 @@ import { ODDS_BP, seeded, type Kind } from "@/lib/lightdive-v3/rules";
 import { type Sim } from "./sim";
 import { RarityGem } from "./kit";
 import { KIND, RARITY_COLOR, TIER, ago, clock, fmt } from "./copy";
-import { tl, localized } from "@/lib/lightdive-v3/i18n";
+import { gap, tl, localized } from "@/lib/lightdive-v3/i18n";
 
 const BUCKET = 40_000;
 
@@ -28,8 +28,9 @@ function summonsAround(now: number, count = 4) {
 }
 
 export function SummonFeed({ sim }: { sim: Sim }) {
-  const list = summonsAround(sim.now);
+  const list = sim.summons ?? summonsAround(sim.now);
   const nextDay = (sim.today + 1) * 86_400_000;
+  const ch = sim.chain;
   return (
     <aside className="v3-feed" aria-label={tl("全服召喚動態")}>
       <header><span className="v3-feed__live" aria-hidden="true" />{tl("全服召喚動態")}</header>
@@ -37,12 +38,15 @@ export function SummonFeed({ sim }: { sim: Sim }) {
         {list.map((x) => (
           <li key={x.id} style={{ ["--rc" as string]: RARITY_COLOR[x.rarity] }} className={x.rarity >= 3 ? "is-rare" : ""}>
             <RarityGem rarity={x.rarity} size={14} />
-            <span><b>{x.who}</b> {tl("召喚到")} <em>{TIER[x.rarity]}{KIND[x.kind]}</em></span>
+            <span><b>{x.who}</b> {tl("召喚到")} <em>{TIER[x.rarity]}{gap()}{KIND[x.kind]}</em></span>
             <small>{ago(sim.now - x.at)}</small>
           </li>
         ))}
       </ul>
-      <footer>{tl("價格每天 00:00 UTC 依流動池均價更新 · 倒數")} <b>{clock(nextDay - sim.now)}</b></footer>
+      {!list.length && <p className="hud-dim">{tl("還沒有人召喚。")}</p>}
+      {ch
+        ? <footer>{tl("目前價格：光塔 {0} · 稜鏡 {1} · 探索者 {2} $RVYN", { 0: fmt(ch.prices[0], 0), 1: fmt(ch.prices[1], 0), 2: fmt(ch.prices[2], 0) })}</footer>
+        : <footer>{tl("價格每天 00:00 UTC 依流動池均價更新 · 倒數")} <b>{clock(nextDay - sim.now)}</b></footer>}
     </aside>
   );
 }

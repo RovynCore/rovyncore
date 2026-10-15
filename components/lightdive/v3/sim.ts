@@ -202,6 +202,8 @@ export type Game = {
   /** Everyone's recent dives (the live log). */
   feed: (now: number, count?: number, hours?: number) => FeedRow[];
   chainOf: (n: Pick<SimNft, "id" | "kind" | "rarity">) => ChainFacts;
+  /** Live game: the latest summons by anyone (the preview simulates its own). */
+  summons?: { id: number; who: string; kind: Kind; rarity: number; at: number }[];
   dive: (spire: number, dest: number) => Promise<ActResult>;
   /** Several teams at once (one transaction on chain); one result per team, in order. */
   diveMany: (teams: { spire: number; dest: number }[]) => Promise<ActResult[]>;

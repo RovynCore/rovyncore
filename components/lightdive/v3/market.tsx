@@ -170,7 +170,7 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
           <div><dt>{tl("上架時間")}</dt><dd>{ago(sim.now - l.listedAt)}</dd></div>
           <div><dt>{tl("標準")}</dt><dd>{tl("ERC-721（RVDIV）")}</dd></div>
         </dl>
-        <p className="v3-nftdetail__note">{tl("預覽模式：掛單和購買都是模擬的。")}</p>
+        {sim.mode === "preview" && <p className="v3-nftdetail__note">{tl("預覽模式：掛單和購買都是模擬的。")}</p>}
       </section>
       <section className="v3-nftdetail__hero" style={{ ["--rc" as string]: RARITY_COLOR[l.rarity] }}>
         <div className="v3-nftdetail__art"><NftArt a={{ kind: l.kind, rarity: l.rarity, trait: l.trait, variant: 0 }} /></div>

@@ -90,11 +90,12 @@ export function LightdiveApp({ sim }: { sim: Game }) {
   const lang = syncGameLocale(siteLocale); // the language actually shown (falls back until a translation is complete)
   const [musicOn, toggleMusic] = useMusicToggle();
   const [lineIndex, setLineIndex] = useState(0);
-  const [spoken, setSpoken] = useState<string | null>(null);
+  // a line Rovyn said in reply to something, kept with the language it was said in (a language switch drops it)
+  const [spoken, setSpoken] = useState<{ text: string; lang: string } | null>(null);
   const pool = sim.state ? rovynPool(sim) : TEXTS.rovyn.idle;
-  const line = spoken ?? pool[lineIndex % pool.length];
+  const line = spoken && spoken.lang === lang ? spoken.text : pool[lineIndex % pool.length];
   const next = useCallback(() => { setSpoken(null); setLineIndex((i) => i + 1); }, []);
-  const say = useCallback((l: string) => setSpoken(l), []);
+  const say = useCallback((l: string) => setSpoken({ text: l, lang }), [lang]);
   const s = sim.state;
 
   const badges = useMemo(() => {
@@ -162,7 +163,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
             : <span className="v3-badge"><FlaskConical aria-hidden="true" />{tl("預覽模式：結果是模擬的，不會上鏈")}</span>}
           <Res icon="clock" label={tl("換日")} value={clock(resetIn)} className="hud-res--wide" />
         </header>
-        {live && <div className="v3-chainstrip"><ChainStrip sim={sim} onFaucet={() => go("faucet")} /></div>}
+        {live && view !== "lobby" && <div className="v3-chainstrip"><ChainStrip sim={sim} onFaucet={() => go("faucet")} /></div>}
         <div key={view} className="v3-view">
         {view === "lobby" ? <Lobby sim={sim} go={go} rovyn={rovyn} />
           : view === "dive" ? <StarMap sim={sim} say={say} />
@@ -170,7 +171,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
           : view === "spires" ? <Collection sim={sim} kind={0} />
           : view === "prisms" ? <Collection sim={sim} kind={1} />
           : view === "seekers" ? <Collection sim={sim} kind={2} />
-          : view === "summon" ? <Summon sim={sim} />
+          : view === "summon" ? <Summon sim={sim} go={go} />
           : view === "market" ? <Market sim={sim} go={go} />
           : view === "treasury" ? <Treasury sim={sim} />
           : view === "credits" ? <Credits />

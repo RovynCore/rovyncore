@@ -242,7 +242,7 @@ function SellDialog({ sim, n, onClose, onDone }: { sim: Sim; n: SimNft; onClose:
         <button type="button" className="hud-btn hud-btn--ghost" onClick={onClose}>{tl("取消")}</button>
         <button type="button" className="hud-btn hud-btn--primary" onClick={go} disabled={!(price > 0)}>{tl("確認上架")}</button>
       </div>
-      <p className="v3-nftdetail__note">{tl("預覽模式：上架與成交都是模擬的。正式版由市集合約處理。")}</p>
+      <p className="v3-nftdetail__note">{sim.mode === "preview" ? tl("預覽模式：上架與成交都是模擬的。正式版由市集合約處理。") : tl("上架期間卡片由市集合約保管，取消上架就會回到你的錢包。")}</p>
     </Modal>
   );
 }

@@ -117,9 +117,9 @@ export function Treasury({ sim }: { sim: Sim }) {
       <History sim={sim} />
 
       <section className="v3-panel v3-pool">
-        <h3>{tl("核光池（模擬）")}</h3>
+        <h3>{sim.mode === "preview" ? tl("核光池（模擬）") : tl("核光池")}</h3>
         <div className="v3-tiles is-4">
-          <Tile label={tl("池子餘額")} value={fmt(sim.pool)} sub={tl("即時變動 · 正式版讀取鏈上")} />
+          <Tile label={tl("池子餘額")} value={fmt(sim.pool)} sub={sim.mode === "preview" ? tl("即時變動 · 正式版讀取鏈上") : tl("鏈上即時餘額")} />
           <Tile label={tl("每天釋出")} value={tl("餘額的 1%")} sub={tl("依光塵比例分給所有出發的人")} />
           <Tile label={tl("今日分配率")} value={sim.rate.toFixed(5)} sub={tl("$RVYN／每點光塵 · 昨日 {0}", { 0: sim.rateYesterday.toFixed(5) })} />
           <Tile label={tl("回流")} value="95%" sub={tl("出發成本、手續費、交易稅")} />

@@ -466,3 +466,19 @@ export async function predictDive(ctx: Ctx, d: Dive3, signature: Hex) {
   const draw = drawDive(plan, diveRandom(signature, d.id));
   return { ...draw, ...diveReward(d.pointsE2, draw.multX100, d.rate, plan.levyBp), plan };
 }
+
+export type RecentSummon = { id: bigint; who: Address; kind: number; rarity: number; at: number };
+
+/** The latest cards summoned by anyone (newest first), for the summon page's live feed. */
+export async function readRecentSummons(ctx: Ctx, count = 6, blocks = 400_000n): Promise<RecentSummon[]> {
+  const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
+  const from = latest > blocks && latest - blocks > ctx.fromBlock ? latest - blocks : ctx.fromBlock;
+  const minted = (await events<Record<string, unknown>>(ctx, ctx.c.nft, ctx.abi.LightdiveNFT3, "Minted", undefined, from)).slice(-count).reverse();
+  const times = new Map<bigint, number>();
+  const out: RecentSummon[] = [];
+  for (const l of minted) {
+    const a = attrsOf(l.args.attributes);
+    out.push({ id: BigInt(l.args.id as bigint), who: l.args.to as Address, kind: a.kind, rarity: a.rarity, at: await blockTime(ctx, times, l.blockNumber) });
+  }
+  return out;
+}

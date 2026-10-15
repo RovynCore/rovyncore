@@ -48,7 +48,13 @@ export function ChainStrip({ sim, onFaucet }: { sim: Game; onFaucet: () => void 
     );
   }
   if (ch.drip && s && s.balance < 20 && sim.now >= ch.drip.nextAt) {
-    return <p className="v3-notice" role="status"><Droplets aria-hidden="true" /> {tl("先領測試 $RVYN：每 24 小時可以領 {0}。", { 0: fmt(ch.drip.amount, 0) })} <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={onFaucet}>{tl("前往領取")}</button></p>;
+    return (
+      <p className="v3-notice" role="status">
+        <Droplets aria-hidden="true" /> {tl("先領測試 $RVYN：每 24 小時可以領 {0}。", { 0: fmt(ch.drip.amount, 0) })}
+        <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" disabled={!!ch.tx?.running} onClick={() => void ch.drip!.run()}>{tl("領取 {0} tRVYN", { 0: fmt(ch.drip.amount, 0) })}</button>
+        <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={onFaucet}>{tl("說明")}</button>
+      </p>
+    );
   }
   return null;
 }
@@ -90,7 +96,7 @@ export function DraftBar({ sim }: { sim: Game }) {
   };
   return (
     <div className="v3-draftbar" role="region" aria-label={tl("尚未儲存的隊伍")}>
-      <span><b>{tl("{0} 支隊伍有變更，還沒上鏈", { 0: ch.drafts.length })}</b>{error ? <em>{error}</em> : <small>{tl("儲存後才能出發；每支隊伍一筆交易。")}</small>}</span>
+      <span><b>{tl("{0} 支隊伍有變更，還沒上鏈", { 0: ch.drafts.length })}</b>{error ? <em>{error}</em> : <small>{tl("出發時會自動一起儲存，也可以現在先存。每支隊伍一筆交易。")}</small>}</span>
       <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => { ch.discardTeams(); setError(null); }}><Undo2 aria-hidden="true" />{tl("還原")}</button>
       <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={() => void save()} disabled={!!ch.tx?.running}><Save aria-hidden="true" />{tl("儲存隊伍")}</button>
     </div>
@@ -117,6 +123,15 @@ export function Faucet({ sim }: { sim: Game }) {
   const platform = usePlatform();
   const [added, setAdded] = useState(false);
   const wait = d ? Math.max(0, d.nextAt - sim.now) : 0;
+  // gas first only for a wallet that has none; otherwise the claim button comes first
+  const needGas = !ch.account || !ch.eth;
+  const gas = (
+    <section className="v3-panel">
+      <h3><Droplets aria-hidden="true" />{needGas ? tl("1. 領手續費用的測試 ETH") : tl("手續費用的測試 ETH")}</h3>
+      <p>{tl("每筆交易都要一點點手續費。到 Robinhood Chain 測試網的水龍頭免費領取：")}</p>
+      <p>{GAS_FAUCETS.map((f) => <a key={f.url} className="hud-btn hud-btn--ghost" href={f.url} target="_blank" rel="noreferrer">{f.name}<ExternalLink aria-hidden="true" /></a>)}</p>
+    </section>
+  );
   const watch = async () => {
     if (!ch.contracts) return;
     try {
@@ -135,13 +150,9 @@ export function Faucet({ sim }: { sim: Game }) {
         <Tile label={tl("手續費用的測試 ETH")} value={ch.eth === null ? "—" : fmt(ch.eth, 4)} tone={ch.eth === 0 ? "#ff9d8a" : undefined} />
         <Tile label={tl("每次可領")} value={d ? fmt(d.amount, 0) : "—"} sub={tl("每 24 小時一次")} />
       </div>
+      {needGas && gas}
       <section className="v3-panel">
-        <h3><Droplets aria-hidden="true" />{tl("1. 領手續費用的測試 ETH")}</h3>
-        <p>{tl("每筆交易都要一點點手續費。到 Robinhood Chain 測試網的水龍頭免費領取：")}</p>
-        <p>{GAS_FAUCETS.map((f) => <a key={f.url} className="hud-btn hud-btn--ghost" href={f.url} target="_blank" rel="noreferrer">{f.name}<ExternalLink aria-hidden="true" /></a>)}</p>
-      </section>
-      <section className="v3-panel">
-        <h3><Sparkles aria-hidden="true" />{tl("2. 領測試 $RVYN")}</h3>
+        <h3><Sparkles aria-hidden="true" />{needGas ? tl("2. 領測試 $RVYN") : tl("領測試 $RVYN")}</h3>
         {!ch.account ? (
           <button type="button" className="hud-btn hud-btn--primary" onClick={() => void ch.join()}><Wallet aria-hidden="true" />{tl("連接錢包")}</button>
         ) : (
@@ -153,6 +164,7 @@ export function Faucet({ sim }: { sim: Game }) {
           </>
         )}
       </section>
+      {!needGas && gas}
       <p className="v3-muted">{tl("合約尚未經過審計。測試網隨時可能重置，測試幣和測試卡片都不會轉到正式版。")}</p>
     </div>
   );
