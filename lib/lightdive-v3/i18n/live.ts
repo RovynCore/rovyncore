@@ -116,4 +116,7 @@ ROVYN CORE · 潛光遠征測試網（測試幣，沒有價值）|ROVYN CORE · 
 合約設定的價格，只能在 {0}–{1} 之間、每天最多調 10%|Set by the contract; it can only move within {0}–{1}, at most 10% a day|合约设定的价格，只能在 {0}–{1} 之间、每天最多调 10%|컨트랙트가 정한 가격으로, {0}–{1} 범위에서 하루 최대 10%만 조정됩니다
 數字直接讀取鏈上：存在的張數、在隊伍上和市集上架的張數。|Read straight from the chain: cards in existence, on teams and listed on the market.|数字直接读取链上：存在的张数、在队伍上和市集上架的张数。|체인에서 직접 읽은 수치입니다: 존재하는 카드, 팀에 있는 카드, 마켓에 등록된 카드.
 鏈上即時餘額|Live balance on chain|链上即时余额|체인 실시간 잔액
-出發時會自動一起儲存，也可以現在先存。每支隊伍一筆交易。|They are saved automatically when the team departs, or save them now. One transaction per team.|出发时会自动一起储存，也可以现在先存。每支队伍一笔交易。|팀이 출발할 때 자동으로 함께 저장되며, 지금 저장해도 됩니다. 팀마다 거래 1건입니다.`;
+出發時會自動一起儲存，也可以現在先存。每支隊伍一筆交易。|They are saved automatically when the team departs, or save them now. One transaction per team.|出发时会自动一起储存，也可以现在先存。每支队伍一笔交易。|팀이 출발할 때 자동으로 함께 저장되며, 지금 저장해도 됩니다. 팀마다 거래 1건입니다.
+下一步：前往 ① 微光淺域|Next: go to ① The Glimmer Shallows|下一步：前往 ① 微光浅域|다음: ① 미광의 얕은 바다로 이동
+下一步：選一個目的地|Next: pick a destination|下一步：选一个目的地|다음: 목적지 선택
+下一步|Next|下一步|다음`;

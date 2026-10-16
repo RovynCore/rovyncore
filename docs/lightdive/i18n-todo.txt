@@ -1,58 +1,6 @@
 # Lightdive strings still missing an English translation, by first file that uses them
 
-## components\lightdive\v3\assets.tsx (1)
-上架期間卡片由市集合約保管，取消上架就會回到你的錢包。
-
-## components\lightdive\v3\batch-sell.tsx (1)
-市集合約會用一筆交易全部上架（第一次需要授權市集合約保管你的卡）。
-
-## components\lightdive\v3\extras.tsx (1)
-ROVYN CORE · 潛光遠征測試網（測試幣，沒有價值）
-
-## components\lightdive\v3\feeds.tsx (2)
-還沒有人召喚。
-目前價格：光塔 {0} · 稜鏡 {1} · 探索者 {2} $RVYN
-
-## components\lightdive\v3\live-ui.tsx (2)
-說明
-領測試 $RVYN
-
-## components\lightdive\v3\pages.tsx (20)
-· 第一步
-連接錢包，開始潛光
-卡片、隊伍和收益都記在你的錢包。這是測試網：用沒有價值的測試幣遊玩。
-切換到 {0}
-遊戲在這條鏈上，錢包要在同一條鏈才能交易。
-先領一點手續費用的測試 ETH
-每筆交易都要一點點手續費。到 Robinhood 測試網水龍頭免費領取，再回來領測試 $RVYN。
-領取方式
-· 第二步
-領 {0} 測試 $RVYN
-召喚光塔和探索者都用 $RVYN。測試幣每 24 小時可以領一次，沒有價值。
-· 光橋回來了
-{0} 趟結果等你收取
-一共 {0} $RVYN。收取後才會進金庫，隊伍也才能再出發。
-全部收取
-先看結果
-· 航行中
-{0} 支隊伍在光橋上
-{0} 後揭曉第一趟。揭曉後回來收取。
-看航行
-
-## components\lightdive\v3\plain.tsx (1)
-未儲存
-
-## components\lightdive\v3\starmap.tsx (1)
-所有觀測者的光橋，直接讀取鏈上紀錄。
-
-## components\lightdive\v3\summon.tsx (4)
-下一步：召喚探索者
-下一步：召喚光塔
-下一步：到碑原組隊
-合約設定的價格，只能在 {0}–{1} 之間、每天最多調 10%
-
-## components\lightdive\v3\supply.tsx (1)
-數字直接讀取鏈上：存在的張數、在隊伍上和市集上架的張數。
-
-## components\lightdive\v3\treasury.tsx (1)
-鏈上即時餘額
+## components\lightdive\v3\starmap.tsx (3)
+下一步：前往 ① 微光淺域
+下一步：選一個目的地
+下一步

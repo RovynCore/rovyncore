@@ -160,7 +160,15 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
           <DestinationCard key={dest} sim={sim} id={dest} teams={teams} used={used} onClose={() => setDest(null)} say={say} onDeparted={departed} />
         )}
         {watch !== null && dest === null && <VoyageLog sim={sim} id={watch} arriving={arriving} onArrived={() => setArrived(revealed?.id ?? null)} onClose={() => setWatch(null)} onSwitch={setWatch} onCollect={(d) => { setSeenUpTo((v) => Math.max(v, d.id)); collectOne(d); }} />}
-        <Coach voyageOpen={watch !== null} step={waiting.length > 0 || revealed ? 4 : watch !== null || pending.length > 0 ? 3 : dest !== null ? 2 : cluster !== null ? 1 : 0} />
+        <Coach voyageOpen={watch !== null} step={waiting.length > 0 || revealed ? 4 : watch !== null || pending.length > 0 ? 3 : dest !== null ? 2 : cluster !== null ? 1 : 0}
+          onOpenCluster={() => { setCluster(0); setDest(null); setHover(null); play("open"); }}
+          onPickDest={() => {
+            // the deepest destination the strongest team reaches in the open cluster (or its first one)
+            const c = cluster ?? 0;
+            const reach = DESTINATIONS.filter((d) => d.cluster === c && best >= d.threshold);
+            if (cluster === null) setCluster(c);
+            setDest((reach.at(-1) ?? DESTINATIONS[c * 4]).id); setWatch(null); play("click");
+          }} />
         <div className="v3-flight" aria-live="polite">
           {notice && <span className="v3-flight__notice" role="alert">{notice}</span>}
           <span className="v3-flight__rate" title={tl("核光池每天釋出 1%，依當天所有人的光塵分；人越多，每點光塵分到越少")}>{tl("今日分配率")} <b>{sim.rate.toFixed(5)}</b> <RateChange sim={sim} /></span>
@@ -202,21 +210,34 @@ const COACH = localized([
 ]);
 
 /** Rovyn walks a first-time player through one dive, then never shows again. */
-function Coach({ step, voyageOpen }: { step: number; voyageOpen: boolean }) {
+function Coach({ step, voyageOpen, onOpenCluster, onPickDest }: { step: number; voyageOpen: boolean; onOpenCluster: () => void; onPickDest: () => void }) {
   const [done, setDone] = useState(() => { try { return localStorage.getItem(COACH_KEY) === "1"; } catch { return true; } });
+  // "next" can move the guide ahead of the player's own actions; it never goes back
+  const [seen, setSeen] = useState(0);
   const finish = () => { setDone(true); try { localStorage.setItem(COACH_KEY, "1"); } catch {} };
   if (done) return null;
-  const c = COACH[step];
+  const shown = Math.max(step, seen);
+  const c = COACH[shown];
+  // the first two steps do the step for the player; departing stays the player's own click (it spends a Dive Pass)
+  const next = () => {
+    if (shown === 0) onOpenCluster();
+    if (shown === 1) onPickDest();
+    setSeen(shown + 1);
+    play("click");
+  };
+  const nextLabel = shown === 0 ? tl("下一步：前往 ① 微光淺域") : shown === 1 ? tl("下一步：選一個目的地") : tl("下一步");
   return (
     <div className={`v3-coach ${c.pos === "is-voyage" && !voyageOpen ? "is-left" : c.pos}`} role="note">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/lightdive/keeper-face.webp" alt="" />
       <div>
-        <span className="hud-kicker">{tl("新手引導 {0}", { 0: step + 1 })}/{COACH.length}</span>
+        <span className="hud-kicker">{tl("新手引導 {0}", { 0: shown + 1 })}/{COACH.length}</span>
         <b>{c.title}</b>
         <p>{c.text}</p>
         <div className="v3-coach__actions">
-          {step === COACH.length - 1 ? <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={finish}>{tl("知道了，開始玩")}</button> : null}
+          {shown === COACH.length - 1
+            ? <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={finish}>{tl("知道了，開始玩")}</button>
+            : <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={next}>{nextLabel}</button>}
           <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={finish}>{tl("跳過引導")}</button>
         </div>
       </div>

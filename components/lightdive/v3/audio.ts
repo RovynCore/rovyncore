@@ -171,8 +171,9 @@ let current: { key: MusicKey; el: HTMLAudioElement } | null = null;
 function fade(el: HTMLAudioElement, to: number, ms: number, done?: () => void) {
   const from = el.volume, start = performance.now();
   const step = (now: number) => {
-    const k = Math.min(1, (now - start) / ms);
-    el.volume = from + (to - from) * k;
+    // the first frame's timestamp can be a little before `start`: keep k and the volume inside [0, 1]
+    const k = Math.max(0, Math.min(1, (now - start) / ms));
+    el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
     if (k < 1) requestAnimationFrame(step);
     else done?.();
   };
