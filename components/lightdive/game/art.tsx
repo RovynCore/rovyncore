@@ -1,8 +1,8 @@
 "use client";
 
-// Placeholder art for Lightdive NFTs, drawn from the same on-chain fields the final art will use
-// (kind, rarity, trait, variant). When the art set exists, <NftArt> is the single place to swap in
-// the images; every screen renders NFTs through it.
+// Art for Lightdive NFTs, from the on-chain fields (kind, rarity, trait, variant). Seekers use the founder's finished
+// paintings (public/lightdive/cards, made by scripts/lightdive-art-webp.mjs); spires and prisms are still drawn here
+// until their art arrives. Every screen renders NFTs through <NftArt>.
 import { useId } from "react";
 import { ATTRIBUTE_COLOR, RARITY_COLOR } from "@/lib/lightdive-copy";
 import { KIND, type Attributes } from "@/lib/lightdive";
@@ -255,8 +255,39 @@ function SignatureSky({ signature }: { signature: number }) {
   );
 }
 
+/** Finished seeker art (founder, 2026-10-16): one painting per light × rarity, transparent, 3:4 portrait. */
+const seekerImage = (light: number, rarity: number) =>
+  light >= 0 && light <= 5 && rarity >= 0 && rarity <= 4 ? `/lightdive/cards/seeker-l${light}-r${rarity}.webp` : null;
+
 export function SeekerArt({ rarity, attribute, signature, className }: { rarity: number; attribute: number; signature: number; className?: string }) {
   const id = useId().replace(/:/g, "");
+  const image = seekerImage(attribute, rarity);
+  if (image) {
+    // the painting sits on a glow in its light's colour, so the light reads at every rarity
+    const glow = ATTRIBUTE_COLOR[attribute] ?? LIME;
+    return (
+      <svg className={className} viewBox="0 0 200 240" role="img" aria-hidden="true">
+        <Backdrop id={id} rarity={rarity} />
+        <defs>
+          <radialGradient id={`${id}-light`} cx="50%" cy="56%" r="52%">
+            <stop offset="0" stopColor={glow} stopOpacity={0.34 + rarity * 0.04} />
+            <stop offset="0.6" stopColor={glow} stopOpacity="0.08" />
+            <stop offset="1" stopColor={glow} stopOpacity="0" />
+          </radialGradient>
+          {/* knee-up paintings end at the canvas edge: fade the bottom so they settle into the card */}
+          <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0.8" stopColor="#fff" stopOpacity="1" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+          <mask id={`${id}-mask`} maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="240">
+            <rect width="200" height="240" fill={`url(#${id}-fade)`} />
+          </mask>
+        </defs>
+        <ellipse cx="100" cy="134" rx="92" ry="104" fill={`url(#${id}-light)`} />
+        <image href={image} x="10" y="0" width="180" height="240" preserveAspectRatio="xMidYMid meet" mask={`url(#${id}-mask)`} />
+      </svg>
+    );
+  }
   const accent = rarity === 3 ? GOLD : rarity === 4 ? WHITE_GOLD : RARITY_COLOR[rarity];
   const light = ATTRIBUTE_COLOR[attribute] ?? LIME;
   const finPairs = rarity >= 4 ? 3 : rarity >= 2 ? 2 : 1;
