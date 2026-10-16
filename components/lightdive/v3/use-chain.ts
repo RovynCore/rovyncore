@@ -21,7 +21,7 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWorld, roundTime,
+  drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
   type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type World,
 } from "@/lib/lightdive-v3/onchain";
 import type { Listing, Supply } from "./market-data";
@@ -97,7 +97,7 @@ const riskOf = (beam: number, dest: number, day: number) => {
 };
 
 type Prediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; signature: Hex };
-type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[] };
+type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[] };
 
 function readNames(): Record<number, string> {
   try { return JSON.parse(localStorage.getItem(NAMES_KEY) ?? "{}"); } catch { return {}; }
@@ -139,10 +139,11 @@ export function useChain(): Game {
         // when it is close to the wall clock (drand itself runs on wall-clock time)
         const skew = world.now * 1000 - Date.now();
         offset.current = Math.abs(skew) < 120_000 ? skew : 0;
-        const [player, market, feed, onTeam, summons, chainId] = await Promise.all([
+        const [player, market, feed, week, onTeam, summons, chainId] = await Promise.all([
           account ? readPlayer(ctx, account, world, G.testToken) : Promise.resolve(null),
           readMarket(ctx),
           readFeed(ctx).catch(() => []),
+          readWeek(ctx).catch(() => []),
           readOnTeam(ctx).catch(() => [0, 0, 0] as [number, number, number]),
           readRecentSummons(ctx).catch(() => [] as RecentSummon[]),
           account ? platform.walletProvider().request({ method: "eth_chainId" }).then(Number).catch(() => null) : Promise.resolve(null),
@@ -157,7 +158,7 @@ export function useChain(): Game {
             predictions.current.set(Number(d.id), { tier: p.tier, multX100: p.multX100, wear: p.wear, reward: p.reward, levy: p.levy, signature: sig });
           }));
         }
-        setData({ world, player, market, feed, onTeam, summons });
+        setData({ world, player, market, feed, week, onTeam, summons });
         setWalletChain(chainId);
         setFailed(false);
       } catch (e) {
@@ -271,7 +272,7 @@ export function useChain(): Game {
     .map((l) => ({ id: Number(l.id), nftId: Number(l.id), kind: l.kind as Kind, rarity: l.rarity, power: l.power, trait: l.trait, voyages: l.voyagesLeft, renewed: l.renewed, price: num(l.price), seller: l.seller, listedAt: l.listedAt * 1000 })), [data, account]);
 
   // everyone else's dives (the pages add the player's own from state)
-  const feedRows = useMemo(() => (data?.feed ?? []).filter((f) => !account || f.owner.toLowerCase() !== account.toLowerCase()).map((f) => {
+  const toRows = useCallback((list: FeedItem[]) => list.filter((f) => !account || f.owner.toLowerCase() !== account.toLowerCase()).map((f) => {
     const names = outcomesOf(baseTable(DESTINATIONS[f.dest].cluster, riskOf(f.beam, f.dest, f.day)));
     return {
       id: String(f.id), who: `${f.owner.slice(0, 6)}…${f.owner.slice(-4)}`, dest: f.dest,
@@ -280,6 +281,8 @@ export function useChain(): Game {
       choice: f.decision !== undefined ? CHOICES[f.decision] : "none",
     };
   }).sort((a, b) => b.at - a.at), [data, account]);
+  const feedRows = useMemo(() => toRows(data?.feed ?? []), [toRows, data]);
+  const weekRows = useMemo(() => toRows(data?.week ?? []), [toRows, data]);
 
   // ---------------------------------------------------------------- transactions
 
@@ -589,6 +592,7 @@ export function useChain(): Game {
     market,
     supply,
     feed: (_now: number, count = 18) => feedRows.slice(0, count),
+    week: weekRows,
     summons: (data?.summons ?? []).map((x) => ({ id: Number(x.id), who: account && x.who.toLowerCase() === account.toLowerCase() ? tl("你") : `${x.who.slice(0, 6)}…${x.who.slice(-4)}`, kind: x.kind as Kind, rarity: x.rarity, at: x.at * 1000 })),
     chainOf: (n) => {
       const raw = data?.player?.cards.find((x) => Number(x.id) === n.id);

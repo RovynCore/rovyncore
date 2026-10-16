@@ -17,7 +17,7 @@ import {
 } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 
-export type View = "lobby" | "dive" | "plain" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
+export type View = "lobby" | "dive" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
 const DAY = 86_400_000;
 
 const alive = (n: SimNft) => !n.homeAt;

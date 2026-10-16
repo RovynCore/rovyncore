@@ -1673,3 +1673,37 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
   .v3-draftbar { left: 12px; right: 12px; bottom: 76px; transform: none; width: auto; max-width: none; flex-wrap: wrap; }
   .v3-tx { right: 12px; bottom: 76px; }
 }
+
+/* ---------------------------------------------------------------- 航海紀錄: titles, footprints, weekly boards */
+.v3-logbook .v3-panel h3 em { margin-left: 8px; font-style: normal; font-size: 14px; color: var(--h-text-3); }
+.v3-titles { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.v3-titles li { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--h-line); border-radius: 12px; background: rgba(255, 255, 255, 0.02); color: var(--h-text-3); }
+.v3-titles li b { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; }
+.v3-titles li b svg { width: 14px; height: 14px; }
+.v3-titles li small { font-size: 13px; }
+.v3-titles li.is-got { border-color: rgba(240, 199, 102, 0.5); background: rgba(240, 199, 102, 0.07); color: var(--h-text); }
+.v3-titles li.is-got b { color: var(--h-gold); }
+.v3-titles li.is-got small { color: var(--h-text-2); }
+
+.v3-footprints__tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px; }
+.v3-footprints__tabs button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--h-line); border-radius: 999px; background: transparent; color: var(--h-text-2); font-size: 14px; cursor: pointer; }
+.v3-footprints__tabs button small { font-size: 12px; color: var(--h-text-3); }
+.v3-footprints__tabs button.is-on { border-color: var(--hue); color: var(--h-text); background: color-mix(in srgb, var(--hue) 12%, transparent); }
+.v3-footprints__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.v3-footprints__list article { display: grid; align-content: start; gap: 10px; padding: 16px; border: 1px solid var(--h-line); border-left: 3px solid var(--hue); border-radius: 12px; background: rgba(255, 255, 255, 0.02); }
+.v3-footprints__list header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.v3-footprints__list header b { font-size: 17px; }
+.v3-footprints__list header small { font-size: 13px; color: var(--h-text-3); white-space: nowrap; }
+.v3-footprint { margin: 0; font-size: 15.5px; line-height: 1.85; color: var(--h-text); }
+.v3-footprint.is-locked { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--h-text-3); }
+.v3-footprint.is-locked svg { width: 14px; height: 14px; flex: none; }
+
+.v3-boards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.v3-board { display: grid; align-content: start; gap: 8px; padding: 14px; border: 1px solid var(--h-line); border-radius: 12px; background: rgba(255, 255, 255, 0.02); }
+.v3-board > b { font-size: 16px; color: var(--tone, var(--h-text)); }
+.v3-board ol { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.v3-board li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; font-size: 14px; color: var(--h-text-2); }
+.v3-board li i { font-style: normal; font-family: var(--h-hud); color: var(--h-text-3); }
+.v3-board li em { font-style: normal; color: var(--h-text); white-space: nowrap; }
+.v3-board li.is-me { background: rgba(201, 255, 85, 0.1); color: var(--h-lime); }
+.v3-board li.is-far { margin-top: 4px; border-top: 1px dashed var(--h-line); border-radius: 0 0 8px 8px; }

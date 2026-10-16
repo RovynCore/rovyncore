@@ -26,6 +26,7 @@ import { Summon } from "./summon";
 import { Market } from "./market";
 import { Treasury } from "./treasury";
 import { Settings } from "./settings-page";
+import { Logbook, recordsOf, unseenFootprints } from "./logbook";
 import { useSettings } from "./settings";
 import { useVoyageAlerts } from "./alerts";
 import { useLanguage } from "@/components/language-provider";
@@ -42,7 +43,7 @@ import { tl, localized } from "@/lib/lightdive-v3/i18n";
 
 type MenuGroup = { group: string; items: { key: View; label: string; icon: IconName }[] };
 const MENU_SRC: MenuGroup[] = [
-  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "plain", label: "碑原", icon: "fleets" }] },
+  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "plain", label: "碑原", icon: "fleets" }, { key: "logbook", label: "航海紀錄", icon: "voyage" }] },
   { group: "資產", items: [{ key: "spires", label: "光塔", icon: "spires" }, { key: "prisms", label: "稜鏡", icon: "prisms" }, { key: "seekers", label: "探索者", icon: "seekers" }] },
   { group: "取得", items: [{ key: "summon", label: "召喚", icon: "summon" }, { key: "market", label: "市集", icon: "market" }, { key: "buy", label: "購買 $RVYN", icon: "rvyn" }] },
   { group: "收益", items: [{ key: "treasury", label: "金庫", icon: "treasury" }] },
@@ -106,8 +107,9 @@ export function LightdiveApp({ sim }: { sim: Game }) {
       dive: s.dives.filter((d) => d.pending).length || Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length),
       spires: docked(0), prisms: docked(1), seekers: docked(2),
       treasury: s.credit > 0 ? 1 : 0,
+      logbook: view === "logbook" ? 0 : unseenFootprints(recordsOf(sim)), // opening the page marks them seen
     } as Partial<Record<View, number>>;
-  }, [s, sim.today]);
+  }, [s, sim.today, view]); // eslint-disable-line react-hooks/exhaustive-deps -- `sim` is a new object every render; its state and day are what matter
 
   if (!s) {
     const wait = !live ? tl("讀取預覽資料…") : sim.chain?.ready ? tl("讀取鏈上資料…") : tl("合約部署中，遊戲即將開放。");
@@ -168,6 +170,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
         {view === "lobby" ? <Lobby sim={sim} go={go} rovyn={rovyn} />
           : view === "dive" ? <StarMap sim={sim} say={say} />
           : view === "plain" ? <Plain sim={sim} go={go} />
+          : view === "logbook" ? <Logbook sim={sim} />
           : view === "spires" ? <Collection sim={sim} kind={0} />
           : view === "prisms" ? <Collection sim={sim} kind={1} />
           : view === "seekers" ? <Collection sim={sim} kind={2} />

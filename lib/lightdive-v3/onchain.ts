@@ -482,3 +482,19 @@ export async function readRecentSummons(ctx: Ctx, count = 6, blocks = 400_000n):
   }
   return out;
 }
+
+/** Everyone's dives of the last `days` days (for the weekly boards): the block range is estimated from the chain's
+ *  recent block rate, then the feed is read over it. */
+export async function readWeek(ctx: Ctx, days = 7): Promise<FeedItem[]> {
+  const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
+  const span = 200_000n;
+  const back = latest > ctx.fromBlock + span ? latest - span : ctx.fromBlock;
+  let from = ctx.fromBlock;
+  if (back > ctx.fromBlock) {
+    const [a, b] = await Promise.all([ctx.client.getBlock({ blockNumber: latest }), ctx.client.getBlock({ blockNumber: back })]);
+    const perBlock = Number(a.timestamp - b.timestamp) / Number(latest - back) || 1;
+    const blocks = BigInt(Math.ceil((days * 86_400) / perBlock));
+    from = latest > blocks && latest - blocks > ctx.fromBlock ? latest - blocks : ctx.fromBlock;
+  }
+  return readFeed(ctx, latest - from + 1n);
+}

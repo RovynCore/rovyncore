@@ -201,6 +201,8 @@ export type Game = {
   supply: (listed: [number, number, number]) => [Supply, Supply, Supply];
   /** Everyone's recent dives (the live log). */
   feed: (now: number, count?: number, hours?: number) => FeedRow[];
+  /** Everyone else's dives of the last 7 days (the weekly boards). */
+  week: FeedRow[];
   chainOf: (n: Pick<SimNft, "id" | "kind" | "rarity">) => ChainFacts;
   /** Live game: the latest summons by anyone (the preview simulates its own). */
   summons?: { id: number; who: string; kind: Kind; rarity: number; at: number }[];
@@ -530,6 +532,9 @@ export function useSim(): Game {
     });
   }, [now, commit]);
 
+  const hour = Math.floor(now / 3_600_000);
+  // the clock starts at 0 until the page mounts; nothing to show before that
+  const week = useMemo(() => (now ? otherDives(hour * 3_600_000, 4000, 168) : []), [hour, now ? 1 : 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const sold = state?.sold;
   const market = useMemo(() => othersListings(today * DAY + DAY - 1000, sold ?? []), [today, sold]);
   const a = <A extends unknown[], R>(f: (...args: A) => R) => async (...args: A) => f(...args);
@@ -539,6 +544,7 @@ export function useSim(): Game {
     market,
     supply: (listed: [number, number, number]) => simulatedSupply(today, listed),
     feed: otherDives,
+    week,
     chainOf,
     dive: a(dive), diveMany: async (teams) => teams.map((t) => dive(t.spire, t.dest)), choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
     claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),

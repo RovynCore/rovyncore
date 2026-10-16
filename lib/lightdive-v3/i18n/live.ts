@@ -119,4 +119,37 @@ ROVYN CORE · 潛光遠征測試網（測試幣，沒有價值）|ROVYN CORE · 
 出發時會自動一起儲存，也可以現在先存。每支隊伍一筆交易。|They are saved automatically when the team departs, or save them now. One transaction per team.|出发时会自动一起储存，也可以现在先存。每支队伍一笔交易。|팀이 출발할 때 자동으로 함께 저장되며, 지금 저장해도 됩니다. 팀마다 거래 1건입니다.
 下一步：前往 ① 微光淺域|Next: go to ① The Glimmer Shallows|下一步：前往 ① 微光浅域|다음: ① 미광의 얕은 바다로 이동
 下一步：選一個目的地|Next: pick a destination|下一步：选一个目的地|다음: 목적지 선택
-下一步|Next|下一步|다음`;
+下一步|Next|下一步|다음
+在 {0} {1} 收下結果|Collect a result in {0} {1}|在 {0} {1} 收下结果|{0} {1}에서 결과 수령
+初航者|First Voyager|初航者|첫 항해자
+收下第一趟結果|Collect your first result|收下第一趟结果|첫 결과 수령
+礁海常客|Reef Regular|礁海常客|산호초 바다의 단골
+碑影行者|Stele Walker|碑影行者|비석 그림자의 순례자
+霧中人|One Who Walks the Mist|雾中人|안개 속의 사람
+裂光倖存者|Riftlight Survivor|裂光幸存者|균열빛의 생존자
+星冠見證者|Witness of the Crown|星冠见证者|별관의 목격자
+傳說帶回者|Bringer of Legends|传说带回者|전설을 가져온 자
+帶回一次傳說|Bring back a Legend|带回一次传说|전설 한 번 가져오기
+恆光航者|Steadfast Voyager|恒光航者|변함없는 항해자
+連續 7 天出航|Dive 7 days in a row|连续 7 天出航|7일 연속 출발
+二十四地|All Twenty-Four|二十四地|스물네 곳
+二十四個目的地都去過|Visit all 24 destinations|二十四个目的地都去过|목적지 24곳 모두 방문
+航海紀錄|Logbook|航海记录|항해 기록
+你走過的地方、留下的紀錄，和每個目的地的故事。這一頁只記榮譽，不影響任何收益。|Where you have been, the records you set, and the story of each destination. This page keeps honours only and affects no rewards.|你走过的地方、留下的记录，和每个目的地的故事。这一页只记荣誉，不影响任何收益。|당신이 다녀간 곳과 남긴 기록, 그리고 목적지마다의 이야기. 이 페이지는 명예만 기록하며 보상에는 영향을 주지 않습니다.
+收下的結果|Results collected|收下的结果|수령한 결과
+趟|voyages|趟|회
+到過的目的地|Destinations visited|到过的目的地|방문한 목적지
+最深到達|Deepest reached|最深到达|가장 깊이 도달
+大豐收以上 {0} 次|Great haul or better: {0}|大丰收以上 {0} 次|대풍작 이상 {0}회
+連續出航|Daily streak|连续出航|연속 출발
+稱號|Titles|称号|칭호
+足跡|Footprints|足迹|발자취
+在一個目的地第一次收下結果，會打開那裡的第一段故事；收下 {0} 次，打開第二段。|Collecting your first result at a destination opens the first part of its story; collecting {0} opens the second.|在一个目的地第一次收下结果，会打开那里的第一段故事；收下 {0} 次，打开第二段。|목적지에서 처음 결과를 수령하면 그곳 이야기의 첫 부분이, {0}회 수령하면 두 번째 부분이 열립니다.
+收下 {0} 次|Collected {0} time(s)|收下 {0} 次|{0}회 수령
+還沒去過|Not visited yet|还没去过|아직 가 보지 않음
+第一次在這裡收下結果時打開|Opens when you first collect a result here|第一次在这里收下结果时打开|이곳에서 처음 결과를 수령하면 열립니다
+在這裡收下 {0} 次時打開（{1}/{0}）|Opens after {0} results collected here ({1}/{0})|在这里收下 {0} 次时打开（{1}/{0}）|이곳에서 {0}회 수령하면 열립니다 ({1}/{0})
+本週排行|This week's boards|本周排行|이번 주 순위
+最近 7 天全服的出航。只排榮譽：出航次數、最深到達、最高倍率和傳說次數。|Everyone's voyages over the last 7 days. Honours only: voyages, deepest reached, best multiplier and Legends.|最近 7 天全服的出航。只排荣誉：出航次数、最深到达、最高倍率和传说次数。|최근 7일간 모든 관측자의 출발. 명예만 집계합니다: 출발 횟수, 최심 도달, 최고 배율, 전설 횟수.
+出航最多|Most voyages|出航最多|최다 출발
+這週還沒有紀錄。|No records this week yet.|这周还没有记录。|이번 주 기록이 아직 없습니다.`;
