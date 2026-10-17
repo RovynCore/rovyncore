@@ -2,28 +2,28 @@
   "site": "https://www.rovyncore.com",
   "worker": "rovyncore-production",
   "latestDocumentedProductionRelease": {
-    "name": "Lightdive v3.1: deep dives, crew bond, voyage supplies, daily commissions (new testnet contracts)",
+    "name": "Lightdive layout fixes from a full walk-through (decision layer, rail and scene scrollbars, summon odds column, tutorial wording)",
     "date": "2026-10-17",
-    "workerVersion": "02284fc9-77bc-4aea-a86b-da074cf12cd1",
-    "history": "releases/production/release-2026-10-05-34.md",
+    "workerVersion": "3b6462ec-9e9c-4755-91cb-7ac10044d733",
+    "history": "releases/production/release-2026-10-05-35.md",
     "releasedBy": "Claude Code (website handover from Codex)",
     "baseGitCommit": "1c473f6a83def91bd4f84a13de9298f7d61be9a3",
-    "sourceManifest": "releases/production/snapshots/release-2026-10-05-34.json",
-    "sourceManifestSha256": "549ABB3F86C5F9631FA185957706FECD424C9C162D8E6D7DC253D5EB1617D0EE",
+    "sourceManifest": "releases/production/snapshots/release-2026-10-05-35.json",
+    "sourceManifestSha256": "4FFE147810EE29A0A4109F2827DC4C889690ED6A868C4680375AEA36601506E4",
     "sourceFileCount": 550,
-    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-33.json",
-    "changedFileCountFromPreReleaseManifest": 33,
+    "preReleaseSourceManifest": "releases/production/snapshots/release-2026-10-05-34.json",
+    "changedFileCountFromPreReleaseManifest": 4,
     "previousRelease": {
-      "name": "Lightdive Logbook: records, titles, 48 destination footprints, weekly honour boards",
-      "date": "2026-10-16",
-      "workerVersion": "e2e5ad89-7889-4ed9-86a1-f0f6f1b0fb27",
-      "history": "releases/production/release-2026-10-05-33.md"
+      "name": "Lightdive v3.1: deep dives, crew bond, voyage supplies, daily commissions (new testnet contracts)",
+      "date": "2026-10-17",
+      "workerVersion": "02284fc9-77bc-4aea-a86b-da074cf12cd1",
+      "history": "releases/production/release-2026-10-05-34.md"
     },
-    "builtWorkerSha256": "8B56AF5C27272BA905EB06531F32E51043B2DBDE1345F9B72FEDF836D51C42F7",
+    "builtWorkerSha256": "5BA3B2B31BE02F4038F5F08B20F73B6622D88C9C3FE5239683DF0FC027FD8FDC",
     "builtWorkerHashArtifact": "Wrangler dry-run bundled production-worker.js",
-    "builtApplicationSha256": "49D995C7E874316AC100AC47794619836A59BFC491A7F69A5BB7AD9E81744177",
+    "builtApplicationSha256": "D19BFE7C1648667F1552E33DB51F67EE2875C710677CFD5E9B0A4BB0844A1024",
     "builtApplicationHashArtifact": "dist/server/index.js",
-    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged). 2026-10-07 release 26: X fetching removed entirely (/api/x-updates 404, no admin import, no scheduled handler, X_AUTO_SYNC dropped); stale official:x-* settings rows left in D1. 2026-10-07 release 27: Lightdive testnet game merged from PR #1 (noindex /game/lightdive, /admin/lightdive); testnet ownership acceptance pending. 2026-10-13 release 28: GitHub PR #2 merged (testnet one-minute randomness slots, special editions removed, new testnet addresses, operator Worker workflow not run by this release); rebuilt testnet game UI ported to slots; /game/lightdive/preview (v3 simulated preview, noindex); Lightdive announcements (settings table, no migration); /transparency section 02 Lightdive v3 caps with placeholders (not deployed, unaudited). No D1 migration or onchain action. 2026-10-16 release 29: Lightdive v3 contracts deployed to Robinhood testnet by the founder (addresses in packages/web3/lightdive-v3.json, unaudited, tRVYN faucet); /game/lightdive is the v3 game on those contracts (indexable), preview stays noindex; /game testnet open; nav badge Testnet; /transparency section 02 live testnet counts. No D1 migration; no onchain action by Claude. 2026-10-16 release 30: playtest-driven fixes to the live Lightdive game (UI only; no contract, no migration, no onchain action). 2026-10-16 release 31: seeker card art (30 founder paintings, kept off the public repo). 2026-10-16 release 32: tutorial next-step buttons, music fade clamp. 2026-10-16 release 33: Lightdive Logbook (records, titles, footprints, weekly boards; honour only). 2026-10-17 release 34: Lightdive v3.1 (deep dives, crew bond, supplies, daily commissions) on new testnet contracts deployed by the founder (testnet reset; addresses in packages/web3/lightdive-v3.json); no D1 migration; no onchain action by Claude."
+    "note": "2026-10-05 adds: Worker security headers (HSTS, nosniff, SAMEORIGIN, Referrer-Policy, Permissions-Policy; no CSP), /transparency page (platform V2 shown as not source-verified), /rvyn explorer link, /.well-known/security.txt. Cumulative 2026-10-04: homepage leads with the first game; /game page and Game nav tab (Soon badge); roadmap presale date to be announced; legal v0.4 matching deployed V5 and stating no independent audit; atelier finishing layer and editorial footer; OG/Twitter large share card; genesis-core.webp; asset-page layout shift fixed; rvyn_allowlist in ops snapshot. 2026-10-06 release 25: site-wide redesign (app/rv.css, components/rv/*; admin keeps legacy.css); /latest-info shows only the development log (X feed no longer rendered; x-updates API unchanged). 2026-10-07 release 26: X fetching removed entirely (/api/x-updates 404, no admin import, no scheduled handler, X_AUTO_SYNC dropped); stale official:x-* settings rows left in D1. 2026-10-07 release 27: Lightdive testnet game merged from PR #1 (noindex /game/lightdive, /admin/lightdive); testnet ownership acceptance pending. 2026-10-13 release 28: GitHub PR #2 merged (testnet one-minute randomness slots, special editions removed, new testnet addresses, operator Worker workflow not run by this release); rebuilt testnet game UI ported to slots; /game/lightdive/preview (v3 simulated preview, noindex); Lightdive announcements (settings table, no migration); /transparency section 02 Lightdive v3 caps with placeholders (not deployed, unaudited). No D1 migration or onchain action. 2026-10-16 release 29: Lightdive v3 contracts deployed to Robinhood testnet by the founder (addresses in packages/web3/lightdive-v3.json, unaudited, tRVYN faucet); /game/lightdive is the v3 game on those contracts (indexable), preview stays noindex; /game testnet open; nav badge Testnet; /transparency section 02 live testnet counts. No D1 migration; no onchain action by Claude. 2026-10-16 release 30: playtest-driven fixes to the live Lightdive game (UI only; no contract, no migration, no onchain action). 2026-10-16 release 31: seeker card art (30 founder paintings, kept off the public repo). 2026-10-16 release 32: tutorial next-step buttons, music fade clamp. 2026-10-16 release 33: Lightdive Logbook (records, titles, footprints, weekly boards; honour only). 2026-10-17 release 34: Lightdive v3.1 (deep dives, crew bond, supplies, daily commissions) on new testnet contracts deployed by the founder (testnet reset; addresses in packages/web3/lightdive-v3.json); no D1 migration; no onchain action by Claude. 2026-10-17 release 35: Lightdive layout fixes (UI only)."
   },
   "productionObservedAt": "2026-10-04",
   "observedLiveBehavior": {

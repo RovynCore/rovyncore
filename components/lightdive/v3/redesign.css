@@ -1154,7 +1154,7 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
   .v3-dive:has(.v3-voyage) { grid-template-columns: minmax(0, 1fr) !important; }
   .v3-dive:has(.v3-voyage) > .hud-live { display: none; }
 }
-.v3-voyage__scene { overflow-y: auto; scrollbar-width: thin; }
+.v3-voyage__scene { overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; } /* the backdrop bleeds 4% past the edges */
 .v3-voyage__outcome { grid-template-columns: auto minmax(0, 1fr); }
 .v3-voyage__outcome > div { grid-row: span 2; }
 .v3-voyage__outcome p { grid-column: 2; }
@@ -1707,3 +1707,15 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .v3-board li em { font-style: normal; color: var(--h-text); white-space: nowrap; }
 .v3-board li.is-me { background: rgba(201, 255, 85, 0.1); color: var(--h-lime); }
 .v3-board li.is-far { margin-top: 4px; border-top: 1px dashed var(--h-line); border-radius: 0 0 8px 8px; }
+/* 10-17: the volume pop-up must fit inside the menu rail (it made the rail scroll sideways even while hidden) */
+.hud-rail { overflow-x: hidden; }
+.v3-vol__pop { gap: 8px; padding: 10px 12px; }
+.v3-vol__pop input[type="range"] { width: 104px; }
+/* 10-17: below 1180px the decision layer renders at the game root (voyage.tsx StageLayer); like the other overlays it
+   starts right of the menu rail and below the site header */
+.hud.v3 > .v3-decisionstage { position: fixed; z-index: 60; left: 248px; padding-top: calc(var(--rv-header-h, 68px) + 14px); overflow-y: auto; }
+@media (max-width: 860px) { .hud.v3 > .v3-decisionstage { left: 0; } }
+/* 10-17: rarity names are longer in English and Korean (Prismatic, 무지갯빛): the rows share one name column sized to the
+   longest name instead of a fixed 52px */
+.v3-droprates { grid-template-columns: 22px max-content minmax(0, 1fr) auto; }
+.v3-droprates li { grid-column: 1 / -1; grid-template-columns: subgrid; }

@@ -3,7 +3,8 @@
 // The voyage screen: a five-minute dive shown as a route from 碑原 to the destination with the team's light moving
 // along it, the crew, the odds, and a log that writes itself beside it. Lines unlock as the voyage goes on, the
 // decision appears 30% in and stays open until the reveal, and the last line is the result.
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { FastForward, Sparkles, X } from "lucide-react";
 import { DECISION_AT, DESTINATIONS, basePoints, planDive, skyOf, type Choice, type DivePlan } from "@/lib/lightdive-v3/rules";
 import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
@@ -178,9 +179,11 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
         <Crew sim={sim} d={d} />
         {d.result && arriving ? <p className="v3-voyage__signal"><i /><i /><i />{tl("光橋抵達{0}，訊號回傳中…", { 0: destName(d.dest) })}</p> : d.result ? <Outcome d={d} onCollect={collect} /> : <Odds d={d} />}
         {showStage && (
-          <div className="v3-decisionstage" role="dialog" aria-label={tl("航行抉擇：{0}", { 0: TEXTS.cards[d.card!].title })}>
-            <Decision sim={sim} d={d} stage onLater={() => setAside(d.id)} />
-          </div>
+          <StageLayer>
+            <div className="v3-decisionstage" role="dialog" aria-label={tl("航行抉擇：{0}", { 0: TEXTS.cards[d.card!].title })}>
+              <Decision sim={sim} d={d} stage onLater={() => setAside(d.id)} />
+            </div>
+          </StageLayer>
         )}
       </div>
       <div className="v3-voyage__side">
@@ -473,6 +476,21 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
       {stage && onLater && <button type="button" className="v3-decision__later" onClick={onLater}>{tl("先看航線，等一下再選")}</button>}
     </div>
   );
+}
+
+/** Below 1180px the decision covers the whole screen; the voyage scene is its own stacking context, so a full-screen
+ *  layer inside it would sit under the menu and the log. There it renders at the game root instead. */
+function StageLayer({ children }: { children: ReactNode }) {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 1180px)");
+    const on = () => setNarrow(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  const host = narrow ? document.querySelector(".ldg-app") : null;
+  return host ? createPortal(children, host) : <>{children}</>;
 }
 
 /** What this voyage carries: a deep dive, a supply, the crew bond at departure. */

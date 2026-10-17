@@ -219,8 +219,8 @@ const COACH_KEY = "lightdive:v3:coach-done";
 const COACH = localized([
   { title: "這是今天的星圖", text: "六個星團由外往內，越靠近核心越危險、帶回的也越多。先點最外圈的 ① 微光淺域。出發後，你的隊伍會變成光橋上的一個光點。", pos: "is-right" },
   { title: "挑一個目的地", text: "每個目的地今天都有自己的光；和你的探索者同頻會多帶回一些。點一個亮著的目的地。", pos: "is-right-low" },
-  { title: "看勝算，再出發", text: "右邊會算出這支隊伍的基礎收益和每種結果的機率。選好隊伍，按「出發」，會用掉 1 張出發令，並打開航行畫面。", pos: "is-mid" },
-  { title: "這是航行畫面", text: "光點沿著航線前進約 5 分鐘，右邊的日誌一段一段寫出路上發生的事。走到三成會跳出抉擇卡：求穩保底、求險搏大，或繞道護隊；揭曉前 1 分鐘截止。", pos: "is-voyage" },
+  { title: "看勝算，再出發", text: "目的地卡會算出這支隊伍的基礎收益和每種結果的機率。選好隊伍，按「出發」，會用掉 1 張出發令，並打開航行畫面。", pos: "is-mid" },
+  { title: "出發之後：航行畫面", text: "光點沿著航線前進約 5 分鐘，右邊的日誌一段一段寫出路上發生的事。走到三成會跳出抉擇卡：求穩保底、求險搏大，或繞道護隊；揭曉前 1 分鐘截止。", pos: "is-voyage" },
   { title: "抵達，然後親手收下", text: "光點抵達目的地時，光環的顏色會先透露結果，接著揭曉倍率。按「收取」，光會飛進上方的「可領取」；之後到金庫提領到錢包。", pos: "is-voyage" },
 ]);
 
@@ -253,7 +253,7 @@ function Coach({ step, voyageOpen, onOpenCluster, onPickDest }: { step: number; 
           {shown === COACH.length - 1
             ? <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={finish}>{tl("知道了，開始玩")}</button>
             : <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={next}>{nextLabel}</button>}
-          <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={finish}>{tl("跳過引導")}</button>
+          {shown < COACH.length - 1 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={finish}>{tl("跳過引導")}</button>}
         </div>
       </div>
     </div>
