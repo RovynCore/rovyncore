@@ -4,12 +4,12 @@
 // berths around the spire), and what this team can do today on the right: power, reach, risk, attunement, life.
 import { useState } from "react";
 import { Check, Eraser, PenLine, Plus, Rocket, X } from "lucide-react";
-import { DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, MAX_TEAM, MAX_TEAMS, VOYAGES, attunement, clusterRange, teamPower, type Kind } from "@/lib/lightdive-v3/rules";
+import { BOND_MAX, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, MAX_TEAM, MAX_TEAMS, VOYAGES, attunement, clusterRange, teamPower, type Kind } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { NftArt } from "../game/art";
 import { PageHead } from "../game/hud";
 import { play } from "./audio";
-import { TEAM_NAME_MAX, divesOn, owned, teamInput, teamName, type Sim, type SimNft, type SimTeam } from "./sim";
+import { TEAM_NAME_MAX, passesOn, owned, teamInput, teamName, type Sim, type SimNft, type SimTeam } from "./sim";
 import { BatchSell } from "./batch-sell";
 import { CountUp, Modal, RarityGem, RarityTag, Tile, Trait, Voyages } from "./kit";
 import { BEAM, BEAM_HINT, CIRCLED, CLUSTER_HUE, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT } from "./copy";
@@ -35,7 +35,7 @@ function statusOf(sim: Sim, spire: number): Status {
   if (!team) return s.teams.length >= MAX_TEAMS ? { label: tl("隊伍已滿"), tone: "done" } : { label: tl("未組隊"), tone: "empty" };
   if (!team.seekers.length) return { label: tl("缺探索者"), tone: "empty" };
   if (sim.chain?.drafts.includes(spire)) return { label: tl("未儲存"), tone: "empty" }; // live game: saved with the dive or the save bar
-  const today = divesOn(s, sim.today).filter((d) => d.spire === spire).length;
+  const today = passesOn(s, sim.today, spire);
   if (today >= DIVES_PER_TEAM_PER_DAY) return { label: tl("今天已滿"), tone: "done" };
   return { label: tl("可出發"), tone: "go" };
 }
@@ -81,8 +81,8 @@ export function Plain({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   const reach = DESTINATIONS.filter((d) => power >= d.threshold);
   const deepest = reach.at(-1);
   const next = DESTINATIONS.find((d) => d.threshold > power);
-  const todayDives = divesOn(s, sim.today).filter((d) => d.spire === spire.id).length;
-  const ticketsLeft = Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length);
+  const todayDives = passesOn(s, sim.today, spire.id);
+  const ticketsLeft = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   const attuned = team.seekers.length
     ? reach.map((d) => ({ d, bonus: attunement(input, sim.sky.lights[d.id]) })).filter((x) => x.bonus > 0).sort((a, b) => b.bonus - a.bonus || b.d.id - a.d.id)
     : [];
@@ -221,6 +221,13 @@ export function Plain({ sim, go }: { sim: Sim; go: (v: View) => void }) {
             <Tile label={tl("下一個目的地")} value={next ? tl("還差 {0}", { 0: next.threshold - power }) : tl("全部可達")} sub={next ? tl("{0}（{1}）", { 0: destName(next.id), 1: next.threshold }) : undefined} tone={next ? undefined : "#c9ff55"} />
             <Tile label={tl("風險風格")} value={prism ? `${BEAM[prism.trait]} · ${BEAM_HINT[prism.trait]}` : `${BEAM[1]} · ${BEAM_HINT[1]}`} sub={prism ? tl("由稜鏡決定") : tl("沒裝稜鏡時的預設")} />
             <Tile label={tl("這隊今天")} value={`${todayDives} / ${DIVES_PER_TEAM_PER_DAY}`} sub={tl("已出發次數")} />
+          </div>
+          <div className="v3-teaminfo__block">
+            <h4>{tl("默契")} <em>{team.bond ?? 0} / {BOND_MAX}</em></h4>
+            <p className="v3-bond" role="img" aria-label={tl("默契 {0} / {1}", { 0: team.bond ?? 0, 1: BOND_MAX })}>
+              {Array.from({ length: BOND_MAX }, (_, i) => <i key={i} className={i < (team.bond ?? 0) ? "is-on" : ""} />)}
+            </p>
+            <p className="v3-muted">{tl("同一組人每平安回來一趟，默契 +1（最多 {0}）；每 1 點默契讓空手機率少 1 個百分點。換掉任何一張卡就歸零。", { 0: BOND_MAX })}</p>
           </div>
           <div className="v3-teaminfo__block">
             <h4>{tl("今天同頻")} <em>{attuned.length}</em></h4>

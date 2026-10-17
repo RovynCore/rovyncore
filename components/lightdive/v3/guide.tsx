@@ -17,6 +17,7 @@ import type { Sim } from "./sim";
 import type { View } from "./pages";
 import { BEAM, BEAM_HINT, CHOICE, CIRCLED, KIND, LIGHT, LIGHT_COLOR, OUTCOME, RARITY_COLOR, RISK, SLOT, STAR, TIER, fmt, pct } from "./copy";
 import { tl, localized } from "@/lib/lightdive-v3/i18n";
+import { BOND_MAX, COMMISSION_BONUS, SUPPLY_PRICE } from "@/lib/lightdive-v3/rules";
 
 const STEPS: { n: string; icon: IconName; title: string; text: string; to: View; cta: string }[] = localized([
   { n: "1", icon: "fleets", title: "組隊", text: "光塔＋稜鏡＋探索者＝一支隊伍。戰力越高，能去越深的地方。", to: "plain", cta: "去碑原組隊" },
@@ -108,6 +109,16 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <article><h4>{tl("今日星象")}</h4><p>{(["tide", "surge", "storm", "calm"] as const).map((e) => <span key={e} className="v3-star" style={{ color: STAR[e].color }}>{STAR[e].name}<small>{STAR[e].effect}</small></span>)}</p></article>
           <article><h4>{tl("超出門檻")}</h4><p>{tl("戰力每超過目的地門檻 20%，空手機率 −1 個百分點，最多 −5。")}</p></article>
           <article><h4>{tl("航行抉擇")}</h4><p>{(["steady", "bold", "detour", "none"] as const).map((x) => <span key={x} className="v3-star"><b>{CHOICE[x].name}</b><small>{CHOICE[x].effect}</small></span>)}</p></article>
+        </div>
+      </section>
+
+      <section className="v3-panel" aria-label={tl("更多玩法")}>
+        <h3>{tl("更多玩法")}</h3>
+        <div className="v3-factors">
+          <article><h4>{tl("深潛")}</h4><p>{tl("第③星團以後的目的地可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2，稜鏡風險高一級。前段有一次抉擇；最後 10 分鐘可以回航，回航固定 ×1.00、只耗損 1 次航程。")}</p></article>
+          <article><h4>{tl("默契")}</h4><p>{tl("同一組人每平安回來一趟，默契 +1（最多 {0}）；每 1 點默契讓空手機率少 1 個百分點。換掉任何一張卡就歸零。", { 0: BOND_MAX })}</p></article>
+          <article><h4>{tl("出航補給")}</h4><p>{tl("出發前可以花一點 $RVYN 帶一種補給：燈油（這趟基礎收益的 {0}）讓這趟只耗損 1 次航程；星圖殘頁（{1}）讓空手機率少 3 個百分點。付的 $RVYN 有 95% 進核光池、5% 銷毀。", { 0: pct(SUPPLY_PRICE[1]), 1: pct(SUPPLY_PRICE[2]) })}</p></article>
+          <article><h4>{tl("每日委託")}</h4><p>{tl("每天 3 個委託，所有人都一樣，由日期決定。一次接一個；接下後出發的航程符合條件，就能完成，領到那趟基礎收益的 {0}。", { 0: pct(COMMISSION_BONUS) })}</p></article>
         </div>
       </section>
 

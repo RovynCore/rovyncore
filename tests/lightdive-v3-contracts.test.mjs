@@ -5,6 +5,7 @@ import ganache from "ganache";
 import { createPublicClient, createWalletClient, custom, defineChain, parseEther, keccak256, encodeAbiParameters, decodeEventLog } from "viem";
 import { ODDS } from "../lib/lightdive-v3/odds.ts";
 import { DESTINATIONS, planDive, skyOf } from "../lib/lightdive-v3/rules.ts";
+import { commissionsOf } from "../lib/lightdive-v3/commissions.ts";
 
 // The Lightdive v3 contracts end to end on a local chain, with test randomness that has drand's timing. Run after
 // `node scripts/compile-contracts-lightdive-v3.mjs` (or `npm run test:lightdive:v3`).
@@ -59,6 +60,7 @@ async function world({ fund = "1000000" } = {}) {
   const minter = await deploy("LightdiveMinter3", [admin, rvyn, nft, rng, pool, treasury]);
   const exp = await deploy("Expedition3", [admin, nft, config, rng, pool]);
   const market = await deploy("LightdiveMarket3", [admin, rvyn, nft, config, pool]);
+  const comm = await deploy("LightdiveCommissions3", [admin, exp, config]);
   for (let c = 0; c < 6; c++) {
     for (let b = 0; b < 3; b++) {
       const tiers = ODDS[`${c + 1}${BEAM_KEY[b]}`].map(([probBp, lo, hi]) => ({ probBp, lo, hi }));
@@ -68,6 +70,7 @@ async function world({ fund = "1000000" } = {}) {
   await ok(nft, "LightdiveNFT3", "setMinter", [minter]);
   await ok(nft, "LightdiveNFT3", "setGame", [exp]);
   await ok(pool, "CoreLightPool3", "setExpedition", [exp]);
+  await ok(exp, "Expedition3", "setCommissions", [comm]);
   await ok(rvyn, "LaunchToken", "approve", [pool, E(fund)]);
   await ok(pool, "CoreLightPool3", "fund", [E(fund)]);
   await ok(minter, "LightdiveMinter3", "setPricer", [pricer]);
@@ -75,6 +78,7 @@ async function world({ fund = "1000000" } = {}) {
     await ok(rvyn, "LaunchToken", "transfer", [player, E("100000")]);
     await ok(rvyn, "LaunchToken", "approve", [minter, E("100000")], player);
     await ok(rvyn, "LaunchToken", "approve", [market, E("100000")], player);
+    await ok(rvyn, "LaunchToken", "approve", [pool, E("100000")], player); // supplies are paid into the pool
     await ok(nft, "LightdiveNFT3", "setApprovalForAll", [market, true], player);
   }
 
@@ -116,7 +120,7 @@ async function world({ fund = "1000000" } = {}) {
     throw new Error("no proof found");
   };
 
-  return { provider, client, admin, treasury, alice, bob, stranger, pricer, rvyn, rng, config, nft, pool, minter, exp, market,
+  return { provider, client, admin, treasury, alice, bob, stranger, pricer, rvyn, rng, config, nft, pool, minter, exp, market, comm,
     ok, no, read, now, warp, events, bal, attrs, summon, squad, diveRandom, proofFor, done: () => provider.disconnect() };
 }
 
@@ -141,7 +145,7 @@ test("config: the day's sky and every dive plan match the website's rules exactl
             const power = Math.round(d.threshold * (1 + over));
             for (const [k, decision] of decisions.entries()) {
               const want = planDive({ spire: power, prism: { power: 0, beam }, seekers: [] }, d, sky, decision);
-              const got = await w.read(w.config, "LightdiveConfig3", "plan", [d.id, BigInt(power), beam, day, k]);
+              const got = await w.read(w.config, "LightdiveConfig3", "plan", [d.id, BigInt(power), beam, day, k, 0, false]);
               assert.deepEqual(got.table.map((t) => [t.probBp, t.lo, t.hi]), want.table, `table ${day}/${d.id}/${beam}/${power}/${decision}`);
               assert.equal(got.risk, want.risk);
               assert.equal(Number(got.coefBp), want.coefBp);
@@ -155,6 +159,31 @@ test("config: the day's sky and every dive plan match the website's rules exactl
       }
     }
     console.log(`  ${checked} dive plans match`);
+    // v3.1: crew bond / star chart stability and deep dives
+    let mods = 0;
+    const sky = skyOf(today);
+    for (const d of DESTINATIONS) {
+      for (const beam of [0, 1, 2]) {
+        for (const over of [0, 0.6]) {
+          const power = Math.round(d.threshold * (1 + over));
+          for (const [k, decision] of decisions.entries()) {
+            for (const [stability, deep] of [[3, false], [8, true], [0, true]]) {
+              const want = planDive({ spire: power, prism: { power: 0, beam }, seekers: [] }, d, sky, decision, { stability, deep });
+              const got = await w.read(w.config, "LightdiveConfig3", "plan", [d.id, BigInt(power), beam, today, k, stability, deep]);
+              assert.deepEqual(got.table.map((t) => [t.probBp, t.lo, t.hi]), want.table, `v3.1 table ${d.id}/${beam}/${power}/${decision}/${stability}/${deep}`);
+              assert.equal(got.risk, want.risk);
+              mods++;
+            }
+          }
+        }
+      }
+    }
+    console.log(`  ${mods} v3.1 plans (stability, deep dives) match`);
+    for (const day of [today, today + 1, today + 7, 20_000, 30_123]) {
+      const got = await w.read(w.comm, "LightdiveCommissions3", "commissionsOf", [day]);
+      const kinds = ["cluster", "good", "decision", "attuned", "sky", "deep", "supply"];
+      assert.deepEqual(got.map((c) => ({ kind: kinds[c.kind], param: c.param })), commissionsOf(day).map((c) => ({ kind: c.kind, param: c.param })), `commissions of ${day}`);
+    }
   } finally {
     await w.done();
   }
@@ -261,12 +290,12 @@ test("dive: teams lock their cards, passes and the decision window are enforced,
     await w.no(w.market, "LightdiveMarket3", "list", [prism, E("10")], w.alice);
 
     const day = await w.read(w.exp, "Expedition3", "today");
-    await w.no(w.exp, "Expedition3", "dive", [spire, 23], w.alice); // far too weak for the core
-    const receipt = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+    await w.no(w.exp, "Expedition3", "dive", [spire, 23, 0, false], w.alice); // far too weak for the core
+    const receipt = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
     const [dived] = w.events(receipt, "Expedition3", "Dived");
     const id = dived.diveId;
     assert.equal(await w.read(w.exp, "Expedition3", "passesUsed", [w.alice, day]), 1);
-    await w.no(w.exp, "Expedition3", "dive", [spire, 0], w.alice); // out on a dive: collect first
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice); // out on a dive: collect first
     await w.no(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
     // first day: the rate is the launch cap
     assert.equal(await w.read(w.exp, "Expedition3", "dayRate", [day]), E("0.015"));
@@ -283,7 +312,7 @@ test("dive: teams lock their cards, passes and the decision window are enforced,
     await w.warp(40);
 
     // pick a proof that brings back something, then check the payment to the wei
-    const p = await w.read(w.config, "LightdiveConfig3", "plan", [0, BigInt(d.power), d.beam, Number(d.day), 2]);
+    const p = await w.read(w.config, "LightdiveConfig3", "plan", [0, BigInt(d.power), d.beam, Number(d.day), 2, 0, false]);
     const proof = w.proofFor(d.round, id, p.table, (tier) => tier >= 2);
     const poolBefore = await w.read(w.pool, "CoreLightPool3", "available");
     const r = await w.ok(w.exp, "Expedition3", "reveal", [id, proof], w.stranger);
@@ -300,12 +329,12 @@ test("dive: teams lock their cards, passes and the decision window are enforced,
 
     // three passes a day per wallet
     for (let i = 0; i < 2; i++) {
-      const rr = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+      const rr = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
       const [dv] = w.events(rr, "Expedition3", "Dived");
       await w.warp(310);
       await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(9)], w.stranger);
     }
-    await w.no(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
 
     // claim: 15% fee on the first day, 95% of it stays in the pool, 5% burned
     const credit = await w.read(w.exp, "Expedition3", "credit", [w.alice]);
@@ -316,7 +345,7 @@ test("dive: teams lock their cards, passes and the decision window are enforced,
 
     // the next day: a new rate from yesterday's points, fresh passes
     await w.warp(DAY);
-    await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+    await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
     const day2 = day + 1;
     const rate2 = await w.read(w.exp, "Expedition3", "dayRate", [day2]);
     const y = await w.read(w.exp, "Expedition3", "dayPointsE2", [day]);
@@ -337,10 +366,10 @@ test("dive: empty-handed pays nothing and no departure cost; the day's ceiling s
     // the deepest destination the team qualifies for keeps some empty-handed chance after overflow stability
     const [power] = await w.read(w.exp, "Expedition3", "teamPower", [spire, 0, await w.read(w.exp, "Expedition3", "today")]);
     const dest = DESTINATIONS.filter((x) => x.threshold <= Number(power)).at(-1).id;
-    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, dest], w.alice);
+    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, dest, 0, false], w.alice);
     const [dv] = w.events(r, "Expedition3", "Dived");
     const d = await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId]);
-    const p = await w.read(w.config, "LightdiveConfig3", "plan", [dest, BigInt(d.power), d.beam, Number(d.day), 0]);
+    const p = await w.read(w.config, "LightdiveConfig3", "plan", [dest, BigInt(d.power), d.beam, Number(d.day), 0, 0, false]);
     await w.warp(310);
     const proof = w.proofFor(d.round, dv.diveId, p.table, (tier) => tier === 0);
     const avail = await w.read(w.pool, "CoreLightPool3", "available");
@@ -359,9 +388,9 @@ test("dive: empty-handed pays nothing and no departure cost; the day's ceiling s
       const a = await w2.squad(w2.alice, 1);
       await w2.ok(w2.exp, "Expedition3", "setTeam", [a.spire, 0n, a.seekers], w2.alice);
       await w2.ok(w2.config, "LightdiveConfig3", "setEconomy", [20, 20, E("1")]);
-      await w2.no(w2.exp, "Expedition3", "dive", [a.spire, 0], w2.alice);
+      await w2.no(w2.exp, "Expedition3", "dive", [a.spire, 0, 0, false], w2.alice);
       await w2.ok(w2.config, "LightdiveConfig3", "setEconomy", [20, 300, E("0.015")]);
-      await w2.ok(w2.exp, "Expedition3", "dive", [a.spire, 0], w2.alice);
+      await w2.ok(w2.exp, "Expedition3", "dive", [a.spire, 0, 0, false], w2.alice);
       const day = await w2.read(w2.exp, "Expedition3", "today");
       assert.ok(await w2.read(w2.exp, "Expedition3", "dayReserved", [day]) <= await w2.read(w2.exp, "Expedition3", "dayCeiling", [day]));
     } finally {
@@ -384,7 +413,7 @@ test("wear: cards dock at zero, renew once within 7 days, then go home; docked c
     let dives = 0;
     while ((await w.attrs(seekers[0])).voyagesLeft > 0) {
       if (dives > 0 && dives % 10 === 0) await w.warp(DAY);
-      const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+      const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
       const [dv] = w.events(r, "Expedition3", "Dived");
       await w.warp(310);
       await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(dives + 1)], w.stranger);
@@ -397,7 +426,7 @@ test("wear: cards dock at zero, renew once within 7 days, then go home; docked c
     assert.ok(a.dockedAt > 0n, "docked");
     assert.equal(await w.read(w.nft, "LightdiveNFT3", "locked", [seekers[0]]), false, "left the team");
     assert.equal((await w.read(w.exp, "Expedition3", "team", [spire])).seekers.length, 0);
-    await w.no(w.exp, "Expedition3", "dive", [spire, 0], w.alice); // no seekers left
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice); // no seekers left
     await w.no(w.exp, "Expedition3", "setTeam", [spire, 0n, [seekers[0]]], w.alice); // docked cards cannot join
     await w.no(w.market, "LightdiveMarket3", "list", [seekers[0], E("5")], w.alice); // nor be listed
     await w.no(w.exp, "Expedition3", "sendHome", [seekers[0]], w.stranger); // not before 7 days
@@ -417,7 +446,7 @@ test("wear: cards dock at zero, renew once within 7 days, then go home; docked c
     await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, [extra]], w.alice);
     for (let i = 0; i < 45; i++) {
       if (i % 10 === 0) await w.warp(DAY);
-      const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+      const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
       const [dv] = w.events(r, "Expedition3", "Dived");
       await w.warp(310);
       await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(500 + i)], w.stranger);
@@ -435,7 +464,7 @@ test("wear: cards dock at zero, renew once within 7 days, then go home; docked c
     await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, [seekers[0]]], w.alice);
     for (let i = 0; i < 45; i++) {
       if (i % 10 === 0) await w.warp(DAY);
-      const rr = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+      const rr = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
       const [dv] = w.events(rr, "Expedition3", "Dived");
       await w.warp(310);
       await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(900 + i)], w.stranger);
@@ -452,7 +481,7 @@ test("dive: without a drand proof a day later, the dive ends neutral (x1.00, one
     await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
     const { spire, seekers } = await w.squad(w.alice, 1);
     await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
-    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0], w.alice);
+    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
     const [dv] = w.events(r, "Expedition3", "Dived");
     await w.warp(310);
     await w.no(w.exp, "Expedition3", "revealFallback", [dv.diveId], w.stranger);
@@ -477,9 +506,9 @@ test("teams: at most 5 per wallet; batch dives; disband unlocks", async () => {
     const seekers = await w.summon(w.alice, SEEKER, 6, proofOf(13));
     for (let i = 0; i < 5; i++) await w.ok(w.exp, "Expedition3", "setTeam", [spires[i], 0n, [seekers[i]]], w.alice);
     await w.no(w.exp, "Expedition3", "setTeam", [spires[5], 0n, [seekers[5]]], w.alice);
-    const r = await w.ok(w.exp, "Expedition3", "diveMany", [[spires[0], spires[1], spires[2]], [0, 0, 1]], w.alice);
+    const r = await w.ok(w.exp, "Expedition3", "diveMany", [[spires[0], spires[1], spires[2]], [0, 0, 1], 0], w.alice);
     assert.equal(w.events(r, "Expedition3", "Dived").length, 3);
-    await w.no(w.exp, "Expedition3", "dive", [spires[3], 0], w.alice); // three passes used
+    await w.no(w.exp, "Expedition3", "dive", [spires[3], 0, 0, false], w.alice); // three passes used
     await w.ok(w.exp, "Expedition3", "disband", [spires[4]], w.alice);
     assert.equal(await w.read(w.nft, "LightdiveNFT3", "locked", [seekers[4]]), false);
     await w.ok(w.exp, "Expedition3", "setTeam", [spires[5], 0n, [seekers[5]]], w.alice);
@@ -576,5 +605,179 @@ test("TestRVYN (testnet only): the faucet gives once per period, the owner mints
     assert.equal(await read("balanceOf", [other]), E("3"));
   } finally {
     await provider.disconnect();
+  }
+});
+
+test("v3.1 deep dive: from the minimum cluster, 2 passes, twice the points, a turn-back window, x1.00 when turning back", async () => {
+  const w = await world();
+  try {
+    await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
+    const { spire, seekers } = await w.squad(w.alice, 1);
+    await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 0, true], w.alice); // cluster 1 is below the deep-dive minimum
+    await w.no(w.config, "LightdiveConfig3", "setDeepDive", [900, 600, 0], w.alice);
+    await w.ok(w.config, "LightdiveConfig3", "setDeepDive", [900, 600, 0]); // owner: deep dives everywhere for the test
+
+    const day = await w.read(w.exp, "Expedition3", "today");
+    const [power, bonus] = await w.read(w.exp, "Expedition3", "teamPower", [spire, 0, day]);
+    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, true], w.alice);
+    const [dv] = w.events(r, "Expedition3", "Dived");
+    const d = await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId]);
+    assert.equal(d.long, true);
+    assert.equal(await w.read(w.exp, "Expedition3", "passesUsed", [w.alice, day]), 2);
+    assert.equal(await w.read(w.exp, "Expedition3", "teamDives", [spire, day]), 2);
+    const coef = (await w.read(w.config, "LightdiveConfig3", "destOf", [day, 0]))[1];
+    assert.equal(d.pointsE2, (power * 100n + bonus) * coef / 10_000n * 2n, "twice the points");
+    const at = Number(await w.read(w.rng, "MockRandomness", "roundTime", [d.round]));
+    assert.ok(at - (await w.now()) >= 899 && at - (await w.now()) <= 903, "fifteen minutes away");
+
+    // first decision until the turn-back window opens; turn back only inside its window
+    await w.ok(w.exp, "Expedition3", "decide", [dv.diveId, 2], w.alice);
+    await w.no(w.exp, "Expedition3", "turnBack", [dv.diveId, true], w.alice);
+    await w.warp(at - (await w.now()) - 590);
+    await w.no(w.exp, "Expedition3", "decide", [dv.diveId, 1], w.alice);
+    await w.no(w.exp, "Expedition3", "turnBack", [dv.diveId, true], w.bob);
+    await w.ok(w.exp, "Expedition3", "turnBack", [dv.diveId, true], w.alice);
+    await w.warp(at - (await w.now()) - 30);
+    await w.no(w.exp, "Expedition3", "turnBack", [dv.diveId, false], w.alice);
+    await w.warp(40);
+
+    const rv = await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(5)], w.stranger);
+    const [res] = w.events(rv, "Expedition3", "Revealed");
+    assert.equal(res.tier, 254);
+    assert.equal(res.multX100, 100);
+    assert.equal(res.wear, 1);
+    const p = await w.read(w.config, "LightdiveConfig3", "plan", [0, BigInt(d.power), d.beam, Number(d.day), 2, 0, true]);
+    const gross = d.pointsE2 * 100n * d.rate / 10_000n;
+    assert.equal(res.reward, gross - gross * BigInt(p.levyBp) / 10_000n, "x1.00, departure cost still paid");
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 0, true], w.alice); // only 1 pass left today
+    await w.no(w.exp, "Expedition3", "turnBack", [0n, true], w.alice); // a revealed dive cannot turn back
+  } finally {
+    await w.done();
+  }
+});
+
+test("v3.1 crew bond: grows with each revealed dive, up to the maximum, resets when the team changes", async () => {
+  const w = await world();
+  try {
+    await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
+    const { spire, seekers } = await w.squad(w.alice, 1);
+    await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
+    await w.ok(w.config, "LightdiveConfig3", "setSupplies", [400, 600, 3, 2]); // bond up to 2 for a short test
+    for (const want of [0, 1, 2]) {
+      assert.equal((await w.read(w.exp, "Expedition3", "team", [spire])).bond, want);
+      const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
+      const [dv] = w.events(r, "Expedition3", "Dived");
+      assert.equal((await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId])).bond, want, "recorded at departure");
+      await w.warp(310);
+      await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(30 + want)], w.stranger);
+    }
+    assert.equal((await w.read(w.exp, "Expedition3", "team", [spire])).bond, 2, "capped");
+    // the bond is used in the plan: 2 points of empty-handed chance moved to normal
+    const d = await w.read(w.exp, "Expedition3", "diveInfo", [2n]);
+    const plain = await w.read(w.config, "LightdiveConfig3", "plan", [0, BigInt(d.power), d.beam, Number(d.day), 0, 0, false]);
+    const bonded = await w.read(w.config, "LightdiveConfig3", "plan", [0, BigInt(d.power), d.beam, Number(d.day), 0, 2, false]);
+    // (at most the empty row: a strong team has little empty-handed chance left after its overflow)
+    assert.equal(plain.table[0].probBp - bonded.table[0].probBp, Math.min(200, plain.table[0].probBp));
+    await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
+    assert.equal((await w.read(w.exp, "Expedition3", "team", [spire])).bond, 0, "any change resets it");
+  } finally {
+    await w.done();
+  }
+});
+
+test("v3.1 supplies: priced from the dive's reward, paid into the pool (5% burned); lamp oil wears 1, a chart steadies", async () => {
+  const w = await world();
+  try {
+    await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
+    const { spire, seekers } = await w.squad(w.alice, 1);
+    await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
+    await w.no(w.exp, "Expedition3", "dive", [spire, 0, 3, false], w.alice); // no such supply
+    const before = await w.bal(w.alice);
+    const poolBefore = await w.bal(w.pool);
+    const r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 1, false], w.alice);
+    const [dv] = w.events(r, "Expedition3", "Dived");
+    const [det] = w.events(r, "Expedition3", "DiveDetails");
+    const d = await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId]);
+    const price = d.pointsE2 * d.rate / 100n * 400n / 10_000n;
+    assert.ok(price > 0n);
+    assert.equal(det.supplyPaid, price);
+    assert.equal(before - (await w.bal(w.alice)), price);
+    assert.equal(await w.bal(w.pool) - poolBefore, price - price * 500n / 10_000n, "95% stays in the pool");
+    // lamp oil: whatever the draw, one voyage of wear
+    await w.warp(310);
+    const rv = await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(77)], w.stranger);
+    assert.equal(w.events(rv, "Expedition3", "Revealed")[0].wear, 1);
+    // a star chart: recorded, and priced at 6%
+    const r2 = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 2, false], w.alice);
+    const [dv2] = w.events(r2, "Expedition3", "Dived");
+    const d2 = await w.read(w.exp, "Expedition3", "diveInfo", [dv2.diveId]);
+    assert.equal(d2.supply, 2);
+    const priceChart = d2.pointsE2 * d2.rate / 100n * 600n / 10_000n;
+    assert.equal(w.events(r2, "Expedition3", "DiveDetails")[0].supplyPaid, priceChart);
+  } finally {
+    await w.done();
+  }
+});
+
+test("v3.1 commissions: three a day, one at a time; a matching dive after accepting completes it once; abandon blocks", async () => {
+  const w = await world();
+  try {
+    await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
+    const { spire, seekers } = await w.squad(w.alice, 1);
+    await w.ok(w.exp, "Expedition3", "setTeam", [spire, 0n, seekers], w.alice);
+    // move to a day that has a "supply" commission and a "decision" commission
+    let today = Number(await w.read(w.comm, "LightdiveCommissions3", "today"));
+    let day = today;
+    for (; day < today + 400; day++) {
+      const kinds = commissionsOf(day).map((c) => c.kind);
+      if (kinds.includes("supply") && kinds.includes("decision")) break;
+    }
+    await w.warp((day - today) * DAY);
+    today = Number(await w.read(w.comm, "LightdiveCommissions3", "today"));
+    assert.equal(today, day);
+    const list = commissionsOf(day);
+    const supplyIndex = list.find((c) => c.kind === "supply").index;
+    const decision = list.find((c) => c.kind === "decision");
+
+    await w.no(w.comm, "LightdiveCommissions3", "accept", [3], w.alice);
+    await w.ok(w.comm, "LightdiveCommissions3", "accept", [supplyIndex], w.alice);
+    await w.no(w.comm, "LightdiveCommissions3", "accept", [decision.index], w.alice); // one at a time
+
+    // a dive without a supply does not meet it
+    let r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 0, false], w.alice);
+    let [dv] = w.events(r, "Expedition3", "Dived");
+    await w.no(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.alice); // not revealed yet
+    await w.warp(310);
+    await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(3)], w.stranger);
+    await w.no(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.alice); // no supply
+
+    // one with a supply does; the bonus is 10% of its x1.00 reward, credited to the claimable balance
+    r = await w.ok(w.exp, "Expedition3", "dive", [spire, 0, 2, false], w.alice);
+    [dv] = w.events(r, "Expedition3", "Dived");
+    await w.warp(310);
+    await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(4)], w.stranger);
+    await w.no(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.bob);
+    const d = await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId]);
+    const creditBefore = await w.read(w.exp, "Expedition3", "credit", [w.alice]);
+    const c = await w.ok(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.alice);
+    const [done] = w.events(c, "LightdiveCommissions3", "Completed");
+    assert.equal(done.bonus, d.pointsE2 * d.rate / 100n * 1000n / 10_000n);
+    assert.equal(await w.read(w.exp, "Expedition3", "credit", [w.alice]) - creditBefore, done.bonus);
+    await w.no(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.alice); // nothing active any more
+    await w.no(w.comm, "LightdiveCommissions3", "accept", [supplyIndex], w.alice); // completed today
+    await w.no(w.exp, "Expedition3", "creditBonus", [w.alice, 1n], w.alice); // only the commissions contract
+
+    // abandon: that one cannot be taken again today, another can
+    await w.ok(w.comm, "LightdiveCommissions3", "accept", [decision.index], w.alice);
+    await w.ok(w.comm, "LightdiveCommissions3", "abandon", [], w.alice);
+    await w.no(w.comm, "LightdiveCommissions3", "accept", [decision.index], w.alice);
+    const third = list.find((x) => x.kind !== "supply" && x.kind !== "decision");
+    await w.ok(w.comm, "LightdiveCommissions3", "accept", [third.index], w.alice);
+    // a new day: the active one has expired
+    await w.warp(DAY);
+    await w.no(w.comm, "LightdiveCommissions3", "complete", [dv.diveId], w.alice);
+  } finally {
+    await w.done();
   }
 });

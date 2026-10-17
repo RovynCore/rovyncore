@@ -10,14 +10,15 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { CLUSTER_IMAGES, GALAXY_IMAGE, ICON_CREDIT, MUSIC, SFX_CREDIT } from "@/lib/lightdive-v3/credits";
 import { GameIcon } from "../game/icon";
 import { PageHead, Panel } from "../game/hud";
-import { dayOf, deciding, divesOn, owned, teamInput, teamName, teamOut, type Sim, type SimNft, type SimState } from "./sim";
+import { dayOf, deciding, divesOn, passesOn, owned, teamInput, teamName, teamOut, type Sim, type SimNft, type SimState } from "./sim";
 import type { IconName } from "../game/icons";
 import {
-  CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt,
+  CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt, outcomeName,
 } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
+import { CommissionsBrief } from "./commissions";
 
-export type View = "lobby" | "dive" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
+export type View = "lobby" | "dive" | "commissions" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
 const DAY = 86_400_000;
 
 const alive = (n: SimNft) => !n.homeAt;
@@ -31,7 +32,7 @@ export function rovynPool(sim: Sim): readonly string[] {
   if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt)) return r.docked;
   if (s.dives.some((d) => d.pending)) return r.collect;
   if (s.dives.some((d) => deciding(d, sim.now))) return r.eventPending;
-  const used = divesOn(s, sim.today).length;
+  const used = passesOn(s, sim.today);
   if (used < DIVES_PER_DAY) {
     // lines that name a destination need a team that can reach one
     const reach = s.teams.some((t) => t.seekers.length && teamPower(teamInput(s, t)) >= DESTINATIONS[0].threshold);
@@ -73,7 +74,7 @@ export function Rovyn({ sim, line, onNext }: { sim: Sim; line: string; onNext: (
     const fee = claimFee((sim.now - s.lastClaimAt) / DAY);
     const name = (id?: number) => (id === undefined ? "" : TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name);
     return {
-      剩: Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length),
+      剩: Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today)),
       目的地: name(tide?.id),
       差: next ? next.threshold - (best?.p ?? 0) : 0,
       名字: docked ? `${KIND[docked.kind]} #${docked.id}` : tl("探索者"),
@@ -128,7 +129,10 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
           </Panel>
         </div>
         <div className="v3-lobbycol">
-        <Panel title={tl("今日星象")} index="03" icon="crystal">
+        <Panel title={tl("每日委託")} index="03" icon="signal" action={<button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => go("commissions")}>{tl("全部委託")}</button>}>
+          <CommissionsBrief sim={sim} go={go} />
+        </Panel>
+        <Panel title={tl("今日星象")} index="04" icon="crystal">
           <p className="v3-skylegend"><span><i className="is-light" />{tl("點的顏色：這個目的地今天的光")}</span><span><i className="is-event" />{tl("外圈：今天有星象")}</span></p>
           <div className="v3-sky">
             {TEXTS.clusters.map((c, ci) => (
@@ -146,7 +150,7 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
           </div>
           <p className="hud-dim v3-skynote">{tl("點一下就會帶你到那個目的地。每天換日時，光和星象都會重新分配。")}</p>
         </Panel>
-        <Panel title={tl("星團預報")} index="04" icon="crystal">
+        <Panel title={tl("星團預報")} index="05" icon="crystal">
           <Forecast sim={sim} best={best} go={go} />
         </Panel>
         </div>
@@ -175,7 +179,7 @@ function todoItems(sim: Sim, go: (v: View) => void): Todo[] {
     const total = waiting.reduce((a, d) => a + (d.reward ?? 0), 0);
     items.push({ key: "collect", icon: "claim", tone: "gold", title: tl("{0} 趟結果待收取", { 0: waiting.length }), sub: tl("一共 {0} $RVYN，收下後才會進到「可領取」。", { 0: fmt(total) }), action: tl("去收取"), run: () => watch(waiting[0].id) });
   }
-  const left = Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length);
+  const left = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   const ready = s.teams.filter((x) => x.seekers.length && !teamOut(s, x.spire));
   if (left > 0 && ready.length) {
     items.push({ key: "dive", icon: "launch", tone: "lime", title: tl("還有 {0} 張出發令", { 0: left }), sub: tl("{0} 支隊伍待命中；換日後出發令不會累積。", { 0: ready.length }), action: tl("去潛光"), run: () => go("dive") });
@@ -486,7 +490,7 @@ function RecentVoyages({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <li key={d.id} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome], ["--hue" as string]: CLUSTER_HUE[dest.cluster] }}>
             <button type="button" onClick={() => open(d.id)}>
               <span className="v3-recentdives__where"><b>{CIRCLED[dest.cluster]}{SLOT[dest.slot]} {TEXTS.clusters[dest.cluster].destinations[dest.slot].name}</b><small>{teamName(s, d.spire)} · {ago(sim.now - d.revealAt)}</small></span>
-              <span className="v3-recentdives__mult"><small>{OUTCOME[r.outcome]}</small><b>×{(r.multX100 / 100).toFixed(2)}</b></span>
+              <span className="v3-recentdives__mult"><small>{outcomeName(d)}</small><b>×{(r.multX100 / 100).toFixed(2)}</b></span>
               <span className="v3-recentdives__reward">{d.pending ? <em>{tl("待收取")}</em> : null}+{fmt(d.reward ?? 0)}</span>
             </button>
           </li>
@@ -501,13 +505,13 @@ function TeamsAtGlance({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   const s = sim.state!;
   const teams = s.teams.filter((x) => x.seekers.length);
   if (!teams.length) return <p className="hud-empty">{tl("還沒有隊伍。到碑原把探索者放上光塔。")}</p>;
-  const left = Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length);
+  const left = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   return (
     <ul className="v3-teamsglance">
       {teams.map((x) => {
         const out = s.dives.find((d) => d.spire === x.spire && !d.result);
         const waiting = s.dives.find((d) => d.spire === x.spire && d.pending);
-        const today = divesOn(s, sim.today).filter((d) => d.spire === x.spire).length;
+        const today = passesOn(s, sim.today, x.spire);
         const st = out ? (deciding(out, sim.now) ? { t: tl("抉擇中"), c: "gold" } : { t: tl("航行中 · {0}", { 0: clock(out.revealAt - sim.now) }), c: "blue" })
           : waiting ? { t: tl("待收取"), c: "gold" } : today >= 3 ? { t: tl("今天已出發 3 次"), c: "dim" } : !left ? { t: tl("出發令已用完"), c: "dim" } : { t: tl("可出發"), c: "lime" };
         const spire = s.nfts.find((n) => n.id === x.spire);

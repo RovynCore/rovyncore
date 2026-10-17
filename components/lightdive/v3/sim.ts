@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DECISION_AT, DECISION_CLOSE_MS, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, DOCK_DAYS, MAX_TEAMS, VOYAGE_MINUTES, EVENT_CHANCE, ODDS_BP, POWER, PRICE, RENEW_SHARE, VOYAGES,
+  BOND_MAX, CHART_STABILITY, COMMISSION_BONUS, DEEP_MIN_CLUSTER, DEEP_MINUTES, DEEP_TURN_MS, SUPPLY_PRICE,
   EMISSION, basePoints, claimFee, dailyRate, planDive, resolve, seeded, skyOf, teamPower,
   type Beam, type Choice, type DivePlan, type DiveResult, type Kind, type TeamInput,
 } from "@/lib/lightdive-v3/rules";
@@ -14,6 +15,7 @@ import { LIST_BATCH, MARKET_TAX } from "@/lib/lightdive-v3/rules";
 import { averagePrice, othersListings, simulatedSupply, type Listing, type Supply } from "./market-data";
 import { chainOf, type ChainFacts } from "./chain";
 import { tl } from "@/lib/lightdive-v3/i18n";
+import { commissionsOf, meetsCommission, type Commission } from "@/lib/lightdive-v3/commissions";
 
 const KEY = "lightdive:preview:v3";
 const VERSION = 1;
@@ -58,7 +60,7 @@ export type SimNft = {
   soldAt?: number; // sold on the market (no longer owned)
   mint?: number; // id of the summon request it came from
 };
-export type SimTeam = { spire: number; prism?: number; seekers: number[] };
+export type SimTeam = { spire: number; prism?: number; seekers: number[]; bond?: number };
 export type SimDive = {
   id: number;
   spire: number;
@@ -76,6 +78,13 @@ export type SimDive = {
   collectedAt?: number;
   log?: string;
   rate?: number; // live game: the rate fixed for the dive's day ($RVYN per point of Lightdust)
+  // v3.1
+  deep?: boolean; // a deep dive (2 passes, 15 minutes, one risk level up, twice the points)
+  supply?: number; // 0 none, 1 lamp oil, 2 star chart
+  supplyPaid?: number;
+  bond?: number; // the team's bond at departure
+  turnedBack?: boolean; // a deep dive that turned back (x1.00)
+  attuned?: boolean;
 };
 export type MintRequest = { id: number; kind: Kind; qty: number; at: number; revealAt: number; paid: number };
 /** A revealed summon, kept for the summon history: the request and the ids of the cards it gave. */
@@ -97,13 +106,15 @@ export type SimState = {
   listings?: { nftId: number; price: number; at: number }[]; // my market listings
   sold?: number[]; // ids of other sellers' listings I bought
   sales?: { nftId: number; price: number; at: number }[]; // my listings that sold
-  spent?: { mint: number; renew: number; market: number }; // RVYN paid for summons, renewals and market buys
+  spent?: { mint: number; renew: number; market: number; supply?: number }; // RVYN paid for summons, renewals, market buys and supplies
   teamNames?: Record<number, string>; // custom team names, kept per spire so a rebuilt team keeps its name
+  commission?: { day: number; index: number; fromDive: number } | null; // the accepted daily commission
+  commissionMarks?: Record<number, number>; // per day: bit i completed, bit i + 8 abandoned
 };
 
-const addSpent = (st: SimState, key: "mint" | "renew" | "market", v: number) => {
-  st.spent = { mint: 0, renew: 0, market: 0, ...st.spent };
-  st.spent[key] += v;
+const addSpent = (st: SimState, key: "mint" | "renew" | "market" | "supply", v: number) => {
+  st.spent = { mint: 0, renew: 0, market: 0, supply: 0, ...st.spent };
+  st.spent[key] = (st.spent[key] ?? 0) + v;
 };
 
 /** Owned: not come home, not sold. */
@@ -169,15 +180,27 @@ export function teamInput(s: SimState, team: SimTeam): TeamInput {
 }
 
 export const divesOn = (s: SimState, day: number) => s.dives.filter((d) => dayOf(d.at) === day);
+/** Dive Passes used on a day (a deep dive uses two), for the wallet or for one team. */
+export const passesOn = (s: SimState, day: number, spire?: number) =>
+  divesOn(s, day).filter((d) => spire === undefined || d.spire === spire).reduce((a, d) => a + (d.deep ? 2 : 1), 0);
+/** A deep dive's turn-back window: from DEEP_TURN_MS until a minute before the reveal. */
+export const turnOpenAt = (d: SimDive) => d.revealAt - DEEP_TURN_MS;
+export const turning = (d: SimDive, now: number) => !!d.deep && !d.result && now >= turnOpenAt(d) && now < d.revealAt - DECISION_CLOSE_MS;
+/** Points of empty-handed chance a dive moves to "normal": its crew bond and a star chart. */
+export const stabilityOf = (bond: number | undefined, supply: number | undefined) => (bond ?? 0) + (supply === 2 ? CHART_STABILITY : 0);
+export type DiveOpts = { supply?: number; deep?: boolean };
+/** A supply's price: its share of the dive's x1.00 reward (twice the points on a deep dive). */
+export const supplyCost = (plan: DivePlan, deep: boolean | undefined, rate: number, supply: number) =>
+  basePoints(plan) * (deep ? 2 : 1) * rate * (SUPPLY_PRICE[supply] ?? 0);
 /** Results the player has collected (the only ones that count as earnings). */
 export const collected = (d: SimDive) => !!d.result && !d.pending;
 /** The team is out: on the bridge, or back with a result nobody has collected yet. */
 export const teamOut = (s: SimState, spire: number) => s.dives.some((d) => d.spire === spire && (!d.result || d.pending));
 /** When the voyage decision opens (it stays open until the reveal). */
-export const decisionAt = (d: SimDive) => d.at + (d.revealAt - d.at) * DECISION_AT;
+export const decisionAt = (d: SimDive) => d.at + (d.revealAt - d.at) * (d.deep ? 0.1 : DECISION_AT); // a deep dive asks early
 /** A decision is waiting for the player. */
 /** When the decision closes: one minute before the reveal, as on chain. */
-export const decisionCloseAt = (d: SimDive) => d.revealAt - DECISION_CLOSE_MS;
+export const decisionCloseAt = (d: SimDive) => d.revealAt - (d.deep ? DEEP_TURN_MS : DECISION_CLOSE_MS);
 export const deciding = (d: SimDive, now: number) => !d.result && d.card !== undefined && !d.choice && now >= decisionAt(d) && now < decisionCloseAt(d);
 
 export type ActResult = { error: string | null; id?: number; card?: number };
@@ -206,9 +229,13 @@ export type Game = {
   chainOf: (n: Pick<SimNft, "id" | "kind" | "rarity">) => ChainFacts;
   /** Live game: the latest summons by anyone (the preview simulates its own). */
   summons?: { id: number; who: string; kind: Kind; rarity: number; at: number }[];
-  dive: (spire: number, dest: number) => Promise<ActResult>;
+  dive: (spire: number, dest: number, opts?: DiveOpts) => Promise<ActResult>;
+  /** A deep dive's second decision: turn back (true) or press on. */
+  turnBack: (diveId: number, back: boolean) => Promise<void>;
+  /** The day's commissions and the player's progress on them. */
+  commissions: Commissions;
   /** Several teams at once (one transaction on chain); one result per team, in order. */
-  diveMany: (teams: { spire: number; dest: number }[]) => Promise<ActResult[]>;
+  diveMany: (teams: { spire: number; dest: number }[], supply?: number) => Promise<ActResult[]>;
   choose: (diveId: number, choice: Choice) => Promise<void>;
   collect: (ids?: number[]) => Promise<number>;
   setTeam: (team: SimTeam) => Promise<string | null>;
@@ -229,6 +256,32 @@ export type Game = {
   chain?: import("./use-chain").ChainExtras;
 };
 export type Sim = Game;
+
+export type Commissions = {
+  list: Commission[];
+  active: number | null; // index of the accepted one
+  done: number[];
+  abandoned: number[];
+  /** A revealed dive that meets the accepted commission (the "complete" button collects it first if needed). */
+  ready: number | null;
+  bonus: number; // share of the dive's x1.00 reward a completed commission pays
+  accept: (index: number) => Promise<string | null>;
+  abandon: () => Promise<void>;
+  complete: () => Promise<string | null>;
+};
+
+/** The commission state any game derives from its dives (the preview keeps it in state; the chain reads it). */
+export function commissionView(s: SimState, today: number, active: { index: number; fromDive: number } | null, marks: number): Pick<Commissions, "list" | "active" | "done" | "abandoned" | "ready"> {
+  const list = commissionsOf(today);
+  const bits = (o: number) => [0, 1, 2].filter((i) => marks & (1 << (i + o)));
+  const c = active ? list[active.index] : null;
+  // a collected one first; a result still waiting is collected by the same button
+  const ready = c && active
+    ? s.dives.filter((d) => d.id >= active.fromDive && dayOf(d.at) === today && d.result && meetsCommission(c, d))
+        .sort((a, b) => Number(!!a.pending) - Number(!!b.pending))[0]?.id ?? null
+    : null;
+  return { list, active: active?.index ?? null, done: bits(0), abandoned: bits(8), ready };
+}
 
 export function useSim(): Game {
   const [state, setState] = useState<SimState | null>(null);
@@ -286,25 +339,35 @@ export function useSim(): Game {
   const sp = state?.spent;
   const pool = poolAt(now, sp ? (sp.mint + sp.renew + sp.market) * 0.95 : 0);
 
-  const dive = useCallback((spire: number, dest: number): { error: string | null; id?: number; card?: number } => {
+  const dive = useCallback((spire: number, dest: number, opts: DiveOpts = {}): { error: string | null; id?: number; card?: number } => {
     let error: string | null = null;
     let made: SimDive | undefined;
     commit((st) => {
       const t = Date.now(), day = dayOf(t);
       const team = st.teams.find((x) => x.spire === spire);
+      const uses = opts.deep ? 2 : 1;
       if (!team || team.seekers.length === 0) { error = "noTeam"; return; }
-      if (divesOn(st, day).length >= DIVES_PER_DAY) { error = "noTickets"; return; }
-      if (divesOn(st, day).filter((d) => d.spire === spire).length >= DIVES_PER_TEAM_PER_DAY) { error = "teamLimit"; return; }
+      if (opts.deep && DESTINATIONS[dest].cluster < DEEP_MIN_CLUSTER) { error = "notDeep"; return; }
+      if (passesOn(st, day) + uses > DIVES_PER_DAY) { error = "noTickets"; return; }
+      if (passesOn(st, day, spire) + uses > DIVES_PER_TEAM_PER_DAY) { error = "teamLimit"; return; }
       if (st.dives.some((d) => d.spire === spire && !d.result)) { error = "onBridge"; return; }
       if (st.dives.some((d) => d.spire === spire && d.pending)) { error = "uncollected"; return; }
       const input = teamInput(st, team);
       const d = DESTINATIONS[dest];
       if (teamPower(input) < d.threshold) { error = "tooDim"; return; }
-      const plan = planDive(input, d, skyOf(day));
+      const supply = opts.supply ?? 0;
+      const plan = planDive(input, d, skyOf(day), "none", { stability: stabilityOf(team.bond, supply), deep: opts.deep });
+      const paid = supplyCost(plan, opts.deep, rateOf(day), supply);
+      if (paid > st.balance) { error = "balance"; return; }
+      st.balance -= paid;
+      if (paid) addSpent(st, "supply", paid);
       const r = seeded(st.nextId * 104729 + t);
       const cards = TEXTS.cards.map((c, i) => ({ c, i })).filter(({ c }) => c.cluster === -1 || c.cluster === d.cluster);
       const card = r() < EVENT_CHANCE ? cards[Math.floor(r() * cards.length)].i : undefined;
-      made = { id: st.nextId++, spire, dest, at: t, revealAt: t + REVEAL_MS, plan, card };
+      made = {
+        id: st.nextId++, spire, dest, at: t, revealAt: t + (opts.deep ? DEEP_MINUTES * 60_000 : REVEAL_MS), plan, card,
+        deep: !!opts.deep, supply, supplyPaid: paid, bond: team.bond ?? 0, attuned: plan.bonus > 0,
+      };
       st.dives.push(made);
     });
     return { error, id: made?.id, card: made?.card };
@@ -317,9 +380,63 @@ export function useSim(): Game {
       const team = st.teams.find((x) => x.spire === d.spire);
       d.choice = choice;
       d.choiceAt = Date.now();
-      if (team) d.plan = planDive(teamInput(st, team), DESTINATIONS[d.dest], skyOf(dayOf(d.at)), choice);
+      if (team) d.plan = planDive(teamInput(st, team), DESTINATIONS[d.dest], skyOf(dayOf(d.at)), choice, { stability: stabilityOf(d.bond, d.supply), deep: d.deep });
     });
   }, [commit]);
+
+  /** A deep dive's second decision, inside its turn-back window. */
+  const turnBack = useCallback((diveId: number, back: boolean) => {
+    commit((st) => {
+      const d = st.dives.find((x) => x.id === diveId);
+      if (!d || !turning(d, Date.now())) return;
+      d.turnedBack = back;
+    });
+  }, [commit]);
+
+  // 每日委託: the same rules as LightdiveCommissions3 (one at a time, a dive after accepting, abandon blocks for the day)
+  const commission = state?.commission && state.commission.day === today ? state.commission : null;
+  const marks = state?.commissionMarks?.[today] ?? 0;
+  const acceptCommission = useCallback((index: number): string | null => {
+    let error: string | null = null;
+    commit((st) => {
+      const day = dayOf(Date.now());
+      const m = st.commissionMarks?.[day] ?? 0;
+      if (st.commission && st.commission.day === day) { error = "commissionActive"; return; }
+      if (m & ((1 << index) | (1 << (index + 8)))) { error = "commissionTaken"; return; }
+      st.commission = { day, index, fromDive: st.nextId };
+    });
+    return error;
+  }, [commit]);
+  const abandonCommission = useCallback(() => {
+    commit((st) => {
+      const day = dayOf(Date.now());
+      if (!st.commission || st.commission.day !== day) return;
+      st.commissionMarks = { ...st.commissionMarks, [day]: (st.commissionMarks?.[day] ?? 0) | (1 << (st.commission.index + 8)) };
+      st.commission = null;
+    });
+  }, [commit]);
+  const completeCommission = useCallback((): string | null => {
+    let error: string | null = null;
+    commit((st) => {
+      const day = dayOf(Date.now());
+      const v = commissionView(st, day, st.commission?.day === day ? st.commission : null, st.commissionMarks?.[day] ?? 0);
+      const d = st.dives.find((x) => x.id === v.ready);
+      if (!st.commission || !d) { error = "commissionNotMet"; return; }
+      if (d.pending) collectInto(st, d);
+      const bonus = basePoints(d.plan) * (d.deep ? 2 : 1) * rateOf(dayOf(d.at)) * COMMISSION_BONUS;
+      st.credit += bonus;
+      st.commissionMarks = { ...st.commissionMarks, [day]: (st.commissionMarks?.[day] ?? 0) | (1 << st.commission.index) };
+      st.commission = null;
+    });
+    return error;
+  }, [commit]);
+  const commissions: Commissions = {
+    ...(state ? commissionView(state, today, commission, marks) : { list: commissionsOf(today), active: null, done: [], abandoned: [], ready: null }),
+    bonus: COMMISSION_BONUS,
+    accept: async (i) => acceptCommission(i),
+    abandon: async () => abandonCommission(),
+    complete: async () => completeCommission(),
+  };
 
   const setTeam = useCallback((team: SimTeam): string | null => {
     let error: string | null = null;
@@ -327,7 +444,9 @@ export function useSim(): Game {
       const others = st.teams.filter((x) => x.spire !== team.spire);
       const keep = team.seekers.length > 0 || team.prism !== undefined;
       if (keep && others.length >= MAX_TEAMS) { error = "teamCap"; return; }
-      st.teams = keep ? [...others, team] : others;
+      const was = st.teams.find((x) => x.spire === team.spire);
+      const same = !!was && was.prism === team.prism && was.seekers.join() === team.seekers.join();
+      st.teams = keep ? [...others, { ...team, bond: same ? was!.bond : 0 }] : others;
     });
     return error;
   }, [commit]);
@@ -458,11 +577,8 @@ export function useSim(): Game {
     commit((st) => {
       for (const d of st.dives) {
         if (!d.pending || (ids && !ids.includes(d.id))) continue;
-        st.credit += d.reward ?? 0;
-        st.levyTotal += d.levyPaid ?? 0;
         total += d.reward ?? 0;
-        delete d.pending;
-        d.collectedAt = Date.now();
+        collectInto(st, d);
       }
     });
     return total;
@@ -546,17 +662,25 @@ export function useSim(): Game {
     feed: otherDives,
     week,
     chainOf,
-    dive: a(dive), diveMany: async (teams) => teams.map((t) => dive(t.spire, t.dest)), choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
+    dive: a(dive), diveMany: async (teams, supply) => teams.map((t) => dive(t.spire, t.dest, { supply })), turnBack: a(turnBack), commissions, choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
     claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),
     hurry, reset, skipDay,
   } satisfies Game;
 }
 
+function collectInto(st: SimState, d: SimDive) {
+  st.credit += d.reward ?? 0;
+  st.levyTotal += d.levyPaid ?? 0;
+  delete d.pending;
+  d.collectedAt = Date.now();
+}
+
 /** Reveals one dive: draws the result and spends voyages (docking NFTs that run out). The reward waits for collect(). */
 function reveal(st: SimState, d: SimDive, now: number) {
   const r = seeded(d.id * 15485863 + d.at);
-  d.result = resolve(d.plan, r(), r());
-  const gross = basePoints(d.plan) * (d.result.multX100 / 100) * rateOf(dayOf(d.at));
+  d.result = d.turnedBack ? { outcome: "normal", tier: 254, multX100: 100, wear: 1 } : resolve(d.plan, r(), r());
+  if (d.supply === 1) d.result.wear = 1; // lamp oil
+  const gross = basePoints(d.plan) * (d.deep ? 2 : 1) * (d.result.multX100 / 100) * rateOf(dayOf(d.at));
   d.levyPaid = gross * d.plan.levy;
   d.reward = gross - d.levyPaid;
   d.pending = true; // the reward waits until the player collects it
@@ -574,8 +698,11 @@ function reveal(st: SimState, d: SimDive, now: number) {
   // Docked NFTs leave the team; a team with no spire left is dissolved.
   const docked = (id: number) => st.nfts.find((x) => x.id === id)?.dockedAt !== undefined;
   if (docked(team.spire)) { st.teams = st.teams.filter((x) => x !== team); return; }
+  const left = (team.prism !== undefined && docked(team.prism)) || team.seekers.some(docked);
   if (team.prism && docked(team.prism)) delete team.prism;
   team.seekers = team.seekers.filter((id) => !docked(id));
+  // crew bond: one level more when everyone comes back on board, reset when anyone leaves
+  team.bond = left ? 0 : Math.min(BOND_MAX, (team.bond ?? 0) + 1);
 }
 
 /** Simulated other observers for the live log: a few dives an hour, the same for everyone in a given hour. */

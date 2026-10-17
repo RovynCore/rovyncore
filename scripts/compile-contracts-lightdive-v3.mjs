@@ -5,7 +5,7 @@ import solc from "solc";
 // Compiles the Lightdive v3 contracts (candidate, unaudited) with the same settings as the other RovynCore contracts
 // and writes ABI/bytecode plus the exact standard input for verification. Test-only contracts under test/ are compiled
 // too, but kept out of the published ABI file.
-const NAMES = ["DrandEvmnetRandomness", "LightdiveConfig3", "LightdiveNFT3", "CoreLightPool3", "LightdiveMinter3", "Expedition3", "LightdiveMarket3", "TestRVYN"];
+const NAMES = ["DrandEvmnetRandomness", "LightdiveConfig3", "LightdiveNFT3", "CoreLightPool3", "LightdiveMinter3", "Expedition3", "LightdiveMarket3", "LightdiveCommissions3", "TestRVYN"];
 const TEST_NAMES = ["MockRandomness", "DrandProbe"];
 const root = "packages/contracts/lightdive-v3";
 const fileOf = {
@@ -40,7 +40,9 @@ const input = {
   language: "Solidity",
   sources,
   settings: {
+    // v3.1: the dive plan takes seven inputs (bond, supplies, deep dives); the IR pipeline keeps it within the stack
     optimizer: { enabled: true, runs: 200 },
+    viaIR: true,
     evmVersion: "paris",
     outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"] } },
   },

@@ -10,7 +10,7 @@ interface IBurnableERC20 {
 }
 
 /// @notice The Core Light Pool holds the RVYN that Lightdive pays to players. Summons, renewals, departure costs, claim
-/// fees and market tax flow in; RVYN only leaves as rewards a dive has earned (to the player who claims them) or as the
+/// fees, supplies and market tax flow in; RVYN only leaves as rewards a dive has earned (to the player who claims them) or as the
 /// burned share of a fee. There is no owner withdrawal.
 /// @dev Accounting: balance = available + owed, where `owed` is credited to players and not yet claimed. A reward can
 /// never be credited beyond `available`, so the pool can never owe more than it holds. Candidate, unaudited.
@@ -26,6 +26,7 @@ contract CoreLightPool3 is Ownable2Step {
     event Credited(uint256 amount);
     event Paid(address indexed to, uint256 gross, uint256 fee, uint256 burned);
     event Burned(uint256 amount);
+    event Collected(address indexed from, uint256 amount, uint256 burned);
 
     error NotExpedition();
     error AlreadySet();
@@ -71,6 +72,14 @@ contract CoreLightPool3 is Ownable2Step {
         rvyn.safeTransfer(to, gross - fee);
         if (burnShare > 0) IBurnableERC20(address(rvyn)).burn(burnShare);
         emit Paid(to, gross, fee, burnShare);
+    }
+
+    /// @notice Takes a payment from a player into the pool (a supply bought at departure; the player has approved the
+    /// pool) and burns `burnShare` of it.
+    function collect(address from, uint256 amount, uint256 burnShare) external onlyExpedition {
+        rvyn.safeTransferFrom(from, address(this), amount);
+        if (burnShare > 0) IBurnableERC20(address(rvyn)).burn(burnShare);
+        emit Collected(from, amount, burnShare);
     }
 
     /// @notice Burns part of a fee the pool kept (the burned share of a departure cost).

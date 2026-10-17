@@ -67,8 +67,17 @@ export const ERROR: Record<string, string> = localized({
   connect: "請先連接錢包。",
   unsaved: "這支隊伍有變更還沒儲存，先儲存隊伍再出發。",
   needSeeker: "每支隊伍至少要有一位探索者才能儲存。",
+  // v3.1
+  notDeep: "深潛只開放給第③星團以後的目的地。",
+  badSupply: "沒有這種補給。",
+  commissionActive: "一次只能接一個委託，先完成或放棄手上的。",
+  commissionTaken: "這個委託今天已經完成或放棄過了。",
+  commissionNone: "目前沒有進行中的委託。",
+  commissionNotMet: "還沒有符合這個委託的航程（接下委託後出發、已經揭曉的航程才算）。",
 });
 
+/** The result's name for a revealed dive ("回航" for a deep dive that turned back). */
+export const outcomeName = (d: { turnedBack?: boolean; result?: { outcome: Outcome } }) => (d.turnedBack ? tl("回航") : d.result ? OUTCOME[d.result.outcome] : "");
 export const fmt = (n: number, digits = 2) => n.toLocaleString("zh-Hant", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 export const pct = (x: number, digits = 0) => `${(x * 100).toFixed(digits)}%`;
 export const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{([^}]+)\}/g, (m, k) => (k in v ? String(v[k]) : m));

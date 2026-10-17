@@ -15,17 +15,21 @@ import {
 } from "viem";
 import { usePlatform } from "@/components/platform-context";
 import {
-  DESTINATIONS, baseTable, outcomesOf, planOf, seeded, skyOf, type Beam, type Choice, type Kind,
+  DESTINATIONS, baseTable, outcomesOf, planDive, planOf, seeded, skyOf, type Beam, type Choice, type Kind,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
+  TURNED_BACK, drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
   type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type World,
 } from "@/lib/lightdive-v3/onchain";
 import type { Listing, Supply } from "./market-data";
-import type { Game, MintRequest, PullRecord, SimDive, SimNft, SimState, SimTeam } from "./sim";
+import {
+  commissionView, stabilityOf, supplyCost, teamInput,
+  type Commissions, type DiveOpts, type Game, type MintRequest, type PullRecord, type SimDive, type SimNft, type SimState, type SimTeam,
+} from "./sim";
+import { commissionsOf } from "@/lib/lightdive-v3/commissions";
 
 const CHOICES: Choice[] = ["none", "steady", "bold", "detour"];
 const NAMES_KEY = "lightdive:v3:team-names";
@@ -72,6 +76,8 @@ const REVERT: Record<string, string> = {
   NotSeller: "notOwned", NotOwner: "notOwned", BadPrice: "price", BadBatch: "batch", DayFull: "dayFull", SaleClosed: "saleClosed", SoldOut: "soldOut",
   EarlyLimit: "earlyLimit", DecisionClosed: "decisionClosed", NotListed: "gone", PriceChanged: "priceChanged", NotDue: "notDue", TooSoon: "dripSoon",
   BadQuantity: "batch", EnforcedPause: "paused",
+  NotDeep: "notDeep", BadSupply: "badSupply", Taken: "commissionTaken", NoneActive: "commissionNone", Expired: "commissionNone",
+  NotMet: "commissionNotMet", NotRevealed: "commissionNotMet", TooEarly: "commissionNotMet",
 };
 function reason(error: unknown): string {
   if (error instanceof BaseError) {
@@ -154,7 +160,7 @@ export function useChain(): Game {
           await Promise.all(due.map(async (d) => {
             const sig = await drandSignature(d.round).catch(() => null);
             if (!sig) return;
-            const p = await predictDive(ctx, d, sig);
+            const p = await predictDive(ctx, d, sig, world.chartStability);
             predictions.current.set(Number(d.id), { tier: p.tier, multX100: p.multX100, wear: p.wear, reward: p.reward, levy: p.levy, signature: sig });
           }));
         }
@@ -213,27 +219,35 @@ export function useChain(): Game {
       listed: x.listedPrice !== undefined ? num(x.listedPrice) : undefined,
       mint: x.request !== undefined ? Number(x.request) : undefined,
     }));
-    const onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number) }));
+    const onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number), bond: t.bond }));
     let teams = onChain.filter((t) => !(t.spire in drafts));
-    for (const t of Object.values(drafts)) if (t) teams.push(t);
+    // a draft keeps the bond only when it is the same crew
+    for (const t of Object.values(drafts)) {
+      if (!t) continue;
+      const was = onChain.find((x) => x.spire === t.spire);
+      teams.push({ ...t, bond: was && was.prism === t.prism && was.seekers.join() === t.seekers.join() ? was.bond : 0 });
+    }
     teams = teams.filter((t) => nfts.some((n) => n.id === t.spire));
-    const voyageMs = w.voyageSeconds * 1000;
     const dives: SimDive[] = p.dives.map((d) => {
       const id = Number(d.id), dest = d.dest;
       const choice = d.decision ? CHOICES[d.decision] : undefined;
       // attunement is not stored on its own: recover it from the recorded points (power + attunement) x weight
+      // (a deep dive records twice the points)
       const coefBp = planOf({ power: d.power, bonus: 0, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day)).coefBp;
-      const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp) / 100 - d.power);
-      const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none");
+      const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp / (d.long ? 2 : 1)) / 100 - d.power);
+      const mods = { stability: stabilityOf(d.bond, d.supply), deep: d.long };
+      const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none", mods);
+      const voyageMs = (d.long ? w.longVoyageSeconds : w.voyageSeconds) * 1000;
       const names = plan.names ?? outcomesOf(plan.table);
       const revealAt = roundTime(d.round) * 1000;
       const settled = d.result;
       const predicted = predictions.current.get(id);
       const r = settled ?? predicted;
-      const outcome = r ? (settled?.fallbackUsed ? "normal" : names[r.tier] ?? "normal") : undefined;
+      const outcome = r ? (settled?.fallbackUsed || r.tier === TURNED_BACK ? "normal" : names[r.tier] ?? "normal") : undefined;
       const lines = TEXTS.logs[dest] as Record<string, readonly string[]>;
       return {
         id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), choice, rate: num(d.rate),
+        deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned,
         result: r && outcome ? { outcome, tier: r.tier, multX100: r.multX100, wear: r.wear } : undefined,
         reward: r ? num(r.reward) : undefined,
         levyPaid: r ? num(r.levy) : undefined,
@@ -403,26 +417,44 @@ export function useChain(): Game {
       : step(tl("解散隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "disband", [BigInt(spire)])));
   };
 
-  const dive = useCallback(async (spire: number, dest: number) => {
+  /** The RVYN a supply costs for one team's dive (paid into the pool on departure). */
+  const supplyWei = (spire: number, dest: number, supply: number, deep?: boolean) => {
+    const st = state!;
+    const team = st.teams.find((t) => t.spire === spire);
+    if (!supply || !team) return 0n;
+    const plan = planDive(teamInput(st, team), DESTINATIONS[dest], skyOf(today), "none", { stability: stabilityOf(team.bond, supply), deep });
+    return parseEther(supplyCost(plan, deep, num(data!.world.rate), supply).toFixed(6));
+  };
+  /** One approval when the pool allowance does not cover the supplies (10% headroom for the day's rounding). */
+  const supplySteps = (cost: bigint): TxStep[] | string =>
+    cost === 0n ? [] : p!.balance < cost ? "balance" : pay(c!.pool, p!.poolAllowance, cost + cost / 10n, tl("允許補給使用 $RVYN"));
+
+  const dive = useCallback(async (spire: number, dest: number, opts: DiveOpts = {}) => {
     const e = ready();
     if (e) return { error: e };
     const st = state!;
     const team = st.teams.find((t) => t.spire === spire);
+    const uses = opts.deep ? 2 : 1;
     if (!team || !team.seekers.length) return { error: "noTeam" };
-    if (p!.passesUsed >= 3) return { error: "noTickets" };
-    if ((p!.teams.find((t) => Number(t.spire) === spire)?.divesToday ?? 0) >= 3) return { error: "teamLimit" };
+    if (opts.deep && DESTINATIONS[dest].cluster < data!.world.longMinCluster) return { error: "notDeep" };
+    if (p!.passesUsed + uses > 3) return { error: "noTickets" };
+    if ((p!.teams.find((t) => Number(t.spire) === spire)?.divesToday ?? 0) + uses > 3) return { error: "teamLimit" };
     if (st.dives.some((d) => d.spire === spire && !d.result)) return { error: "onBridge" };
     if (st.dives.some((d) => d.spire === spire && d.pending)) return { error: "uncollected" };
     // unsaved team changes are saved in the same go, right before the team departs
     const save = draftSteps();
-    const { receipts, error } = await run([...save, step(tl("派隊伍出發"), c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest])]);
+    const supply = opts.supply ?? 0;
+    const approve = supplySteps(supplyWei(spire, dest, supply, opts.deep));
+    if (typeof approve === "string") return { error: approve };
+    const label = opts.deep ? tl("派隊伍深潛") : tl("派隊伍出發");
+    const { receipts, error } = await run([...save, ...approve, step(label, c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest, supply, !!opts.deep])]);
     if (!receipts) return { error };
     if (save.length) setDrafts({});
     const id = Number(logArgs(receipts, A.Expedition3, "Dived")[0]?.diveId);
     return { error: null, id, card: cardOf(id, dest) };
   }, [state, data, p, c, A, run, drafts]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const diveMany = useCallback(async (list: { spire: number; dest: number }[]) => {
+  const diveMany = useCallback(async (list: { spire: number; dest: number }[], supply = 0) => {
     const e = ready();
     if (e) return list.map(() => ({ error: e }));
     const st = state!;
@@ -435,7 +467,9 @@ export function useChain(): Game {
     if (go.length > 3 - p!.passesUsed) return list.map(() => ({ error: "noTickets" }));
     if (!go.length) return errors.map((error) => ({ error }));
     const saves = draftSteps();
-    const { receipts, error } = await run([...saves, step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest)])]);
+    const approve = supplySteps(go.reduce((a, t) => a + supplyWei(t.spire, t.dest, supply), 0n));
+    if (typeof approve === "string") return list.map(() => ({ error: approve }));
+    const { receipts, error } = await run([...saves, ...approve, step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest), supply])]);
     if (receipts && saves.length) setDrafts({});
     const ids = receipts ? logArgs(receipts, A.Expedition3, "Dived").map((x) => Number(x.diveId)) : [];
     let k = 0;
@@ -451,6 +485,35 @@ export function useChain(): Game {
     if (ready()) return;
     await run([step(tl("航行抉擇"), c!.expedition, A.Expedition3, "decide", [BigInt(diveId), CHOICES.indexOf(choice)])]);
   }, [c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const turnBack = useCallback(async (diveId: number, back: boolean) => {
+    if (ready()) return;
+    await run([step(back ? tl("回航") : tl("繼續深潛"), c!.expedition, A.Expedition3, "turnBack", [BigInt(diveId), back])]);
+  }, [c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 每日委託: the list comes from the day; the active one and the marks from the chain
+  const C3 = A.LightdiveCommissions3;
+  const ca = p?.commission.active;
+  const cview = state && p
+    ? commissionView(state, today, ca ? { index: ca.index, fromDive: Number(ca.fromDive) } : null, p.commission.marks)
+    : { list: commissionsOf(today), active: null, done: [], abandoned: [], ready: null };
+  const commissions: Commissions = {
+    ...cview,
+    bonus: (data?.world.commissionBonusBp ?? 1000) / 10_000,
+    accept: async (index) => ready() ?? (await run([step(tl("接受委託"), c!.commissions, C3, "accept", [index])])).error,
+    abandon: async () => { if (!ready()) await run([step(tl("放棄委託"), c!.commissions, C3, "abandon")]); },
+    complete: async () => {
+      const e = ready();
+      if (e) return e;
+      if (cview.ready === null) return "commissionNotMet";
+      // a result still waiting is revealed on chain first, in the same go
+      const d = state!.dives.find((x) => x.id === cview.ready)!;
+      const sig = d.pending ? predictions.current.get(d.id)?.signature : undefined;
+      if (d.pending && !sig) return "commissionNotMet";
+      const reveal = sig ? [step(tl("收取結果"), c!.expedition, A.Expedition3, "revealMany", [[BigInt(d.id)], [sig]])] : [];
+      return (await run([...reveal, step(tl("完成委託"), c!.commissions, C3, "complete", [BigInt(cview.ready)])])).error;
+    },
+  };
 
   const collect = useCallback(async (ids?: number[]) => {
     if (ready()) return 0;
@@ -611,7 +674,7 @@ export function useChain(): Game {
         explorer: G.explorer && c ? `${G.explorer}/token/${c.nft}/instance/${n.id}` : null,
       };
     },
-    dive, diveMany, choose, collect, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
+    dive, diveMany, turnBack, commissions, choose, collect, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
     chain: {
       account,
       ready: !!c,

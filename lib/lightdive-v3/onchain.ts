@@ -13,6 +13,7 @@ export type Contracts3 = {
   minter: Address;
   expedition: Address;
   market: Address;
+  commissions: Address;
 };
 export type Deployment3 = Partial<Record<keyof Contracts3, string | null>> & {
   chainId: number;
@@ -21,7 +22,7 @@ export type Deployment3 = Partial<Record<keyof Contracts3, string | null>> & {
   rpcUrl?: string | null;
 };
 export type Abis3 = Record<
-  "DrandEvmnetRandomness" | "LightdiveConfig3" | "LightdiveNFT3" | "CoreLightPool3" | "LightdiveMinter3" | "Expedition3" | "LightdiveMarket3" | "TestRVYN",
+  "DrandEvmnetRandomness" | "LightdiveConfig3" | "LightdiveNFT3" | "CoreLightPool3" | "LightdiveMinter3" | "Expedition3" | "LightdiveMarket3" | "LightdiveCommissions3" | "TestRVYN",
   Abi
 >;
 export type Ctx = {
@@ -34,7 +35,7 @@ export type Ctx = {
 };
 
 export const MULTICALL3 = getAddress("0xcA11bde05977b3631167028862bE2a173976CA11");
-export const KEYS: (keyof Contracts3)[] = ["rvyn", "rng", "config", "nft", "pool", "minter", "expedition", "market"];
+export const KEYS: (keyof Contracts3)[] = ["rvyn", "rng", "config", "nft", "pool", "minter", "expedition", "market", "commissions"];
 
 /** The contracts of a deployment file, or null while it is not filled in. */
 export function contractsOf(d: Deployment3): Contracts3 | null {
@@ -182,6 +183,14 @@ export type World = {
   voyageSeconds: number;
   decisionCloseSeconds: number;
   dripAmount: bigint | null; // test token only
+  // v3.1
+  longVoyageSeconds: number;
+  longTurnSeconds: number;
+  longMinCluster: number;
+  bondMax: number;
+  chartStability: number;
+  supplyPriceBp: number[]; // [0, lamp oil, star chart]
+  commissionBonusBp: number;
 };
 
 export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
@@ -205,8 +214,13 @@ export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
     ...k.map((i) => ({ address: c.nft, abi: N, functionName: "maxAlive", args: [i] })),
     ...k.map((i) => ({ address: c.minter, abi: M, functionName: "price", args: [i] })),
     ...k.map((i) => ({ address: c.minter, abi: M, functionName: "renewPrice", args: [i] })),
+    { address: c.config, abi: C, functionName: "rules" },
+    { address: c.config, abi: C, functionName: "supplyPriceBp", args: [1] },
+    { address: c.config, abi: C, functionName: "supplyPriceBp", args: [2] },
+    { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "bonusBp" },
   ]);
   const at = testToken ? 9 : 8;
+  const rules = (r[at + 12] as Record<string, number>) ?? {};
   const [rate, ceiling] = (r[0] as [bigint, bigint]) ?? [0n, 0n];
   const y = (r[1] as bigint) ?? 0n;
   return {
@@ -223,16 +237,28 @@ export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
     maxAlive: k.map((i) => Number((r[at + 3 + i] as bigint) ?? 0n)),
     price: k.map((i) => (r[at + 6 + i] as bigint) ?? 0n),
     renewPrice: k.map((i) => (r[at + 9 + i] as bigint) ?? 0n),
+    longVoyageSeconds: Number(rules.longVoyageSeconds ?? 900),
+    longTurnSeconds: Number(rules.longTurnSeconds ?? 600),
+    longMinCluster: Number(rules.longMinCluster ?? 2),
+    bondMax: Number(rules.bondMax ?? 5),
+    chartStability: Number(rules.chartStability ?? 3),
+    supplyPriceBp: [0, Number(r[at + 13] ?? 400), Number(r[at + 14] ?? 600)],
+    commissionBonusBp: Number(r[at + 15] ?? 1000),
   };
 }
 
 export type Card3 = Attributes3 & { id: bigint; locked: boolean; listedPrice?: bigint; listedAt?: number; homeAt?: number; soldAt?: number; request?: bigint; mintBlock?: bigint; mintTx?: Hex };
-export type Team3 = { spire: bigint; prism: bigint; seekers: bigint[]; activeDive: bigint; divesToday: number };
+export type Team3 = { spire: bigint; prism: bigint; seekers: bigint[]; activeDive: bigint; divesToday: number; bond: number };
 export type Dive3 = {
   id: bigint; spire: bigint; day: number; dest: number; beam: number; decision: number; revealed: boolean; power: number;
   round: bigint; pointsE2: bigint; rate: bigint;
+  // v3.1
+  long: boolean; turnedBack: boolean; attuned: boolean; supply: number; bond: number;
   result?: { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; fallbackUsed: boolean };
 };
+/** The player's commission state: the active one (index and the first dive id that counts) and today's marks
+ *  (bit i completed, bit i + 8 abandoned). */
+export type CommissionState = { active: { day: number; index: number; fromDive: bigint } | null; marks: number };
 export type Request3 = { id: bigint; kind: number; qty: number; round: bigint; paid: bigint; revealed: boolean; cards: bigint[] };
 export type Player = {
   balance: bigint;
@@ -243,7 +269,9 @@ export type Player = {
   minterAllowance: bigint;
   marketAllowance: bigint;
   marketApproved: boolean;
+  poolAllowance: bigint; // supplies are paid into the pool
   nextDripAt: number | null;
+  commission: CommissionState;
   cards: Card3[]; // owned now (in the wallet or listed by me), plus the ones that went home or were sold
   teams: Team3[];
   dives: Dive3[];
@@ -332,15 +360,18 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
       { address: c.rvyn, abi: T, functionName: "allowance", args: [me, c.minter] },
       { address: c.rvyn, abi: T, functionName: "allowance", args: [me, c.market] },
       { address: c.nft, abi: N, functionName: "isApprovedForAll", args: [me, c.market] },
+      { address: c.rvyn, abi: T, functionName: "allowance", args: [me, c.pool] },
+      { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "active", args: [me] },
+      { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "marks", args: [me, world.day] },
       ...(testToken ? [{ address: c.rvyn, abi: T, functionName: "nextDripAt", args: [me] }] : []),
     ]),
   ]);
 
   const teams: Team3[] = [];
   spires.forEach((spire, i) => {
-    const t = teamViews[i * 2] as { owner: Address; prism: bigint; seekers: readonly bigint[]; activeDive: bigint } | null;
+    const t = teamViews[i * 2] as { owner: Address; prism: bigint; seekers: readonly bigint[]; activeDive: bigint; bond: number } | null;
     if (!t || t.owner.toLowerCase() !== me.toLowerCase()) return;
-    teams.push({ spire, prism: t.prism, seekers: [...t.seekers], activeDive: t.activeDive, divesToday: Number((teamViews[i * 2 + 1] as bigint) ?? 0n) });
+    teams.push({ spire, prism: t.prism, seekers: [...t.seekers], activeDive: t.activeDive, divesToday: Number((teamViews[i * 2 + 1] as bigint) ?? 0n), bond: Number(t.bond ?? 0) });
   });
 
   const results = new Map(revealed.map((l) => [BigInt(l.args.diveId as bigint), l.args]));
@@ -350,6 +381,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     return {
       id, spire: BigInt(d.spire as bigint), day: Number(d.day), dest: Number(d.dest), beam: Number(d.beam), decision: Number(d.decision),
       revealed: Boolean(d.revealed), power: Number(d.power), round: BigInt(d.round as bigint), pointsE2: BigInt(d.pointsE2 as bigint), rate: BigInt(d.rate as bigint),
+      long: Boolean(d.long), turnedBack: Boolean(d.turnedBack), attuned: Boolean(d.attuned), supply: Number(d.supply ?? 0), bond: Number(d.bond ?? 0),
       result: res ? {
         tier: Number(res.tier), multX100: Number(res.multX100), wear: Number(res.wear), reward: BigInt(res.reward as bigint), levy: BigInt(res.levy as bigint),
         fallbackUsed: Boolean(res.fallbackUsed),
@@ -376,7 +408,9 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     minterAllowance: (own[4] as bigint) ?? 0n,
     marketAllowance: (own[5] as bigint) ?? 0n,
     marketApproved: Boolean(own[6]),
-    nextDripAt: testToken ? Number((own[7] as bigint) ?? 0n) : null,
+    poolAllowance: (own[7] as bigint) ?? 0n,
+    commission: commissionState(own[8], own[9], world.day),
+    nextDripAt: testToken ? Number((own[10] as bigint) ?? 0n) : null,
     cards, teams, dives, requests,
     claimed: sum(claimed, "gross") - sum(claimed, "fee"),
     claimFees: sum(claimed, "fee"),
@@ -449,9 +483,13 @@ export async function readOnTeam(ctx: Ctx): Promise<[number, number, number]> {
 }
 
 /** The exact plan of a dive as the contract will settle it. */
-export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "decision">): Promise<ChainPlan> {
+/** Points of empty-handed chance a dive moves to "normal": its crew bond and a star chart. */
+export const stabilityOf = (d: Pick<Dive3, "bond" | "supply">, chartStability: number) => d.bond + (d.supply === 2 ? chartStability : 0);
+
+export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "decision" | "bond" | "supply" | "long">, chartStability: number): Promise<ChainPlan> {
   const p = (await ctx.client.readContract({
-    address: ctx.c.config, abi: ctx.abi.LightdiveConfig3, functionName: "plan", args: [d.dest, BigInt(d.power), d.beam, d.day, d.decision],
+    address: ctx.c.config, abi: ctx.abi.LightdiveConfig3, functionName: "plan",
+    args: [d.dest, BigInt(d.power), d.beam, d.day, d.decision, stabilityOf(d, chartStability), d.long],
   })) as Record<string, unknown>;
   return {
     table: (p.table as Record<string, number>[]).map((t) => ({ probBp: Number(t.probBp), lo: Number(t.lo), hi: Number(t.hi) })),
@@ -461,10 +499,24 @@ export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam
 
 /** A dive whose drand round is out but that nobody has revealed yet: its result is already decided, and shown as
  *  waiting to be collected (the reveal transaction credits it). */
-export async function predictDive(ctx: Ctx, d: Dive3, signature: Hex) {
-  const plan = await readPlan(ctx, d);
-  const draw = drawDive(plan, diveRandom(signature, d.id));
+export async function predictDive(ctx: Ctx, d: Dive3, signature: Hex, chartStability: number) {
+  const plan = await readPlan(ctx, d, chartStability);
+  // a deep dive that turned back ends at x1.00 with 1 voyage of wear; lamp oil caps the wear at 1
+  const drawn = drawDive(plan, diveRandom(signature, d.id));
+  const draw = d.turnedBack ? { tier: TURNED_BACK, multX100: 100, wear: 1 } : { ...drawn, wear: d.supply === 1 ? 1 : drawn.wear };
   return { ...draw, ...diveReward(d.pointsE2, draw.multX100, d.rate, plan.levyBp), plan };
+}
+
+export const TURNED_BACK = 254;
+
+function commissionState(active: unknown, marks: unknown, day: number): CommissionState {
+  const a = active as [number, number, boolean, bigint] | Record<string, unknown> | null;
+  const on = a ? Boolean(Array.isArray(a) ? a[2] : a.on) : false;
+  const aDay = a ? Number(Array.isArray(a) ? a[0] : a.day) : 0;
+  return {
+    active: a && on && aDay === day ? { day: aDay, index: Number(Array.isArray(a) ? a[1] : a.index), fromDive: BigInt((Array.isArray(a) ? a[3] : a.fromDive) as bigint) } : null,
+    marks: Number(marks ?? 0),
+  };
 }
 
 export type RecentSummon = { id: bigint; who: Address; kind: number; rarity: number; at: number };

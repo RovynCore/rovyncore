@@ -10,7 +10,7 @@ import { PageHead } from "../game/hud";
 import { play } from "./audio";
 import { collected, dayOf, owned, type Sim, type SimDive } from "./sim";
 import { CountUp, RarityGem, Tile, Voyages, flyLight } from "./kit";
-import { CIRCLED, KIND, OUTCOME, OUTCOME_TONE, SLOT, STAR, fmt, pct } from "./copy";
+import { CIRCLED, KIND, OUTCOME, OUTCOME_TONE, SLOT, STAR, fmt, outcomeName, pct } from "./copy";
 import { tl, localized } from "@/lib/lightdive-v3/i18n";
 
 const DAY = 86_400_000;
@@ -286,7 +286,7 @@ function History({ sim }: { sim: Sim }) {
             {list.map((d) => (
               <li key={d.id}>
                 <span className="v3-history2__dest">{destName(d.dest)}</span>
-                <b style={{ color: OUTCOME_TONE[d.result!.outcome] }}>{OUTCOME[d.result!.outcome]} ×{(d.result!.multX100 / 100).toFixed(2)}</b>
+                <b style={{ color: OUTCOME_TONE[d.result!.outcome] }}>{outcomeName(d)} ×{(d.result!.multX100 / 100).toFixed(2)}</b>
                 <span className="v3-history2__tags">
                   <i>{tl("耗損 {0}", { 0: d.result!.wear })}</i>
                   {d.plan.event && <i style={{ color: STAR[d.plan.event].color }}>{STAR[d.plan.event].name}</i>}

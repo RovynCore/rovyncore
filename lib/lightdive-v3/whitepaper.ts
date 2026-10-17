@@ -573,7 +573,63 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 超出門檻的穩定 → 航行抉擇。"
+      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 深潛（風險升一級）→ 超出門檻的穩定、默契與星圖殘頁 → 航行抉擇。"
+     },
+     {
+      "t": "h3",
+      "text": "深潛"
+     },
+     {
+      "t": "p",
+      "text": "第③星團以後的目的地可以選擇深潛：用 2 張出發令（也算這支隊伍今天的 2 次），航行 15 分鐘，光塵 ×2，稜鏡風險高一級。航行抉擇在前段出現，揭曉前 10 分鐘截止；接著是第二個決定：揭曉前 10 分鐘到 1 分鐘之間可以選擇回航。回航的這趟固定 ×1.00、只耗損 1 次航程，出發成本照付。"
+     },
+     {
+      "t": "h3",
+      "text": "默契"
+     },
+     {
+      "t": "p",
+      "text": "同一組人（光塔、稜鏡、探索者都沒換）每揭曉一趟，默契 +1，最多 5。每 1 點默契讓空手機率少 1 個百分點，移到「一般」，和超出門檻的穩定一起計算。換掉任何一張卡、或有卡停泊離隊，默契就歸零。"
+     },
+     {
+      "t": "h3",
+      "text": "出航補給"
+     },
+     {
+      "t": "p",
+      "text": "出發時可以花 $RVYN 帶一種補給，價格是這趟 ×1.00 收益（出發成本前）的一個比例："
+     },
+     {
+      "t": "table",
+      "head": [
+       "補給",
+       "價格",
+       "效果"
+      ],
+      "rows": [
+       [
+        "燈油",
+        "4%",
+        "這趟不論結果，只耗損 1 次航程"
+       ],
+       [
+        "星圖殘頁",
+        "6%",
+        "空手機率少 3 個百分點，移到「一般」"
+       ]
+      ]
+     },
+     {
+      "t": "p",
+      "text": "付的 $RVYN 有 95% 進核光池、5% 銷毀，和其他費用一樣。"
+     },
+     {
+      "t": "h3",
+      "text": "每日委託"
+     },
+     {
+      "t": "p",
+      "text": "每天 3 個委託，由日期決定（任何人都能從合約算出同樣的 3 個），不需要有人手動發布。一次接一個；接下後出發、揭曉後符合條件的一趟，就能完成委託，從核光池領到那趟 ×1.00 收益的 10%，計入當天的分配上限。放棄的委託當天不能再接。委託種類：指定星團帶回光、豐收以上、指定航行抉擇、帶同頻探索者、前往有星象的目的地、深潛、帶補給。"
      },
      {
       "t": "h3",
@@ -754,6 +810,11 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "續航",
         "原價 50%",
         "同召喚"
+       ],
+       [
+        "出航補給",
+        "這趟 ×1.00 收益的 4%／6%",
+        "95% 回核光池、5% 銷毀"
        ]
       ]
      },
@@ -1522,7 +1583,63 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 超出门槛的稳定 → 航行抉择。"
+      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 深潜（风险升一级）→ 超出门槛的稳定、默契与星图残页 → 航行抉择。"
+     },
+     {
+      "t": "h3",
+      "text": "深潜"
+     },
+     {
+      "t": "p",
+      "text": "第③星团以后的目的地可以选择深潜：用 2 张出发令（也算这支队伍今天的 2 次），航行 15 分钟，光尘 ×2，棱镜风险高一级。航行抉择在前段出现，揭晓前 10 分钟截止；接着是第二个决定：揭晓前 10 分钟到 1 分钟之间可以选择回航。回航的这趟固定 ×1.00、只耗损 1 次航程，出发成本照付。"
+     },
+     {
+      "t": "h3",
+      "text": "默契"
+     },
+     {
+      "t": "p",
+      "text": "同一组人（光塔、棱镜、探索者都没换）每揭晓一趟，默契 +1，最多 5。每 1 点默契让空手概率少 1 个百分点，移到「一般」，和超出门槛的稳定一起计算。换掉任何一张卡、或有卡停泊离队，默契就归零。"
+     },
+     {
+      "t": "h3",
+      "text": "出航补给"
+     },
+     {
+      "t": "p",
+      "text": "出发时可以花 $RVYN 带一种补给，价格是这趟 ×1.00 收益（出发成本前）的一个比例："
+     },
+     {
+      "t": "table",
+      "head": [
+       "补给",
+       "价格",
+       "效果"
+      ],
+      "rows": [
+       [
+        "灯油",
+        "4%",
+        "这趟不論结果，只耗损 1 次航程"
+       ],
+       [
+        "星图残页",
+        "6%",
+        "空手概率少 3 个百分点，移到「一般」"
+       ]
+      ]
+     },
+     {
+      "t": "p",
+      "text": "付的 $RVYN 有 95% 进核光池、5% 销毁，和其他费用一样。"
+     },
+     {
+      "t": "h3",
+      "text": "每日委托"
+     },
+     {
+      "t": "p",
+      "text": "每天 3 个委托，由日期决定（任何人都能从合约算出同样的 3 个），不需要有人手动发布。一次接一个；接下后出发、揭晓后符合条件的一趟，就能完成委托，从核光池领到那趟 ×1.00 收益的 10%，计入当天的分配上限。放棄的委托当天不能再接。委托种类：指定星团带回光、丰收以上、指定航行抉择、带同频探索者、前往有星象的目的地、深潜、带补给。"
      },
      {
       "t": "h3",
@@ -1703,6 +1820,11 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "续航",
         "原价 50%",
         "同召唤"
+       ],
+       [
+        "出航补给",
+        "这趟 ×1.00 收益的 4%／6%",
+        "95% 回核光池、5% 销毁"
        ]
       ]
      },
@@ -2471,7 +2593,63 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Base odds table (cluster × beam) → today's sky event → steadiness from being above the threshold → voyage decision."
+      "text": "Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond and a star chart → voyage decision."
+     },
+     {
+      "t": "h3",
+      "text": "Deep dives"
+     },
+     {
+      "t": "p",
+      "text": "Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. The voyage decision comes early and closes 10 minutes before the reveal; then comes a second call: from 10 minutes to 1 minute before the reveal you may turn back. A voyage that turns back settles at ×1.00 with 1 wear, and still pays its departure cost."
+     },
+     {
+      "t": "h3",
+      "text": "Crew bond"
+     },
+     {
+      "t": "p",
+      "text": "Each revealed dive by the same crew (spire, prism and seekers unchanged) adds 1 bond, up to 5. Each point moves 1 percentage point of empty-handed chance to \"Normal\", together with the overflow stability. Changing any card, or a card docking off the team, resets it to 0."
+     },
+     {
+      "t": "h3",
+      "text": "Voyage supplies"
+     },
+     {
+      "t": "p",
+      "text": "At departure you may pay $RVYN for one supply, priced as a share of the voyage's ×1.00 reward (before the departure cost):"
+     },
+     {
+      "t": "table",
+      "head": [
+       "Supply",
+       "Price",
+       "Effect"
+      ],
+      "rows": [
+       [
+        "Lamp oil",
+        "4%",
+        "This voyage wears only 1, whatever the result"
+       ],
+       [
+        "Star chart fragment",
+        "6%",
+        "3 percentage points less empty-handed chance, moved to \"Normal\""
+       ]
+      ]
+     },
+     {
+      "t": "p",
+      "text": "Of the $RVYN paid, 95% goes into the Core Light Pool and 5% is burned, like every other fee."
+     },
+     {
+      "t": "h3",
+      "text": "Daily commissions"
+     },
+     {
+      "t": "p",
+      "text": "Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after accepting and meets it, once revealed, completes it for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a given voyage decision, an attuned seeker, a destination with a sky event, a deep dive, a supply."
      },
      {
       "t": "h3",
@@ -2652,6 +2830,11 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "Renewal",
         "50% of the original price",
         "Same as Summon"
+       ],
+       [
+        "Voyage supply",
+        "4% / 6% of the voyage's ×1.00 reward",
+        "95% Core Light Pool, 5% burned"
        ]
       ]
      },
@@ -3420,7 +3603,63 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 기준 초과 안정화 → 항해 선택."
+      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 딥 다이브(위험 한 단계 상승) → 기준 초과 안정화·호흡·성도 조각 → 항해 선택."
+     },
+     {
+      "t": "h3",
+      "text": "딥 다이브"
+     },
+     {
+      "t": "p",
+      "text": "③성단 이후 목적지에서는 딥 다이브를 할 수 있습니다. 출발령 2장을 쓰고(팀의 오늘 출발 2회로 계산), 15분 동안 항해하며, 빛가루 ×2, 위험이 한 단계 올라갑니다. 항해 선택은 초반에 나오고 공개 10분 전에 마감됩니다. 이어서 두 번째 결정: 공개 10분 전부터 1분 전까지 회항할 수 있습니다. 회항한 항해는 ×1.00 고정, 소모 1회이며 출발 비용은 그대로 냅니다."
+     },
+     {
+      "t": "h3",
+      "text": "호흡"
+     },
+     {
+      "t": "p",
+      "text": "같은 팀원(광탑·프리즘·탐색자 변경 없음)으로 다이브가 공개될 때마다 호흡 +1, 최대 5. 호흡 1점마다 빈손 확률 1%p가 \"보통\"으로 옮겨지며, 기준 초과 안정화와 함께 계산됩니다. 카드를 하나라도 바꾸거나 카드가 정박해 팀을 떠나면 0이 됩니다."
+     },
+     {
+      "t": "h3",
+      "text": "출항 보급"
+     },
+     {
+      "t": "p",
+      "text": "출발할 때 $RVYN을 내고 보급 한 가지를 챙길 수 있습니다. 가격은 이번 항해 ×1.00 보상(출발 비용 전)의 비율입니다."
+     },
+     {
+      "t": "table",
+      "head": [
+       "보급",
+       "가격",
+       "효과"
+      ],
+      "rows": [
+       [
+        "등유",
+        "4%",
+        "결과와 상관없이 이번 항해는 소모 1회"
+       ],
+       [
+        "성도 조각",
+        "6%",
+        "빈손 확률 3%p 감소, \"보통\"으로 이동"
+       ]
+      ]
+     },
+     {
+      "t": "p",
+      "text": "지불한 $RVYN의 95%는 코어빛 풀로, 5%는 소각되며 다른 수수료와 같습니다."
+     },
+     {
+      "t": "h3",
+      "text": "일일 의뢰"
+     },
+     {
+      "t": "p",
+      "text": "매일 의뢰 3개가 날짜로 정해지며(누구나 컨트랙트에서 같은 3개를 계산할 수 있음) 누구도 직접 게시하지 않습니다. 한 번에 하나씩 받고, 수락 후 출발해 공개된 항해가 조건을 충족하면 의뢰를 완료하고 그 항해 ×1.00 보상의 10%를 코어빛 풀에서 받습니다(그날의 분배 상한에 포함). 포기한 의뢰는 그날 다시 받을 수 없습니다. 종류: 지정 성단에서 빛 가져오기, 풍작 이상, 지정 항해 선택, 동조 탐색자, 천체 현상 목적지, 딥 다이브, 보급."
      },
      {
       "t": "h3",
@@ -3601,6 +3840,11 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "연장",
         "원가의 50%",
         "소환과 동일"
+       ],
+       [
+        "출항 보급",
+        "항해 ×1.00 보상의 4%／6%",
+        "95% 코어빛 풀, 5% 소각"
        ]
       ]
      },

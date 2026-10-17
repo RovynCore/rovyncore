@@ -9,11 +9,12 @@ import { play, useAmbience, useMusic } from "./audio";
 import { CLUSTER_IMAGES, GALAXY_IMAGE } from "@/lib/lightdive-v3/credits";
 import { ArrowLeft, Lock, Rocket, X } from "lucide-react";
 import {
-  DESTINATIONS, DIVES_PER_DAY, baseReward, basePoints, clusterRange, destinationBase, outcomesOf, overflowPoints, planDive, teamPower,
+  DEEP_MIN_CLUSTER, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, baseReward, basePoints, clusterRange, destinationBase, outcomesOf, overflowPoints, planDive, teamPower,
   type Choice, type DivePlan,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
-import { deciding, divesOn, teamInput, teamName, teamOut, type Sim, type SimDive, type SimState } from "./sim";
+import { deciding, passesOn, stabilityOf, teamInput, teamName, teamOut, turning, type Sim, type SimDive, type SimState } from "./sim";
+import { SupplyPrompt, type Departure } from "./provisions";
 import { VoyageLog } from "./voyage";
 import { flyLight } from "./kit";
 import { fxQuality } from "./settings";
@@ -35,7 +36,7 @@ function teamsOf(s: SimState, today: number): TeamView[] {
         name: teamName(s, spire.id),
         busy: teamOut(s, t.spire),
         waiting: s.dives.some((d) => d.spire === t.spire && d.pending),
-        teamToday: divesOn(s, today).filter((d) => d.spire === t.spire).length,
+        teamToday: passesOn(s, today, t.spire),
       };
     })
     .sort((a, b) => b.power - a.power);
@@ -63,7 +64,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const [seenUpTo, setSeenUpTo] = useState(() => Math.max(0, ...s.dives.filter((d) => d.result).map((d) => d.id)));
   const teams = teamsOf(s, sim.today);
   const best = teams[0]?.power ?? 0;
-  const used = divesOn(s, sim.today).length;
+  const used = passesOn(s, sim.today);
 
   // A result pops up once when it comes back; its reward only counts after the player collects it.
   const revealed = s.dives.find((d) => d.result && d.pending && d.id > seenUpTo);
@@ -101,13 +102,21 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const pending = s.dives.filter((d) => !d.result);
   const [notice, setNotice] = useState<string | null>(null);
   // Same team, same destination, one more ticket.
+  const [supplyFor, setSupplyFor] = useState<Departure | null>(null);
   const again = async () => {
     if (!revealed) return;
     await closeReveal(true);
-    const r = await sim.dive(revealed.spire, revealed.dest);
-    if (r.error) { setNotice(ERROR[r.error]); setCluster(DESTINATIONS[revealed.dest].cluster); setDest(revealed.dest); return; }
+    // a deep dive again only when today's passes still allow one; otherwise the same trip at normal depth
+    const deep = !!revealed.deep && passesOn(s, sim.today) + 2 <= DIVES_PER_DAY && passesOn(s, sim.today, revealed.spire) + 2 <= DIVES_PER_TEAM_PER_DAY;
+    setSupplyFor({ spire: revealed.spire, dest: revealed.dest, deep });
+  };
+  const departAgain = async (supply: number) => {
+    const g = supplyFor!;
+    setSupplyFor(null);
+    const r = await sim.dive(g.spire, g.dest, { supply, deep: g.deep });
+    if (r.error) { setNotice(ERROR[r.error]); setCluster(DESTINATIONS[g.dest].cluster); setDest(g.dest); return; }
     setNotice(null);
-    departed(r.id!, r.card, revealed.dest);
+    departed(r.id!, r.card, g.dest);
   };
   // Where a destination sits in the current view, for bridges and bursts.
   const spotOf = (destId: number) => (cluster === null ? NODE[DESTINATIONS[destId].cluster] : DESTINATIONS[destId].cluster === cluster ? SPOT[DESTINATIONS[destId].slot] : null);
@@ -123,6 +132,11 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const notified = useRef(new Set<number>());
   useEffect(() => {
     for (const d of s.dives) {
+      if (turning(d, sim.now) && !notified.current.has(-d.id)) {
+        notified.current.add(-d.id);
+        play("event");
+        say(tl("深潛到了最深處，要繼續還是回航？打開那趟航行就能決定。"));
+      }
       if (!deciding(d, sim.now) || notified.current.has(d.id)) continue;
       notified.current.add(d.id);
       play("event");
@@ -193,6 +207,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
       </section>
       <LiveLog sim={sim} />
       {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
+      {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={departAgain} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
   );
@@ -454,13 +469,22 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
     return eligible.find((t) => t.spire === pref && !t.busy)?.spire ?? eligible.find((t) => !t.busy)?.spire ?? null;
   });
   const [error, setError] = useState<string | null>(null);
+  const canDeep = d.cluster >= DEEP_MIN_CLUSTER;
+  const [deep, setDeep] = useState(false);
+  const [asking, setAsking] = useState(false);
   const team = s.teams.find((t) => t.spire === pick);
-  const plan: DivePlan | null = useMemo(() => (team ? planDive(teamInput(s, team), d, sim.sky) : null), [team, s, d, sim.sky]);
+  const plan: DivePlan | null = useMemo(
+    () => (team ? planDive(teamInput(s, team), d, sim.sky, "none", { stability: stabilityOf(team.bond, 0), deep: canDeep && deep }) : null),
+    [team, s, d, sim.sky, deep, canDeep],
+  );
   const light = sim.sky.lights[id];
   const ev = sim.sky.events.get(id);
-  const go = async () => {
+  const uses = canDeep && deep ? 2 : 1;
+  const teamUsed = pick === null ? 0 : passesOn(s, sim.today, pick);
+  const go = async (supply: number) => {
     if (pick === null) return;
-    const r = await sim.dive(pick, id);
+    setAsking(false);
+    const r = await sim.dive(pick, id, { supply, deep: canDeep && deep });
     if (r.error) { setError(ERROR[r.error]); return; }
     if (r.id !== undefined) onDeparted(r.id, r.card, id);
     const lines = TEXTS.departures[d.cluster];
@@ -496,20 +520,34 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
               <button key={t.spire} type="button" disabled={!ok || t.busy} className={pick === t.spire ? "is-on" : ""} onClick={() => setPick(t.spire)}>
                 <b>{t.name}</b>
                 <span>{tl("戰力 {0}", { 0: t.power })}{!ok ? tl("（差 {0}）", { 0: d.threshold - t.power }) : overflowPoints(t.power, d.threshold) ? tl(" · 穩定 −{0}%", { 0: overflowPoints(t.power, d.threshold) }) : ""}</span>
-                <small>{t.waiting ? tl("上一趟還沒收取") : t.busy ? tl("光橋上") : tl("今天已出發 {0}/3", { 0: t.teamToday })}{attuned ? tl(" · 同頻 {0} 位", { 0: attuned }) : ""}</small>
+                <small>{t.waiting ? tl("上一趟還沒收取") : t.busy ? tl("光橋上") : tl("今天已出發 {0}/3", { 0: t.teamToday })}{attuned ? tl(" · 同頻 {0} 位", { 0: attuned }) : ""}{team.bond ? tl(" · 默契 {0}", { 0: team.bond }) : ""}</small>
               </button>
             );
           })}
         </div>
       )}
 
+      {canDeep && (
+        <>
+          <h3>{tl("航程")}</h3>
+          <div className="v3-depth" role="radiogroup" aria-label={tl("航程")}>
+            <button type="button" role="radio" aria-checked={!deep} className={!deep ? "is-on" : ""} onClick={() => setDeep(false)}>
+              <b>{tl("一般")}</b><span>{tl("5 分鐘 · 1 張出發令")}</span>
+            </button>
+            <button type="button" role="radio" aria-checked={deep} className={deep ? "is-on" : ""} onClick={() => setDeep(true)}>
+              <b>{tl("深潛")}</b><span>{tl("15 分鐘 · 2 張出發令 · 光塵 ×2 · 稜鏡風險高一級")}</span>
+            </button>
+          </div>
+          {deep && <p className="hud-note">{tl("深潛前段有一次抉擇；最後 10 分鐘可以選擇回航，回航固定 ×1.00、只耗損 1 次航程。")}</p>}
+        </>
+      )}
       {plan && (
         <>
           <h3>{tl("這次的勝算")} <small>{tl("稜鏡：{0}（{1}）", { 0: BEAM[plan.risk], 1: BEAM_HINT[plan.risk] })}</small></h3>
           <div className="v3-base">
             <div>
               <small>{tl("這支隊伍的基礎收益")}</small>
-              <b>{fmt(baseReward(plan, sim.rate))}<em>$RVYN</em></b>
+              <b>{fmt(baseReward(plan, sim.rate) * uses)}<em>$RVYN</em></b>
               <span>{tl("結果倍率 ×1.00 時帶回，已扣出發成本；揭曉時乘上結果倍率。")} <RateChange sim={sim} /></span>
             </div>
             <div>
@@ -518,15 +556,17 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
               <span>{tl("戰力剛好 {0}、沒有同頻的隊伍", { 0: d.threshold })}</span>
             </div>
           </div>
-          <Odds plan={plan} base={baseReward(plan, sim.rate)} />
-          <p className="v3-estimate">{tl("光塵 {0}", { 0: fmt(basePoints(plan), 0) })}{plan.bonus ? tl("（含同頻 +{0}）", { 0: fmt(plan.bonus, 0) }) : ""} {tl("× 今日分配率 {0}", { 0: sim.rate.toFixed(5) })} $RVYN <RateChange sim={sim} />{tl("。分配率每天依核光池和參與人數調整，基礎收益跟著變。")}</p>
+          <Odds plan={plan} base={baseReward(plan, sim.rate) * uses} />
+          {team?.bond ? <p className="hud-note">{tl("默契 {0}：空手機率已少 {0} 個百分點。", { 0: team.bond })}</p> : null}
+          <p className="v3-estimate">{tl("光塵 {0}", { 0: fmt(basePoints(plan) * uses, 0) })}{plan.bonus ? tl("（含同頻 +{0}）", { 0: fmt(plan.bonus, 0) }) : ""} {tl("× 今日分配率 {0}", { 0: sim.rate.toFixed(5) })} $RVYN <RateChange sim={sim} />{tl("。分配率每天依核光池和參與人數調整，基礎收益跟著變。")}</p>
         </>
       )}
       {error && <p className="v3-error" role="alert">{error}</p>}
       <p className="hud-note">{tl("失敗時沒有收益，也就不用付出發成本；但航程照樣耗損。")}</p>
-      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used >= DIVES_PER_DAY} onClick={go}>
-        <Rocket aria-hidden="true" />{used >= DIVES_PER_DAY ? tl("今天的出發令用完了") : tl("出發（用 1 張出發令）")}
+      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used + uses > DIVES_PER_DAY || teamUsed + uses > 3} onClick={() => setAsking(true)}>
+        <Rocket aria-hidden="true" />{used + uses > DIVES_PER_DAY ? (used >= DIVES_PER_DAY ? tl("今天的出發令用完了") : tl("出發令不夠深潛")) : teamUsed + uses > 3 ? tl("這支隊伍今天的次數不夠") : uses === 2 ? tl("深潛（用 2 張出發令）") : tl("出發（用 1 張出發令）")}
       </button>
+      {asking && pick !== null && <SupplyPrompt sim={sim} go={[{ spire: pick, dest: id, deep: canDeep && deep }]} onConfirm={go} onClose={() => setAsking(false)} />}
     </aside>
   );
 }
@@ -592,7 +632,7 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll }: { d
       <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome] }} onClick={(e) => e.stopPropagation()}>
         <Burst tone={OUTCOME_TONE[r.outcome]} level={{ empty: 0, partial: 0, normal: 1, good: 2, great: 4, legend: 7 }[r.outcome]} />
         <span className="hud-kicker">{tl("{0} · 光橋揭曉", { 0: name })}</span>
-        <h2>{OUTCOME[r.outcome]}</h2>
+        <h2>{d.turnedBack ? tl("回航") : OUTCOME[r.outcome]}</h2>
         <b className="v3-reveal__mult">×{(shown / 100).toFixed(2)}</b>
         <p className="v3-reveal__log">{tl("「{0}」", { 0: d.log })}</p>
         <dl className="v3-kv">
@@ -630,7 +670,7 @@ function LiveLog({ sim }: { sim: Sim }) {
   const others = useMemo(() => sim.feed(bucket * 30_000), [sim, bucket]);
   const own = s.dives.slice(-20).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, outcome: d.result?.outcome, mult: d.result?.multX100, at: d.at, choice: d.choice, me: true }));
   const items = [...own, ...(mine ? [] : others.map((o) => ({ ...o, me: false })))].sort((a, b) => b.at - a.at).slice(0, 30);
-  const todayCount = others.filter((o) => Math.floor(o.at / 86_400_000) === sim.today).length + divesOn(s, sim.today).length;
+  const todayCount = others.filter((o) => Math.floor(o.at / 86_400_000) === sim.today).length + passesOn(s, sim.today);
   return (
     <aside className="hud-live" aria-label={tl("即時探索日誌")}>
       <header>

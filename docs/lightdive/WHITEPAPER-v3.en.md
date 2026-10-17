@@ -169,7 +169,30 @@ The average multipliers differ by only 3% on purpose: everyone shares the same p
 
 ### Order of application
 
-Base odds table (cluster × beam) → today's sky event → steadiness from being above the threshold → voyage decision.
+Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond and a star chart → voyage decision.
+
+### Deep dives
+
+Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. The voyage decision comes early and closes 10 minutes before the reveal; then comes a second call: from 10 minutes to 1 minute before the reveal you may turn back. A voyage that turns back settles at ×1.00 with 1 wear, and still pays its departure cost.
+
+### Crew bond
+
+Each revealed dive by the same crew (spire, prism and seekers unchanged) adds 1 bond, up to 5. Each point moves 1 percentage point of empty-handed chance to "Normal", together with the overflow stability. Changing any card, or a card docking off the team, resets it to 0.
+
+### Voyage supplies
+
+At departure you may pay $RVYN for one supply, priced as a share of the voyage's ×1.00 reward (before the departure cost):
+
+| Supply | Price | Effect |
+|---|---|---|
+| Lamp oil | 4% | This voyage wears only 1, whatever the result |
+| Star chart fragment | 6% | 3 percentage points less empty-handed chance, moved to "Normal" |
+
+Of the $RVYN paid, 95% goes into the Core Light Pool and 5% is burned, like every other fee.
+
+### Daily commissions
+
+Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after accepting and meets it, once revealed, completes it for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a given voyage decision, an attuned seeker, a destination with a sky event, a deep dive, a supply.
 
 ### Wear
 
@@ -232,6 +255,7 @@ The game has only one currency, **$RVYN**, and every amount is kept to two decim
 | Withdrawal fee | 15%, −1% a day, free from day 15 | 95% Core Light Pool, 5% burned |
 | Market trade tax | 5% of the sale price, paid by the seller | 95% Core Light Pool, 5% burned |
 | Renewal | 50% of the original price | Same as Summon |
+| Voyage supply | 4% / 6% of the voyage's ×1.00 reward | 95% Core Light Pool, 5% burned |
 
 ### Summon prices
 

@@ -48,7 +48,7 @@ Optional: `TREASURY_ADDRESS` (who receives the treasury share and royalties) and
 Each step below is an on-chain or financial action and needs the founder's explicit go-ahead at the time:
 
 1. Run the mainnet deploy (section 2) with the founder's deployer key and the env values above.
-2. From the multisig, call `acceptOwnership` on config, nft, pool, minter, expedition and market.
+2. From the multisig, call `acceptOwnership` on config, nft, pool, minter, expedition, market and commissions (v3.1).
 3. From the multisig, approve RVYN and call `CoreLightPool3.fund(amount)` to seed the pool. The founder decides the amount. The whitepaper assumes 1,000,000.
 4. From the multisig, call `LightdiveMinter3.openSale(start)`, with 0 for now.
    - The first 48 hours limit each wallet to 3 spires.

@@ -150,6 +150,31 @@
   },
   {
    "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "uint32",
+     "name": "longVoyageSeconds",
+     "type": "uint32"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint32",
+     "name": "longTurnSeconds",
+     "type": "uint32"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "longMinCluster",
+     "type": "uint8"
+    }
+   ],
+   "name": "DeepDiveSet",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
    "inputs": [],
    "name": "DestinationsSet",
    "type": "event"
@@ -271,6 +296,37 @@
     }
    ],
    "name": "OwnershipTransferred",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "uint16",
+     "name": "oilPriceBp",
+     "type": "uint16"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint16",
+     "name": "chartPriceBp",
+     "type": "uint16"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "chartStability",
+     "type": "uint8"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "bondMax",
+     "type": "uint8"
+    }
+   ],
+   "name": "SuppliesSet",
    "type": "event"
   },
   {
@@ -521,6 +577,19 @@
   },
   {
    "inputs": [],
+   "name": "bondMax",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
    "name": "capPerPoint",
    "outputs": [
     {
@@ -540,6 +609,19 @@
      "internalType": "uint16",
      "name": "",
      "type": "uint16"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "chartStability",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
     }
    ],
    "stateMutability": "view",
@@ -649,6 +731,40 @@
      "internalType": "uint32",
      "name": "",
      "type": "uint32"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    },
+    {
+     "internalType": "uint8",
+     "name": "dest",
+     "type": "uint8"
+    }
+   ],
+   "name": "destOf",
+   "outputs": [
+    {
+     "internalType": "uint16",
+     "name": "thresh",
+     "type": "uint16"
+    },
+    {
+     "internalType": "uint256",
+     "name": "coef",
+     "type": "uint256"
+    },
+    {
+     "internalType": "uint8",
+     "name": "light",
+     "type": "uint8"
     }
    ],
    "stateMutability": "view",
@@ -773,6 +889,45 @@
   },
   {
    "inputs": [],
+   "name": "longMinCluster",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "longTurnSeconds",
+   "outputs": [
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "longVoyageSeconds",
+   "outputs": [
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
    "name": "marketTaxBp",
    "outputs": [
     {
@@ -873,6 +1028,16 @@
      "internalType": "uint8",
      "name": "decision",
      "type": "uint8"
+    },
+    {
+     "internalType": "uint8",
+     "name": "stability",
+     "type": "uint8"
+    },
+    {
+     "internalType": "bool",
+     "name": "riskUp",
+     "type": "bool"
     }
    ],
    "name": "plan",
@@ -948,6 +1113,96 @@
    "type": "function"
   },
   {
+   "inputs": [],
+   "name": "rules",
+   "outputs": [
+    {
+     "components": [
+      {
+       "internalType": "uint8",
+       "name": "dailyPasses",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "teamDivesPerDay",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "maxTeams",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "bondMax",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "chartStability",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "longMinCluster",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint16",
+       "name": "taxToPoolBp",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint16",
+       "name": "emissionBp",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint16",
+       "name": "ceilingBp",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint32",
+       "name": "voyageSeconds",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint32",
+       "name": "decisionCloseSeconds",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint32",
+       "name": "fallbackSeconds",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint32",
+       "name": "longVoyageSeconds",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint32",
+       "name": "longTurnSeconds",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint256",
+       "name": "capPerPoint",
+       "type": "uint256"
+      }
+     ],
+     "internalType": "struct LightdiveConfig3.Rules",
+     "name": "r",
+     "type": "tuple"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
    "inputs": [
     {
      "internalType": "uint8",
@@ -971,6 +1226,29 @@
     }
    ],
    "name": "setCluster",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint32",
+     "name": "voyage",
+     "type": "uint32"
+    },
+    {
+     "internalType": "uint32",
+     "name": "turn",
+     "type": "uint32"
+    },
+    {
+     "internalType": "uint8",
+     "name": "minCluster",
+     "type": "uint8"
+    }
+   ],
+   "name": "setDeepDive",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -1070,6 +1348,34 @@
   {
    "inputs": [
     {
+     "internalType": "uint16",
+     "name": "oilBp",
+     "type": "uint16"
+    },
+    {
+     "internalType": "uint16",
+     "name": "chartBp",
+     "type": "uint16"
+    },
+    {
+     "internalType": "uint8",
+     "name": "chartPoints",
+     "type": "uint8"
+    },
+    {
+     "internalType": "uint8",
+     "name": "maxBond",
+     "type": "uint8"
+    }
+   ],
+   "name": "setSupplies",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
      "internalType": "uint8",
      "name": "cluster",
      "type": "uint8"
@@ -1128,6 +1434,25 @@
    "name": "setTiming",
    "outputs": [],
    "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "",
+     "type": "uint256"
+    }
+   ],
+   "name": "supplyPriceBp",
+   "outputs": [
+    {
+     "internalType": "uint16",
+     "name": "",
+     "type": "uint16"
+    }
+   ],
+   "stateMutability": "view",
    "type": "function"
   },
   {
@@ -2735,6 +3060,31 @@
    "anonymous": false,
    "inputs": [
     {
+     "indexed": true,
+     "internalType": "address",
+     "name": "from",
+     "type": "address"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "burned",
+     "type": "uint256"
+    }
+   ],
+   "name": "Collected",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
      "indexed": false,
      "internalType": "uint256",
      "name": "amount",
@@ -2874,6 +3224,29 @@
     }
    ],
    "name": "burn",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "from",
+     "type": "address"
+    },
+    {
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    },
+    {
+     "internalType": "uint256",
+     "name": "burnShare",
+     "type": "uint256"
+    }
+   ],
+   "name": "collect",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -4172,6 +4545,16 @@
   },
   {
    "inputs": [],
+   "name": "AlreadySet",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "BadSupply",
+   "type": "error"
+  },
+  {
+   "inputs": [],
    "name": "BadTeam",
    "type": "error"
   },
@@ -4208,6 +4591,16 @@
   {
    "inputs": [],
    "name": "NoPasses",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotCommissions",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotDeep",
    "type": "error"
   },
   {
@@ -4282,6 +4675,44 @@
    "inputs": [
     {
      "indexed": true,
+     "internalType": "uint256",
+     "name": "spire",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "bond",
+     "type": "uint8"
+    }
+   ],
+   "name": "BondChanged",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "owner",
+     "type": "address"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    }
+   ],
+   "name": "BonusCredited",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
      "internalType": "address",
      "name": "owner",
      "type": "address"
@@ -4300,6 +4731,19 @@
     }
    ],
    "name": "Claimed",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "address",
+     "name": "commissions",
+     "type": "address"
+    }
+   ],
+   "name": "CommissionsSet",
    "type": "event"
   },
   {
@@ -4344,6 +4788,49 @@
     }
    ],
    "name": "Decided",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "bool",
+     "name": "long",
+     "type": "bool"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "supply",
+     "type": "uint8"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "supplyPaid",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "bond",
+     "type": "uint8"
+    },
+    {
+     "indexed": false,
+     "internalType": "bool",
+     "name": "attuned",
+     "type": "bool"
+    }
+   ],
+   "name": "DiveDetails",
    "type": "event"
   },
   {
@@ -4567,6 +5054,25 @@
    "anonymous": false,
    "inputs": [
     {
+     "indexed": true,
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "bool",
+     "name": "turnBack",
+     "type": "bool"
+    }
+   ],
+   "name": "TurnedBack",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
      "indexed": false,
      "internalType": "address",
      "name": "account",
@@ -4578,12 +5084,64 @@
   },
   {
    "inputs": [],
+   "name": "CHART",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
    "name": "DOCK_SECONDS",
    "outputs": [
     {
      "internalType": "uint256",
      "name": "",
      "type": "uint256"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "FALLBACK",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "OIL",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "TURNED_BACK",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
     }
    ],
    "stateMutability": "view",
@@ -4601,6 +5159,19 @@
    "name": "claim",
    "outputs": [],
    "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "commissions",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
    "type": "function"
   },
   {
@@ -4633,6 +5204,30 @@
     }
    ],
    "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "owner",
+     "type": "address"
+    },
+    {
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    }
+   ],
+   "name": "creditBonus",
+   "outputs": [
+    {
+     "internalType": "uint256",
+     "name": "credited",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "nonpayable",
    "type": "function"
   },
   {
@@ -4753,6 +5348,16 @@
      "internalType": "uint8",
      "name": "dest",
      "type": "uint8"
+    },
+    {
+     "internalType": "uint8",
+     "name": "supply",
+     "type": "uint8"
+    },
+    {
+     "internalType": "bool",
+     "name": "deep",
+     "type": "bool"
     }
    ],
    "name": "dive",
@@ -4845,6 +5450,31 @@
        "internalType": "uint256",
        "name": "rate",
        "type": "uint256"
+      },
+      {
+       "internalType": "bool",
+       "name": "long",
+       "type": "bool"
+      },
+      {
+       "internalType": "bool",
+       "name": "turnedBack",
+       "type": "bool"
+      },
+      {
+       "internalType": "bool",
+       "name": "attuned",
+       "type": "bool"
+      },
+      {
+       "internalType": "uint8",
+       "name": "supply",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "bond",
+       "type": "uint8"
       }
      ],
      "internalType": "struct Expedition3.Dive",
@@ -4866,6 +5496,11 @@
      "internalType": "uint8[]",
      "name": "dests",
      "type": "uint8[]"
+    },
+    {
+     "internalType": "uint8",
+     "name": "supply",
+     "type": "uint8"
     }
    ],
    "name": "diveMany",
@@ -5031,6 +5666,52 @@
      "internalType": "uint256",
      "name": "id",
      "type": "uint256"
+    }
+   ],
+   "name": "result",
+   "outputs": [
+    {
+     "components": [
+      {
+       "internalType": "uint8",
+       "name": "tier",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint16",
+       "name": "multX100",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint8",
+       "name": "wear",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint256",
+       "name": "reward",
+       "type": "uint256"
+      },
+      {
+       "internalType": "uint256",
+       "name": "levy",
+       "type": "uint256"
+      }
+     ],
+     "internalType": "struct Expedition3.Result",
+     "name": "",
+     "type": "tuple"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "id",
+     "type": "uint256"
     },
     {
      "internalType": "bytes",
@@ -5103,6 +5784,19 @@
   {
    "inputs": [
     {
+     "internalType": "address",
+     "name": "commissions_",
+     "type": "address"
+    }
+   ],
+   "name": "setCommissions",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
      "internalType": "uint256",
      "name": "spire",
      "type": "uint256"
@@ -5121,6 +5815,35 @@
    "name": "setTeam",
    "outputs": [],
    "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint8",
+     "name": "supply",
+     "type": "uint8"
+    },
+    {
+     "internalType": "uint256",
+     "name": "pointsE2",
+     "type": "uint256"
+    },
+    {
+     "internalType": "uint256",
+     "name": "rate",
+     "type": "uint256"
+    }
+   ],
+   "name": "supplyPrice",
+   "outputs": [
+    {
+     "internalType": "uint256",
+     "name": "",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "view",
    "type": "function"
   },
   {
@@ -5154,6 +5877,11 @@
        "internalType": "uint256",
        "name": "activeDive",
        "type": "uint256"
+      },
+      {
+       "internalType": "uint8",
+       "name": "bond",
+       "type": "uint8"
       }
      ],
      "internalType": "struct Expedition3.Team",
@@ -5263,6 +5991,24 @@
     }
    ],
    "name": "transferOwnership",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "id",
+     "type": "uint256"
+    },
+    {
+     "internalType": "bool",
+     "name": "back",
+     "type": "bool"
+    }
+   ],
+   "name": "turnBack",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -5780,6 +6526,638 @@
   {
    "inputs": [],
    "name": "unpause",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  }
+ ],
+ "LightdiveCommissions3": [
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "owner_",
+     "type": "address"
+    },
+    {
+     "internalType": "contract Expedition3",
+     "name": "expedition_",
+     "type": "address"
+    },
+    {
+     "internalType": "contract LightdiveConfig3",
+     "name": "config_",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "nonpayable",
+   "type": "constructor"
+  },
+  {
+   "inputs": [],
+   "name": "BadIndex",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "Expired",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NoneActive",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotMet",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotRevealed",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotYours",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "OutOfBounds",
+   "type": "error"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "owner",
+     "type": "address"
+    }
+   ],
+   "name": "OwnableInvalidOwner",
+   "type": "error"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "account",
+     "type": "address"
+    }
+   ],
+   "name": "OwnableUnauthorizedAccount",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "ReentrancyGuardReentrantCall",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "Taken",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "TooEarly",
+   "type": "error"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "player",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    }
+   ],
+   "name": "Abandoned",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "player",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    }
+   ],
+   "name": "Accepted",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "uint16",
+     "name": "bonusBp",
+     "type": "uint16"
+    }
+   ],
+   "name": "BonusSet",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "player",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "bonus",
+     "type": "uint256"
+    }
+   ],
+   "name": "Completed",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "previousOwner",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "newOwner",
+     "type": "address"
+    }
+   ],
+   "name": "OwnershipTransferStarted",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "previousOwner",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "newOwner",
+     "type": "address"
+    }
+   ],
+   "name": "OwnershipTransferred",
+   "type": "event"
+  },
+  {
+   "inputs": [],
+   "name": "ATTUNED",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "CLUSTER",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "DECISION",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "DEEP",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "GOOD",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "KINDS",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "PER_DAY",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "SKY",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "SUPPLY",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "abandon",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    }
+   ],
+   "name": "accept",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "acceptOwnership",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "name": "active",
+   "outputs": [
+    {
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    },
+    {
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    },
+    {
+     "internalType": "bool",
+     "name": "on",
+     "type": "bool"
+    },
+    {
+     "internalType": "uint256",
+     "name": "fromDive",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "bonusBp",
+   "outputs": [
+    {
+     "internalType": "uint16",
+     "name": "",
+     "type": "uint16"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint32",
+     "name": "day",
+     "type": "uint32"
+    }
+   ],
+   "name": "commissionsOf",
+   "outputs": [
+    {
+     "components": [
+      {
+       "internalType": "uint8",
+       "name": "kind",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "param",
+       "type": "uint8"
+      }
+     ],
+     "internalType": "struct LightdiveCommissions3.Commission[3]",
+     "name": "out",
+     "type": "tuple[3]"
+    }
+   ],
+   "stateMutability": "pure",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    }
+   ],
+   "name": "complete",
+   "outputs": [
+    {
+     "internalType": "uint256",
+     "name": "bonus",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "config",
+   "outputs": [
+    {
+     "internalType": "contract LightdiveConfig3",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "expedition",
+   "outputs": [
+    {
+     "internalType": "contract Expedition3",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    },
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    }
+   ],
+   "name": "marks",
+   "outputs": [
+    {
+     "internalType": "uint16",
+     "name": "",
+     "type": "uint16"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "id",
+     "type": "uint256"
+    },
+    {
+     "components": [
+      {
+       "internalType": "uint8",
+       "name": "kind",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "param",
+       "type": "uint8"
+      }
+     ],
+     "internalType": "struct LightdiveCommissions3.Commission",
+     "name": "c",
+     "type": "tuple"
+    }
+   ],
+   "name": "meets",
+   "outputs": [
+    {
+     "internalType": "bool",
+     "name": "",
+     "type": "bool"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "owner",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "pendingOwner",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "renounceOwnership",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint16",
+     "name": "bp",
+     "type": "uint16"
+    }
+   ],
+   "name": "setBonus",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "today",
+   "outputs": [
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "newOwner",
+     "type": "address"
+    }
+   ],
+   "name": "transferOwnership",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"

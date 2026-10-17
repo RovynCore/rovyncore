@@ -11,8 +11,8 @@ import { NftArt } from "../game/art";
 import { flyLight } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { play } from "./audio";
-import { decisionAt, deciding, rateOf, teamInput, teamName as teamNameOf, type Sim, type SimDive, type SimNft } from "./sim";
-import { BEAM, CHOICE, CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME, OUTCOME_TONE, RARITY_COLOR, SLOT, STAR, TIER, clock, fmt, pct } from "./copy";
+import { decisionAt, deciding, rateOf, stabilityOf, teamInput, teamName as teamNameOf, turnOpenAt, turning, type Sim, type SimDive, type SimNft } from "./sim";
+import { BEAM, CHOICE, CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, RARITY_COLOR, SLOT, STAR, TIER, clock, fmt, outcomeName, pct } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 import { ROUTE_P as P, alongRoute, routeIn } from "./voyage-route";
 import type { VoyageGl, VoyageView } from "./voyage-engine";
@@ -64,6 +64,10 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
     } else if (d.result) {
       list.push({ key: "choice", at: d.revealAt - 1, kind: "choice", text: tl("沒有做出抉擇，這趟順其自然。") });
     }
+  }
+  if (d.deep) {
+    list.push({ key: "deep", at: turnOpenAt(d), kind: "rovyn", text: tl("Rovyn：「到最深處了。光很亮，也很不穩——要繼續，還是回航？」") });
+    if (d.turnedBack) list.push({ key: "back", at: d.revealAt - 60_000, kind: "choice", text: tl("你選擇回航：這趟固定 ×1.00，只耗損 1 次航程。") });
   }
   if (d.result) list.push({ key: "result", at: d.revealAt, kind: "result", text: d.log ?? "", color: OUTCOME_TONE[d.result.outcome] });
   return list.filter((e) => e.at <= now).sort((a, b) => a.at - b.at);
@@ -166,9 +170,11 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
         )}
         <div className="v3-voyage__progress" style={{ ["--k" as string]: k, ["--d" as string]: (decisionAt(d) - d.at) / span }}>
           <i />
-          <span>{d.result ? tl("已揭曉") : open ? tl("抉擇中 · 揭曉前 1 分鐘截止") : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</span>
+          <span>{d.result ? tl("已揭曉") : open ? (d.deep ? tl("抉擇中 · 回航時刻前截止") : tl("抉擇中 · 揭曉前 1 分鐘截止")) : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</span>
           {!d.result && sim.hurry && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => sim.hurry?.(d.id, 60_000)} title={tl("預覽用：讓這趟航行往前 1 分鐘")}><FastForward aria-hidden="true" />{tl("快轉 1 分鐘")}</button>}
         </div>
+        <Tags d={d} />
+        {d.deep && !d.result && <TurnBack sim={sim} d={d} />}
         <Crew sim={sim} d={d} />
         {d.result && arriving ? <p className="v3-voyage__signal"><i /><i /><i />{tl("光橋抵達{0}，訊號回傳中…", { 0: destName(d.dest) })}</p> : d.result ? <Outcome d={d} onCollect={collect} /> : <Odds d={d} />}
         {showStage && (
@@ -194,7 +200,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
                 ) : <Decision sim={sim} d={d} />
               ) : e.kind === "result" && d.result ? (
                 <div className="v3-voyage__result">
-                  <b style={{ color: OUTCOME_TONE[d.result.outcome] }}>{OUTCOME[d.result.outcome]} ×{(d.result.multX100 / 100).toFixed(2)}</b>
+                  <b style={{ color: OUTCOME_TONE[d.result.outcome] }}>{outcomeName(d)} ×{(d.result.multX100 / 100).toFixed(2)}</b>
                   <p>{tl("「")}{i === list.length - 1 ? <Typewriter text={e.text} /> : e.text}{tl("」")}</p>
                 </div>
               ) : (
@@ -383,11 +389,11 @@ function Odds({ d }: { d: SimDive }) {
 /** After the reveal: the outcome, the multiplier and the reward rolling up, and the collect button. */
 function Outcome({ d, onCollect }: { d: SimDive; onCollect: (el: Element) => void }) {
   const r = d.result!;
-  const base = basePoints(d.plan) * (d.rate ?? rateOf(Math.floor(d.at / DAY)));
+  const base = basePoints(d.plan) * (d.deep ? 2 : 1) * (d.rate ?? rateOf(Math.floor(d.at / DAY)));
   return (
     <div className={`v3-voyage__outcome is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome] }}>
       <div>
-        <small>{OUTCOME[r.outcome]}</small>
+        <small>{outcomeName(d)}</small>
         <b>×<Roll value={r.multX100 / 100} /></b>
       </div>
       <p>{tl("基礎 {0}", { 0: fmt(base) })} × {tl("{0} − 出發成本", { 0: (r.multX100 / 100).toFixed(2) })} {fmt(d.levyPaid ?? 0)} {tl("· 耗損 {0} 次航程", { 0: r.wear })}</p>
@@ -421,7 +427,8 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
   const s = sim.state!;
   const card = TEXTS.cards[d.card!];
   const team = s.teams.find((x) => x.spire === d.spire);
-  const plan = (c: Choice): DivePlan | null => (team ? planDive(teamInput(s, team), DESTINATIONS[d.dest], skyOf(Math.floor(d.at / DAY)), c) : null);
+  const plan = (c: Choice): DivePlan | null =>
+    (team ? planDive(teamInput(s, team), DESTINATIONS[d.dest], skyOf(Math.floor(d.at / DAY)), c, { stability: stabilityOf(d.bond, d.supply), deep: d.deep }) : null);
   const stats = (p: DivePlan | null) => {
     if (!p) return null;
     const names = p.names ?? [];
@@ -462,8 +469,42 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
           );
         })}
       </div>
-      {open && <small className="v3-decision__hint">{tl("揭曉前 1 分鐘截止；沒選就當作順其自然。")}</small>}
+      {open && <small className="v3-decision__hint">{d.deep ? tl("回航時刻（揭曉前 10 分鐘）前截止；沒選就當作順其自然。") : tl("揭曉前 1 分鐘截止；沒選就當作順其自然。")}</small>}
       {stage && onLater && <button type="button" className="v3-decision__later" onClick={onLater}>{tl("先看航線，等一下再選")}</button>}
+    </div>
+  );
+}
+
+/** What this voyage carries: a deep dive, a supply, the crew bond at departure. */
+function Tags({ d }: { d: SimDive }) {
+  const tags = [
+    d.deep ? tl("深潛 · 光塵 ×2") : null,
+    d.supply === 1 ? tl("燈油 · 只耗損 1 次") : d.supply === 2 ? tl("星圖殘頁 · 空手 −3%") : null,
+    d.bond ? tl("默契 {0} · 空手 −{0}%", { 0: d.bond }) : null,
+  ].filter((x): x is string => !!x);
+  if (!tags.length) return null;
+  return <p className="v3-voyage__tags">{tags.map((t) => <span key={t}>{t}</span>)}</p>;
+}
+
+/** A deep dive's second decision: from 10 minutes before the reveal until 1 minute before it, press on or turn back. */
+function TurnBack({ sim, d }: { sim: Sim; d: SimDive }) {
+  const open = turning(d, sim.now);
+  const set = (back: boolean) => { sim.turnBack(d.id, back); play(back ? "toggle" : "great"); };
+  if (sim.now < turnOpenAt(d)) {
+    return <p className="v3-turnback is-later">{tl("深潛的最後 10 分鐘可以選擇回航（{0} 後）。", { 0: clock(turnOpenAt(d) - sim.now) })}</p>;
+  }
+  return (
+    <div className={`v3-turnback${open ? " is-open" : ""}`}>
+      <b>{tl("深潛 · 繼續還是回航？")}</b>
+      <div>
+        <button type="button" className={!d.turnedBack ? "is-on" : ""} disabled={!open} onClick={() => set(false)}>
+          <b>{tl("繼續深潛")}</b><span>{tl("照這趟的勝算揭曉，光塵 ×2")}</span>
+        </button>
+        <button type="button" className={d.turnedBack ? "is-on" : ""} disabled={!open} onClick={() => set(true)}>
+          <b>{tl("回航")}</b><span>{tl("固定 ×1.00，只耗損 1 次航程")}</span>
+        </button>
+      </div>
+      <small>{open ? tl("揭曉前 1 分鐘截止，截止前可以改。") : tl("已截止。")}</small>
     </div>
   );
 }

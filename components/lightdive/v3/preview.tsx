@@ -12,7 +12,7 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { GameIcon } from "../game/icon";
 import type { IconName } from "../game/icons";
 import { Nebula } from "../game/nebula";
-import { divesOn, useSim, type Game } from "./sim";
+import { passesOn, useSim, type Game } from "./sim";
 import { ChainStrip, DraftBar, Faucet, SummonBar, TxPanel, WalletBox } from "./live-ui";
 import { StarMap } from "./starmap";
 import { Credits, Lobby, Rovyn, rovynPool, type View } from "./pages";
@@ -27,6 +27,7 @@ import { Market } from "./market";
 import { Treasury } from "./treasury";
 import { Settings } from "./settings-page";
 import { Logbook, recordsOf, unseenFootprints } from "./logbook";
+import { CommissionsPage, commissionBadge } from "./commissions";
 import { useSettings } from "./settings";
 import { useVoyageAlerts } from "./alerts";
 import { useLanguage } from "@/components/language-provider";
@@ -43,7 +44,7 @@ import { tl, localized } from "@/lib/lightdive-v3/i18n";
 
 type MenuGroup = { group: string; items: { key: View; label: string; icon: IconName }[] };
 const MENU_SRC: MenuGroup[] = [
-  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "plain", label: "碑原", icon: "fleets" }, { key: "logbook", label: "航海紀錄", icon: "voyage" }] },
+  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "commissions", label: "每日委託", icon: "signal" }, { key: "plain", label: "碑原", icon: "fleets" }, { key: "logbook", label: "航海紀錄", icon: "voyage" }] },
   { group: "資產", items: [{ key: "spires", label: "光塔", icon: "spires" }, { key: "prisms", label: "稜鏡", icon: "prisms" }, { key: "seekers", label: "探索者", icon: "seekers" }] },
   { group: "取得", items: [{ key: "summon", label: "召喚", icon: "summon" }, { key: "market", label: "市集", icon: "market" }, { key: "buy", label: "購買 $RVYN", icon: "rvyn" }] },
   { group: "收益", items: [{ key: "treasury", label: "金庫", icon: "treasury" }] },
@@ -104,10 +105,11 @@ export function LightdiveApp({ sim }: { sim: Game }) {
     const docked = (k: number) => s.nfts.filter((n) => n.kind === k && n.dockedAt !== undefined && !n.homeAt).length;
     return {
       // results waiting to be collected come first; otherwise the tickets left today
-      dive: s.dives.filter((d) => d.pending).length || Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length),
+      dive: s.dives.filter((d) => d.pending).length || Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today)),
       spires: docked(0), prisms: docked(1), seekers: docked(2),
       treasury: s.credit > 0 ? 1 : 0,
       logbook: view === "logbook" ? 0 : unseenFootprints(recordsOf(sim)), // opening the page marks them seen
+      commissions: commissionBadge(sim),
     } as Partial<Record<View, number>>;
   }, [s, sim.today, view]); // eslint-disable-line react-hooks/exhaustive-deps -- `sim` is a new object every render; its state and day are what matter
 
@@ -157,7 +159,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
         <header className="hud-top">
           <Res icon="rvyn" label={sim.chain?.testToken ? "tRVYN" : "$RVYN"} value={fmt(s.balance)} className="hud-res--wallet" onClick={sim.chain?.testToken ? () => go("faucet") : undefined} />
           <Res icon="claim" tone="gold" label={tl("可領取")} value={fmt(s.credit)} className="hud-res--claim" onClick={() => go("treasury")} />
-          <Res icon="launch" label={tl("出發令")} value={tl("{0}／{1}", { 0: Math.max(0, DIVES_PER_DAY - divesOn(s, sim.today).length), 1: DIVES_PER_DAY })} onClick={() => go("dive")} />
+          <Res icon="launch" label={tl("出發令")} value={tl("{0}／{1}", { 0: Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today)), 1: DIVES_PER_DAY })} onClick={() => go("dive")} />
           <Res icon="rvyn" tone="gold" label={tl("核光池")} value={fmt(sim.pool)} className="hud-res--pool" onClick={() => go("treasury")} />
           <span className="hud-top__space" />
           {live
@@ -171,6 +173,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
           : view === "dive" ? <StarMap sim={sim} say={say} />
           : view === "plain" ? <Plain sim={sim} go={go} />
           : view === "logbook" ? <Logbook sim={sim} />
+          : view === "commissions" ? <CommissionsPage sim={sim} go={go} />
           : view === "spires" ? <Collection sim={sim} kind={0} />
           : view === "prisms" ? <Collection sim={sim} kind={1} />
           : view === "seekers" ? <Collection sim={sim} kind={2} />

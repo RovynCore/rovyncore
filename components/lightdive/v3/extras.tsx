@@ -9,8 +9,9 @@ import {
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { calm } from "./settings";
-import { divesOn, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
+import { divesOn, passesOn, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
 import { CIRCLED, ERROR, OUTCOME, OUTCOME_TONE, SLOT, STAR } from "./copy";
+import { SupplyPrompt } from "./provisions";
 import { tl } from "@/lib/lightdive-v3/i18n";
 
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
@@ -32,23 +33,25 @@ function bestDestination(sim: Sim, input: TeamInput) {
 
 export function Dispatch({ sim, onClose, onDeparted }: { sim: Sim; onClose: () => void; onDeparted: (id: number, card: number | undefined, dest: number) => void }) {
   const s = sim.state!;
-  const left = DIVES_PER_DAY - divesOn(s, sim.today).length;
+  const left = DIVES_PER_DAY - passesOn(s, sim.today);
   const rows = s.teams
     .filter((t) => t.seekers.length > 0)
     .map((t) => {
       const input = teamInput(s, t);
       const spire = s.nfts.find((n) => n.id === t.spire)!;
       const busy = teamOut(s, t.spire);
-      const today = divesOn(s, sim.today).filter((d) => d.spire === t.spire).length;
+      const today = passesOn(s, sim.today, t.spire);
       return { spire: t.spire, name: teamName(s, spire.id), power: teamPower(input), input, busy, full: today >= DIVES_PER_TEAM_PER_DAY, best: bestDestination(sim, input) };
     })
     .sort((a, b) => b.power - a.power);
   const [pick, setPick] = useState<Record<number, number>>(() => Object.fromEntries(rows.filter((r) => !r.busy && !r.full && r.best >= 0).slice(0, left).map((r) => [r.spire, r.best])));
   const [msg, setMsg] = useState<string | null>(null);
   const chosen = Object.entries(pick).filter(([, d]) => d >= 0);
-  const go = async () => {
+  const [asking, setAsking] = useState(false);
+  const go = async (supply: number) => {
+    setAsking(false);
     const errors: string[] = [];
-    const results = await sim.diveMany(chosen.map(([spire, dest]) => ({ spire: Number(spire), dest })));
+    const results = await sim.diveMany(chosen.map(([spire, dest]) => ({ spire: Number(spire), dest })), supply);
     results.forEach((r, i) => {
       if (r.error) errors.push(ERROR[r.error]);
       else onDeparted(r.id!, r.card, chosen[i][1]);
@@ -84,7 +87,8 @@ export function Dispatch({ sim, onClose, onDeparted }: { sim: Sim; onClose: () =
         </ul>
         {msg && <p className="v3-error" role="alert">{msg}</p>}
         <p className="hud-note">{tl("正式版會把這幾次出發合成一筆交易，只需要簽一次。")}</p>
-        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={go}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
+        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={() => setAsking(true)}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
+        {asking && <SupplyPrompt sim={sim} go={chosen.map(([spire, dest]) => ({ spire: Number(spire), dest }))} onConfirm={go} onClose={() => setAsking(false)} />}
       </div>
     </div>
   );

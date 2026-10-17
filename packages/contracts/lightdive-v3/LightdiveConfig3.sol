@@ -70,6 +70,15 @@ contract LightdiveConfig3 is Ownable2Step {
     uint32 public decisionCloseSeconds = 60; // decisions close this long before the reveal round
     uint32 public fallbackSeconds = 1 days; // without a drand proof this long after the reveal: neutral result
 
+    // v3.1: deep dives, crew bond, supplies
+    uint32 public longVoyageSeconds = 900; // a deep dive's departure to reveal
+    uint32 public longTurnSeconds = 600; // the turn-back decision opens this long before the reveal
+    uint8 public longMinCluster = 2; // deep dives from the third cluster on
+    uint8 public bondMax = 5; // crew bond levels; each removes 1 point of empty-handed chance
+    /// @notice Supply prices in basis points of the dive's x1.00 reward (index 1 lamp oil, 2 star chart; 0 = none).
+    uint16[3] public supplyPriceBp = [uint16(0), 400, 600];
+    uint8 public chartStability = 3; // points of empty-handed chance a star chart removes
+
     event TableSet(uint8 cluster, uint8 beam);
     event DestinationsSet();
     event ClusterSet(uint8 cluster, uint16 levyBp, uint16 wear2Bp, uint16 wear3Bp);
@@ -77,6 +86,27 @@ contract LightdiveConfig3 is Ownable2Step {
     event FeesSet(uint16 claimFeeMaxBp, uint16 claimFeeStepBp, uint16 taxToPoolBp, uint16 marketTaxBp);
     event LimitsSet(uint8 dailyPasses, uint8 teamDivesPerDay, uint8 maxTeams);
     event TimingSet(uint32 voyageSeconds, uint32 decisionCloseSeconds, uint32 fallbackSeconds);
+    /// @notice Every setting Expedition3 needs, in one read (keeps Expedition3 within the contract size limit).
+    struct Rules {
+        uint8 dailyPasses;
+        uint8 teamDivesPerDay;
+        uint8 maxTeams;
+        uint8 bondMax;
+        uint8 chartStability;
+        uint8 longMinCluster;
+        uint16 taxToPoolBp;
+        uint16 emissionBp;
+        uint16 ceilingBp;
+        uint32 voyageSeconds;
+        uint32 decisionCloseSeconds;
+        uint32 fallbackSeconds;
+        uint32 longVoyageSeconds;
+        uint32 longTurnSeconds;
+        uint256 capPerPoint;
+    }
+
+    event DeepDiveSet(uint32 longVoyageSeconds, uint32 longTurnSeconds, uint8 longMinCluster);
+    event SuppliesSet(uint16 oilPriceBp, uint16 chartPriceBp, uint8 chartStability, uint8 bondMax);
 
     error OutOfBounds();
     error BadTable();
@@ -140,8 +170,24 @@ contract LightdiveConfig3 is Ownable2Step {
 
     /// @notice Everything that decides one dive, in the rulebook's order: base table (cluster x risk after the star
     /// event), overflow stability, then the decision.
-    function plan(uint8 dest, uint256 power, uint8 beam, uint32 day, uint8 decision) external view returns (Plan memory p) {
+    /// @param stability extra points of empty-handed chance moved to "normal" (crew bond, a star-chart supply), on top of
+    /// the overflow stability; together never more than the empty row.
+    /// @param riskUp a deep dive: one risk level up (after the star event), at most needle.
+    function plan(uint8 dest, uint256 power, uint8 beam, uint32 day, uint8 decision, uint8 stability, bool riskUp)
+        external
+        view
+        returns (Plan memory p)
+    {
         if (dest >= DESTINATIONS || beam > 2 || decision > DETOUR) revert OutOfBounds();
+        p = _frame(dest, beam, day, decision, riskUp);
+        Tier[] memory base = tableOf(clusterOf(dest), p.risk);
+        Pos memory at = _positions(base);
+        _stabilize(base, at, (overflowPoints(power, threshold[dest]) + stability) * 100);
+        p.table = decision == STEADY ? _reshape(base, at, true) : decision == BOLD ? _reshape(base, at, false) : base;
+    }
+
+    /// @dev Everything of a plan except its table: risk, star event, weight, departure cost and wear.
+    function _frame(uint8 dest, uint8 beam, uint32 day, uint8 decision, bool riskUp) private view returns (Plan memory p) {
         uint8 cluster = clusterOf(dest);
         p.starEvent = eventAt(day, dest);
         int256 risk = int256(uint256(beam));
@@ -165,17 +211,43 @@ contract LightdiveConfig3 is Ownable2Step {
             p.wear3Bp = 0;
             p.levyBp += 200;
         }
+        if (riskUp) risk += 1;
         p.risk = uint8(uint256(risk < 0 ? int256(0) : risk > 2 ? int256(2) : risk));
+    }
 
-        Tier[] memory base = tableOf(cluster, p.risk);
-        Pos memory at = _positions(base);
-        uint256 cut = overflowPoints(power, threshold[dest]) * 100;
+    /// @dev Moves `cut` basis points (at most the whole empty row) from empty-handed to "normal".
+    function _stabilize(Tier[] memory base, Pos memory at, uint256 cut) private pure {
         if (cut > base[0].probBp) cut = base[0].probBp;
         if (cut > 0) {
             base[0].probBp -= uint16(cut);
             base[at.normal].probBp += uint16(cut);
         }
-        p.table = decision == STEADY ? _reshape(base, at, true) : decision == BOLD ? _reshape(base, at, false) : base;
+    }
+
+    function rules() external view returns (Rules memory r) {
+        r.dailyPasses = dailyPasses;
+        r.teamDivesPerDay = teamDivesPerDay;
+        r.maxTeams = maxTeams;
+        r.bondMax = bondMax;
+        r.chartStability = chartStability;
+        r.longMinCluster = longMinCluster;
+        r.taxToPoolBp = taxToPoolBp;
+        r.emissionBp = emissionBp;
+        r.ceilingBp = ceilingBp;
+        r.voyageSeconds = voyageSeconds;
+        r.decisionCloseSeconds = decisionCloseSeconds;
+        r.fallbackSeconds = fallbackSeconds;
+        r.longVoyageSeconds = longVoyageSeconds;
+        r.longTurnSeconds = longTurnSeconds;
+        r.capPerPoint = capPerPoint;
+    }
+
+    /// @notice A destination on a day: threshold, reward weight (a light surge included) and today's light.
+    function destOf(uint32 day, uint8 dest) external view returns (uint16 thresh, uint256 coef, uint8 light) {
+        thresh = threshold[dest];
+        coef = coefBp[dest];
+        if (eventAt(day, dest) == SURGE) coef = coef * 105 / 100;
+        light = lightOf(day, dest);
     }
 
     /// @notice Claim fee in basis points `elapsed` seconds after the previous claim.
@@ -355,5 +427,21 @@ contract LightdiveConfig3 is Ownable2Step {
         decisionCloseSeconds = decisionClose;
         fallbackSeconds = fallbackAfter;
         emit TimingSet(voyage, decisionClose, fallbackAfter);
+    }
+
+    function setDeepDive(uint32 voyage, uint32 turn, uint8 minCluster) external onlyOwner {
+        if (voyage < 120 || voyage > 2 hours || turn <= decisionCloseSeconds || turn >= voyage || minCluster >= CLUSTERS) revert OutOfBounds();
+        longVoyageSeconds = voyage;
+        longTurnSeconds = turn;
+        longMinCluster = minCluster;
+        emit DeepDiveSet(voyage, turn, minCluster);
+    }
+
+    function setSupplies(uint16 oilBp, uint16 chartBp, uint8 chartPoints, uint8 maxBond) external onlyOwner {
+        if (oilBp > 2000 || chartBp > 2000 || chartPoints > 10 || maxBond > 10) revert OutOfBounds();
+        supplyPriceBp = [uint16(0), oilBp, chartBp];
+        chartStability = chartPoints;
+        bondMax = maxBond;
+        emit SuppliesSet(oilBp, chartBp, chartPoints, maxBond);
     }
 }

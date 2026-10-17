@@ -153,6 +153,15 @@ export const EVENT_CHANCE = 1; // every voyage brings one decision
 export const VOYAGE_MINUTES = 5; // departure to reveal; the voyage log plays out over this time
 export const DECISION_AT = 0.3; // the decision appears 30% into the voyage ...
 export const DECISION_CLOSE_MS = 60_000; // ... and closes 1 minute before the reveal (Expedition3: decisionCloseSeconds)
+// v3.1 (LightdiveConfig3 defaults): deep dives, crew bond, supplies
+export const DEEP_MINUTES = 15; // a deep dive's departure to reveal
+export const DEEP_TURN_MS = 600_000; // its turn-back decision opens this long before the reveal
+export const DEEP_MIN_CLUSTER = 2; // deep dives from ③ on
+export const BOND_MAX = 5; // each level moves 1 point of empty-handed chance to "normal"
+export const CHART_STABILITY = 3; // points a star chart moves
+/** Supply prices as a share of the dive's x1.00 reward (index 1 lamp oil, 2 star chart). */
+export const SUPPLY_PRICE = [0, 0.04, 0.06] as const;
+export const COMMISSION_BONUS = 0.1; // a completed commission pays 10% of that dive's x1.00 reward
 
 /** round(a / b) for a, b >= 0, halves up: the same integer rounding as LightdiveConfig3. */
 const rnd = (a: number, b: number) => Math.floor((2 * a + b) / (2 * b));
@@ -239,12 +248,16 @@ export type DivePlan = {
 };
 
 /** Everything that decides one dive, in the rulebook's order: base table, star event, overflow, choice. */
-export function planDive(t: TeamInput, d: Destination, sky: Sky, choice: Choice = "none"): DivePlan {
-  return planOf({ power: teamPower(t), bonus: attunement(t, sky.lights[d.id]), beam: t.prism?.beam ?? 1 }, d, sky, choice);
+export function planDive(t: TeamInput, d: Destination, sky: Sky, choice: Choice = "none", mods: PlanMods = {}): DivePlan {
+  return planOf({ power: teamPower(t), bonus: attunement(t, sky.lights[d.id]), beam: t.prism?.beam ?? 1 }, d, sky, choice, mods);
 }
 
+/** v3.1 additions to a plan: points of empty-handed chance moved to "normal" (crew bond, a star chart) and a deep dive
+ *  (one risk level up). The same inputs as LightdiveConfig3.plan's last two. */
+export type PlanMods = { stability?: number; deep?: boolean };
+
 /** The same plan from a dive's recorded numbers (power, attunement and beam, as Expedition3 stores them). */
-export function planOf(team: { power: number; bonus: number; beam: Beam }, d: Destination, sky: Sky, choice: Choice = "none"): DivePlan {
+export function planOf(team: { power: number; bonus: number; beam: Beam }, d: Destination, sky: Sky, choice: Choice = "none", mods: PlanMods = {}): DivePlan {
   const { power } = team;
   const event = sky.events.get(d.id);
   let risk = team.beam as number;
@@ -257,10 +270,11 @@ export function planOf(team: { power: number; bonus: number; beam: Beam }, d: De
   const ce = CHOICE_EFFECT[choice];
   if (ce.wearCap === 1) { wear2 = 0; wear3 = 0; }
   if (ce.levy) levyBp += Math.round(ce.levy * 10000);
+  if (mods.deep) risk += 1;
   const r = Math.max(0, Math.min(2, risk)) as Beam;
   const base = baseTable(d.cluster, r);
   const names = outcomesOf(base);
-  const cut = Math.min(base[0][0], overflowPoints(power, d.threshold) * 100);
+  const cut = Math.min(base[0][0], (overflowPoints(power, d.threshold) + (mods.stability ?? 0)) * 100);
   if (cut > 0) {
     base[0][0] -= cut;
     base[names.indexOf("normal")][0] += cut;

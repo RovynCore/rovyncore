@@ -4,8 +4,9 @@
 //   npm run lightdive:v3:deploy -- --network mainnet     Robinhood Chain (4663), the real RVYN; see below
 //   npm run lightdive:v3:deploy -- --network local       a local chain at RPC_URL (scripts/lightdive-v3-localnet.mjs)
 //
-// The deployer's private key is read from DEPLOYER_PRIVATE_KEY or, when that is not set, asked for on the terminal
-// without echo. It is never written anywhere. Every step is recorded in tmp/lightdive-v3-deploy-<network>-<chainId>.json, so a
+// The deployer's private key is read from DEPLOYER_PRIVATE_KEY or, when that is not set, asked for on the terminal:
+// each character shows as *, then the script prints how many characters it read and the wallet address the key belongs
+// to, and waits for "y" before sending anything. The key itself is never shown or written anywhere. Every step is recorded in tmp/lightdive-v3-deploy-<network>-<chainId>.json, so a
 // run that stops halfway (RPC error, out of gas) continues where it stopped when started again.
 //
 // testnet:
@@ -22,8 +23,7 @@
 //     over packages/web3/lightdive-v3.json at the switch.
 import fs from "node:fs";
 import readline from "node:readline";
-import { Writable } from "node:stream";
-import { createPublicClient, createWalletClient, defineChain, getAddress, http, parseEther } from "viem";
+import { createPublicClient, createWalletClient, defineChain, getAddress, http, keccak256, parseEther, toBytes } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { CHAINS } from "../packages/web3/config.ts";
 import { ODDS } from "../lib/lightdive-v3/odds.ts";
@@ -40,22 +40,75 @@ const network = arg("network");
 if (!["testnet", "mainnet", "local"].includes(network)) throw new Error("Pass --network testnet, --network mainnet or --network local.");
 const env = (k) => process.env[k]?.trim() || undefined;
 
-async function askHidden(question) {
-  const muted = new Writable({ write: (_c, _e, cb) => cb() });
-  const rl = readline.createInterface({ input: process.stdin, output: muted, terminal: true });
+// piped input (not a terminal): one shared reader, so a later question gets the next line
+let lines;
+const nextLine = () => {
+  if (!lines) lines = readline.createInterface({ input: process.stdin })[Symbol.asyncIterator]();
+  return lines.next().then((r) => (r.done ? "" : r.value));
+};
+
+/** Reads a secret from the terminal, showing one * per character (right-click or Ctrl+V pastes; Backspace deletes). */
+function askMasked(question) {
   process.stdout.write(question);
-  const answer = await new Promise((resolve) => rl.question("", resolve));
-  rl.close();
-  process.stdout.write("\n");
-  return answer.trim();
+  const stdin = process.stdin;
+  if (!stdin.isTTY) return nextLine().then((line) => { process.stdout.write("\n"); return line; });
+  return new Promise((resolve) => {
+    let value = "";
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
+    const done = () => {
+      stdin.setRawMode(false);
+      stdin.pause();
+      stdin.off("data", onData);
+      process.stdout.write("\n");
+      resolve(value);
+    };
+    const onData = (chunk) => {
+      for (const ch of chunk.replace(/\x1b\[20[01]~/g, "")) {
+        if (ch === "\r" || ch === "\n") { if (value) return done(); continue; }
+        if (ch === "\u0003") { process.stdout.write("\n"); process.exit(1); } // Ctrl+C
+        if (ch === "\u0016") continue; // a literal Ctrl+V when the console does not paste
+        if (ch === "\b" || ch === "\u007f") {
+          if (value) { value = value.slice(0, -1); process.stdout.write("\b \b"); }
+          continue;
+        }
+        if (ch < " ") continue;
+        value += ch;
+        process.stdout.write("*");
+      }
+    };
+    stdin.on("data", onData);
+  });
+}
+
+function askLine(question) {
+  if (!process.stdin.isTTY) { process.stdout.write(question); return nextLine().then((a) => { process.stdout.write("\n"); return a.trim(); }); }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => rl.question(question, (a) => { rl.close(); resolve(a.trim()); }));
 }
 
 let key = env("DEPLOYER_PRIVATE_KEY");
-if (!key) key = await askHidden("Deployer private key (not shown): ");
+const asked = !key;
+if (!key) key = await askMasked("Deployer private key (paste with right-click, shown as *): ");
+// a paste can bring spaces, line breaks, quotes or terminal paste markers along: keep only what a key is made of
+key = key.replace(/\x1b\[20[01]~/g, "").replace(/[^0-9a-fA-Fx]/g, "");
 if (/^[0-9a-fA-F]{64}$/.test(key)) key = `0x${key}`; // MetaMask exports the key without 0x
-if (!/^0x[0-9a-fA-F]{64}$/.test(key)) throw new Error("The private key must be 64 hex characters (with or without 0x).");
+if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+  const n = key.replace(/^0x/, "").length;
+  const hint = n === 0 ? "nothing was pasted" : n === 40 ? "that looks like a wallet address, not its private key" : `got ${n} characters`;
+  throw new Error(`The private key must be 64 hex characters (with or without 0x): ${hint}.`);
+}
 const account = privateKeyToAccount(key);
 key = undefined;
+if (asked) {
+  console.log("Read 64 hex characters. This key belongs to the wallet:");
+  console.log(`  ${account.address}`);
+  if (!/^y(es)?$/i.test(await askLine("Is this your deployer wallet? Deploy from it? (y/n) "))) {
+    console.log("Stopped. Nothing was sent.");
+    process.exit(1);
+  }
+}
 
 let chain;
 if (network === "local") {
@@ -86,6 +139,12 @@ fs.mkdirSync("tmp", { recursive: true });
 const progressFile = `tmp/lightdive-v3-deploy-${network}-${chain.id}.json`;
 const P = fs.existsSync(progressFile) ? JSON.parse(fs.readFileSync(progressFile, "utf8")) : { deployer: account.address, steps: {} };
 if (P.deployer !== account.address) throw new Error(`${progressFile} belongs to another deployer (${P.deployer}). Move it away to start over.`);
+// resume only a run of the same contract code: a record from older contracts would mix old and new addresses
+const codeHash = keccak256(toBytes(Object.keys(A).sort().map((n) => A[n].bytecode).join("")));
+if (Object.keys(P.steps).length && P.codeHash !== codeHash) {
+  throw new Error(`${progressFile} was made with different contract code. Move it away (keep it as a record) to deploy the new contracts.`);
+}
+P.codeHash = codeHash;
 const save = () => fs.writeFileSync(progressFile, `${JSON.stringify(P, null, 2)}\n`);
 P.startBlock ??= Number(await client.getBlockNumber());
 save();
@@ -125,6 +184,7 @@ const pool = await deploy("CoreLightPool3", [me, rvyn]);
 const minter = await deploy("LightdiveMinter3", [me, rvyn, nft, rng, pool, treasury]);
 const expedition = await deploy("Expedition3", [me, nft, config, rng, pool]);
 const market = await deploy("LightdiveMarket3", [me, rvyn, nft, config, pool]);
+const commissions = await deploy("LightdiveCommissions3", [me, expedition, config]);
 
 for (let c = 0; c < 6; c++) {
   for (let b = 0; b < 3; b++) {
@@ -135,6 +195,7 @@ for (let c = 0; c < 6; c++) {
 await call("nft.setMinter", nft, "LightdiveNFT3", "setMinter", [minter]);
 await call("nft.setGame", nft, "LightdiveNFT3", "setGame", [expedition]);
 await call("pool.setExpedition", pool, "CoreLightPool3", "setExpedition", [expedition]);
+await call("expedition.setCommissions", expedition, "Expedition3", "setCommissions", [commissions]);
 
 if (!mainnet) {
   await call("tRVYN mint pool seed", rvyn, "TestRVYN", "mint", [me, seed]);
@@ -145,6 +206,7 @@ if (!mainnet) {
   for (const [label, address, name] of [
     ["config", config, "LightdiveConfig3"], ["nft", nft, "LightdiveNFT3"], ["pool", pool, "CoreLightPool3"],
     ["minter", minter, "LightdiveMinter3"], ["expedition", expedition, "Expedition3"], ["market", market, "LightdiveMarket3"],
+    ["commissions", commissions, "LightdiveCommissions3"],
   ]) await call(`${label}.transferOwnership`, address, name, "transferOwnership", [owner]);
 }
 
@@ -152,13 +214,13 @@ const out = {
   chainId: chain.id,
   deploymentBlock: P.startBlock,
   testToken: !mainnet,
-  rvyn, rng, config, nft, pool, minter, expedition, market,
+  rvyn, rng, config, nft, pool, minter, expedition, market, commissions,
 };
 const target = mainnet ? "packages/web3/lightdive-v3.mainnet.json" : network === "local" ? "tmp/lightdive-v3-local.json" : "packages/web3/lightdive-v3.json";
 fs.writeFileSync(target, `${JSON.stringify(out, null, 2)}\n`);
 console.log(`\nWrote ${target}.`);
 if (mainnet) {
-  console.log(`Next, from the multisig ${owner}: acceptOwnership on config, nft, pool, minter, expedition and market.`);
+  console.log(`Next, from the multisig ${owner}: acceptOwnership on config, nft, pool, minter, expedition, market and commissions.`);
   console.log("Summons stay closed and the pool is empty until the switch (docs/lightdive/MAINNET-SWITCH.md).");
 } else {
   console.log("Summons are open. Send the file to Claude (or commit it) so the website points at this deployment.");
