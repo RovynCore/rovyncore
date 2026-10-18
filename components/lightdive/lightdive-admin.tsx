@@ -48,6 +48,7 @@ const A = {
   paused: c("paused", "已暫停", "已暂停", "일시정지됨"),
   running: c("running", "運作中", "运作中", "운영 중"),
   done: c("Confirmed on chain", "鏈上已確認", "链上已确认", "온체인 확인됨"),
+  v2: c("Retired v2 game: contract tools (click to open)", "已停用的 v2 遊戲：合約管理工具（點開）", "已停用的 v2 游戏：合约管理工具（点开）", "중단된 v2 게임: 컨트랙트 관리 도구 (눌러서 열기)"),
 };
 
 export function LightdiveAdmin() {
@@ -131,6 +132,12 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
   return (
     <main className="ld" lang={locale}>
       <h1 className="ld-admin-title">{t(A.title)}</h1>
+      {/* used by the v3 game: the observatory announcements and the internal reward calculator */}
+      <AnnouncementsAdmin />
+      <RulesCalculator />
+      {/* 10-19: the retired v2 game's contract tools stay available, folded away so they are not mistaken for v3 */}
+      <details className="ld-v2">
+        <summary>{t(A.v2)}</summary>
       <section className="ld-bar">
         <span>{t(A.owner)} <b>{owner ?? "—"}</b></span>
         <span>{t(A.you)} <b>{platform.account ?? "—"}</b></span>
@@ -234,9 +241,6 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
         </section>
       )}
 
-      <AnnouncementsAdmin />
-      <RulesCalculator />
-
       <section className="ld-sub">
         <h3>{t(A.contracts)}</h3>
         <ul className="ld-list">
@@ -245,6 +249,7 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
           ))}
         </ul>
       </section>
+      </details>
     </main>
   );
 }

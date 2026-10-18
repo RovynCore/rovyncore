@@ -2,6 +2,7 @@
 
 // Corner panels for the summon and market pages (the wallet balance already sits in the top bar):
 // a live feed of everyone's summons with the countdown to the next price update, and 渡 the dock keeper.
+import { openProfile } from "./logbook";
 import { useState } from "react";
 import { ODDS_BP, seeded, type Kind } from "@/lib/lightdive-v3/rules";
 import { type Sim } from "./sim";
@@ -13,7 +14,7 @@ const BUCKET = 40_000;
 
 /** Simulated summons by other observers: a few a minute, the same for everyone at a given time. */
 function summonsAround(now: number, count = 4) {
-  const out: { id: number; who: string; kind: Kind; rarity: number; at: number }[] = [];
+  const out: { id: number; who: string; owner?: string; kind: Kind; rarity: number; at: number }[] = [];
   const b = Math.floor(now / BUCKET);
   for (let k = 0; out.length < count && k < 30; k++) {
     const r = seeded((b - k) * 6151 + 11);
@@ -38,7 +39,7 @@ export function SummonFeed({ sim }: { sim: Sim }) {
         {list.map((x) => (
           <li key={x.id} style={{ ["--rc" as string]: RARITY_COLOR[x.rarity] }} className={x.rarity >= 3 ? "is-rare" : ""}>
             <RarityGem rarity={x.rarity} size={14} />
-            <span><b>{x.who}</b> {tl("召喚到")} <em>{TIER[x.rarity]}{gap()}{KIND[x.kind]}</em></span>
+            <span>{x.owner ? <button type="button" className="v3-who" onClick={() => openProfile(x.owner)} title={tl("看這位觀測者的檔案")}>{x.who}</button> : <b>{x.who}</b>} {tl("召喚到")} <em>{TIER[x.rarity]}{gap()}{KIND[x.kind]}</em></span>
             <small>{ago(sim.now - x.at)}</small>
           </li>
         ))}

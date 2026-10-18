@@ -9,6 +9,7 @@ import { tl } from "@/lib/lightdive-v3/i18n";
 import { fmt } from "./copy";
 import { passesOn, type Sim } from "./sim";
 import { rovynImage } from "./pages";
+import { unlocksOf } from "./unlocks";
 import type { View } from "./pages";
 
 const KEY = "lightdive:v3:last-seen";
@@ -39,8 +40,10 @@ export function WelcomeBack({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   const hours = Math.floor(away / 3_600_000);
   const rows: { text: string; to: View }[] = [];
   if (waiting.length) rows.push({ text: tl("{0} 趟結果等你收取，一共 {1} $RVYN", { 0: waiting.length, 1: fmt(waiting.reduce((a, d) => a + (d.reward ?? 0), 0)) }), to: "dive" });
-  if (cm.ready !== null) rows.push({ text: tl("手上的委託已經可以完成"), to: "commissions" });
-  else if (cm.active === null && open) rows.push({ text: tl("今天還有 {0} 個委託可以接", { 0: open }), to: "commissions" });
+  const commissionsOpen = unlocksOf(s).commissions; // (not shown before the daily commissions open)
+  if (commissionsOpen && cm.ready !== null) rows.push({ text: tl("手上的委託已經可以完成"), to: "commissions" });
+  else if (commissionsOpen && cm.active === null && open) rows.push({ text: tl("今天還有 {0} 個委託可以接", { 0: open }), to: "commissions" });
+  if (s.credit > 0.005) rows.push({ text: tl("金庫裡有 {0} $RVYN 可以提領", { 0: fmt(s.credit) }), to: "treasury" });
   if (docked) rows.push({ text: tl("{0} 張卡停泊了，可以續航或等它歸航", { 0: docked }), to: "spires" });
   if (left) rows.push({ text: tl("今天還有 {0} 張出發令", { 0: left }), to: "dive" });
   if (!rows.length) return null;

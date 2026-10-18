@@ -12,6 +12,8 @@ import { calm } from "./settings";
 import { divesOn, passesOn, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
 import { CIRCLED, ERROR, OUTCOME, OUTCOME_TONE, SLOT, STAR, outcomeName } from "./copy";
 import { SupplyPrompt, rememberedSupply } from "./provisions";
+import { unlocksOf } from "./unlocks";
+import { openProfile } from "./logbook";
 import { tl } from "@/lib/lightdive-v3/i18n";
 
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
@@ -87,7 +89,7 @@ export function Dispatch({ sim, onClose, onDeparted }: { sim: Sim; onClose: () =
         </ul>
         {msg && <p className="v3-error" role="alert">{msg}</p>}
         <p className="hud-note">{tl("正式版會把這幾次出發合成一筆交易，只需要簽一次。")}</p>
-        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={() => { const kept = rememberedSupply(); if (kept !== null) void go(kept); else setAsking(true); }}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
+        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={() => { const kept = unlocksOf(s).supplies ? rememberedSupply() : 0; if (kept !== null) void go(kept); else setAsking(true); }}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
         {asking && <SupplyPrompt sim={sim} go={chosen.map(([spire, dest]) => ({ spire: Number(spire), dest }))} onConfirm={go} onClose={() => setAsking(false)} />}
       </div>
     </div>
@@ -103,8 +105,8 @@ export function Ranking({ sim }: { sim: Sim }) {
   const bucket = Math.floor(sim.now / 60_000);
   const others = useMemo(() => sim.feed(bucket * 60_000, 400, hours), [sim, bucket, hours]);
   const rows = [
-    ...others.filter((o) => o.at >= startOfDay && o.outcome).map((o) => ({ id: o.id, who: o.who, dest: o.dest, mult: o.mult ?? 0, outcome: o.outcome!, me: false })),
-    ...divesOn(s, sim.today).filter((d) => d.result).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, mult: d.result!.multX100, outcome: d.result!.outcome as string, me: true })),
+    ...others.filter((o) => o.at >= startOfDay && o.outcome).map((o) => ({ id: o.id, who: o.who, owner: o.owner, dest: o.dest, mult: o.mult ?? 0, outcome: o.outcome!, me: false })),
+    ...divesOn(s, sim.today).filter((d) => d.result).map((d) => ({ id: `me-${d.id}`, who: tl("你"), owner: undefined as string | undefined, dest: d.dest, mult: d.result!.multX100, outcome: d.result!.outcome as string, me: true })),
   ].sort((a, b) => b.mult - a.mult).slice(0, 15);
   if (!rows.length) return <p className="hud-dim hud-live__empty">{tl("今天還沒有揭曉的光橋。")}</p>;
   return (
@@ -112,7 +114,7 @@ export function Ranking({ sim }: { sim: Sim }) {
       {rows.map((r, i) => (
         <li key={r.id} className={r.me ? "is-mine" : ""}>
           <em>{i + 1}</em>
-          <span><b>{r.who}</b><small>{CIRCLED[DESTINATIONS[r.dest].cluster]} {destName(r.dest)}</small></span>
+          <span>{r.owner ? <button type="button" className="v3-who" onClick={() => openProfile(r.owner)} title={tl("看這位觀測者的檔案")}>{r.who}</button> : <b>{r.who}</b>}<small>{CIRCLED[DESTINATIONS[r.dest].cluster]} {destName(r.dest)}</small></span>
           <strong style={{ color: OUTCOME_TONE[r.outcome as keyof typeof OUTCOME_TONE] }}>×{(r.mult / 100).toFixed(2)}</strong>
         </li>
       ))}
@@ -131,7 +133,7 @@ function wrap(g: CanvasRenderingContext2D, text: string, x: number, y: number, m
 }
 
 /** Draws a 1200x630 share image for a reveal (the size X uses for link cards). */
-async function drawCard(d: SimDive): Promise<HTMLCanvasElement> {
+async function drawCard(d: SimDive, title?: string | null): Promise<HTMLCanvasElement> {
   const r = d.result!;
   const c = document.createElement("canvas");
   c.width = 1200; c.height = 630;
@@ -151,8 +153,16 @@ async function drawCard(d: SimDive): Promise<HTMLCanvasElement> {
   try { g.drawImage(await load(`/lightdive/npc/rovyn-pose-${pose}.webp`), 760, 60, 470, 574); } catch {}
   g.fillStyle = "#c9ff55"; g.font = "700 26px 'Chakra Petch', sans-serif";
   g.fillText(tl("LIGHTDIVE · 潛光遠征"), 70, 90);
+  // the representative title, when the observer has one
+  if (title) {
+    g.font = "700 22px sans-serif";
+    const w = g.measureText(title).width + 28;
+    g.fillStyle = "rgba(240,199,102,0.16)"; g.fillRect(70, 108, w, 34);
+    g.strokeStyle = "rgba(240,199,102,0.7)"; g.lineWidth = 1.5; g.strokeRect(70, 108, w, 34);
+    g.fillStyle = "#f0c766"; g.fillText(title, 84, 133);
+  }
   g.fillStyle = "#a3b39c"; g.font = "500 30px sans-serif";
-  g.fillText(`${CIRCLED[DESTINATIONS[d.dest].cluster]} ${TEXTS.clusters[DESTINATIONS[d.dest].cluster].name} · ${destName(d.dest)}`, 70, 160);
+  g.fillText(`${CIRCLED[DESTINATIONS[d.dest].cluster]} ${TEXTS.clusters[DESTINATIONS[d.dest].cluster].name} · ${destName(d.dest)}`, 70, title ? 185 : 160);
   g.fillStyle = tone; g.font = "900 96px sans-serif";
   g.fillText(outcomeName(d), 70, 290);
   g.font = "700 120px 'Chakra Petch', sans-serif";
@@ -165,12 +175,12 @@ async function drawCard(d: SimDive): Promise<HTMLCanvasElement> {
   return c;
 }
 
-export function ShareButtons({ d }: { d: SimDive }) {
+export function ShareButtons({ d, title }: { d: SimDive; title?: string | null }) {
   const [busy, setBusy] = useState(false);
   const download = async () => {
     setBusy(true);
     try {
-      const c = await drawCard(d);
+      const c = await drawCard(d, title);
       const a = document.createElement("a");
       a.href = c.toDataURL("image/png");
       a.download = `lightdive-${d.id}.png`;

@@ -1720,8 +1720,8 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .v3-droprates { grid-template-columns: 22px max-content minmax(0, 1fr) auto; }
 .v3-droprates li { grid-column: 1 / -1; grid-template-columns: subgrid; }
 /* 10-18: 渡 in person (the founder's art) instead of the drawn lamp */
-.v3-keeper__talk { grid-template-columns: 108px minmax(0, 1fr); align-items: center; }
-.v3-keeper__art { width: 108px; height: 132px; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 18px rgba(240, 199, 102, 0.22)); animation: v3-fade 0.4s both; }
+.v3-keeper__talk { grid-template-columns: 150px minmax(0, 1fr); align-items: center; }
+.v3-keeper__art { width: 150px; height: 184px; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 18px rgba(240, 199, 102, 0.22)); animation: v3-fade 0.4s both; }
 /* 10-18 daylight: the founder's light backgrounds behind the observatory hero and the Stele Plain. A dark veil keeps
    the dark panels and white text readable; the light still reads as day. */
 .hud-daybg { position: fixed; left: 248px; top: var(--rv-header-h); right: 0; bottom: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(3, 7, 10, 0.12), rgba(3, 7, 10, 0.38) 50%, rgba(3, 7, 10, 0.78)), url(/lightdive/bg/light-bg-stele-dawn.webp) center 30% / cover no-repeat, #0b1014; }
@@ -1825,3 +1825,8 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .v3-nftdetail__art.is-card { aspect-ratio: 0.7; overflow: visible; border: 0; box-shadow: none; }
 .v3-nftdetail__art.is-card .v3-face { box-shadow: 0 0 70px -16px var(--rc); }
 .hud.v3:has(.hud-daybg) .hud-pagehead h1, .hud.v3:has(.hud-daybg) .hud-pagehead p, .hud.v3:has(.hud-daybg) .hud-kicker { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.6); }
+/* 10-19: rare cards read as rare in every grid: a slow holographic sweep over the art of 稜光 and 曜核 */
+.v3-nft.r3 .v3-nft__art::after, .v3-nft.r4 .v3-nft__art::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; mix-blend-mode: color-dodge; opacity: 0.28; background: repeating-linear-gradient(115deg, rgba(255, 0, 132, 0) 0%, rgba(255, 214, 0, 0.5) 7%, rgba(0, 255, 170, 0.45) 14%, rgba(0, 170, 255, 0.5) 21%, rgba(190, 90, 255, 0.45) 28%, rgba(255, 0, 132, 0) 35%); background-size: 300% 300%; animation: v3-holo 7s ease-in-out infinite alternate; }
+.v3-nft.r4 .v3-nft__art::after { opacity: 0.38; }
+.v3-nft.r4 { box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent), 0 0 30px -10px var(--rc); }
+.hud.v3.is-calm .v3-nft .v3-nft__art::after { animation: none; }

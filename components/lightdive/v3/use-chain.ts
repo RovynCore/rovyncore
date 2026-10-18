@@ -67,6 +67,8 @@ export type ChainExtras = {
   join: () => Promise<void>;
   switchNetwork: () => Promise<void>;
   reload: () => Promise<void>;
+  /** Anyone's public profile, read from the chain (null while loading fails). */
+  profile: (address: string) => Promise<SimState | null>;
 };
 
 /** Player-language reason for a failed transaction (the contract's custom error when there is one). */
@@ -107,6 +109,79 @@ type Loaded = { world: World; player: Player | null; market: MarketListing[]; fe
 
 function readNames(): Record<number, string> {
   try { return JSON.parse(localStorage.getItem(NAMES_KEY) ?? "{}"); } catch { return {}; }
+}
+
+/** A player's chain data in the preview's shape. Also used for anyone's public profile (no drafts, no names, no
+ *  predictions: only what the chain has settled). */
+function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>, names: Record<number, string>, predictions: Map<number, Prediction>): SimState {
+  const nfts: SimNft[] = p.cards.map((x) => ({
+    id: Number(x.id), kind: x.kind as Kind, rarity: x.rarity, power: x.power, trait: x.trait, voyages: x.voyagesLeft, renewed: x.renewed,
+    dockedAt: x.dockedAt ? x.dockedAt * 1000 : undefined,
+    homeAt: x.homeAt ? x.homeAt * 1000 : undefined,
+    soldAt: x.soldAt ? x.soldAt * 1000 : undefined,
+    listed: x.listedPrice !== undefined ? num(x.listedPrice) : undefined,
+    mint: x.request !== undefined ? Number(x.request) : undefined,
+  }));
+  const onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number), bond: t.bond }));
+  let teams = onChain.filter((t) => !(t.spire in drafts));
+  // a draft keeps the bond only when it is the same crew
+  for (const t of Object.values(drafts)) {
+    if (!t) continue;
+    const was = onChain.find((x) => x.spire === t.spire);
+    teams.push({ ...t, bond: was && was.prism === t.prism && was.seekers.join() === t.seekers.join() ? was.bond : 0 });
+  }
+  teams = teams.filter((t) => nfts.some((n) => n.id === t.spire));
+  const dives: SimDive[] = p.dives.map((d) => {
+    const id = Number(d.id), dest = d.dest;
+    const choice = d.decision ? CHOICES[d.decision] : undefined;
+    // attunement is not stored on its own: recover it from the recorded points (power + attunement) x weight
+    // (a deep dive records twice the points)
+    const coefBp = planOf({ power: d.power, bonus: 0, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day)).coefBp;
+    const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp / (d.long ? 2 : 1)) / 100 - d.power);
+    const mods = { stability: stabilityOf(d.bond, d.supply), deep: d.long };
+    const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none", mods);
+    const voyageMs = (d.long ? w.longVoyageSeconds : w.voyageSeconds) * 1000;
+    const names = plan.names ?? outcomesOf(plan.table);
+    const revealAt = roundTime(d.round) * 1000;
+    const settled = d.result;
+    const predicted = predictions.get(id);
+    const r = settled ?? predicted;
+    const outcome = r ? (settled?.fallbackUsed || r.tier === TURNED_BACK ? "normal" : names[r.tier] ?? "normal") : undefined;
+    const lines = TEXTS.logs[dest] as Record<string, readonly string[]>;
+    return {
+      id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), choice, rate: num(d.rate),
+      deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned,
+      result: r && outcome ? { outcome, tier: r.tier, multX100: r.multX100, wear: r.wear } : undefined,
+      reward: r ? num(r.reward) : undefined,
+      levyPaid: r ? num(r.levy) : undefined,
+      pending: !d.revealed && !!predicted ? true : undefined,
+      collectedAt: d.revealed ? revealAt : undefined,
+      log: r && outcome ? (lines[outcome] ?? lines.normal)[id % (lines[outcome] ?? lines.normal).length] : undefined,
+    };
+  });
+  const mints: MintRequest[] = p.requests.filter((r) => !r.revealed).map((r) => ({
+    id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid),
+  }));
+  const pulls: PullRecord[] = p.requests.filter((r) => r.revealed).map((r) => ({
+    id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid), cards: r.cards.map(Number),
+  }));
+  return {
+    version: 1,
+    nextId: 0,
+    balance: num(p.balance),
+    credit: num(p.credit),
+    lastClaimAt: p.lastClaimAt * 1000,
+    nfts, teams, dives, mints, pulls,
+    claimed: num(p.claimed),
+    levyTotal: num(p.levyTotal),
+    feesPaid: num(p.claimFees),
+    listings: p.cards.filter((x) => x.listedPrice !== undefined).map((x) => ({ nftId: Number(x.id), price: num(x.listedPrice!), at: (x.listedAt ?? 0) * 1000 })),
+    sold: [],
+    sales: p.sales.map((s) => ({ nftId: Number(s.id), price: num(s.price), at: s.at * 1000 })),
+    spent: { mint: num(p.spent.mint), renew: num(p.spent.renew), market: num(p.spent.market) },
+    teamNames: names,
+    commissionsDone: p.commissionsDone,
+  };
 }
 
 export function useChain(): Game {
@@ -206,81 +281,23 @@ export function useChain(): Game {
   const today = Math.floor((now || Date.now()) / 86_400_000);
   const state = useMemo<SimState | null>(() => {
     if (!data) return null;
-    const p = data.player;
-    const w = data.world;
-    if (!p) {
+    if (!data.player) {
       return { version: 1, nextId: 1, balance: 0, credit: 0, lastClaimAt: 0, nfts: [], teams: [], dives: [], mints: [], pulls: [], claimed: 0, levyTotal: 0, listings: [], sales: [], spent: { mint: 0, renew: 0, market: 0 }, teamNames: names };
     }
-    const nfts: SimNft[] = p.cards.map((x) => ({
-      id: Number(x.id), kind: x.kind as Kind, rarity: x.rarity, power: x.power, trait: x.trait, voyages: x.voyagesLeft, renewed: x.renewed,
-      dockedAt: x.dockedAt ? x.dockedAt * 1000 : undefined,
-      homeAt: x.homeAt ? x.homeAt * 1000 : undefined,
-      soldAt: x.soldAt ? x.soldAt * 1000 : undefined,
-      listed: x.listedPrice !== undefined ? num(x.listedPrice) : undefined,
-      mint: x.request !== undefined ? Number(x.request) : undefined,
-    }));
-    const onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number), bond: t.bond }));
-    let teams = onChain.filter((t) => !(t.spire in drafts));
-    // a draft keeps the bond only when it is the same crew
-    for (const t of Object.values(drafts)) {
-      if (!t) continue;
-      const was = onChain.find((x) => x.spire === t.spire);
-      teams.push({ ...t, bond: was && was.prism === t.prism && was.seekers.join() === t.seekers.join() ? was.bond : 0 });
-    }
-    teams = teams.filter((t) => nfts.some((n) => n.id === t.spire));
-    const dives: SimDive[] = p.dives.map((d) => {
-      const id = Number(d.id), dest = d.dest;
-      const choice = d.decision ? CHOICES[d.decision] : undefined;
-      // attunement is not stored on its own: recover it from the recorded points (power + attunement) x weight
-      // (a deep dive records twice the points)
-      const coefBp = planOf({ power: d.power, bonus: 0, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day)).coefBp;
-      const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp / (d.long ? 2 : 1)) / 100 - d.power);
-      const mods = { stability: stabilityOf(d.bond, d.supply), deep: d.long };
-      const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none", mods);
-      const voyageMs = (d.long ? w.longVoyageSeconds : w.voyageSeconds) * 1000;
-      const names = plan.names ?? outcomesOf(plan.table);
-      const revealAt = roundTime(d.round) * 1000;
-      const settled = d.result;
-      const predicted = predictions.current.get(id);
-      const r = settled ?? predicted;
-      const outcome = r ? (settled?.fallbackUsed || r.tier === TURNED_BACK ? "normal" : names[r.tier] ?? "normal") : undefined;
-      const lines = TEXTS.logs[dest] as Record<string, readonly string[]>;
-      return {
-        id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), choice, rate: num(d.rate),
-        deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned,
-        result: r && outcome ? { outcome, tier: r.tier, multX100: r.multX100, wear: r.wear } : undefined,
-        reward: r ? num(r.reward) : undefined,
-        levyPaid: r ? num(r.levy) : undefined,
-        pending: !d.revealed && !!predicted ? true : undefined,
-        collectedAt: d.revealed ? revealAt : undefined,
-        log: r && outcome ? (lines[outcome] ?? lines.normal)[id % (lines[outcome] ?? lines.normal).length] : undefined,
-      };
-    });
-    const mints: MintRequest[] = p.requests.filter((r) => !r.revealed).map((r) => ({
-      id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid),
-    }));
-    const pulls: PullRecord[] = p.requests.filter((r) => r.revealed).map((r) => ({
-      id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid), cards: r.cards.map(Number),
-    }));
-    return {
-      version: 1,
-      nextId: 0,
-      balance: num(p.balance),
-      credit: num(p.credit),
-      lastClaimAt: p.lastClaimAt * 1000,
-      nfts, teams, dives, mints, pulls,
-      claimed: num(p.claimed),
-      levyTotal: num(p.levyTotal),
-      feesPaid: num(p.claimFees),
-      listings: p.cards.filter((x) => x.listedPrice !== undefined).map((x) => ({ nftId: Number(x.id), price: num(x.listedPrice!), at: (x.listedAt ?? 0) * 1000 })),
-      sold: [],
-      sales: p.sales.map((s) => ({ nftId: Number(s.id), price: num(s.price), at: s.at * 1000 })),
-      spent: { mint: num(p.spent.mint), renew: num(p.spent.renew), market: num(p.spent.market) },
-      teamNames: names,
-      commissionsDone: p.commissionsDone,
-    };
     // predictions are read through the ref; `data` changes whenever one is added
+    return playerState(data.player, data.world, drafts, names, predictions.current);
   }, [data, drafts, names]);
+
+  const profile = useCallback(async (address: string): Promise<SimState | null> => {
+    if (!ctx || !data || !/^0x[0-9a-fA-F]{40}$/.test(address)) return null;
+    try {
+      const p = await readPlayer(ctx, address as Address, data.world, G.testToken);
+      return playerState(p, data.world, {}, {}, new Map());
+    } catch (e) {
+      console.warn("lightdive profile", e);
+      return null;
+    }
+  }, [ctx, data, G.testToken]);
 
   const market = useMemo<Listing[]>(() => (data?.market ?? [])
     .filter((l) => !account || l.seller.toLowerCase() !== account.toLowerCase())
@@ -290,7 +307,7 @@ export function useChain(): Game {
   const toRows = useCallback((list: FeedItem[]) => list.filter((f) => !account || f.owner.toLowerCase() !== account.toLowerCase()).map((f) => {
     const names = outcomesOf(baseTable(DESTINATIONS[f.dest].cluster, riskOf(f.beam, f.dest, f.day)));
     return {
-      id: String(f.id), who: `${f.owner.slice(0, 6)}…${f.owner.slice(-4)}`, dest: f.dest,
+      id: String(f.id), who: `${f.owner.slice(0, 6)}…${f.owner.slice(-4)}`, owner: f.owner, dest: f.dest,
       outcome: f.tier !== undefined ? names[f.tier] ?? "normal" : undefined, mult: f.multX100,
       at: (roundTime(f.round) - (data?.world.voyageSeconds ?? 300)) * 1000,
       choice: f.decision !== undefined ? CHOICES[f.decision] : "none",
@@ -657,7 +674,7 @@ export function useChain(): Game {
     supply,
     feed: (_now: number, count = 18) => feedRows.slice(0, count),
     week: weekRows,
-    summons: (data?.summons ?? []).map((x) => ({ id: Number(x.id), who: account && x.who.toLowerCase() === account.toLowerCase() ? tl("你") : `${x.who.slice(0, 6)}…${x.who.slice(-4)}`, kind: x.kind as Kind, rarity: x.rarity, at: x.at * 1000 })),
+    summons: (data?.summons ?? []).map((x) => ({ id: Number(x.id), who: account && x.who.toLowerCase() === account.toLowerCase() ? tl("你") : `${x.who.slice(0, 6)}…${x.who.slice(-4)}`, owner: account && x.who.toLowerCase() === account.toLowerCase() ? undefined : x.who, kind: x.kind as Kind, rarity: x.rarity, at: x.at * 1000 })),
     chainOf: (n) => {
       const raw = data?.player?.cards.find((x) => Number(x.id) === n.id);
       return {
@@ -703,6 +720,7 @@ export function useChain(): Game {
       join,
       switchNetwork,
       reload: load,
+      profile,
     },
   };
 }

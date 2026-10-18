@@ -35,6 +35,7 @@ import { syncGameLocale } from "@/lib/lightdive-v3/i18n";
 import { clock, fmt } from "./copy";
 import { Broadcast } from "./extras";
 import { WelcomeBack } from "./welcome";
+import { ALL_UNLOCKED, UnlockNotice, unlocksOf } from "./unlocks";
 import { play, useMusic, useMusicToggle, useMute, useVolume } from "./audio";
 import "../game/game.css";
 import "../game/app.css";
@@ -45,7 +46,7 @@ import { tl, localized } from "@/lib/lightdive-v3/i18n";
 
 type MenuGroup = { group: string; items: { key: View; label: string; icon: IconName }[] };
 const MENU_SRC: MenuGroup[] = [
-  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "commissions", label: "每日委託", icon: "signal" }, { key: "plain", label: "碑原", icon: "fleets" }, { key: "logbook", label: "航海紀錄", icon: "voyage" }] },
+  { group: "主要", items: [{ key: "lobby", label: "觀測站", icon: "overview" }, { key: "dive", label: "潛光", icon: "expedition" }, { key: "commissions", label: "每日委託", icon: "signal" }, { key: "plain", label: "碑原", icon: "fleets" }, { key: "logbook", label: "個人檔案", icon: "voyage" }] },
   { group: "資產", items: [{ key: "spires", label: "光塔", icon: "spires" }, { key: "prisms", label: "稜鏡", icon: "prisms" }, { key: "seekers", label: "探索者", icon: "seekers" }] },
   { group: "取得", items: [{ key: "summon", label: "召喚", icon: "summon" }, { key: "market", label: "市集", icon: "market" }, { key: "buy", label: "購買 $RVYN", icon: "rvyn" }] },
   { group: "收益", items: [{ key: "treasury", label: "金庫", icon: "treasury" }] },
@@ -60,7 +61,8 @@ function useView(ITEMS: MenuGroup["items"]): [View, (v: View) => void] {
   const [view, setView] = useState<View>("lobby");
   useEffect(() => {
     const sync = () => {
-      const h = window.location.hash.slice(1) as View;
+      // a view may carry a parameter after "=" (someone's profile: #logbook=0x…)
+      const h = window.location.hash.slice(1).split("=")[0] as View;
       setView(ITEMS.some((i) => i.key === h) ? h : "lobby");
     };
     sync();
@@ -68,7 +70,7 @@ function useView(ITEMS: MenuGroup["items"]): [View, (v: View) => void] {
     return () => window.removeEventListener("hashchange", sync);
   }, [ITEMS]);
   const go = useCallback((v: View) => {
-    if (window.location.hash.slice(1) !== v) window.location.hash = v;
+    if (window.location.hash.slice(1).split("=")[0] !== v || window.location.hash.includes("=")) window.location.hash = v;
     setView(v);
     document.getElementById("v3-main")?.scrollTo({ top: 0 });
   }, []);
@@ -82,9 +84,16 @@ export function LightdivePreview() {
 
 export function LightdiveApp({ sim }: { sim: Game }) {
   const live = sim.mode === "chain";
-  const menu = live && sim.chain?.testToken ? FAUCET_MENU : MENU;
+  // step-by-step unlocks: the profile and the daily commissions join the menu as the player gets there
+  const unlocks = sim.state ? unlocksOf(sim.state) : ALL_UNLOCKED;
+  const hidden = `${unlocks.profile ? "" : "logbook,"}${unlocks.commissions ? "" : "commissions"}`;
+  const baseMenu = live && sim.chain?.testToken ? FAUCET_MENU : MENU;
+  // (the group name stays a getter: the menu objects read the current language when they render)
+  const menu = useMemo(() => baseMenu.map((m) => ({ get group() { return m.group; }, items: m.items.filter((i) => !hidden.includes(i.key)) })), [baseMenu, hidden]);
   const ITEMS = useMemo(() => menu.flatMap((m) => m.items), [menu]);
-  const [view, go] = useView(ITEMS);
+  // routing knows every page: a locked page is only left out of the menu (a shared profile link must still open)
+  const ROUTES = useMemo(() => baseMenu.flatMap((m) => m.items), [baseMenu]);
+  const [view, go] = useView(ROUTES);
   const [more, setMore] = useState(false);
   const [muted, toggleMute] = useMute();
   const settings = useSettings();
@@ -110,7 +119,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
       spires: docked(0), prisms: docked(1), seekers: docked(2),
       treasury: s.credit > 0 ? 1 : 0,
       logbook: view === "logbook" ? 0 : unseenFootprints(recordsOf(sim)), // opening the page marks them seen
-      commissions: commissionBadge(sim),
+      commissions: unlocksOf(s).commissions ? commissionBadge(sim) : 0,
     } as Partial<Record<View, number>>;
   }, [s, sim.today, view]); // eslint-disable-line react-hooks/exhaustive-deps -- `sim` is a new object every render; its state and day are what matter
 
@@ -194,6 +203,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
         </div>
         <Broadcast sim={sim} />
         <WelcomeBack sim={sim} go={go} />
+        <UnlockNotice unlocks={unlocks} go={go} />
         {view === "dive" && <div className="v3-dock-rovyn">{rovyn}</div>}
         {view !== "dive" && <ObservatoryMusic quiet={view === "story" || view === "whitepaper"} />}
       </div>

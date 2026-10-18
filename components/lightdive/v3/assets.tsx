@@ -148,7 +148,6 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
       <section className="v3-nftdetail__hero" style={{ ["--rc" as string]: RARITY_COLOR[n.rarity] }}>
         {/* the card as a trading card: 稜光 and 曜核 are full-art foil (10-19) */}
         <div className="v3-nftdetail__art is-card"><Foil rarity={n.rarity}><CardFace n={n} size="lg" /></Foil></div>
-        <RarityTag rarity={n.rarity} />
         <h2>{KIND[n.kind]} #{n.id}</h2>
         <span className={`v3-nft__badge is-${w}`}>{w === "listed" ? tl("上架中 {0} $RVYN", { 0: fmt(n.listed ?? 0) }) : WHERE[w]}</span>
       </section>

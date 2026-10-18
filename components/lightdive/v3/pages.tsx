@@ -20,6 +20,7 @@ import {
 } from "./copy";
 import { gap, plurals, tl } from "@/lib/lightdive-v3/i18n";
 import { CommissionsBrief } from "./commissions";
+import { unlocksOf } from "./unlocks";
 
 export type View = "lobby" | "dive" | "commissions" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
 const DAY = 86_400_000;
@@ -149,9 +150,11 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
           </Panel>
         </div>
         <div className="v3-lobbycol">
-        <Panel title={tl("每日委託")} index="03" icon="signal" action={<button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => go("commissions")}>{tl("全部委託")}</button>}>
-          <CommissionsBrief sim={sim} go={go} />
-        </Panel>
+        {unlocksOf(s).commissions && (
+          <Panel title={tl("每日委託")} index="03" icon="signal" action={<button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => go("commissions")}>{tl("全部委託")}</button>}>
+            <CommissionsBrief sim={sim} go={go} />
+          </Panel>
+        )}
         <Panel title={tl("今日星象")} index="04" icon="crystal">
           <p className="v3-skylegend"><span><i className="is-light" />{tl("點的顏色：這個目的地今天的光")}</span><span><i className="is-event" />{tl("外圈：今天有星象")}</span></p>
           <div className="v3-sky">

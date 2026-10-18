@@ -205,7 +205,7 @@ export const decisionCloseAt = (d: SimDive) => d.revealAt - (d.deep ? DEEP_TURN_
 export const deciding = (d: SimDive, now: number) => !d.result && d.card !== undefined && !d.choice && now >= decisionAt(d) && now < decisionCloseAt(d);
 
 export type ActResult = { error: string | null; id?: number; card?: number };
-export type FeedRow = { id: string; who: string; dest: number; outcome?: string; mult?: number; at: number; choice?: string };
+export type FeedRow = { id: string; who: string; owner?: string; dest: number; outcome?: string; mult?: number; at: number; choice?: string };
 
 /** What every page plays with: the preview (useSim, simulated in this browser) or the live game (useChain, the v3
  *  contracts). Actions are async because on chain they wait for the wallet and the transaction. */
@@ -229,7 +229,7 @@ export type Game = {
   week: FeedRow[];
   chainOf: (n: Pick<SimNft, "id" | "kind" | "rarity">) => ChainFacts;
   /** Live game: the latest summons by anyone (the preview simulates its own). */
-  summons?: { id: number; who: string; kind: Kind; rarity: number; at: number }[];
+  summons?: { id: number; who: string; owner?: string; kind: Kind; rarity: number; at: number }[];
   dive: (spire: number, dest: number, opts?: DiveOpts) => Promise<ActResult>;
   /** A deep dive's second decision: turn back (true) or press on. */
   turnBack: (diveId: number, back: boolean) => Promise<void>;

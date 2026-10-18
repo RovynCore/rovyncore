@@ -16,6 +16,8 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { deciding, passesOn, stabilityOf, teamInput, teamName, teamOut, turning, type Sim, type SimDive, type SimState } from "./sim";
 import { SUPPLIES, SupplyPrompt, forgetSupply, rememberedSupply, type Departure } from "./provisions";
 import { commissionTitle, readyBonus } from "./commissions";
+import { unlocksOf } from "./unlocks";
+import { bestTitle, openProfile, recordsOf } from "./logbook";
 import { VoyageLog } from "./voyage";
 import { flyLight } from "./kit";
 import { fxQuality } from "./settings";
@@ -124,7 +126,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
     // a deep dive again only when today's passes still allow one; otherwise the same trip at normal depth
     const deep = !!revealed.deep && passesOn(s, sim.today) + 2 <= DIVES_PER_DAY && passesOn(s, sim.today, revealed.spire) + 2 <= DIVES_PER_TEAM_PER_DAY;
     const g = { spire: revealed.spire, dest: revealed.dest, deep };
-    const kept = rememberedSupply();
+    const kept = unlocksOf(s).supplies ? rememberedSupply() : 0;
     if (kept !== null) await departAgain(g, kept);
     else setSupplyFor(g);
   };
@@ -223,7 +225,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
         </div>
       </section>
       <LiveLog sim={sim} />
-      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
+      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={bestTitle(recordsOf(sim))} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
       {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={(supply) => departAgain(supplyFor, supply)} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
@@ -580,10 +582,10 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
       )}
       {error && <p className="v3-error" role="alert">{error}</p>}
       <p className="hud-note">{tl("失敗時沒有收益，也就不用付出發成本；但航程照樣耗損。")}</p>
-      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used + uses > DIVES_PER_DAY || teamUsed + uses > 3} onClick={() => { const kept = rememberedSupply(); if (kept !== null) void go(kept); else setAsking(true); }}>
+      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used + uses > DIVES_PER_DAY || teamUsed + uses > 3} onClick={() => { const kept = unlocksOf(s).supplies ? rememberedSupply() : 0; if (kept !== null) void go(kept); else setAsking(true); }}>
         <Rocket aria-hidden="true" />{used + uses > DIVES_PER_DAY ? (used >= DIVES_PER_DAY ? tl("今天的出發令用完了") : tl("出發令不夠深潛")) : teamUsed + uses > 3 ? tl("這支隊伍今天的次數不夠") : uses === 2 ? tl("深潛（用 2 張出發令）") : tl("出發（用 1 張出發令）")}
       </button>
-      <KeptSupply onChange={() => setAsking(true)} />
+      {unlocksOf(s).supplies && <KeptSupply onChange={() => setAsking(true)} />}
       {asking && pick !== null && <SupplyPrompt sim={sim} go={[{ spire: pick, dest: id, deep: canDeep && deep }]} onConfirm={go} onClose={() => setAsking(false)} />}
     </aside>
   );
@@ -622,7 +624,7 @@ function Odds({ plan, base }: { plan: DivePlan; base?: number }) {
 
 /** The reveal: a short scan while the signal "comes back", then the result with a counting multiplier. */
 type RevealCommission = { title: string; bonus: number | null; complete: () => Promise<void> };
-function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null }) {
+function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission, title }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null }) {
   const [completing, setCompleting] = useState(false);
   const r = d.result!;
   const dest = DESTINATIONS[d.dest];
@@ -674,7 +676,7 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commi
           <div><dt>{tl("耗損航程")}</dt><dd>{tl("{0} 次", { 0: r.wear })}{reason ? tl("：{0}", { 0: reason }) : ""}</dd></div>
           {d.choice && <div><dt>{tl("你的抉擇")}</dt><dd>{tl("{0}（{1}）", { 0: CHOICE[d.choice].name, 1: CHOICE[d.choice].tag })}</dd></div>}
         </dl>
-        <ShareButtons d={d} />
+        <ShareButtons d={d} title={title} />
         {queued > 0 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-acceptall" onClick={onAll}>{tl("還有 {0} 趟等著收取 · 全部收取", { 0: queued })}</button>}
         {commission && (
           <div className="v3-reveal__commission">
@@ -737,7 +739,7 @@ function LiveLog({ sim }: { sim: Sim }) {
             <li key={x.id} className={`${x.me ? "is-mine" : ""}${x.outcome ? "" : " is-flight"}${big ? " is-big" : ""}`} style={{ ["--lc" as string]: LIGHT_COLOR[light] }}>
               <i className="hud-live__mark" />
               <div>
-                <p><b>{x.who}</b> · {CIRCLED[d.cluster]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}</p>
+                <p>{"owner" in x && x.owner ? <button type="button" className="v3-who" onClick={() => openProfile(x.owner)} title={tl("看這位觀測者的檔案")}>{x.who}</button> : <b>{x.who}</b>} · {CIRCLED[d.cluster]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}</p>
                 {x.outcome ? (
                   <p className="hud-live__result" style={{ ["--tc" as string]: OUTCOME_TONE[x.outcome as keyof typeof OUTCOME_TONE] }}>{OUTCOME[x.outcome as keyof typeof OUTCOME]} ×{((x.mult ?? 0) / 100).toFixed(2)}{x.choice && x.choice !== "none" ? ` · ${CHOICE[x.choice as Choice].name}` : ""}</p>
                 ) : (

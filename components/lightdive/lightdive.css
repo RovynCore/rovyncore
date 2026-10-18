@@ -131,3 +131,7 @@
 .ld-calc select { height: 34px; padding: 0 8px; border: 1px solid var(--c-line); border-radius: 8px; background: rgba(0, 0, 0, 0.4); color: inherit; font: inherit; }
 .ld-calc input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: #c9ff55; }
 .ld-calc .ld-table { margin-top: 12px; }
+/* 10-19: the retired v2 tools, folded */
+.ld-v2 { margin: 18px 0; padding: 12px 16px; border: 1px dashed rgba(255, 255, 255, 0.18); border-radius: 14px; }
+.ld-v2 > summary { cursor: pointer; font-weight: 700; color: #8a948a; }
+.ld-v2[open] > summary { margin-bottom: 12px; }
