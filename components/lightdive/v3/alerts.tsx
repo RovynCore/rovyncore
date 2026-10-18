@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { DESTINATIONS } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
-import { deciding, teamName, type Sim, type SimDive } from "./sim";
+import { deciding, teamName, turning, type Sim, type SimDive } from "./sim";
 import { useSettings } from "./settings";
 import { OUTCOME } from "./copy";
 import { tl } from "@/lib/lightdive-v3/i18n";
@@ -23,11 +23,15 @@ export function useVoyageAlerts(sim: Sim) {
   const s = sim.state;
   useEffect(() => {
     if (!s) return;
-    const due: { key: string; d: SimDive; kind: "decide" | "reveal" }[] = [];
+    const due: { key: string; d: SimDive; kind: "decide" | "reveal" | "turn" | "commission" }[] = [];
     for (const d of s.dives) {
       if (deciding(d, sim.now) && !d.choice) due.push({ key: `decide:${d.id}`, d, kind: "decide" });
+      if (turning(d, sim.now)) due.push({ key: `turn:${d.id}`, d, kind: "turn" });
       if (d.result && d.pending) due.push({ key: `reveal:${d.id}`, d, kind: "reveal" });
     }
+    const ready = sim.commissions.ready;
+    const rd = ready !== null ? s.dives.find((x) => x.id === ready) : undefined;
+    if (rd) due.push({ key: `commission:${rd.id}`, d: rd, kind: "commission" });
     // the first look only remembers what is already waiting, so opening the game never fires old alerts
     if (!sent.current) { sent.current = new Set(due.map((x) => x.key)); return; }
     const can = alerts && permission() === "granted" && document.hidden;
@@ -36,21 +40,26 @@ export function useVoyageAlerts(sim: Sim) {
       sent.current.add(x.key);
       if (!can) continue;
       const team = teamName(s, x.d.spire);
-      const title = x.kind === "decide" ? tl("{0} 遇到岔路，等你抉擇", { 0: team }) : tl("{0} 帶回了結果", { 0: team });
-      const body = x.kind === "decide"
-        ? tl("{0} · 揭曉前 1 分鐘截止。", { 0: destName(x.d) })
-        : tl("{0} · {1} ×{2}，回到遊戲收取。", { 0: destName(x.d), 1: OUTCOME[x.d.result!.outcome], 2: (x.d.result!.multX100 / 100).toFixed(2) });
+      const title = x.kind === "decide" ? tl("{0} 遇到岔路，等你抉擇", { 0: team })
+        : x.kind === "turn" ? tl("{0} 到了深潛的最深處", { 0: team })
+          : x.kind === "commission" ? tl("每日委託可以完成了")
+            : tl("{0} 帶回了結果", { 0: team });
+      const body = x.kind === "decide" ? tl("{0} · 揭曉前 1 分鐘截止。", { 0: destName(x.d) })
+        : x.kind === "turn" ? tl("{0} · 繼續深潛還是回航？揭曉前 1 分鐘截止。", { 0: destName(x.d) })
+          : x.kind === "commission" ? tl("{0} 的這一趟符合今天的委託，回到遊戲按一下就能完成。", { 0: destName(x.d) })
+            : tl("{0} · {1} ×{2}，回到遊戲收取。", { 0: destName(x.d), 1: OUTCOME[x.d.result!.outcome], 2: (x.d.result!.multX100 / 100).toFixed(2) });
       try {
         const n = new Notification(title, { body, tag: x.key, icon: "/lightdive/keeper-face.webp" });
         n.onclick = () => {
           try { sessionStorage.setItem("lightdive:v3:watch", String(x.d.id)); } catch {}
           window.focus();
-          if (window.location.hash !== "#dive") window.location.hash = "dive";
+          const view = x.kind === "commission" ? "commissions" : "dive";
+          if (window.location.hash !== `#${view}`) window.location.hash = view;
           n.close();
         };
       } catch {}
     }
-  }, [alerts, s, sim.now]);
+  }, [alerts, s, sim.now, sim.commissions.ready]);
 }
 
 /** The switch on the settings page: turning it on asks the browser for permission first. */
@@ -72,7 +81,7 @@ export function AlertsSwitch({ on, onChange }: { on: boolean; onChange: (v: bool
     <>
       <label className="v3-setswitch">
         <input type="checkbox" checked={checked} disabled={perm === "unsupported" || perm === "denied"} onChange={(e) => toggle(e.target.checked)} />
-        <span><b>{tl("抉擇與揭曉提醒")}</b><small>{tl("遊戲開著、但你在看別的分頁或視窗時，航行出現抉擇或結果揭曉，會跳出瀏覽器通知。關掉這個分頁後就不會再提醒。")}</small></span>
+        <span><b>{tl("抉擇與揭曉提醒")}</b><small>{tl("遊戲開著、但你在看別的分頁或視窗時，航行出現抉擇、深潛到了回航時刻、結果揭曉或委託可以完成，會跳出瀏覽器通知。關掉這個分頁後就不會再提醒。")}</small></span>
       </label>
       {perm === "denied" && <p className="v3-muted">{tl("瀏覽器封鎖了這個網站的通知。要開啟的話，請到瀏覽器的網站設定裡允許通知。")}</p>}
       {perm === "unsupported" && <p className="v3-muted">{tl("這個瀏覽器不支援通知。")}</p>}

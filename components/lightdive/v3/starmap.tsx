@@ -14,7 +14,8 @@ import {
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { deciding, passesOn, stabilityOf, teamInput, teamName, teamOut, turning, type Sim, type SimDive, type SimState } from "./sim";
-import { SupplyPrompt, type Departure } from "./provisions";
+import { SUPPLIES, SupplyPrompt, forgetSupply, rememberedSupply, type Departure } from "./provisions";
+import { commissionTitle, readyBonus } from "./commissions";
 import { VoyageLog } from "./voyage";
 import { flyLight } from "./kit";
 import { fxQuality } from "./settings";
@@ -103,15 +104,31 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const [notice, setNotice] = useState<string | null>(null);
   // Same team, same destination, one more ticket.
   const [supplyFor, setSupplyFor] = useState<Departure | null>(null);
+  // the revealed voyage meets the accepted commission: complete it from the reveal (it collects the result too)
+  const cm = sim.commissions;
+  const commissionHere = revealed && cm.active !== null && cm.ready === revealed.id ? {
+    title: commissionTitle(cm.list[cm.active]),
+    bonus: readyBonus(sim),
+    complete: async () => {
+      const id = revealed.id;
+      const e = await cm.complete();
+      setSeenUpTo(Math.max(seenUpTo, id));
+      if (e) { setNotice(ERROR[e] ?? e); return; }
+      play("claim");
+      say(tl("委託完成。這趟的光和委託的獎勵都進了「可領取」。"));
+    },
+  } : null;
   const again = async () => {
     if (!revealed) return;
     await closeReveal(true);
     // a deep dive again only when today's passes still allow one; otherwise the same trip at normal depth
     const deep = !!revealed.deep && passesOn(s, sim.today) + 2 <= DIVES_PER_DAY && passesOn(s, sim.today, revealed.spire) + 2 <= DIVES_PER_TEAM_PER_DAY;
-    setSupplyFor({ spire: revealed.spire, dest: revealed.dest, deep });
+    const g = { spire: revealed.spire, dest: revealed.dest, deep };
+    const kept = rememberedSupply();
+    if (kept !== null) await departAgain(g, kept);
+    else setSupplyFor(g);
   };
-  const departAgain = async (supply: number) => {
-    const g = supplyFor!;
+  const departAgain = async (g: Departure, supply: number) => {
     setSupplyFor(null);
     const r = await sim.dive(g.spire, g.dest, { supply, deep: g.deep });
     if (r.error) { setNotice(ERROR[r.error]); setCluster(DESTINATIONS[g.dest].cluster); setDest(g.dest); return; }
@@ -206,8 +223,8 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
         </div>
       </section>
       <LiveLog sim={sim} />
-      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
-      {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={departAgain} onClose={() => setSupplyFor(null)} />}
+      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
+      {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={(supply) => departAgain(supplyFor, supply)} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
   );
@@ -563,11 +580,25 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
       )}
       {error && <p className="v3-error" role="alert">{error}</p>}
       <p className="hud-note">{tl("失敗時沒有收益，也就不用付出發成本；但航程照樣耗損。")}</p>
-      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used + uses > DIVES_PER_DAY || teamUsed + uses > 3} onClick={() => setAsking(true)}>
+      <button type="button" className="hud-btn hud-btn--primary hud-btn--block v3-dest__go" disabled={!plan || used + uses > DIVES_PER_DAY || teamUsed + uses > 3} onClick={() => { const kept = rememberedSupply(); if (kept !== null) void go(kept); else setAsking(true); }}>
         <Rocket aria-hidden="true" />{used + uses > DIVES_PER_DAY ? (used >= DIVES_PER_DAY ? tl("今天的出發令用完了") : tl("出發令不夠深潛")) : teamUsed + uses > 3 ? tl("這支隊伍今天的次數不夠") : uses === 2 ? tl("深潛（用 2 張出發令）") : tl("出發（用 1 張出發令）")}
       </button>
+      <KeptSupply onChange={() => setAsking(true)} />
       {asking && pick !== null && <SupplyPrompt sim={sim} go={[{ spire: pick, dest: id, deep: canDeep && deep }]} onConfirm={go} onClose={() => setAsking(false)} />}
     </aside>
+  );
+}
+
+/** When today's supply is remembered: what it is, and a way to choose again. */
+export function KeptSupply({ onChange }: { onChange: () => void }) {
+  // the card only opens after a click in the browser, so reading the browser's storage here is safe
+  const [kept, setKept] = useState<number | null>(() => rememberedSupply());
+  if (kept === null) return null;
+  return (
+    <p className="v3-keptsupply">
+      {tl("今天自動帶：{0}", { 0: SUPPLIES[kept]?.name() ?? "" })}
+      <button type="button" onClick={() => { forgetSupply(); setKept(null); onChange(); }}>{tl("修改")}</button>
+    </p>
   );
 }
 
@@ -590,7 +621,9 @@ function Odds({ plan, base }: { plan: DivePlan; base?: number }) {
 // ---------------------------------------------------------------- voyage choice and reveal
 
 /** The reveal: a short scan while the signal "comes back", then the result with a counting multiplier. */
-function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void }) {
+type RevealCommission = { title: string; bonus: number | null; complete: () => Promise<void> };
+function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null }) {
+  const [completing, setCompleting] = useState(false);
   const r = d.result!;
   const dest = DESTINATIONS[d.dest];
   const reason = r.wear > 1 ? TEXTS.wearReasons[dest.cluster][d.id % Math.max(1, TEXTS.wearReasons[dest.cluster].length)] : null;
@@ -643,6 +676,14 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll }: { d
         </dl>
         <ShareButtons d={d} />
         {queued > 0 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-acceptall" onClick={onAll}>{tl("還有 {0} 趟等著收取 · 全部收取", { 0: queued })}</button>}
+        {commission && (
+          <div className="v3-reveal__commission">
+            <span>{tl("這趟符合今天的委託「{0}」", { 0: commission.title })}</span>
+            <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" disabled={completing} onClick={async (e) => { setCompleting(true); flyLight(e.currentTarget, ".hud-res--claim", "#c9ff55"); await commission.complete(); }}>
+              {commission.bonus !== null ? tl("收取並完成委託（+{0}）", { 0: fmt(commission.bonus) }) : tl("收取並完成委託")}
+            </button>
+          </div>
+        )}
         <div className="v3-reveal__actions">
           <button type="button" className="hud-btn hud-btn--gold" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onCollect(); }}>{r.outcome === "empty" ? tl("確認") : tl("收取 +{0}", { 0: fmt(d.reward ?? 0) })}</button>
           <button type="button" className="hud-btn hud-btn--primary" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onAgain(); }}><Rocket aria-hidden="true" />{tl("收取並同隊再出發")}</button>

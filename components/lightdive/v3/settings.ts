@@ -7,10 +7,13 @@
 import { useSyncExternalStore } from "react";
 
 export type FxQuality = "high" | "standard" | "low";
+/** Backgrounds: daylight art from 06:00 to 18:00 local time (the founder's light backgrounds, 10-18), or always one. */
+export type Sky = "auto" | "day" | "night";
 
 const FX_KEY = "lightdive:v3:fx";
 const CALM_KEY = "lightdive:v3:calm";
 const ALERTS_KEY = "lightdive:v3:alerts";
+const SKY_KEY = "lightdive:v3:sky";
 const EVENT = "lightdive:v3:settings";
 
 const read = (key: string) => {
@@ -32,7 +35,19 @@ export function calm(): boolean {
 /** Voyage alerts: the player turned them on (the browser's own permission is checked where they are sent). */
 export function alertsOn(): boolean { return read(ALERTS_KEY) === "1"; }
 
+export function skyPref(): Sky {
+  const v = read(SKY_KEY);
+  return v === "day" || v === "night" ? v : "auto";
+}
+/** Whether the daylight backgrounds show now. */
+export function isDaylight(pref: Sky = skyPref(), at = new Date()): boolean {
+  if (pref !== "auto") return pref === "day";
+  const h = at.getHours();
+  return h >= 6 && h < 18;
+}
+
 export function setFxQuality(v: FxQuality) { write(FX_KEY, v); }
+export function setSky(v: Sky) { write(SKY_KEY, v); }
 export function setAlerts(v: boolean) { write(ALERTS_KEY, v ? "1" : "0"); }
 export function setCalm(v: boolean) { write(CALM_KEY, v ? "1" : "0"); }
 
@@ -47,11 +62,11 @@ function subscribe(cb: () => void) {
   return () => { window.removeEventListener(EVENT, cb); window.removeEventListener("storage", cb); };
 }
 
-const snapshot = () => `${fxQuality()}|${calm() ? 1 : 0}|${alertsOn() ? 1 : 0}`;
+const snapshot = () => `${fxQuality()}|${calm() ? 1 : 0}|${alertsOn() ? 1 : 0}|${skyPref()}`;
 
 /** The current settings; re-renders when any of them changes. */
-export function useSettings(): { fx: FxQuality; calm: boolean; alerts: boolean } {
-  const s = useSyncExternalStore(subscribe, snapshot, () => "high|0|0");
-  const [fx, c, a] = s.split("|");
-  return { fx: fx as FxQuality, calm: c === "1", alerts: a === "1" };
+export function useSettings(): { fx: FxQuality; calm: boolean; alerts: boolean; sky: Sky } {
+  const s = useSyncExternalStore(subscribe, snapshot, () => "high|0|0|auto");
+  const [fx, c, a, k] = s.split("|");
+  return { fx: fx as FxQuality, calm: c === "1", alerts: a === "1", sky: k as Sky };
 }

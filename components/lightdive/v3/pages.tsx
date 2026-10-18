@@ -4,18 +4,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import {
-  DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, DOCK_DAYS, MAX_TEAMS, basePoints, claimFee, clusterRange, planDive, teamPower,
+  DEEP_MIN_CLUSTER, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, DOCK_DAYS, MAX_TEAMS, basePoints, claimFee, clusterRange, planDive, teamPower,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { CLUSTER_IMAGES, GALAXY_IMAGE, ICON_CREDIT, MUSIC, SFX_CREDIT } from "@/lib/lightdive-v3/credits";
+import { isDaylight, useSettings } from "./settings";
+
+const DAY_OBSERVATORY = "/lightdive/bg/light-bg-observatory.webp";
 import { GameIcon } from "../game/icon";
 import { PageHead, Panel } from "../game/hud";
-import { dayOf, deciding, divesOn, passesOn, owned, teamInput, teamName, teamOut, type Sim, type SimNft, type SimState } from "./sim";
+import { dayOf, deciding, passesOn, owned, teamInput, teamName, teamOut, turning, type Sim, type SimNft, type SimState } from "./sim";
 import type { IconName } from "../game/icons";
 import {
   CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt, outcomeName,
 } from "./copy";
-import { gap, tl } from "@/lib/lightdive-v3/i18n";
+import { gap, plurals, tl } from "@/lib/lightdive-v3/i18n";
 import { CommissionsBrief } from "./commissions";
 
 export type View = "lobby" | "dive" | "commissions" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
@@ -43,6 +46,20 @@ export function rovynPool(sim: Sim): readonly string[] {
   if (s.credit > 0.5) return claimFee((sim.now - s.lastClaimAt) / DAY) > 0 ? r.claim : r.claim.filter((l) => !l.includes("{天}") && !l.includes("{費}"));
   return r.idle;
 }
+
+/** Rovyn's pose for the moment (the founder's four poses, 10-18): bright after a great result, leaning in when
+ *  something needs the player soon, quiet when the day is done or a voyage came back empty, otherwise guiding. */
+export type RovynPose = "guide" | "bright" | "warn" | "quiet";
+export function rovynPose(sim: Sim): RovynPose {
+  const s = sim.state!;
+  const recent = s.dives.filter((d) => d.result && sim.now - d.revealAt < 15 * 60_000).sort((a, b) => b.revealAt - a.revealAt)[0];
+  if (recent && (recent.result!.outcome === "great" || recent.result!.outcome === "legend")) return "bright";
+  if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt) || s.dives.some((d) => deciding(d, sim.now) && !d.choice) || s.dives.some((d) => turning(d, sim.now))) return "warn";
+  if (recent && recent.result!.outcome === "empty") return "quiet";
+  if (passesOn(s, sim.today) >= DIVES_PER_DAY && !s.dives.some((d) => !d.result || d.pending)) return "quiet";
+  return "guide";
+}
+export const rovynImage = (pose: RovynPose) => `/lightdive/npc/rovyn-pose-${pose}.webp`;
 
 /** Types a line out letter by letter, the way a signal comes in. */
 function Typed({ text }: { text: string }) {
@@ -85,11 +102,12 @@ export function Rovyn({ sim, line, onNext }: { sim: Sim; line: string; onNext: (
       費2: 0,
     };
   }, [s, sim.now, sim.today, sim.sky, best]);
-  const text = line.replace(/\{([^}]+)\}/g, (m, k) => (k in values ? String(values[k as keyof typeof values]) : m));
+  const text = plurals(line.replace(/\{([^}]+)\}/g, (m, k) => (k in values ? String(values[k as keyof typeof values]) : m)));
+  const pose = rovynPose(sim);
   return (
     <button type="button" className="v3-rovyn" onClick={onNext} aria-label={tl("點一下換一句")}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/lightdive/keeper-portrait.webp" alt="" />
+      <img key={pose} className={`is-${pose}`} src={rovynImage(pose)} alt="" />
       <span className="v3-rovyn__speech">
         <b>{tl("訊號守望者・Rovyn")}</b>
         <Typed text={text} />
@@ -106,9 +124,11 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
   const date = new Date(sim.today * DAY).toISOString().slice(0, 10);
   const best = Math.max(0, ...s.teams.filter((t) => t.seekers.length).map((t) => teamPower(teamInput(s, t))));
   const items = todoItems(sim, go);
+  const { sky } = useSettings();
+  const day = isDaylight(sky, new Date(sim.now));
   return (
     <div className="hud-page v3-lobby">
-      <section className="hud-panel hud-hero v3-hero" style={{ ["--photo" as string]: `url(${GALAXY_IMAGE.src})` }}>
+      <section className={`hud-panel hud-hero v3-hero${day ? " is-day" : ""}`} style={{ ["--photo" as string]: `url(${day ? DAY_OBSERVATORY : GALAXY_IMAGE.src})` }}>
         <div className="hud-hero__copy">
           <TodayRoute sim={sim} go={go} date={date} />
         </div>
@@ -247,10 +267,10 @@ const STAGES = [
  *  New players also see the four-step path. Facts only: no amounts of RVYN. */
 function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: string }) {
   const s = sim.state!;
-  const today = divesOn(s, sim.today);
-  const left = Math.max(0, DIVES_PER_DAY - today.length);
+  // Dive Passes, not dives: a deep dive uses two
+  const left = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   const teams = s.teams.filter((t) => t.seekers.length).map((t) => ({ t, input: teamInput(s, t), power: teamPower(teamInput(s, t)) }));
-  const ready = teams.filter((x) => !teamOut(s, x.t.spire) && today.filter((d) => d.spire === x.t.spire).length < DIVES_PER_TEAM_PER_DAY);
+  const ready = teams.filter((x) => !teamOut(s, x.t.spire) && passesOn(s, sim.today, x.t.spire) < DIVES_PER_TEAM_PER_DAY);
   const team = (ready.length ? ready : teams).sort((a, b) => b.power - a.power)[0];
   const reach = team ? DESTINATIONS.filter((d) => team.power >= d.threshold) : [];
   const pick = team && reach.length
@@ -338,6 +358,8 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
   const light = sim.sky.lights[d.id];
   const attuned = team.t.seekers.map((id) => s.nfts.find((n) => n.id === id)).filter((n) => n && n.trait === light).length;
   const ev = pick.plan.event;
+  // a deep dive fits today: two passes left for the wallet and the team, and the pick is in cluster ③ or deeper
+  const deepOk = d.cluster >= DEEP_MIN_CLUSTER && left >= 2 && passesOn(s, sim.today, team.t.spire) + 2 <= DIVES_PER_TEAM_PER_DAY;
   return (
     <div className="v3-route-hero" style={{ ["--hue" as string]: CLUSTER_HUE[d.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
       <span className="hud-kicker"><GameIcon name="signal" />{date} {tl("· 今日航線建議")}</span>
@@ -350,6 +372,7 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
         <li className="is-light"><i />{attuned ? tl("今天的光：{0} · 你有 {1} 位探索者同頻", { 0: LIGHT[light], 1: attuned }) : tl("今天的光：{0}", { 0: LIGHT[light] })}</li>
         {ev && <li className="is-event" style={{ ["--ec" as string]: STAR[ev].color }}><i />{tl("星象：{0} · {1}", { 0: STAR[ev].name, 1: STAR[ev].effect })}</li>}
         <li className="is-reach"><i />{tl("門檻 {0} · 你的隊伍高出 {1}", { 0: d.threshold, 1: team.power - d.threshold })}</li>
+        {deepOk && <li className="is-deep"><i />{tl("也可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2（在目的地卡選「深潛」）")}</li>}
       </ul>
       <div className="v3-route-hero__go">
         <button type="button" className="hud-btn hud-btn--primary v3-route-hero__btn" onClick={open}><GameIcon name="expedition" />{left ? tl("前往潛光") : tl("看今天的航行")}</button>
@@ -446,30 +469,17 @@ function Forecast({ sim, best, go }: { sim: Sim; best: number; go: (v: View) => 
 // ---------------------------------------------------------------- 素材授權
 
 export function Credits() {
-  const images = [GALAXY_IMAGE, ...CLUSTER_IMAGES];
   return (
     <div className="hud-page">
-      <PageHead kicker={tl("素材授權")} icon="guide" title={tl("素材授權")} lead={tl("遊戲裡使用的第三方影像、音樂、音效與圖示，以及它們要求的標註。")} />
-      <Panel title={tl("太空影像（ESA/Hubble，CC BY 4.0）")} index="01" icon="crystal">
-        <ul className="v3-credits">
-          {images.map((i) => (
-            <li key={i.src}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={i.src} alt="" loading="lazy" />
-              <span><b>{i.title}</b><small>Credit: {i.credit}</small><a href={i.url} target="_blank" rel="noreferrer">{i.url}</a></span>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-      <Panel title={tl("音樂（CC BY 4.0）")} index="02" icon="signal">
+      <PageHead kicker={tl("素材授權")} icon="guide" title={tl("素材授權")} lead={tl("遊戲裡使用的第三方音樂、音效與圖示，以及它們要求的標註。卡面、角色、場景與星圖都是本遊戲的原創美術。")} />
+      <Panel title={tl("音樂（CC BY 4.0）")} index="01" icon="signal">
         <ul className="v3-credits is-text">
           {Object.values(MUSIC).map((m) => <li key={m.src}><span><b>{m.title}</b><small>{m.credit}</small></span></li>)}
         </ul>
       </Panel>
-      <Panel title={tl("音效與圖示")} index="03" icon="voyage">
+      <Panel title={tl("音效與圖示")} index="02" icon="voyage">
         <p className="hud-dim">{SFX_CREDIT}</p>
         <p className="hud-dim">{ICON_CREDIT}</p>
-        <p className="hud-note">{tl("影像的使用不代表 ESA、NASA 或任何機構為本遊戲背書。")}</p>
       </Panel>
     </div>
   );

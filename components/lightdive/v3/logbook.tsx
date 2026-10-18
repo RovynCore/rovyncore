@@ -30,6 +30,13 @@ export type Records = {
   legends: number;
   greats: number;
   streak: number;
+  // v3.1
+  deepDives: number;
+  deepLegends: number;
+  turnedBack: number;
+  maxBond: number;
+  supplyDays: number; // longest run of days with a supply on every departure
+  commissions: number;
 };
 
 export function recordsOf(sim: Sim): Records {
@@ -40,6 +47,11 @@ export function recordsOf(sim: Sim): Records {
   // consecutive days with a departure, ending today (or yesterday, while today has none yet)
   let streak = 0;
   for (let day = days.has(sim.today) ? sim.today : sim.today - 1; days.has(day); day--) streak++;
+  // days on which every departure carried a supply, and the longest run of them
+  const supplied = new Set([...days].filter((day) => s.dives.filter((d) => dayOf(d.at) === day).every((d) => (d.supply ?? 0) > 0)));
+  let supplyDays = 0;
+  for (const day of supplied) { let n = 0; while (supplied.has(day - n)) n++; supplyDays = Math.max(supplyDays, n); }
+  const bit3 = (m: number) => (m & 1) + ((m >> 1) & 1) + ((m >> 2) & 1);
   return {
     dives: list.length,
     visited,
@@ -49,6 +61,12 @@ export function recordsOf(sim: Sim): Records {
     legends: list.filter((d) => d.result!.outcome === "legend").length,
     greats: list.filter((d) => d.result!.outcome === "great" || d.result!.outcome === "legend").length,
     streak,
+    deepDives: list.filter((d) => d.deep).length,
+    deepLegends: list.filter((d) => d.deep && !d.turnedBack && d.result!.outcome === "legend").length,
+    turnedBack: list.filter((d) => d.turnedBack).length,
+    maxBond: Math.max(0, ...s.teams.map((t) => t.bond ?? 0), ...s.dives.map((d) => d.bond ?? 0)),
+    supplyDays,
+    commissions: s.commissionsDone ?? Object.values(s.commissionMarks ?? {}).reduce((a, m) => a + bit3(m), 0),
   };
 }
 
@@ -76,6 +94,14 @@ function titlesOf(r: Records): Title[] {
     { name: tl("傳說帶回者"), how: tl("帶回一次傳說"), got: r.legends > 0 },
     { name: tl("恆光航者"), how: tl("連續 7 天出航"), got: r.streak >= 7 },
     { name: tl("二十四地"), how: tl("二十四個目的地都去過"), got: r.places >= 24 },
+    // v3.1
+    { name: tl("深淵初探"), how: tl("完成第一趟深潛"), got: r.deepDives > 0 },
+    { name: tl("深淵帶光者"), how: tl("深潛帶回一次傳說"), got: r.deepLegends > 0 },
+    { name: tl("知進退"), how: tl("深潛時選擇回航一次"), got: r.turnedBack > 0 },
+    { name: tl("同舟"), how: tl("一支隊伍的默契達到 5"), got: r.maxBond >= 5 },
+    { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7 },
+    { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10 },
+    { name: tl("老練受託人"), how: tl("完成 50 個每日委託"), got: r.commissions >= 50 },
   ];
 }
 

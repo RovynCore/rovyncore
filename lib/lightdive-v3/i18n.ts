@@ -40,7 +40,20 @@ export function tl(source: string, values?: Record<string, unknown>, locale: Loc
     if (hit) out = hit;
     else if (process.env.NODE_ENV !== "production" && /[\u4e00-\u9fff]/.test(source)) missing.add(source);
   }
-  return values ? out.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m)) : out;
+  if (values) out = out.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));
+  // English rows write countable nouns as "pass(es)"; once every number is in, pick the right form
+  return locale === "en" && !/\{[^}]+\}/.test(out) ? plurals(out) : out;
+}
+
+/** "1 Dive Pass(es)" → "1 Dive Pass", "3 day(s)" → "3 days"; with no number before it, the plural. Up to two words
+ *  may sit between the number and the noun ("2 seeker summon(s)"). Callers that fill their own placeholders after
+ *  tl() (Rovyn's lines) run this again once the numbers are in. */
+export function plurals(text: string): string {
+  if (!text.includes("(")) return text;
+  return text
+    .replace(/(\d[\d,]*(?:\.\d+)?)((?:\s+[A-Za-z]+){0,2}?\s+)([A-Za-z]+)\((e?s)\)/g, (_m, n: string, mid: string, noun: string, suffix: string) =>
+      `${n}${mid}${noun}${n === "1" ? "" : suffix}`)
+    .replace(/([A-Za-z]+)\((e?s)\)/g, "$1$2");
 }
 
 /** Strings asked for in a language that has no translation yet (development only). */

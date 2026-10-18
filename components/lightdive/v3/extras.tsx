@@ -10,8 +10,8 @@ import {
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { calm } from "./settings";
 import { divesOn, passesOn, teamInput, teamName, teamOut, type Sim, type SimDive } from "./sim";
-import { CIRCLED, ERROR, OUTCOME, OUTCOME_TONE, SLOT, STAR } from "./copy";
-import { SupplyPrompt } from "./provisions";
+import { CIRCLED, ERROR, OUTCOME, OUTCOME_TONE, SLOT, STAR, outcomeName } from "./copy";
+import { SupplyPrompt, rememberedSupply } from "./provisions";
 import { tl } from "@/lib/lightdive-v3/i18n";
 
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
@@ -87,7 +87,7 @@ export function Dispatch({ sim, onClose, onDeparted }: { sim: Sim; onClose: () =
         </ul>
         {msg && <p className="v3-error" role="alert">{msg}</p>}
         <p className="hud-note">{tl("正式版會把這幾次出發合成一筆交易，只需要簽一次。")}</p>
-        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={() => setAsking(true)}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
+        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={!chosen.length} onClick={() => { const kept = rememberedSupply(); if (kept !== null) void go(kept); else setAsking(true); }}><Rocket aria-hidden="true" />{tl("全部出發（{0} 張出發令）", { 0: chosen.length })}</button>
         {asking && <SupplyPrompt sim={sim} go={chosen.map(([spire, dest]) => ({ spire: Number(spire), dest }))} onConfirm={go} onClose={() => setAsking(false)} />}
       </div>
     </div>
@@ -137,27 +137,24 @@ async function drawCard(d: SimDive): Promise<HTMLCanvasElement> {
   c.width = 1200; c.height = 630;
   const g = c.getContext("2d")!;
   const tone = OUTCOME_TONE[r.outcome];
-  const bg = g.createRadialGradient(840, 300, 40, 840, 300, 700);
-  bg.addColorStop(0, "#1a2a10"); bg.addColorStop(0.5, "#07100b"); bg.addColorStop(1, "#020405");
-  g.fillStyle = bg; g.fillRect(0, 0, 1200, 630);
-  for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.6})`; g.fillRect(Math.random() * 1200, Math.random() * 630, 1.5, 1.5); }
-  const glow = g.createRadialGradient(900, 310, 0, 900, 310, 260);
-  glow.addColorStop(0, tone); glow.addColorStop(0.25, `${tone}88`); glow.addColorStop(1, "transparent");
-  g.fillStyle = glow; g.fillRect(600, 0, 600, 630);
-  try {
-    const img = new Image();
-    img.src = "/lightdive/keeper-portrait.webp";
-    await img.decode();
-    g.globalAlpha = 0.9;
-    g.drawImage(img, 820, 120, 330, 420);
-    g.globalAlpha = 1;
-  } catch {}
+  const load = async (src: string) => { const img = new Image(); img.src = src; await img.decode(); return img; };
+  // the founder's share background (10-18): the left 55% stays clear for the text, Rovyn stands on the right
+  g.fillStyle = "#020405"; g.fillRect(0, 0, 1200, 630);
+  try { g.drawImage(await load("/lightdive/share-bg.webp"), 0, 0, 1200, 630); } catch {}
+  const shade = g.createLinearGradient(0, 0, 700, 0);
+  shade.addColorStop(0, "rgba(2,4,5,0.82)"); shade.addColorStop(1, "rgba(2,4,5,0)");
+  g.fillStyle = shade; g.fillRect(0, 0, 700, 630);
+  const glow = g.createRadialGradient(930, 330, 0, 930, 330, 280);
+  glow.addColorStop(0, `${tone}aa`); glow.addColorStop(0.3, `${tone}44`); glow.addColorStop(1, "transparent");
+  g.fillStyle = glow; g.fillRect(620, 0, 580, 630);
+  const pose = d.turnedBack ? "guide" : r.outcome === "empty" ? "quiet" : r.outcome === "great" || r.outcome === "legend" || r.outcome === "good" ? "bright" : "guide";
+  try { g.drawImage(await load(`/lightdive/npc/rovyn-pose-${pose}.webp`), 760, 60, 470, 574); } catch {}
   g.fillStyle = "#c9ff55"; g.font = "700 26px 'Chakra Petch', sans-serif";
   g.fillText(tl("LIGHTDIVE · 潛光遠征"), 70, 90);
   g.fillStyle = "#a3b39c"; g.font = "500 30px sans-serif";
   g.fillText(`${CIRCLED[DESTINATIONS[d.dest].cluster]} ${TEXTS.clusters[DESTINATIONS[d.dest].cluster].name} · ${destName(d.dest)}`, 70, 160);
   g.fillStyle = tone; g.font = "900 96px sans-serif";
-  g.fillText(OUTCOME[r.outcome], 70, 290);
+  g.fillText(outcomeName(d), 70, 290);
   g.font = "700 120px 'Chakra Petch', sans-serif";
   g.fillText(`×${(r.multX100 / 100).toFixed(2)}`, 70, 420);
   g.fillStyle = "#eaf3e1"; g.font = "500 28px sans-serif";
@@ -181,7 +178,7 @@ export function ShareButtons({ d }: { d: SimDive }) {
     } finally { setBusy(false); }
   };
   const text = tl("我在《潛光遠征》的「{0}」帶回了{1} ×{2}！", { 0: destName(d.dest), 1: OUTCOME[d.result!.outcome], 2: (d.result!.multX100 / 100).toFixed(2) });
-  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent("https://rovyncore.com/game")}`;
+  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent("https://www.rovyncore.com/game/lightdive")}`;
   return (
     <div className="v3-share">
       <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={download} disabled={busy}><Download aria-hidden="true" />{tl("下載分享圖")}</button>

@@ -1,30 +1,33 @@
 "use client";
 
-// Summon: three banners stacked top to bottom (spire, prism, seeker), then a full-screen pull: the circle charges
-// while the signal comes in, a pillar of light in the colour of the best card, and the cards dealt face down.
+// Summon: three banners stacked top to bottom (spire, prism, seeker), then a full-screen pull (redone 10-19):
+// - the kind's card back floats in the summoning circle while the signal comes in;
+// - the rarity tell: the back's rim light climbs through the tiers to the best card's colour, then a pillar of light;
+// - the cards are dealt face down (the founder's backs); a 稜光 card gathers light before it turns, a 曜核 card rises
+//   to the centre in a showcase; both are full-art foil cards.
 import { useEffect, useRef, useState } from "react";
 import type { SummonFx } from "./summon-fx";
 import { Sparkles } from "lucide-react";
 import { DESTINATIONS, DIVES_PER_DAY, ODDS_BP, POWER, PRICE, PRICE_CEILING, PRICE_FLOOR, RENEW_SHARE, VOYAGES, type Kind } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { NftArt } from "../game/art";
+import { CardBackFace, CardFace, Foil, backImage } from "./cards";
 import { PageHead } from "../game/hud";
 import { play } from "./audio";
 import { SummonFeed } from "./feeds";
 import { SummonHistory } from "./history";
-import { fxQuality } from "./settings";
+import { calm, fxQuality } from "./settings";
 import { owned, type Sim, type SimNft } from "./sim";
 import { RarityGem, RarityTag, Trait, Voyages, traitName } from "./kit";
 import { NftDetail } from "./assets";
 import { CardSupply } from "./supply";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, clock, fmt } from "./copy";
-import { gap, tl, localized } from "@/lib/lightdive-v3/i18n";
+import { tl, localized } from "@/lib/lightdive-v3/i18n";
 import type { View } from "./pages";
 
-/** Banner art per kind. Drop the final images into public/lightdive/summon/ and set the paths here;
- *  until then each banner is composed from its top cards over a Hubble photo. */
-const BANNER_ART: Record<Kind, string | null> = { 0: null, 1: null, 2: null };
-const BANNER_PHOTO: Record<Kind, string> = { 0: "/lightdive/space/galaxy.jpg", 1: "/lightdive/space/cluster-3.jpg", 2: "/lightdive/space/cluster-2.jpg" };
+/** Banner art per kind (the founder's paintings, 10-18); the composed card view stays as the fallback. */
+const BANNER_ART: Record<Kind, string | null> = { 0: "/lightdive/banner/spire.webp", 1: "/lightdive/banner/prism.webp", 2: "/lightdive/banner/seeker.webp" };
+const BANNER_PHOTO: Record<Kind, string> = { 0: "/lightdive/space/galaxy.webp", 1: "/lightdive/space/cluster-3.webp", 2: "/lightdive/space/cluster-2.webp" };
 const ACCENT: Record<Kind, string> = { 0: "#f0c766", 1: "#7fd3ff", 2: "#c9ff55" };
 const TITLE: Record<Kind, [string, string]> = localized({
   0: ["光塔召喚", "SPIRE"],
@@ -180,6 +183,10 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
   const [open, setOpen] = useState<Set<number>>(new Set());
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState<number | null>(null);
+  // a 稜光 or 曜核 card gathers light for a moment before it turns; a 曜核 card then rises into the showcase
+  const [charging, setCharging] = useState<Set<number>>(new Set());
+  const [showcase, setShowcase] = useState<SimNft | null>(null);
+  const shown3 = useRef(new Set<number>());
   // the tier climb after the signal arrives: 微光 → … → best, one step every STEP ms (the rarity tell)
   const [step, setStep] = useState(0);
   const climbed = ready && step >= best;
@@ -225,7 +232,7 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
     return () => timers.forEach((x) => window.clearTimeout(x));
   }, [ready, best]);
 
-  const flip = (n: SimNft) => {
+  const turn = (n: SimNft) => {
     setOpen((o) => (o.has(n.id) ? o : new Set(o).add(n.id)));
     setFocus(n.id);
     play(n.rarity >= 4 ? "legend" : n.rarity >= 3 ? "great" : n.rarity >= 2 ? "good" : "click");
@@ -233,13 +240,29 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
       setShake(true);
       window.setTimeout(() => setShake(false), 520);
     }
+    if (n.rarity >= 4 && !shown3.current.has(n.id)) {
+      shown3.current.add(n.id);
+      window.setTimeout(() => setShowcase(n), 380);
+    }
+  };
+  const flip = (n: SimNft) => {
+    if (open.has(n.id) || charging.has(n.id)) return;
+    if (n.rarity < 3 || calm()) { turn(n); return; }
+    setCharging((c) => new Set(c).add(n.id));
+    play("scan");
+    window.setTimeout(() => {
+      setCharging((c) => { const x = new Set(c); x.delete(n.id); return x; });
+      turn(n);
+    }, n.rarity >= 4 ? 1100 : 700);
   };
   const flipAll = () => {
     const rest = cards.filter((n) => !open.has(n.id));
-    rest.forEach((n, i) => window.setTimeout(() => flip(n), i * 220));
+    // the plain cards turn first, the rare ones last, so the best moment comes at the end
+    const order = [...rest].sort((a, b) => a.rarity - b.rarity);
+    order.forEach((n, i) => window.setTimeout(() => flip(n), i * 220));
     // when everything is open, show the best card of the pull
     const top = [...cards].sort((a, b) => b.rarity - a.rarity || b.power - a.power)[0];
-    if (top) window.setTimeout(() => setFocus(top.id), rest.length * 220 + 60);
+    if (top) window.setTimeout(() => setFocus(top.id), rest.length * 220 + 1200);
   };
   const focused = cards.find((n) => n.id === focus && open.has(n.id));
   const allOpen = cards.length > 0 && cards.every((n) => open.has(n.id));
@@ -274,6 +297,10 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
               <circle cx="100" cy="100" r="92" className="v3-pull__bar" style={{ strokeDashoffset: 578 * (1 - progress) }} />
             </svg>
             <span className="v3-pull__core" />
+            <span className="v3-pull__back" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={backImage(pull.kind)} alt="" draggable={false} />
+            </span>
           </div>
           {phaseName === "beam" && climbed && <span className="v3-pull__pillar" aria-hidden="true" />}
           <div className="v3-pull__text">
@@ -292,6 +319,16 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
           {phaseName === "charge" && <button type="button" className="hud-btn hud-btn--ghost" onClick={onHide}>{tl("在背景等待")}</button>}
         </div>
       )}
+      {showcase && (
+        <div className="v3-showcase" role="dialog" aria-label={tl("{0}{1} #{2}", { 0: TIER[showcase.rarity], 1: KIND[showcase.kind], 2: showcase.id })} onClick={() => setShowcase(null)}>
+          <i className="v3-showcase__rays" aria-hidden="true" />
+          <div className="v3-showcase__card" onClick={(e) => e.stopPropagation()}>
+            <Foil rarity={showcase.rarity}><CardFace n={showcase} size="lg" /></Foil>
+          </div>
+          <p className="v3-showcase__line">{tl("曜核現身。這張卡的光，整片星圖都看得見。")}</p>
+          <button type="button" className="hud-btn hud-btn--primary" onClick={() => setShowcase(null)}>{tl("收下")}</button>
+        </div>
+      )}
       {phaseName === "cards" && (
         <div className="v3-pull__deal">
           <header>
@@ -301,15 +338,11 @@ function PullScreen({ sim, pull, next, onInspect, onHide, onDone, onAgain }: { s
           <div className="v3-pull__table">
           <div className={`v3-pull__grid n${Math.min(cards.length, 10)}`}>
             {cards.map((n, i) => (
-              <button key={n.id} type="button" className={`v3-pcard r${n.rarity}${open.has(n.id) ? " is-open" : ""}${focused?.id === n.id ? " is-focus" : ""}`} style={{ ["--rc" as string]: RARITY_COLOR[n.rarity], ["--i" as string]: i, ["--col" as string]: cards.length >= 5 ? i % 5 : i - (cards.length - 1) / 2 + 2 }} onClick={() => (open.has(n.id) ? setFocus(n.id) : flip(n))} aria-pressed={open.has(n.id) ? focused?.id === n.id : undefined} aria-label={open.has(n.id) ? tl("{0}{1} #{2}，戰力 {3}", { 0: TIER[n.rarity], 1: KIND[n.kind], 2: n.id, 3: n.power }) : tl("翻開這張卡")}>
+              <button key={n.id} type="button" className={`v3-pcard r${n.rarity}${open.has(n.id) ? " is-open" : ""}${charging.has(n.id) ? " is-charging" : ""}${focused?.id === n.id ? " is-focus" : ""}`} style={{ ["--rc" as string]: RARITY_COLOR[n.rarity], ["--i" as string]: i, ["--col" as string]: cards.length >= 5 ? i % 5 : i - (cards.length - 1) / 2 + 2 }} onClick={() => (open.has(n.id) ? setFocus(n.id) : flip(n))} aria-pressed={open.has(n.id) ? focused?.id === n.id : undefined} aria-label={open.has(n.id) ? tl("{0}{1} #{2}，戰力 {3}", { 0: TIER[n.rarity], 1: KIND[n.kind], 2: n.id, 3: n.power }) : tl("翻開這張卡")}>
                 <span className="v3-pcard__inner">
-                  <span className={`v3-pcard__back h${n.rarity}`}><i className="v3-pcard__seal" aria-hidden="true" /><CardBack /><small>LIGHTDIVE</small></span>
+                  <span className={`v3-pcard__back h${n.rarity}`}><CardBackFace kind={n.kind} hint={n.rarity} /></span>
                   <span className="v3-pcard__front">
-                    <span className="v3-pcard__top"><RarityTag rarity={n.rarity} compact /><small>#{n.id}</small></span>
-                    <span className="v3-pcard__art"><NftArt a={{ kind: n.kind, rarity: n.rarity, trait: n.trait, variant: 0 }} /></span>
-                    <b className="v3-pcard__name">{TIER[n.rarity]}{gap()}{KIND[n.kind]}</b>
-                    <span className="v3-pcard__pw"><small>{tl("戰力")}</small><b>{n.power}</b></span>
-                    <Trait n={n} />
+                    <Foil rarity={n.rarity} tilt={false}><CardFace n={n} size="sm" /></Foil>
                   </span>
                 </span>
                 {open.has(n.id) && <i className="v3-pcard__burst" aria-hidden="true" />}
@@ -395,27 +428,5 @@ function ResultPanel({ sim, n, onInspect }: { sim: Sim; n: SimNft; onInspect: ()
       </dl>
       <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={onInspect}>{tl("完整資料（含鏈上資料）")}</button>
     </div>
-  );
-}
-
-/** The back of a summoned card: a double frame with corner diamonds and the summon emblem (circle, hexagram, core). */
-function CardBack() {
-  const hex = (r: number, rot: number) => Array.from({ length: 3 }, (_, i) => {
-    const a = rot + (i * 2 * Math.PI) / 3;
-    return `${50 + Math.cos(a) * r},${50 + Math.sin(a) * r}`;
-  }).join(" ");
-  return (
-    <svg className="v3-cardback" viewBox="0 0 100 100" aria-hidden="true">
-      <circle cx="50" cy="50" r="34" className="is-ring" />
-      <circle cx="50" cy="50" r="29" className="is-thin" />
-      {Array.from({ length: 24 }, (_, i) => {
-        const a = (i / 24) * Math.PI * 2, l = i % 6 === 0 ? 5 : 2.5;
-        return <line key={i} x1={50 + Math.cos(a) * 34} y1={50 + Math.sin(a) * 34} x2={50 + Math.cos(a) * (34 - l)} y2={50 + Math.sin(a) * (34 - l)} className="is-tick" />;
-      })}
-      <polygon points={hex(27, -Math.PI / 2)} className="is-star" />
-      <polygon points={hex(27, Math.PI / 2)} className="is-star" />
-      <circle cx="50" cy="50" r="10" className="is-thin" />
-      <circle cx="50" cy="50" r="5" className="is-core" />
-    </svg>
   );
 }

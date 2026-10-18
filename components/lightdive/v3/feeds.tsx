@@ -62,7 +62,10 @@ const DU_LINES = localized([
   "光塵餅是免費的。來過碼頭的人，不能空著手走。",
 ]);
 
-export function DockKeeper({ sim }: { sim: Sim }) {
+/** 渡's picture for the market tab (the founder's art, 10-18): on the bench, trimming the lamp, or reading the ledger. */
+const DU_POSE = { shop: "du-portrait", mine: "du-pose-lamp", sales: "du-pose-ledger" } as const;
+
+export function DockKeeper({ sim, tab = "shop" }: { sim: Sim; tab?: keyof typeof DU_POSE }) {
   const [i, setI] = useState(0);
   const today = sim.market;
   const listed = today.filter((l) => l.listedAt <= sim.now).length;
@@ -70,7 +73,8 @@ export function DockKeeper({ sim }: { sim: Sim }) {
   return (
     <aside className="v3-feed v3-keeper" aria-label={tl("碼頭看燈人・渡")}>
       <button type="button" className="v3-keeper__talk" onClick={() => setI((x) => x + 1)} aria-label={tl("點一下換一句")}>
-        <span className="v3-keeper__lamp" aria-hidden="true"><i /></span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img key={tab} className="v3-keeper__art" src={`/lightdive/npc/${DU_POSE[tab]}.webp`} alt="" />
         <span>
           <b>{tl("碼頭看燈人・渡")}</b>
           <q>{DU_LINES[i % DU_LINES.length]}</q>

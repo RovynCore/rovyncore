@@ -157,7 +157,7 @@ UTC 00:00 重置|reset at 00:00 UTC|UTC 00:00 重置|UTC 00:00 초기화
 已套用建議：特效品質「{0}」。|Suggestion applied: effects quality “{0}”.|已套用建议：特效品质「{0}」。|권장값 적용: 효과 품질 '{0}'.
 語言|Language|语言|언어
 製作中|Coming soon|制作中|준비 중
-遊戲文字正在翻譯成英文、簡體中文和韓文，完成後就能在這裡切換。|The game is being translated into English, Simplified Chinese and Korean; you can switch here once each is done.|游戏文字正在翻译成英文、简体中文和韩文，完成后就能在这里切换。|게임을 영어, 중국어 간체, 한국어로 번역 중이며 완료되면 여기서 바꿀 수 있습니다.
+遊戲有繁體中文、English、简体中文、한국어四種語言，和網站上方的語言設定同步。|The game comes in four languages: 繁體中文, English, 简体中文 and 한국어. It follows the language picker at the top of the site.|游戏有繁體中文、English、简体中文、한국어四种语言，和网站上方的语言设置同步。|게임은 繁體中文, English, 简体中文, 한국어 네 가지 언어를 지원하며 사이트 상단의 언어 설정을 따릅니다.
 重新看新手引導|Replay the tutorial|重新看新手引导|튜토리얼 다시 보기
 下次打開潛光頁時，從星圖開始重新帶一次。|The next time you open the Dive page, it starts again from the star map.|下次打开潜光页时，从星图开始重新带一次。|다음에 다이브 페이지를 열면 성도부터 다시 안내합니다.
 新手引導已重置，到潛光頁就會出現。|Tutorial reset. It appears on the Dive page.|新手引导已重置，到潜光页就会出现。|튜토리얼을 초기화했습니다. 다이브 페이지에서 나타납니다.

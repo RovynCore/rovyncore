@@ -20,5 +20,6 @@ import { NEXT } from "./next";
 import { ALERTS } from "./alerts";
 import { LIVE } from "./live";
 import { V31 } from "./v31";
+import { V32 } from "./v32";
 
-export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS, LIVE, V31];
+export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS, LIVE, V31, V32];

@@ -28,12 +28,13 @@ import { Treasury } from "./treasury";
 import { Settings } from "./settings-page";
 import { Logbook, recordsOf, unseenFootprints } from "./logbook";
 import { CommissionsPage, commissionBadge } from "./commissions";
-import { useSettings } from "./settings";
+import { isDaylight, useSettings } from "./settings";
 import { useVoyageAlerts } from "./alerts";
 import { useLanguage } from "@/components/language-provider";
 import { syncGameLocale } from "@/lib/lightdive-v3/i18n";
 import { clock, fmt } from "./copy";
 import { Broadcast } from "./extras";
+import { WelcomeBack } from "./welcome";
 import { play, useMusic, useMusicToggle, useMute, useVolume } from "./audio";
 import "../game/game.css";
 import "../game/app.css";
@@ -155,7 +156,10 @@ export function LightdiveApp({ sim }: { sim: Game }) {
       </aside>
 
       <div className="hud-main" id="v3-main">
-        {view !== "dive" && <Nebula className="hud-nebula" />}
+        {/* daylight (the founder's light backgrounds, 10-18): the Stele Plain at dawn; the night sky otherwise */}
+        {view === "plain" && isDaylight(settings.sky, new Date(sim.now))
+          ? <div className="hud-daybg is-plain" aria-hidden="true" />
+          : view !== "dive" && <Nebula className="hud-nebula" />}
         <header className="hud-top">
           <Res icon="rvyn" label={sim.chain?.testToken ? "tRVYN" : "$RVYN"} value={fmt(s.balance)} className="hud-res--wallet" onClick={sim.chain?.testToken ? () => go("faucet") : undefined} />
           <Res icon="claim" tone="gold" label={tl("可領取")} value={fmt(s.credit)} className="hud-res--claim" onClick={() => go("treasury")} />
@@ -189,6 +193,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
           : <Guide sim={sim} go={go} />}
         </div>
         <Broadcast sim={sim} />
+        <WelcomeBack sim={sim} go={go} />
         {view === "dive" && <div className="v3-dock-rovyn">{rovyn}</div>}
         {view !== "dive" && <ObservatoryMusic quiet={view === "story" || view === "whitepaper"} />}
       </div>

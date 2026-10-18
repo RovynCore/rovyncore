@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { BellRing, Gauge, Languages, MonitorPlay, RotateCcw, Volume2 } from "lucide-react";
 import { PageHead } from "../game/hud";
 import { play, useVolume } from "./audio";
-import { setAlerts, setCalm, setFxQuality, useSettings, type FxQuality } from "./settings";
+import { setAlerts, setCalm, setFxQuality, setSky, useSettings, type FxQuality, type Sky } from "./settings";
 import { AlertsSwitch } from "./alerts";
 import { useLanguage } from "@/components/language-provider";
 import { isReady } from "@/lib/lightdive-v3/i18n";
@@ -19,6 +19,12 @@ const FX: { key: FxQuality; name: string; text: string }[] = localized([
   { key: "standard", name: "標準", text: "保留特效，粒子大約減半、光暈簡化，較省電。" },
   { key: "low", name: "簡化", text: "不使用 WebGL：星圖和召喚改用輕量的畫面，最省資源。" },
 ]);
+const SKY: { key: Sky; name: () => string; text: () => string }[] = [
+  { key: "auto", name: () => tl("背景：依時間"), text: () => tl("早上 6 點到傍晚 6 點顯示白天的觀測站與碑原，其他時間是夜空。") },
+  { key: "day", name: () => tl("背景：白天"), text: () => tl("一直顯示白天的觀測站與碑原。") },
+  { key: "night", name: () => tl("背景：夜晚"), text: () => tl("一直顯示夜空。") },
+];
+
 const LANGS: { key: Locale; name: string }[] = [
   { key: "zh-Hant", name: "繁體中文" },
   { key: "en", name: "English" },
@@ -53,6 +59,13 @@ export function Settings({ sim, muted, toggleMute, musicOn, toggleMusic }: { sim
               </button>
             ))}
           </div>
+          <div className="v3-setchoice" role="radiogroup" aria-label={tl("背景")}>
+            {SKY.map((x) => (
+              <button key={x.key} type="button" role="radio" aria-checked={st.sky === x.key} className={st.sky === x.key ? "is-on" : ""} onClick={() => { setSky(x.key); play("toggle"); }}>
+                <b>{x.name()}</b><small>{x.text()}</small>
+              </button>
+            ))}
+          </div>
           <label className="v3-setswitch">
             <input type="checkbox" checked={st.calm} onChange={(e) => { setCalm(e.target.checked); play("toggle"); }} />
             <span><b>{tl("減少動畫")}</b><small>{tl("關掉閃光、震動、粒子和大部分動態效果，適合容易暈眩或想要安靜畫面的人。系統設定了「減少動態效果」時會自動開啟。")}</small></span>
@@ -75,7 +88,7 @@ export function Settings({ sim, muted, toggleMute, musicOn, toggleMusic }: { sim
               </button>
             ))}
           </div>
-          <p className="v3-muted">{tl("遊戲文字正在翻譯成英文、簡體中文和韓文，完成後就能在這裡切換。")}</p>
+          <p className="v3-muted">{tl("遊戲有繁體中文、English、简体中文、한국어四種語言，和網站上方的語言設定同步。")}</p>
         </section>
 
         <section className="v3-panel v3-setcard">

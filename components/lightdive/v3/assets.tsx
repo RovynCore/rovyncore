@@ -2,6 +2,7 @@
 
 // Asset pages (spires, prisms, seekers): a clear card wall, and an NFT detail with on-chain data on the left,
 // the art in the middle and in-game data on the right. Listing opens a sell dialog with market references.
+import { CardFace, Foil } from "./cards";
 import { useState } from "react";
 import { Anchor, ExternalLink, Store, Tag } from "lucide-react";
 import { DESTINATIONS, MARKET_TAX, POWER, PRICE, RENEW_SHARE, TAX_TO_POOL, VOYAGES, type Kind } from "@/lib/lightdive-v3/rules";
@@ -145,7 +146,8 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
       </section>
 
       <section className="v3-nftdetail__hero" style={{ ["--rc" as string]: RARITY_COLOR[n.rarity] }}>
-        <div className="v3-nftdetail__art"><NftArt a={{ kind: n.kind, rarity: n.rarity, trait: n.trait, variant: 0 }} /></div>
+        {/* the card as a trading card: 稜光 and 曜核 are full-art foil (10-19) */}
+        <div className="v3-nftdetail__art is-card"><Foil rarity={n.rarity}><CardFace n={n} size="lg" /></Foil></div>
         <RarityTag rarity={n.rarity} />
         <h2>{KIND[n.kind]} #{n.id}</h2>
         <span className={`v3-nft__badge is-${w}`}>{w === "listed" ? tl("上架中 {0} $RVYN", { 0: fmt(n.listed ?? 0) }) : WHERE[w]}</span>

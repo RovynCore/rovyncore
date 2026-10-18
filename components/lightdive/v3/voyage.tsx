@@ -495,13 +495,14 @@ function StageLayer({ children }: { children: ReactNode }) {
 
 /** What this voyage carries: a deep dive, a supply, the crew bond at departure. */
 function Tags({ d }: { d: SimDive }) {
-  const tags = [
-    d.deep ? tl("深潛 · 光塵 ×2") : null,
-    d.supply === 1 ? tl("燈油 · 只耗損 1 次") : d.supply === 2 ? tl("星圖殘頁 · 空手 −3%") : null,
-    d.bond ? tl("默契 {0} · 空手 −{0}%", { 0: d.bond }) : null,
-  ].filter((x): x is string => !!x);
+  const tags: [string, string | null][] = [];
+  if (d.deep) tags.push([tl("深潛 · 光塵 ×2"), null]);
+  if (d.supply === 1) tags.push([tl("燈油 · 只耗損 1 次"), "/lightdive/items/lamp-oil.webp"]);
+  if (d.supply === 2) tags.push([tl("星圖殘頁 · 空手 −3%"), "/lightdive/items/star-chart-fragment.webp"]);
+  if (d.bond) tags.push([tl("默契 {0} · 空手 −{0}%", { 0: d.bond }), null]);
   if (!tags.length) return null;
-  return <p className="v3-voyage__tags">{tags.map((t) => <span key={t}>{t}</span>)}</p>;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <p className="v3-voyage__tags">{tags.map(([t, icon]) => <span key={t}>{icon && <img src={icon} alt="" />}{t}</span>)}</p>;
 }
 
 /** A deep dive's second decision: from 10 minutes before the reveal until 1 minute before it, press on or turn back. */

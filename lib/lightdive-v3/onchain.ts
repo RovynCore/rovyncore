@@ -272,6 +272,7 @@ export type Player = {
   poolAllowance: bigint; // supplies are paid into the pool
   nextDripAt: number | null;
   commission: CommissionState;
+  commissionsDone: number; // every commission this wallet has completed
   cards: Card3[]; // owned now (in the wallet or listed by me), plus the ones that went home or were sold
   teams: Team3[];
   dives: Dive3[];
@@ -292,7 +293,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
   const { c, abi } = ctx;
   const E = abi.Expedition3, N = abi.LightdiveNFT3, M = abi.LightdiveMinter3, K = abi.LightdiveMarket3, T = abi.TestRVYN;
   type A = Record<string, unknown>;
-  const [minted, received, homecomings, soldMine, bought, dived, revealed, claimed, requested, renewals] = await Promise.all([
+  const [minted, received, homecomings, soldMine, bought, dived, revealed, claimed, requested, renewals, completed] = await Promise.all([
     events<A>(ctx, c.nft, N, "Minted", { to: me }),
     events<A>(ctx, c.nft, N, "Transfer", { to: me }),
     events<A>(ctx, c.nft, N, "Homecoming", { owner: me }),
@@ -303,6 +304,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     events<A>(ctx, c.expedition, E, "Claimed", { owner: me }),
     events<A>(ctx, c.minter, M, "SummonRequested", { player: me }),
     events<A>(ctx, c.minter, M, "Renewal", { owner: me }),
+    events<A>(ctx, c.commissions, abi.LightdiveCommissions3, "Completed", { player: me }).catch(() => []),
   ]);
 
   // Every card that has ever been mine; its attributes at mint come from Minted (it may have gone home since).
@@ -410,6 +412,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     marketApproved: Boolean(own[6]),
     poolAllowance: (own[7] as bigint) ?? 0n,
     commission: commissionState(own[8], own[9], world.day),
+    commissionsDone: completed.length,
     nextDripAt: testToken ? Number((own[10] as bigint) ?? 0n) : null,
     cards, teams, dives, requests,
     claimed: sum(claimed, "gross") - sum(claimed, "fee"),

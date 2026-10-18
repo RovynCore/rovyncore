@@ -110,6 +110,7 @@ export type SimState = {
   teamNames?: Record<number, string>; // custom team names, kept per spire so a rebuilt team keeps its name
   commission?: { day: number; index: number; fromDive: number } | null; // the accepted daily commission
   commissionMarks?: Record<number, number>; // per day: bit i completed, bit i + 8 abandoned
+  commissionsDone?: number; // live game: completed commissions read from the chain (the preview counts its marks)
 };
 
 const addSpent = (st: SimState, key: "mint" | "renew" | "market" | "supply", v: number) => {

@@ -24,6 +24,8 @@ const TITLES: Record<Commission["kind"], () => string> = {
   supply: () => tl("補給充足"),
 };
 
+export const commissionTitle = (c: Commission) => TITLES[c.kind]();
+
 /** What the commission asks, in one sentence. */
 export function commissionText(c: Commission) {
   switch (c.kind) {
@@ -61,7 +63,7 @@ function useCommissionActions() {
 }
 
 /** The reward the ready voyage would pay: its share of that voyage's x1.00 reward. */
-function readyBonus(sim: Sim) {
+export function readyBonus(sim: Sim) {
   const c = sim.commissions;
   const d = c.ready !== null ? sim.state!.dives.find((x) => x.id === c.ready) : undefined;
   return d ? basePoints(d.plan) * (d.deep ? 2 : 1) * (d.rate ?? sim.rateOn(dayOf(d.at))) * c.bonus : null;

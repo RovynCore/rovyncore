@@ -277,6 +277,7 @@ export function useChain(): Game {
       sales: p.sales.map((s) => ({ nftId: Number(s.id), price: num(s.price), at: s.at * 1000 })),
       spent: { mint: num(p.spent.mint), renew: num(p.spent.renew), market: num(p.spent.market) },
       teamNames: names,
+      commissionsDone: p.commissionsDone,
     };
     // predictions are read through the ref; `data` changes whenever one is added
   }, [data, drafts, names]);

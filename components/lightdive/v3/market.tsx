@@ -52,7 +52,7 @@ export function Market({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   return (
     <div className="hud-page v3-market">
       <PageHead kicker={tl("市集")} icon="market" title={tl("市集")} lead={tl("用 $RVYN 跟其他觀測者買賣光塔、稜鏡、探索者。成交時從賣方收 5% 交易稅。")}
-        side={<DockKeeper sim={sim} />} />
+        side={<DockKeeper sim={sim} tab={tab} />} />
       <div className="v3-market__bar">
       <div className="hud-seg v3-tabs" role="tablist">
         {([["shop", tl("市場（{0}）", { 0: others.length })], ["mine", tl("我的掛單（{0}）", { 0: mineListings.length })], ["sales", tl("成交紀錄（{0}）", { 0: (s.sales ?? []).length })]] as [Tab, string][]).map(([k, label]) => (
