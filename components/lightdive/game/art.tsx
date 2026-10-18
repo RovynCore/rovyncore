@@ -1,8 +1,9 @@
 "use client";
 
-// Art for Lightdive NFTs, from the on-chain fields (kind, rarity, trait, variant). Seekers use the founder's finished
-// paintings (public/lightdive/cards, made by scripts/lightdive-art-webp.mjs); spires and prisms are still drawn here
-// until their art arrives. Every screen renders NFTs through <NftArt>.
+// Art for Lightdive NFTs, from the on-chain fields (kind, rarity, trait, variant). All three kinds use the founder's
+// finished paintings (public/lightdive/cards, made by scripts/lightdive-art-webp.mjs): seekers by light and rarity,
+// spires by rarity (a spire's level is its rarity + 1), prisms by beam and rarity. The drawn versions below stay as the
+// fallback for values without a painting. Every screen renders NFTs through <NftArt>.
 import { useId } from "react";
 import { ATTRIBUTE_COLOR, RARITY_COLOR } from "@/lib/lightdive-copy";
 import { KIND, type Attributes } from "@/lib/lightdive";
@@ -41,8 +42,45 @@ function Backdrop({ id, rarity }: { id: string; rarity: number }) {
 
 export type Box = { x: number; y: number; width: number; height: number };
 
+const inRange = (n: number, max: number) => Number.isInteger(n) && n >= 0 && n <= max;
+const spireImage = (rarity: number) => (inRange(rarity, 4) ? `/lightdive/cards/spire-r${rarity}.webp` : null);
+const prismImage = (beam: number, rarity: number) => (inRange(beam, 2) && inRange(rarity, 4) ? `/lightdive/cards/prism-b${beam}-r${rarity}.webp` : null);
+
+/** A painting on a soft glow; `fade` settles a painting that ends at the canvas edge (seekers are knee-up). */
+function Painting({ id, image, glow, strength, fade, backdrop, rarity, className, box }: {
+  id: string; image: string; glow: string; strength: number; fade?: boolean; backdrop?: boolean; rarity: number; className?: string; box?: Box;
+}) {
+  return (
+    <svg className={className} viewBox="0 0 200 240" role="img" aria-hidden="true" {...box}>
+      {backdrop !== false && <Backdrop id={id} rarity={rarity} />}
+      <defs>
+        <radialGradient id={`${id}-light`} cx="50%" cy="56%" r="52%">
+          <stop offset="0" stopColor={glow} stopOpacity={strength} />
+          <stop offset="0.6" stopColor={glow} stopOpacity="0.08" />
+          <stop offset="1" stopColor={glow} stopOpacity="0" />
+        </radialGradient>
+        {fade && (
+          <>
+            <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0.8" stopColor="#fff" stopOpacity="1" />
+              <stop offset="1" stopColor="#fff" stopOpacity="0" />
+            </linearGradient>
+            <mask id={`${id}-mask`} maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="240">
+              <rect width="200" height="240" fill={`url(#${id}-fade)`} />
+            </mask>
+          </>
+        )}
+      </defs>
+      <ellipse cx="100" cy="134" rx="92" ry="104" fill={`url(#${id}-light)`} />
+      <image href={image} x="10" y="0" width="180" height="240" preserveAspectRatio="xMidYMid meet" mask={fade ? `url(#${id}-mask)` : undefined} />
+    </svg>
+  );
+}
+
 export function SpireArt({ rarity, level, variant, className, box }: { rarity: number; level: number; variant: number; className?: string; box?: Box }) {
   const id = useId().replace(/:/g, "");
+  const image = spireImage(rarity);
+  if (image) return <Painting id={id} image={image} glow={LIME} strength={0.18 + rarity * 0.04} rarity={rarity} backdrop={!box} className={className} box={box} />;
   const accent = rarity === 3 ? GOLD : rarity === 4 ? WHITE_GOLD : RARITY_COLOR[rarity];
   const w = (variant === 1 ? 13 : 5) + rarity * 2; // crack half-width at its widest
   const steps = 3 + Math.floor(rarity / 2);
@@ -127,6 +165,8 @@ export function SpireArt({ rarity, level, variant, className, box }: { rarity: n
 
 export function PrismArt({ rarity, beam, variant, className }: { rarity: number; beam: number; variant: number; className?: string }) {
   const id = useId().replace(/:/g, "");
+  const image = prismImage(beam, rarity);
+  if (image) return <Painting id={id} image={image} glow={LIME} strength={0.2 + rarity * 0.05} rarity={rarity} className={className} />;
   const accent = rarity === 3 ? GOLD : rarity === 4 ? WHITE_GOLD : RARITY_COLOR[rarity];
   const tear = variant === 2;
   return (
@@ -262,32 +302,8 @@ const seekerImage = (light: number, rarity: number) =>
 export function SeekerArt({ rarity, attribute, signature, className }: { rarity: number; attribute: number; signature: number; className?: string }) {
   const id = useId().replace(/:/g, "");
   const image = seekerImage(attribute, rarity);
-  if (image) {
-    // the painting sits on a glow in its light's colour, so the light reads at every rarity
-    const glow = ATTRIBUTE_COLOR[attribute] ?? LIME;
-    return (
-      <svg className={className} viewBox="0 0 200 240" role="img" aria-hidden="true">
-        <Backdrop id={id} rarity={rarity} />
-        <defs>
-          <radialGradient id={`${id}-light`} cx="50%" cy="56%" r="52%">
-            <stop offset="0" stopColor={glow} stopOpacity={0.34 + rarity * 0.04} />
-            <stop offset="0.6" stopColor={glow} stopOpacity="0.08" />
-            <stop offset="1" stopColor={glow} stopOpacity="0" />
-          </radialGradient>
-          {/* knee-up paintings end at the canvas edge: fade the bottom so they settle into the card */}
-          <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0.8" stopColor="#fff" stopOpacity="1" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <mask id={`${id}-mask`} maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="240">
-            <rect width="200" height="240" fill={`url(#${id}-fade)`} />
-          </mask>
-        </defs>
-        <ellipse cx="100" cy="134" rx="92" ry="104" fill={`url(#${id}-light)`} />
-        <image href={image} x="10" y="0" width="180" height="240" preserveAspectRatio="xMidYMid meet" mask={`url(#${id}-mask)`} />
-      </svg>
-    );
-  }
+  // the painting sits on a glow in its light's colour, so the light reads at every rarity
+  if (image) return <Painting id={id} image={image} glow={ATTRIBUTE_COLOR[attribute] ?? LIME} strength={0.34 + rarity * 0.04} fade rarity={rarity} className={className} />;
   const accent = rarity === 3 ? GOLD : rarity === 4 ? WHITE_GOLD : RARITY_COLOR[rarity];
   const light = ATTRIBUTE_COLOR[attribute] ?? LIME;
   const finPairs = rarity >= 4 ? 3 : rarity >= 2 ? 2 : 1;
