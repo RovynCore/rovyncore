@@ -52,12 +52,13 @@ export function DailyBulletin() {
             <div className="rv-daily__rovyn">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/lightdive/npc/rovyn-pose-guide.webp" alt="" width={96} height={117} />
-              <p>{d ? rovynLine(d) : tl("正在讀取鏈上紀錄…")}<small>{tl("—— Rovyn，訊號看守者")}</small></p>
+              <p>{d ? rovynLine(d) : tl("正在讀取鏈上紀錄…")}<small>{tl("—— Rovyn，訊號守望者")}</small></p>
             </div>
           </div>
           <Link className="rv-btn rv-btn--primary" href="/game/lightdive">{tl("進入潛光遠征")}<ArrowRight aria-hidden="true" /></Link>
         </div>
-        <div className="rv-daily__tiles">
+        {/* a quiet day shows only Rovyn's line and the way in: six zeros would make the home page look empty */}
+        {(!d || d.dives > 0) && <div className="rv-daily__tiles">
           {(d ? tiles : Array.from({ length: 6 }, () => ["", ""] as [string, string])).map(([label, value, sub], i) => (
             <div key={i} className={`rv-card rv-daily__tile${d ? "" : " is-loading"}`}>
               <span className="rv-stat__label">{label}</span>
@@ -65,7 +66,7 @@ export function DailyBulletin() {
               {sub ? <small>{sub}</small> : null}
             </div>
           ))}
-        </div>
+        </div>}
         <p className="rv-caption">{tl("潛光遠征目前在測試網，使用測試幣，沒有價值。數字直接讀自鏈上的公開紀錄。")}</p>
       </div>
     </section>

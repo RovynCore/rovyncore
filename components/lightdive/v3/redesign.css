@@ -1980,3 +1980,19 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
   .v3-chat__fab:hover { width: auto; padding: 0 16px; border-radius: 999px; }
   .v3-chat__fab:hover .v3-chat__fablabel { display: inline; }
 }
+/* 10-20 UI pass 2 — the tutorial card narrows while a destination card is open, so the two never overlap */
+@media (min-width: 861px) {
+  .v3-map:has(.v3-dest) .v3-coach:not(.is-voyage) { width: min(380px, max(250px, calc(100% - 480px))); }
+}
+/* 10-20 UI pass 2 — Korean and English: a feed time ("51분 전") stays on one line; the brand line fits by size */
+.hud-live__list li > small { white-space: nowrap; }
+.hud-brand small { font-size: 10.5px; letter-spacing: 0.02em; }
+/* 10-20 UI pass 2 — the preview / testnet notice in the top bar wraps inside itself (up to 2 lines) instead of pushing
+   the day clock to a second row in English and Korean; nothing of the notice is cut */
+@media (min-width: 861px) {
+  .hud-top .v3-badge { max-width: 330px; white-space: normal; line-height: 1.3; font-size: 12px; text-wrap-style: balance; }
+}
+@media (min-width: 861px) {
+  .hud-top__space { flex: 1 1 0; min-width: 0; }
+  .hud-top .v3-badge { max-width: 300px; }
+}

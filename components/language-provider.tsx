@@ -32,23 +32,29 @@ export function translateRuntime(
     typeof document === "undefined" ? "en" : document.documentElement.lang;
   return translate(source, valid(current) ? current : "en", values);
 }
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, update] = useState<Locale>("en");
+const COOKIE = "rovyncore-lang";
+const remember = (next: Locale) => {
+  try { localStorage.setItem("rovyncore:language", next); } catch {}
+  // the server reads this to render the next page in the same language (no flash of English)
+  document.cookie = `${COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+};
+export function LanguageProvider({ children, initial = "en" }: { children: ReactNode; initial?: Locale }) {
+  const [locale, update] = useState<Locale>(initial);
   const pathname = usePathname();
   const setLocale = useCallback((next: Locale) => {
     if (!valid(next)) return;
     document.documentElement.lang = next;
     update(next);
-    try {
-      localStorage.setItem("rovyncore:language", next);
-    } catch {}
+    remember(next);
   }, []);
   useEffect(() => {
     try {
+      // a choice saved before the cookie existed: apply it and write the cookie for the next page
       const saved = localStorage.getItem("rovyncore:language");
-      if (valid(saved)) queueMicrotask(() => setLocale(saved));
+      if (valid(saved) && saved !== initial) queueMicrotask(() => setLocale(saved));
+      else if (!document.cookie.includes(`${COOKIE}=`) && valid(saved)) remember(saved);
     } catch {}
-  }, [setLocale]);
+  }, [setLocale, initial]);
   useEffect(() => {
     document.title = pageTitle(locale, pathname || "/");
   }, [locale, pathname]);

@@ -9,7 +9,7 @@ export const V36 = `觀測者|Observer|观测者|관측자
 下載觀測者名片|Download observer card|下载观测者名片|관측자 카드 다운로드
 觀測站日報|Observatory daily|观测站日报|관측소 일보
 正在讀取鏈上紀錄…|Reading the chain records…|正在读取链上记录…|체인 기록을 읽는 중…
-—— Rovyn，訊號看守者|— Rovyn, the Signal Keeper|—— Rovyn，讯号看守者|— Rovyn, 신호 관리자
+—— Rovyn，訊號守望者|— Rovyn, the Signal Keeper|—— Rovyn，讯号守望者|— Rovyn, 신호 감시자
 進入潛光遠征|Enter Lightdive|进入潜光远征|라이트다이브 입장
 其中深潛 {0} 趟|{0} of them deep dive(s)|其中深潜 {0} 趟|그중 딥 다이브 {0}회
 出航的觀測者|Observers out|出航的观测者|출발한 관측자

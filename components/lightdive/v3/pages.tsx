@@ -34,6 +34,9 @@ const alive = (n: SimNft) => !n.homeAt;
 export function rovynPool(sim: Sim): readonly string[] {
   const s = sim.state!;
   const r = TEXTS.rovyn;
+  // 10-20: a visitor without a wallet, and an observer with no cards yet, hear about the first steps instead
+  if (sim.chain && !sim.chain.account) return [tl("第一次來嗎？連上錢包，我帶你去看第一道光。"), tl("這裡用的是測試幣，沒有價值。先看看也可以：預覽版不用錢包。"), tl("光橋每天都會換一次天象。今天的光，正在等第一位觀測者。")];
+  if (!s.nfts.some(owned)) return [tl("先召喚一座光塔和一位探索者，就能組成第一支隊伍。"), tl("光塔決定能帶幾位探索者，探索者決定戰力。先從召喚開始吧。")];
   if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt)) return r.docked;
   if (s.dives.some((d) => d.pending)) return r.collect;
   if (s.dives.some((d) => deciding(d, sim.now))) return r.eventPending;
@@ -321,7 +324,10 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
   );
   if (ch?.ready && ch.loaded) {
     const busy = !!ch.tx?.running;
-    if (!ch.account) return hero(tl("· 第一步"), tl("連接錢包，開始潛光"), tl("卡片、隊伍和收益都記在你的錢包。這是測試網：用沒有價值的測試幣遊玩。"), btn(tl("連接錢包"), "rvyn", () => void ch.join()));
+    if (!ch.account) return hero(tl("· 第一步"), tl("連接錢包，開始潛光"), tl("卡片、隊伍和收益都記在你的錢包。這是測試網：用沒有價值的測試幣遊玩。"), <>
+      {btn(tl("連接錢包"), "rvyn", () => void ch.join())}
+      <a className="hud-btn hud-btn--ghost v3-route-hero__btn" href="/game/lightdive/preview">{tl("先試玩預覽版（不用錢包）")}</a>
+    </>);
     if (ch.wrongChain) return hero(tl("· 第一步"), tl("切換到 {0}", { 0: ch.chainName }), tl("遊戲在這條鏈上，錢包要在同一條鏈才能交易。"), btn(tl("切換網路"), "rvyn", () => void ch.switchNetwork()));
     if (ch.eth === 0) return hero(tl("· 第一步"), tl("先領一點手續費用的測試 ETH"), tl("每筆交易都要一點點手續費。到 Robinhood 測試網水龍頭免費領取，再回來領測試 $RVYN。"), btn(tl("領取方式"), "rvyn", () => go("faucet")));
     if (ch.drip && s.balance < 20 && !s.nfts.some(owned)) {

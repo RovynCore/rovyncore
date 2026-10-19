@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { localeNames, type Locale } from "@/lib/translations";
 import "./rv.css";
 import { PlatformProvider } from "@/components/platform-provider";
 import { AgentTools } from "@/components/agent-tools";
@@ -53,13 +55,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // the language the visitor chose last (a cookie the language picker writes), so the server renders the page in it
+  // and there is no flash of English before the saved language loads; crawlers without the cookie get English
+  const saved = (await cookies()).get("rovyncore-lang")?.value;
+  const initial: Locale = saved && Object.hasOwn(localeNames, saved) ? (saved as Locale) : "en";
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang={initial} className="dark" suppressHydrationWarning>
       <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{ __html: "(function(){try{var d=document.documentElement;if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!localStorage.getItem('rv-intro')){d.classList.add('intro-on');setTimeout(function(){d.classList.remove('intro-on')},4500)}}catch(e){}})();" }}
@@ -76,7 +82,7 @@ export default function RootLayout({
             sameAs: ["https://x.com/RovynCORE"],
           }) }}
         />
-        <LanguageProvider>
+        <LanguageProvider initial={initial}>
           <PlatformProvider>
             <AgentTools />
             <RevealObserver />
