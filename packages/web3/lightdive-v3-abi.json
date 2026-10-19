@@ -184,6 +184,19 @@
    "inputs": [
     {
      "indexed": false,
+     "internalType": "uint8",
+     "name": "echoStability",
+     "type": "uint8"
+    }
+   ],
+   "name": "EchoSet",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
      "internalType": "uint16",
      "name": "emissionBp",
      "type": "uint16"
@@ -772,6 +785,19 @@
   },
   {
    "inputs": [],
+   "name": "echoStability",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
    "name": "emissionBp",
    "outputs": [
     {
@@ -1267,6 +1293,19 @@
     }
    ],
    "name": "setDestinations",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint8",
+     "name": "points",
+     "type": "uint8"
+    }
+   ],
+   "name": "setEcho",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -4899,6 +4938,31 @@
    "inputs": [
     {
      "indexed": true,
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "guide",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "follower",
+     "type": "address"
+    }
+   ],
+   "name": "Echoed",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
      "internalType": "address",
      "name": "previousOwner",
      "type": "address"
@@ -5517,6 +5581,44 @@
   {
    "inputs": [
     {
+     "internalType": "uint256",
+     "name": "",
+     "type": "uint256"
+    }
+   ],
+   "name": "echoed",
+   "outputs": [
+    {
+     "internalType": "bool",
+     "name": "",
+     "type": "bool"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "name": "echoesGiven",
+   "outputs": [
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
      "internalType": "address",
      "name": "",
      "type": "address"
@@ -5528,6 +5630,30 @@
      "internalType": "uint64",
      "name": "",
      "type": "uint64"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint32",
+     "name": "",
+     "type": "uint32"
+    },
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "name": "lastDiver",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
     }
    ],
    "stateMutability": "view",

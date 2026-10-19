@@ -28,6 +28,10 @@ import {CoreLightPool3} from "./CoreLightPool3.sol";
 /// Crew bond (v3.1): a team whose members do not change gains a level of bond with every revealed dive (up to
 /// `bondMax`); each level moves 1 point of empty-handed chance to "normal". Any change to the team resets it.
 ///
+/// Echo bridges (v3.2): every dive leaves its bridge at the destination for the rest of the UTC day. The next dive
+/// there by someone else follows that light: `echoStability` points of empty-handed chance moved to "normal", and the
+/// observer who left it is counted as its guide (`echoesGiven`). Nothing is paid to anyone; one dive helps only the next.
+///
 /// Supplies (v3.1): at departure the owner may buy one supply, priced in basis points of the dive's x1.00 reward and
 /// paid in RVYN into the pool (the burned share as for every fee): lamp oil (1 voyage of wear) or a star chart
 /// (`chartStability` points of empty-handed chance moved to "normal").
@@ -110,6 +114,11 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(address => uint256) public credit;
     mapping(address => uint64) public lastClaimAt;
 
+    // echo bridges (v3.2)
+    mapping(uint32 => mapping(uint8 => address)) public lastDiver; // day => destination => the latest observer there
+    mapping(uint256 => bool) public echoed; // dive => it followed someone else's bridge
+    mapping(address => uint32) public echoesGiven; // observer => dives that followed their bridges
+
     event TeamSet(uint256 indexed spire, address indexed owner, uint256 prism, uint256[] seekers);
     event TeamDisbanded(uint256 indexed spire, address indexed owner);
     event DayOpened(uint32 indexed day, uint256 rate, uint256 ceiling);
@@ -122,6 +131,7 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     event Claimed(address indexed owner, uint256 gross, uint256 fee);
     event CommissionsSet(address commissions);
     event BonusCredited(address indexed owner, uint256 amount);
+    event Echoed(uint256 indexed diveId, address indexed guide, address indexed follower);
 
     error NotOwner();
     error WrongKind();
@@ -422,6 +432,14 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         }
 
         id = _dives.length;
+        // echo: the bridge someone else left here today
+        address prev = lastDiver[day][dest];
+        lastDiver[day][dest] = msg.sender;
+        if (prev != address(0) && prev != msg.sender) {
+            echoed[id] = true;
+            unchecked { echoesGiven[prev] += 1; }
+            emit Echoed(id, prev, msg.sender);
+        }
         _dives.push(Dive({
             owner: msg.sender,
             spire: spire,
@@ -467,16 +485,16 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         dayPointsE2[day] += pointsE2;
     }
 
-    /// @dev Points of empty-handed chance moved to "normal" for a dive: its bond and a star chart.
-    function _stability(Dive storage d, LightdiveConfig3.Rules memory k) internal view returns (uint8) {
-        return d.bond + (d.supply == CHART ? k.chartStability : 0);
+    /// @dev Points of empty-handed chance moved to "normal" for a dive: its bond, a star chart and an echo.
+    function _stability(uint256 id, Dive storage d, LightdiveConfig3.Rules memory k) internal view returns (uint8) {
+        return d.bond + (d.supply == CHART ? k.chartStability : 0) + (echoed[id] ? config.echoStability() : 0);
     }
 
     function _settle(uint256 id, Dive storage d, uint256 r, bool fallbackUsed) internal {
         d.revealed = true;
         Result memory res;
         LightdiveConfig3.Rules memory k = config.rules();
-        LightdiveConfig3.Plan memory p = config.plan(d.dest, d.power, d.beam, d.day, d.decision, _stability(d, k), d.long);
+        LightdiveConfig3.Plan memory p = config.plan(d.dest, d.power, d.beam, d.day, d.decision, _stability(id, d, k), d.long);
         if (fallbackUsed) {
             res.multX100 = 100;
             res.wear = 1;

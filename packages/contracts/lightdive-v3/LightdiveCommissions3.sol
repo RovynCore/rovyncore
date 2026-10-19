@@ -92,7 +92,7 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
         if (!d.revealed) return false;
         Expedition3.Result memory r = expedition.result(id);
         if (c.kind == CLUSTER) return config.clusterOf(d.dest) == c.param && r.multX100 > 0;
-        if (c.kind == GOOD) return _goodOrBetter(d, r);
+        if (c.kind == GOOD) return _goodOrBetter(id, d, r);
         if (c.kind == DECISION) return d.decision == c.param;
         if (c.kind == ATTUNED) return d.attuned;
         if (c.kind == SKY) return config.eventAt(d.day, d.dest) != 0;
@@ -154,9 +154,9 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
     /// @dev "Good" or better: the row named good, great or legend in the dive's table (the same naming as the
     /// website: after row 0 (empty) comes an optional "slight loss" row whose top is at most x0.80, then normal, then
     /// good, great, legend). A turned-back or fallback dive is x1.00, never good.
-    function _goodOrBetter(Expedition3.Dive memory d, Expedition3.Result memory r) internal view returns (bool) {
+    function _goodOrBetter(uint256 id, Expedition3.Dive memory d, Expedition3.Result memory r) internal view returns (bool) {
         if (r.tier >= expedition.TURNED_BACK() || r.tier == 0) return false;
-        uint8 stability = d.bond + (d.supply == expedition.CHART() ? config.chartStability() : 0);
+        uint8 stability = d.bond + (d.supply == expedition.CHART() ? config.chartStability() : 0) + (expedition.echoed(id) ? config.echoStability() : 0);
         LightdiveConfig3.Plan memory p = config.plan(d.dest, d.power, d.beam, d.day, d.decision, stability, d.long);
         // rows are named from the base table (before a decision rescales the multipliers), as LightdiveConfig3 does
         LightdiveConfig3.Tier[] memory base = config.tableOf(config.clusterOf(d.dest), p.risk);

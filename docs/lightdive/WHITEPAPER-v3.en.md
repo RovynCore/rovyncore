@@ -169,7 +169,7 @@ The average multipliers differ by only 3% on purpose: everyone shares the same p
 
 ### Order of application
 
-Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond and a star chart → voyage decision.
+Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo → voyage decision.
 
 ### Deep dives
 
@@ -178,6 +178,10 @@ Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and 
 ### Crew bond
 
 Each revealed dive by the same crew (spire, prism and seekers unchanged) adds 1 bond, up to 5. Each point moves 1 percentage point of empty-handed chance to "Normal", together with the overflow stability. Changing any card, or a card docking off the team, resets it to 0.
+
+### Echo bridges
+
+Every departure leaves its light bridge at the destination until the end of the UTC day. The next dive there by another observer follows that light: 1 percentage point of empty-handed chance moves to "Normal". Following your own bridge does not count. Once you set out, the bridge there is yours, left for the next one, and the observer who left the one you followed is counted as its guide: honour only, no share of any reward. The points are set in the contract (0 to 5, currently 1).
 
 ### Voyage supplies
 

@@ -62,7 +62,7 @@ export function AdminStats() {
             <Tile label={tl("玩過的錢包")} value={n0(stats.wallets)} sub={tl("今天出航 {0}", { 0: n0(stats.activeToday) })} />
             <Tile label={tl("次日留存")} value={pct(stats.retention.d1)} sub={tl("第 7 天 {0}", { 0: pct(stats.retention.d7) })} />
             <Tile label={tl("核光池")} value={n0(stats.pool)} sub={tl("今日分配率 {0}", { 0: stats.rate.toFixed(5) })} />
-            <Tile label={tl("出航")} value={n0(t!.dives)} sub={tl("深潛 {0} · 回航 {1}", { 0: n0(t!.deep), 1: n0(t!.turnedBack) })} />
+            <Tile label={tl("出航")} value={n0(t!.dives)} sub={t!.echoes ? tl("深潛 {0} · 回航 {1} · 光橋回聲 {2}", { 0: n0(t!.deep), 1: n0(t!.turnedBack), 2: n0(t!.echoes) }) : tl("深潛 {0} · 回航 {1}", { 0: n0(t!.deep), 1: n0(t!.turnedBack) })} />
             <Tile label={tl("召喚的卡")} value={n0(t!.summons)} sub={tl("{0} $RVYN", { 0: n2(t!.summonPaid) })} />
             <Tile label={tl("帶回（已扣出發成本）")} value={n2(t!.rewards)} sub={tl("出發成本 {0}", { 0: n2(t!.levy) })} />
             <Tile label={tl("提領")} value={n2(t!.claimed)} sub={tl("手續費 {0}", { 0: n2(t!.claimFees) })} />

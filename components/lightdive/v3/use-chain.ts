@@ -140,7 +140,7 @@ function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>
     // (a deep dive records twice the points)
     const coefBp = planOf({ power: d.power, bonus: 0, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day)).coefBp;
     const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp / (d.long ? 2 : 1)) / 100 - d.power);
-    const mods = { stability: stabilityOf(d.bond, d.supply), deep: d.long };
+    const mods = { stability: stabilityOf(d.bond, d.supply, d.echo), deep: d.long };
     const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none", mods);
     const voyageMs = (d.long ? w.longVoyageSeconds : w.voyageSeconds) * 1000;
     const names = plan.names ?? outcomesOf(plan.table);
@@ -152,7 +152,7 @@ function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>
     const lines = TEXTS.logs[dest] as Record<string, readonly string[]>;
     return {
       id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), choice, rate: num(d.rate),
-      deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned,
+      deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned, ...(d.echo ? { echo: d.echo } : {}),
       result: r && outcome ? { outcome, tier: r.tier, multX100: r.multX100, wear: r.wear } : undefined,
       reward: r ? num(r.reward) : undefined,
       levyPaid: r ? num(r.levy) : undefined,
@@ -183,6 +183,7 @@ function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>
     spent: { mint: num(p.spent.mint), renew: num(p.spent.renew), market: num(p.spent.market) },
     teamNames: names,
     commissionsDone: p.commissionsDone,
+    echoesGiven: w.echoStability ? p.echoesGiven : undefined,
   };
 }
 
@@ -711,6 +712,11 @@ export function useChain(): Game {
       };
     },
     history: (id: number) => data?.histories.get(id) ?? null,
+    bridge: (dest: number) => {
+      const w = data?.world;
+      const last = w?.bridges[dest];
+      return w && w.echoStability && last && (!account || last !== account.toLowerCase()) ? w.echoStability : 0;
+    },
     dive, diveMany, turnBack, commissions, choose, collect, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
     chain: {
       account,

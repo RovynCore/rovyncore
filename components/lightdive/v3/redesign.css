@@ -986,6 +986,9 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .hud.v3 .v3-spot__orb { width: 52px; height: 52px; }
 .hud.v3 .v3-spot__orb::after { transform: rotate(30deg) scale(0.9); }
 @keyframes v3-twinkle { 50% { opacity: 0.75; transform: scale(0.92); } }
+/* v3.2 光橋殘光: someone else's bridge is here today */
+.hud.v3 .v3-spot.has-echo .v3-spot__orb { outline: 1px dashed rgba(255, 231, 168, 0.7); outline-offset: -8px; }
+.hud.v3 .v3-spot em.is-echo, .hud.v3 .v3-kv dd.is-echo { color: #ffe7a8; }
 .hud.v3 .v3-node.is-locked .v3-node__orb, .hud.v3 .v3-spot.is-locked .v3-spot__orb { filter: grayscale(0.9) brightness(0.6); }
 @media (max-width: 860px) { .hud.v3 .v3-node__label::before, .hud.v3 .v3-spot:not(.is-flip) .v3-spot__label::before { display: none; } }
 

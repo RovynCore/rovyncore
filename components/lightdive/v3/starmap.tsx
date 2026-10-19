@@ -444,11 +444,12 @@ function ClusterView({ sim, c, best, dest, pending, onBack, onPick, onHover, onW
         const light = sim.sky.lights[id];
         const ev = sim.sky.events.get(id);
         const locked = best < d.threshold;
+        const echo = sim.bridge(id);
         return (
           <button
             key={id}
             type="button"
-            className={`v3-spot${locked ? " is-locked" : ""}${dest === id ? " is-on" : ""}${p.x > 70 ? " is-flip" : ""}`}
+            className={`v3-spot${locked ? " is-locked" : ""}${dest === id ? " is-on" : ""}${p.x > 70 ? " is-flip" : ""}${echo ? " has-echo" : ""}`}
             style={{ left: `${p.x}%`, top: `${p.y}%`, ["--lc" as string]: LIGHT_COLOR[light] }}
             onClick={() => onPick(id)}
             onMouseEnter={() => onHover(i)}
@@ -461,8 +462,10 @@ function ClusterView({ sim, c, best, dest, pending, onBack, onPick, onHover, onW
               <b><i>{SLOT[i]}</i>{info.destinations[i].name}{locked && <Lock aria-label={tl("未解鎖")} />}</b>
               <span className="v3-maplabel__meta">{tl("門檻 {0} · 今天的光", { 0: d.threshold })} <i style={{ color: LIGHT_COLOR[light] }}><LightIcon light={light} />{LIGHT[light]}</i></span>
               {ev && <em style={{ color: STAR[ev].color }}>{STAR[ev].name}</em>}
+              {echo > 0 && <em className="is-echo">{tl("光橋殘光")}</em>}
               <span className="v3-maplabel__more"><span>
                 <em className="is-base">{tl("基礎收益 {0} $RVYN 起", { 0: fmt(destinationBase(d, sim.rate)) })}</em>
+                {echo > 0 && <em className="is-echo">{tl("今天有人走過這裡，空手 −{0}%", { 0: echo })}</em>}
                 {ev && <em>{STAR[ev].effect}</em>}
                 {locked ? <em className="is-lock"><Lock aria-hidden="true" />{tl("還差 {0} 戰力", { 0: d.threshold - best })}</em> : <em className="is-go">{tl("點一下看詳情、派隊伍")}</em>}
               </span></span>
@@ -492,9 +495,10 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
   const [deep, setDeep] = useState(false);
   const [asking, setAsking] = useState(false);
   const team = s.teams.find((t) => t.spire === pick);
+  const echo = sim.bridge(id);
   const plan: DivePlan | null = useMemo(
-    () => (team ? planDive(teamInput(s, team), d, sim.sky, "none", { stability: stabilityOf(team.bond, 0), deep: canDeep && deep }) : null),
-    [team, s, d, sim.sky, deep, canDeep],
+    () => (team ? planDive(teamInput(s, team), d, sim.sky, "none", { stability: stabilityOf(team.bond, 0, echo), deep: canDeep && deep }) : null),
+    [team, s, d, sim.sky, deep, canDeep, echo],
   );
   const light = sim.sky.lights[id];
   const ev = sim.sky.events.get(id);
@@ -524,6 +528,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
         <div><dt>{tl("出發成本")}</dt><dd>{tl("收益的 {0}（回來後扣）", { 0: pct(plan?.levy ?? d.levy) })}</dd></div>
         <div><dt>{tl("耗損")}</dt><dd>{d.wear2 + d.wear3 === 0 || plan?.wear2 === 0 ? tl("一律 1 次航程") : tl("{0} 耗損 2、{1} 耗損 3", { 0: pct(plan?.wear2 ?? d.wear2, 1), 1: pct(plan?.wear3 ?? d.wear3, 1) })}</dd></div>
         {ev && <div><dt>{tl("今日星象")}</dt><dd style={{ color: STAR[ev].color }}>{tl("{0}：{1}", { 0: STAR[ev].name, 1: STAR[ev].effect })}</dd></div>}
+        {echo > 0 && <div><dt>{tl("光橋殘光")}</dt><dd className="is-echo">{tl("今天有人走過這裡，空手 −{0}%", { 0: echo })}</dd></div>}
       </dl>
 
       <h3>{tl("選擇隊伍")}</h3>
@@ -577,6 +582,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
           </div>
           <Odds plan={plan} base={baseReward(plan, sim.rate) * uses} />
           {team?.bond ? <p className="hud-note">{tl("默契 {0}：空手機率已少 {0} 個百分點。", { 0: team.bond })}</p> : null}
+          {echo > 0 && <p className="hud-note">{tl("光橋殘光：跟著今天前一位觀測者留下的光橋走，空手機率少 {0} 個百分點。你出發後，殘光就換成你的，留給下一位。", { 0: echo })}</p>}
           <p className="v3-estimate">{tl("光塵 {0}", { 0: fmt(basePoints(plan) * uses, 0) })}{plan.bonus ? tl("（含同頻 +{0}）", { 0: fmt(plan.bonus, 0) }) : ""} {tl("× 今日分配率 {0}", { 0: sim.rate.toFixed(5) })} $RVYN <RateChange sim={sim} />{tl("。分配率每天依核光池和參與人數調整，基礎收益跟著變。")}</p>
         </>
       )}

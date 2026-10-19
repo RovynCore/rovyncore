@@ -123,6 +123,13 @@ assert.ok(predicted.tier !== 0, "steady never comes back empty");
 assert.equal(me.credit, settled.reward);
 log(`reveal ok: x${settled.multX100 / 100}, wear ${settled.wear}, reward ${Number(settled.reward) / 1e18}`);
 assert.equal(me.teams[0].bond, 1, "the crew bond grew");
+// v3.2 echo bridges: the first dive of the day there follows nobody, and leaves alice's bridge behind
+assert.equal(world.echoStability, 1);
+assert.equal(world.bridges[d.dest], alice.toLowerCase(), "alice's bridge is the latest there");
+assert.equal(me.dives.find((x) => x.id === dive.id).echo, 0);
+assert.equal(me.echoesGiven, 0);
+assert.ok(typeof me.nextDripAt === "number" && me.nextDripAt > 0, "the faucet time still reads after echoesGiven");
+log("echo bridges ok");
 
 // every commission of the day: the website's test equals the contract's
 const done = me.dives.find((x) => x.id === dive.id);

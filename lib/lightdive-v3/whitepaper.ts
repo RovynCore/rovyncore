@@ -573,7 +573,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 深潛（風險升一級）→ 超出門檻的穩定、默契與星圖殘頁 → 航行抉擇。"
+      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 深潛（風險升一級）→ 超出門檻的穩定、默契、星圖殘頁與光橋回聲 → 航行抉擇。"
      },
      {
       "t": "h3",
@@ -590,6 +590,14 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      {
       "t": "p",
       "text": "同一組人（光塔、稜鏡、探索者都沒換）每揭曉一趟，默契 +1，最多 5。每 1 點默契讓空手機率少 1 個百分點，移到「一般」，和超出門檻的穩定一起計算。換掉任何一張卡、或有卡停泊離隊，默契就歸零。"
+     },
+     {
+      "t": "h3",
+      "text": "光橋回聲"
+     },
+     {
+      "t": "p",
+      "text": "每一趟出發，都會在那個目的地留下光橋，留到當天結束（UTC）。下一位「別的觀測者」去同一個地方，就會跟著這道光走：空手機率少 1 個百分點，移到「一般」。自己連續去同一個地方不算。出發後，那裡的光橋就換成你的，留給下一位；留下光橋的人會被記一次「引路」，只算榮譽，不分任何收益。加成點數由合約設定（0 到 5，目前 1）。"
      },
      {
       "t": "h3",
@@ -1583,7 +1591,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 深潜（风险升一级）→ 超出门槛的稳定、默契与星图残页 → 航行抉择。"
+      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 深潜（风险升一级）→ 超出门槛的稳定、默契、星图残页与光桥回声 → 航行抉择。"
      },
      {
       "t": "h3",
@@ -1600,6 +1608,14 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      {
       "t": "p",
       "text": "同一组人（光塔、棱镜、探索者都没换）每揭晓一趟，默契 +1，最多 5。每 1 点默契让空手概率少 1 个百分点，移到「一般」，和超出门槛的稳定一起计算。换掉任何一张卡、或有卡停泊离队，默契就归零。"
+     },
+     {
+      "t": "h3",
+      "text": "光桥回声"
+     },
+     {
+      "t": "p",
+      "text": "每一趟出发，都会在那个目的地留下光桥，留到当天结束（UTC）。下一位「别的观测者」去同一个地方，就会跟着这道光走：空手概率少 1 个百分点，移到「一般」。自己连续去同一个地方不算。出发后，那里的光桥就换成你的，留给下一位；留下光桥的人会被记一次「引路」，只算榮譽，不分任何收益。加成点数由合约设置（0 到 5，目前 1）。"
      },
      {
       "t": "h3",
@@ -2593,7 +2609,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond and a star chart → voyage decision."
+      "text": "Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo → voyage decision."
      },
      {
       "t": "h3",
@@ -2610,6 +2626,14 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      {
       "t": "p",
       "text": "Each revealed dive by the same crew (spire, prism and seekers unchanged) adds 1 bond, up to 5. Each point moves 1 percentage point of empty-handed chance to \"Normal\", together with the overflow stability. Changing any card, or a card docking off the team, resets it to 0."
+     },
+     {
+      "t": "h3",
+      "text": "Echo bridges"
+     },
+     {
+      "t": "p",
+      "text": "Every departure leaves its light bridge at the destination until the end of the UTC day. The next dive there by another observer follows that light: 1 percentage point of empty-handed chance moves to \"Normal\". Following your own bridge does not count. Once you set out, the bridge there is yours, left for the next one, and the observer who left the one you followed is counted as its guide: honour only, no share of any reward. The points are set in the contract (0 to 5, currently 1)."
      },
      {
       "t": "h3",
@@ -3603,7 +3627,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 딥 다이브(위험 한 단계 상승) → 기준 초과 안정화·호흡·성도 조각 → 항해 선택."
+      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 딥 다이브(위험 한 단계 상승) → 기준 초과 안정화·호흡·성도 조각·빛다리 메아리 → 항해 선택."
      },
      {
       "t": "h3",
@@ -3620,6 +3644,14 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      {
       "t": "p",
       "text": "같은 팀원(광탑·프리즘·탐색자 변경 없음)으로 다이브가 공개될 때마다 호흡 +1, 최대 5. 호흡 1점마다 빈손 확률 1%p가 \"보통\"으로 옮겨지며, 기준 초과 안정화와 함께 계산됩니다. 카드를 하나라도 바꾸거나 카드가 정박해 팀을 떠나면 0이 됩니다."
+     },
+     {
+      "t": "h3",
+      "text": "빛다리 메아리"
+     },
+     {
+      "t": "p",
+      "text": "출발할 때마다 그 목적지에 빛다리가 남아 그날(UTC)이 끝날 때까지 이어집니다. 같은 곳에 다른 관측자가 다음으로 가면 그 빛을 따라가 빈손 확률 1%p가 \"보통\"으로 옮겨집니다. 자기 빛다리를 따라가는 것은 해당되지 않습니다. 출발하면 그곳의 빛다리는 당신의 것이 되어 다음 사람에게 남겨지고, 빛다리를 남긴 사람에게는 '길잡이' 1회가 기록됩니다(명예일 뿐 보상은 나누지 않음). 점수는 컨트랙트에서 정합니다(0~5, 현재 1)."
      },
      {
       "t": "h3",

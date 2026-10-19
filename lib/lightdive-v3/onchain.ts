@@ -191,6 +191,9 @@ export type World = {
   chartStability: number;
   supplyPriceBp: number[]; // [0, lamp oil, star chart]
   commissionBonusBp: number;
+  // v3.2 (0 and nobody against contracts without echo bridges)
+  echoStability: number;
+  bridges: (string | null)[]; // per destination: the latest observer there today (lower case)
 };
 
 export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
@@ -218,6 +221,8 @@ export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
     { address: c.config, abi: C, functionName: "supplyPriceBp", args: [1] },
     { address: c.config, abi: C, functionName: "supplyPriceBp", args: [2] },
     { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "bonusBp" },
+    { address: c.config, abi: C, functionName: "echoStability" },
+    ...Array.from({ length: 24 }, (_, i) => ({ address: c.expedition, abi: E, functionName: "lastDiver", args: [day, i] })),
   ]);
   const at = testToken ? 9 : 8;
   const rules = (r[at + 12] as Record<string, number>) ?? {};
@@ -244,6 +249,11 @@ export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
     chartStability: Number(rules.chartStability ?? 3),
     supplyPriceBp: [0, Number(r[at + 13] ?? 400), Number(r[at + 14] ?? 600)],
     commissionBonusBp: Number(r[at + 15] ?? 1000),
+    echoStability: Number(r[at + 16] ?? 0),
+    bridges: Array.from({ length: 24 }, (_, i) => {
+      const a = r[at + 17 + i] as string | null;
+      return a && !/^0x0+$/.test(a) ? a.toLowerCase() : null;
+    }),
   };
 }
 
@@ -254,6 +264,8 @@ export type Dive3 = {
   round: bigint; pointsE2: bigint; rate: bigint;
   // v3.1
   long: boolean; turnedBack: boolean; attuned: boolean; supply: number; bond: number;
+  // v3.2: points its echo moved (it followed someone else's bridge)
+  echo: number;
   result?: { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; fallbackUsed: boolean };
 };
 /** The player's commission state: the active one (index and the first dive id that counts) and today's marks
@@ -273,6 +285,7 @@ export type Player = {
   nextDripAt: number | null;
   commission: CommissionState;
   commissionsDone: number; // every commission this wallet has completed
+  echoesGiven: number; // v3.2: dives by others that followed this wallet's bridges
   cards: Card3[]; // owned now (in the wallet or listed by me), plus the ones that went home or were sold
   teams: Team3[];
   dives: Dive3[];
@@ -348,12 +361,13 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
 
   const spires = cards.filter((x) => x.kind === 0 && !x.homeAt && !x.soldAt && x.listedPrice === undefined).map((x) => x.id);
   const diveIds = dived.map((l) => BigInt(l.args.diveId as bigint));
-  const [teamViews, diveViews, own] = await Promise.all([
+  const [teamViews, diveViews, echoViews, own] = await Promise.all([
     many<unknown>(ctx, spires.flatMap((s) => [
       { address: c.expedition, abi: E, functionName: "team", args: [s] },
       { address: c.expedition, abi: E, functionName: "teamDives", args: [s, world.day] },
     ])),
     many<unknown>(ctx, diveIds.map((id) => ({ address: c.expedition, abi: E, functionName: "diveInfo", args: [id] }))),
+    world.echoStability ? many<unknown>(ctx, diveIds.map((id) => ({ address: c.expedition, abi: E, functionName: "echoed", args: [id] }))) : Promise.resolve([]),
     many<unknown>(ctx, [
       { address: c.rvyn, abi: T, functionName: "balanceOf", args: [me] },
       { address: c.expedition, abi: E, functionName: "credit", args: [me] },
@@ -365,6 +379,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
       { address: c.rvyn, abi: T, functionName: "allowance", args: [me, c.pool] },
       { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "active", args: [me] },
       { address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "marks", args: [me, world.day] },
+      { address: c.expedition, abi: E, functionName: "echoesGiven", args: [me] },
       ...(testToken ? [{ address: c.rvyn, abi: T, functionName: "nextDripAt", args: [me] }] : []),
     ]),
   ]);
@@ -384,6 +399,7 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
       id, spire: BigInt(d.spire as bigint), day: Number(d.day), dest: Number(d.dest), beam: Number(d.beam), decision: Number(d.decision),
       revealed: Boolean(d.revealed), power: Number(d.power), round: BigInt(d.round as bigint), pointsE2: BigInt(d.pointsE2 as bigint), rate: BigInt(d.rate as bigint),
       long: Boolean(d.long), turnedBack: Boolean(d.turnedBack), attuned: Boolean(d.attuned), supply: Number(d.supply ?? 0), bond: Number(d.bond ?? 0),
+      echo: echoViews[i] ? world.echoStability : 0,
       result: res ? {
         tier: Number(res.tier), multX100: Number(res.multX100), wear: Number(res.wear), reward: BigInt(res.reward as bigint), levy: BigInt(res.levy as bigint),
         fallbackUsed: Boolean(res.fallbackUsed),
@@ -413,7 +429,8 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     poolAllowance: (own[7] as bigint) ?? 0n,
     commission: commissionState(own[8], own[9], world.day),
     commissionsDone: completed.length,
-    nextDripAt: testToken ? Number((own[10] as bigint) ?? 0n) : null,
+    echoesGiven: Number(own[10] ?? 0),
+    nextDripAt: testToken ? Number((own[11] as bigint) ?? 0n) : null,
     cards, teams, dives, requests,
     claimed: sum(claimed, "gross") - sum(claimed, "fee"),
     claimFees: sum(claimed, "fee"),
@@ -486,10 +503,10 @@ export async function readOnTeam(ctx: Ctx): Promise<[number, number, number]> {
 }
 
 /** The exact plan of a dive as the contract will settle it. */
-/** Points of empty-handed chance a dive moves to "normal": its crew bond and a star chart. */
-export const stabilityOf = (d: Pick<Dive3, "bond" | "supply">, chartStability: number) => d.bond + (d.supply === 2 ? chartStability : 0);
+/** Points of empty-handed chance a dive moves to "normal": its crew bond, a star chart and an echo. */
+export const stabilityOf = (d: Pick<Dive3, "bond" | "supply" | "echo">, chartStability: number) => d.bond + (d.supply === 2 ? chartStability : 0) + d.echo;
 
-export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "decision" | "bond" | "supply" | "long">, chartStability: number): Promise<ChainPlan> {
+export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "decision" | "bond" | "supply" | "long" | "echo">, chartStability: number): Promise<ChainPlan> {
   const p = (await ctx.client.readContract({
     address: ctx.c.config, abi: ctx.abi.LightdiveConfig3, functionName: "plan",
     args: [d.dest, BigInt(d.power), d.beam, d.day, d.decision, stabilityOf(d, chartStability), d.long],

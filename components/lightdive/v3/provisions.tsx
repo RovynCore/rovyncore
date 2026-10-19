@@ -39,8 +39,9 @@ export function SupplyPrompt({ sim, go, onConfirm, onClose }: { sim: Sim; go: De
   const [keep, setKeep] = useState(false);
   const plans = go.map((g) => {
     const team = s.teams.find((t) => t.spire === g.spire)!;
-    const plain = planDive(teamInput(s, team), DESTINATIONS[g.dest], sim.sky, "none", { stability: stabilityOf(team.bond, 0), deep: g.deep });
-    const chart = planDive(teamInput(s, team), DESTINATIONS[g.dest], sim.sky, "none", { stability: stabilityOf(team.bond, 2), deep: g.deep });
+    const echo = sim.bridge(g.dest);
+    const plain = planDive(teamInput(s, team), DESTINATIONS[g.dest], sim.sky, "none", { stability: stabilityOf(team.bond, 0, echo), deep: g.deep });
+    const chart = planDive(teamInput(s, team), DESTINATIONS[g.dest], sim.sky, "none", { stability: stabilityOf(team.bond, 2, echo), deep: g.deep });
     return { g, plain, chart };
   });
   const cost = (supply: number) => plans.reduce((a, p) => a + supplyCost(p.plain, p.g.deep, sim.rate, supply), 0);

@@ -162,6 +162,10 @@ export const CHART_STABILITY = 3; // points a star chart moves
 /** Supply prices as a share of the dive's x1.00 reward (index 1 lamp oil, 2 star chart). */
 export const SUPPLY_PRICE = [0, 0.04, 0.06] as const;
 export const COMMISSION_BONUS = 0.1; // a completed commission pays 10% of that dive's x1.00 reward
+// v3.2 光橋回聲 (LightdiveConfig3.echoStability): a dive that follows someone else's bridge at the same place that day
+export const ECHO_STABILITY = 1; // points of empty-handed chance it moves to "normal"
+/** The preview plays echoes only once the v3.2 contracts are live (the live game reads them from the chain). */
+export const ECHO_PREVIEW = true;
 
 /** round(a / b) for a, b >= 0, halves up: the same integer rounding as LightdiveConfig3. */
 const rnd = (a: number, b: number) => Math.floor((2 * a + b) / (2 * b));

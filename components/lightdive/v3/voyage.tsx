@@ -431,7 +431,7 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
   const card = TEXTS.cards[d.card!];
   const team = s.teams.find((x) => x.spire === d.spire);
   const plan = (c: Choice): DivePlan | null =>
-    (team ? planDive(teamInput(s, team), DESTINATIONS[d.dest], skyOf(Math.floor(d.at / DAY)), c, { stability: stabilityOf(d.bond, d.supply), deep: d.deep }) : null);
+    (team ? planDive(teamInput(s, team), DESTINATIONS[d.dest], skyOf(Math.floor(d.at / DAY)), c, { stability: stabilityOf(d.bond, d.supply, d.echo), deep: d.deep }) : null);
   const stats = (p: DivePlan | null) => {
     if (!p) return null;
     const names = p.names ?? [];
@@ -500,6 +500,7 @@ function Tags({ d }: { d: SimDive }) {
   if (d.supply === 1) tags.push([tl("燈油 · 只耗損 1 次"), "/lightdive/items/lamp-oil.webp"]);
   if (d.supply === 2) tags.push([tl("星圖殘頁 · 空手 −3%"), "/lightdive/items/star-chart-fragment.webp"]);
   if (d.bond) tags.push([tl("默契 {0} · 空手 −{0}%", { 0: d.bond }), null]);
+  if (d.echo) tags.push([tl("光橋殘光 · 空手 −{0}%", { 0: d.echo }), null]);
   if (!tags.length) return null;
   // eslint-disable-next-line @next/next/no-img-element
   return <p className="v3-voyage__tags">{tags.map(([t, icon]) => <span key={t}>{icon && <img src={icon} alt="" />}{t}</span>)}</p>;

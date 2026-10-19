@@ -35,6 +35,7 @@ export type Stats = {
     dives: number; deep: number; turnedBack: number; summons: number; summonPaid: number; rewards: number; levy: number;
     claimed: number; claimFees: number; burned: number; supplies: [number, number]; supplyPaid: number;
     commissions: number; commissionBonus: number; sales: number; salesVolume: number; salesTax: number; drips: number;
+    echoes: number; // v3.2: dives that followed someone else's bridge
   };
   days: DayStats[]; // the last 14 days, newest first
   retention: { d1: number | null; d7: number | null; cohorts: number };
@@ -49,7 +50,7 @@ const day = (ms: number) => Math.floor(ms / 86_400_000);
 export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
   const { c, abi } = ctx;
   const E = abi.Expedition3, M = abi.LightdiveMinter3, K = abi.LightdiveMarket3, N = abi.LightdiveNFT3, P = abi.CoreLightPool3, C = abi.LightdiveCommissions3;
-  const [world, dived, details, decided, turned, revealed, claimed, opened, requested, minted, sold, burned, collected, paid, completed, drips] = await Promise.all([
+  const [world, dived, details, decided, turned, revealed, claimed, opened, requested, minted, sold, burned, collected, paid, completed, drips, echoed] = await Promise.all([
     readWorld(ctx, testToken),
     events<A>(ctx, c.expedition, E, "Dived"),
     events<A>(ctx, c.expedition, E, "DiveDetails"),
@@ -66,6 +67,7 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
     events<A>(ctx, c.pool, P, "Paid").catch(() => [] as Log<A>[]),
     events<A>(ctx, c.commissions, C, "Completed").catch(() => [] as Log<A>[]),
     testToken ? events<A>(ctx, c.rvyn, abi.TestRVYN, "Dripped").catch(() => [] as Log<A>[]) : Promise.resolve([] as Log<A>[]),
+    events<A>(ctx, c.expedition, E, "Echoed").catch(() => [] as Log<A>[]),
   ]);
   const args = (l: Log<A>) => (l as unknown as { args: A }).args;
   const blockOf = (l: Log<A>) => Number(l.blockNumber ?? 0n);
@@ -188,7 +190,7 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
       claimed: claimed.reduce((a, l) => a + num(args(l).gross), 0), claimFees: claimed.reduce((a, l) => a + num(args(l).fee), 0),
       burned: burned.reduce((a, l) => a + num(args(l).amount), 0) + collected.reduce((a, l) => a + num(args(l).burned), 0) + paid.reduce((a, l) => a + num(args(l).burned), 0),
       supplies: supplyCount, supplyPaid, commissions: completed.length, commissionBonus,
-      sales: sold.length, salesVolume, salesTax, drips: drips.length,
+      sales: sold.length, salesVolume, salesTax, drips: drips.length, echoes: echoed.length,
     },
     days: Array.from({ length: 14 }, (_, i) => days.get(today - i) ?? blank(today - i)),
     retention: { d1: cohort(1), d7: cohort(7), cohorts: firstDay.size },

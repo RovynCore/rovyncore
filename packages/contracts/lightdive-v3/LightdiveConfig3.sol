@@ -78,6 +78,7 @@ contract LightdiveConfig3 is Ownable2Step {
     /// @notice Supply prices in basis points of the dive's x1.00 reward (index 1 lamp oil, 2 star chart; 0 = none).
     uint16[3] public supplyPriceBp = [uint16(0), 400, 600];
     uint8 public chartStability = 3; // points of empty-handed chance a star chart removes
+    uint8 public echoStability = 1; // v3.2: points an echo (another observer's bridge at the same place that day) removes
 
     event TableSet(uint8 cluster, uint8 beam);
     event DestinationsSet();
@@ -107,6 +108,7 @@ contract LightdiveConfig3 is Ownable2Step {
 
     event DeepDiveSet(uint32 longVoyageSeconds, uint32 longTurnSeconds, uint8 longMinCluster);
     event SuppliesSet(uint16 oilPriceBp, uint16 chartPriceBp, uint8 chartStability, uint8 bondMax);
+    event EchoSet(uint8 echoStability);
 
     error OutOfBounds();
     error BadTable();
@@ -443,5 +445,12 @@ contract LightdiveConfig3 is Ownable2Step {
         chartStability = chartPoints;
         bondMax = maxBond;
         emit SuppliesSet(oilBp, chartBp, chartPoints, maxBond);
+    }
+
+    /// @notice Points of empty-handed chance an echo moves to "normal" (0 turns echoes off).
+    function setEcho(uint8 points) external onlyOwner {
+        if (points > 5) revert OutOfBounds();
+        echoStability = points;
+        emit EchoSet(points);
     }
 }

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DECISION_AT, DECISION_CLOSE_MS, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, DOCK_DAYS, MAX_TEAMS, VOYAGE_MINUTES, EVENT_CHANCE, ODDS_BP, POWER, PRICE, RENEW_SHARE, VOYAGES,
-  BOND_MAX, CHART_STABILITY, COMMISSION_BONUS, DEEP_MIN_CLUSTER, DEEP_MINUTES, DEEP_TURN_MS, SUPPLY_PRICE,
+  BOND_MAX, CHART_STABILITY, COMMISSION_BONUS, ECHO_PREVIEW, ECHO_STABILITY, DEEP_MIN_CLUSTER, DEEP_MINUTES, DEEP_TURN_MS, SUPPLY_PRICE,
   EMISSION, basePoints, claimFee, dailyRate, planDive, resolve, seeded, skyOf, teamPower,
   type Beam, type Choice, type DivePlan, type DiveResult, type Kind, type TeamInput,
 } from "@/lib/lightdive-v3/rules";
@@ -87,6 +87,7 @@ export type SimDive = {
   turnedBack?: boolean; // a deep dive that turned back (x1.00)
   attuned?: boolean;
   crew?: number[]; // spire, prism and seekers at departure (card histories)
+  echo?: number; // v3.2: points its echo moved (it followed someone else's bridge)
 };
 export type MintRequest = { id: number; kind: Kind; qty: number; at: number; revealAt: number; paid: number };
 /** A revealed summon, kept for the summon history: the request and the ids of the cards it gave. */
@@ -113,6 +114,7 @@ export type SimState = {
   commission?: { day: number; index: number; fromDive: number } | null; // the accepted daily commission
   commissionMarks?: Record<number, number>; // per day: bit i completed, bit i + 8 abandoned
   commissionsDone?: number; // live game: completed commissions read from the chain (the preview counts its marks)
+  echoesGiven?: number; // v3.2: dives by others that followed this observer's bridges (undefined: echoes are off)
 };
 
 const addSpent = (st: SimState, key: "mint" | "renew" | "market" | "supply", v: number) => {
@@ -189,8 +191,35 @@ export const passesOn = (s: SimState, day: number, spire?: number) =>
 /** A deep dive's turn-back window: from DEEP_TURN_MS until a minute before the reveal. */
 export const turnOpenAt = (d: SimDive) => d.revealAt - DEEP_TURN_MS;
 export const turning = (d: SimDive, now: number) => !!d.deep && !d.result && now >= turnOpenAt(d) && now < d.revealAt - DECISION_CLOSE_MS;
-/** Points of empty-handed chance a dive moves to "normal": its crew bond and a star chart. */
-export const stabilityOf = (bond: number | undefined, supply: number | undefined) => (bond ?? 0) + (supply === 2 ? CHART_STABILITY : 0);
+/** Points of empty-handed chance a dive moves to "normal": its crew bond, a star chart and an echo. */
+export const stabilityOf = (bond: number | undefined, supply: number | undefined, echo?: number) => (bond ?? 0) + (supply === 2 ? CHART_STABILITY : 0) + (echo ?? 0);
+/** 光橋回聲 in the preview: the latest dive by someone else at each destination today, before `t`. */
+function othersLatest(t: number): Map<number, number> {
+  const day = dayOf(t);
+  const out = new Map<number, number>();
+  for (const r of otherDives(t, 500, Math.ceil((t - day * DAY) / 3_600_000) + 1)) {
+    if (dayOf(r.at) === day && r.at <= t && !out.has(r.dest)) out.set(r.dest, r.at);
+  }
+  return out;
+}
+/** Points a dive at `dest` gets now: someone else's bridge there is newer than the player's own (as Expedition3.lastDiver). */
+function echoOf(st: SimState, others: Map<number, number>, dest: number, t: number): number {
+  if (!ECHO_PREVIEW) return 0;
+  const day = dayOf(t);
+  const mine = Math.max(0, ...st.dives.filter((d) => d.dest === dest && dayOf(d.at) === day).map((d) => d.at));
+  const other = others.get(dest);
+  return other !== undefined && other > mine ? ECHO_STABILITY : 0;
+}
+/** The preview's guide count: each other dive that came next after one of the player's at the same place that day. */
+function echoesGivenOf(st: SimState, rows: FeedRow[]): number {
+  let n = 0;
+  for (const d of st.dives) {
+    const day = dayOf(d.at);
+    const next = rows.filter((r) => r.dest === d.dest && dayOf(r.at) === day && r.at > d.at).reduce((a, r) => Math.min(a, r.at), Infinity);
+    if (next < Infinity && !st.dives.some((x) => x.dest === d.dest && x.at > d.at && x.at < next)) n++;
+  }
+  return n;
+}
 export type DiveOpts = { supply?: number; deep?: boolean };
 /** Voyages of the player's own state (the preview; older saves without a crew count the spire only). */
 export function voyagesOf(s: SimState): Voyage[] {
@@ -246,6 +275,8 @@ export type Game = {
   commissions: Commissions;
   /** 卡片履歷: what a card has lived through (null when it has never sailed). */
   history: (id: number) => CardHistory | null;
+  /** 光橋回聲: points a dive at `dest` would get now from someone else's bridge (0: none, or echoes are off). */
+  bridge: (dest: number) => number;
   /** Several teams at once (one transaction on chain); one result per team, in order. */
   diveMany: (teams: { spire: number; dest: number }[], supply?: number) => Promise<ActResult[]>;
   choose: (diveId: number, choice: Choice) => Promise<void>;
@@ -368,7 +399,8 @@ export function useSim(): Game {
       const d = DESTINATIONS[dest];
       if (teamPower(input) < d.threshold) { error = "tooDim"; return; }
       const supply = opts.supply ?? 0;
-      const plan = planDive(input, d, skyOf(day), "none", { stability: stabilityOf(team.bond, supply), deep: opts.deep });
+      const echo = echoOf(st, othersLatest(t), dest, t);
+      const plan = planDive(input, d, skyOf(day), "none", { stability: stabilityOf(team.bond, supply, echo), deep: opts.deep });
       const paid = supplyCost(plan, opts.deep, rateOf(day), supply);
       if (paid > st.balance) { error = "balance"; return; }
       st.balance -= paid;
@@ -380,6 +412,7 @@ export function useSim(): Game {
         id: st.nextId++, spire, dest, at: t, revealAt: t + (opts.deep ? DEEP_MINUTES * 60_000 : REVEAL_MS), plan, card,
         deep: !!opts.deep, supply, supplyPaid: paid, bond: team.bond ?? 0, attuned: plan.bonus > 0,
         crew: [team.spire, ...(team.prism ? [team.prism] : []), ...team.seekers],
+        ...(echo ? { echo } : {}),
       };
       st.dives.push(made);
     });
@@ -393,7 +426,7 @@ export function useSim(): Game {
       const team = st.teams.find((x) => x.spire === d.spire);
       d.choice = choice;
       d.choiceAt = Date.now();
-      if (team) d.plan = planDive(teamInput(st, team), DESTINATIONS[d.dest], skyOf(dayOf(d.at)), choice, { stability: stabilityOf(d.bond, d.supply), deep: d.deep });
+      if (team) d.plan = planDive(teamInput(st, team), DESTINATIONS[d.dest], skyOf(dayOf(d.at)), choice, { stability: stabilityOf(d.bond, d.supply, d.echo), deep: d.deep });
     });
   }, [commit]);
 
@@ -669,8 +702,11 @@ export function useSim(): Game {
   const a = <A extends unknown[], R>(f: (...args: A) => R) => async (...args: A) => f(...args);
   const dives = state?.dives;
   const histories = useMemo(() => (state ? historiesOf(voyagesOf(state)) : new Map<number, CardHistory>()), [dives]); // eslint-disable-line react-hooks/exhaustive-deps -- only the dives matter
+  const minute = Math.floor(now / 60_000);
+  const others = useMemo(() => (ECHO_PREVIEW && now ? othersLatest(now) : new Map<number, number>()), [minute]); // eslint-disable-line react-hooks/exhaustive-deps -- once a minute
+  const shown = useMemo(() => (state && ECHO_PREVIEW ? { ...state, echoesGiven: echoesGivenOf(state, week) } : state), [state, week]);
   return {
-    mode: "preview", state, now, today, sky, rate, rateYesterday, pool,
+    mode: "preview", state: shown, now, today, sky, rate, rateYesterday, pool,
     rateOn: rateOf,
     market,
     supply: (listed: [number, number, number]) => simulatedSupply(today, listed),
@@ -678,6 +714,7 @@ export function useSim(): Game {
     week,
     chainOf,
     history: (id) => histories.get(id) ?? null,
+    bridge: (dest) => (state ? echoOf(state, others, dest, now) : 0),
     dive: a(dive), diveMany: async (teams, supply) => teams.map((t) => dive(t.spire, t.dest, { supply })), turnBack: a(turnBack), commissions, choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
     claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),
     hurry, reset, skipDay,

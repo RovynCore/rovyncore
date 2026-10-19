@@ -781,3 +781,76 @@ test("v3.1 commissions: three a day, one at a time; a matching dive after accept
     await w.done();
   }
 });
+
+test("v3.2 echo bridges: another observer's dive at the same place that day is echoed (+1 point to normal), your own is not", async () => {
+  const w = await world();
+  try {
+    await w.ok(w.minter, "LightdiveMinter3", "openSale", [0n]);
+    const a = await w.squad(w.alice, 1);
+    const b = await w.squad(w.bob, 1);
+    await w.ok(w.exp, "Expedition3", "setTeam", [a.spire, 0n, a.seekers], w.alice);
+    await w.ok(w.exp, "Expedition3", "setTeam", [b.spire, 0n, b.seekers], w.bob);
+    const day = await w.read(w.exp, "Expedition3", "today");
+    // the deepest destination both teams qualify for keeps some empty-handed chance
+    const reach = async (spire) => Number((await w.read(w.exp, "Expedition3", "teamPower", [spire, 0, day]))[0]);
+    const top = Math.min(await reach(a.spire), await reach(b.spire));
+    const dest = DESTINATIONS.filter((x) => x.threshold <= top).at(-1).id;
+    assert.equal(await w.read(w.config, "LightdiveConfig3", "echoStability"), 1);
+
+    // the first bridge of the day: nobody to follow
+    let r = await w.ok(w.exp, "Expedition3", "dive", [a.spire, dest, 0, false], w.alice);
+    let [dv] = w.events(r, "Expedition3", "Dived");
+    assert.equal(w.events(r, "Expedition3", "Echoed").length, 0);
+    assert.equal(await w.read(w.exp, "Expedition3", "echoed", [dv.diveId]), false);
+    assert.equal(await w.read(w.exp, "Expedition3", "lastDiver", [Number(day), dest]), w.alice);
+    await w.warp(310);
+    await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proofOf(9)], w.stranger);
+    // following your own bridge is not an echo
+    r = await w.ok(w.exp, "Expedition3", "dive", [a.spire, dest, 0, false], w.alice);
+    [dv] = w.events(r, "Expedition3", "Dived");
+    assert.equal(w.events(r, "Expedition3", "Echoed").length, 0);
+    assert.equal(await w.read(w.exp, "Expedition3", "echoed", [dv.diveId]), false);
+
+    // someone else's is: the event names the guide, the guide's count grows, the bridge is now the follower's
+    r = await w.ok(w.exp, "Expedition3", "dive", [b.spire, dest, 0, false], w.bob);
+    [dv] = w.events(r, "Expedition3", "Dived");
+    const [echo] = w.events(r, "Expedition3", "Echoed");
+    assert.equal(echo.diveId, dv.diveId);
+    assert.equal(echo.guide, w.alice);
+    assert.equal(echo.follower, w.bob);
+    assert.equal(await w.read(w.exp, "Expedition3", "echoed", [dv.diveId]), true);
+    assert.equal(await w.read(w.exp, "Expedition3", "echoesGiven", [w.alice]), 1);
+    assert.equal(await w.read(w.exp, "Expedition3", "echoesGiven", [w.bob]), 0);
+    assert.equal(await w.read(w.exp, "Expedition3", "lastDiver", [Number(day), dest]), w.bob);
+    assert.equal(await w.read(w.exp, "Expedition3", "lastDiver", [Number(day) + 1, dest]), "0x0000000000000000000000000000000000000000", "bridges fade at the end of the day");
+
+    // the reveal uses the echo: a draw that is empty-handed without it lands on "normal" with it
+    const d = await w.read(w.exp, "Expedition3", "diveInfo", [dv.diveId]);
+    const plain = await w.read(w.config, "LightdiveConfig3", "plan", [dest, BigInt(d.power), d.beam, Number(d.day), 0, d.bond, false]);
+    const lit = await w.read(w.config, "LightdiveConfig3", "plan", [dest, BigInt(d.power), d.beam, Number(d.day), 0, d.bond + 1, false]);
+    assert.equal(plain.table[0].probBp - lit.table[0].probBp, Math.min(100, plain.table[0].probBp));
+    assert.ok(plain.table[0].probBp > lit.table[0].probBp, "the test needs some empty-handed chance left");
+    await w.warp(310);
+    const tierOf = (x, table) => { let t = 0; for (; t < table.length - 1 && x >= table[t].probBp; t++) x -= table[t].probBp; return t; };
+    let proof;
+    for (let n = 1; !proof && n < 200_000; n++) {
+      const x = Number(w.diveRandom(d.round, proofOf(n), dv.diveId) % 10_000n);
+      if (tierOf(x, plain.table) === 0 && tierOf(x, lit.table) === 1) proof = proofOf(n);
+    }
+    assert.ok(proof, "a proof in the echo's 1%");
+    const rv = await w.ok(w.exp, "Expedition3", "reveal", [dv.diveId, proof], w.stranger);
+    const [res] = w.events(rv, "Expedition3", "Revealed");
+    assert.equal(res.tier, 1);
+    assert.ok(res.multX100 > 0, "not empty-handed");
+
+    // the owner can turn echoes off or up to 5 points, no further; nobody else can
+    await w.no(w.config, "LightdiveConfig3", "setEcho", [6]);
+    await w.no(w.config, "LightdiveConfig3", "setEcho", [2], w.stranger);
+    const s = await w.ok(w.config, "LightdiveConfig3", "setEcho", [0]);
+    assert.equal(w.events(s, "LightdiveConfig3", "EchoSet")[0].echoStability, 0);
+    assert.equal(await w.read(w.config, "LightdiveConfig3", "echoStability"), 0);
+    await w.ok(w.config, "LightdiveConfig3", "setEcho", [5]);
+  } finally {
+    await w.done();
+  }
+});

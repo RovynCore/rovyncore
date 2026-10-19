@@ -41,6 +41,7 @@ export type Records = {
   maxBond: number;
   supplyDays: number; // longest run of days with a supply on every departure
   commissions: number;
+  echoes?: number; // v3.2: dives that followed this observer's bridges (undefined while echo bridges are off)
   // the profile
   brought: number; // $RVYN brought back, after departure costs
   summons: number;
@@ -80,6 +81,7 @@ export function recordsFrom(s: SimState, today: number): Records {
     maxBond: Math.max(0, ...s.teams.map((t) => t.bond ?? 0), ...s.dives.map((d) => d.bond ?? 0)),
     supplyDays,
     commissions: s.commissionsDone ?? Object.values(s.commissionMarks ?? {}).reduce((a, m) => a + bit3(m), 0),
+    echoes: s.echoesGiven, // v3.2 (undefined while echo bridges are off)
     brought: list.reduce((a, d) => a + (d.reward ?? 0), 0),
     summons: (s.pulls ?? []).length + s.mints.length,
     since: starts.length ? Math.min(...starts) : null,
@@ -119,6 +121,11 @@ function titlesOf(r: Records): Title[] {
     { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7, rank: 5 },
     { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10, rank: 4 },
     { name: tl("老練受託人"), how: tl("完成 50 個每日委託"), got: r.commissions >= 50, rank: 7 },
+    // v3.2: only once echo bridges are on
+    ...(r.echoes === undefined ? [] : [
+      { name: tl("引路人"), how: tl("你留下的光橋被別人跟著走 10 次"), got: r.echoes >= 10, rank: 4 },
+      { name: tl("光橋守望者"), how: tl("你留下的光橋被別人跟著走 100 次"), got: r.echoes >= 100, rank: 8 },
+    ]),
   ];
 }
 
@@ -247,7 +254,9 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
           <Tile label={tl("最高倍率")} value={r.bestMult ? `×${(r.bestMult / 100).toFixed(2)}` : "—"} tone="#f0c766" />
           <Tile label={tl("傳說")} value={r.legends} sub={tl("大豐收以上 {0} 次", { 0: r.greats })} tone="#fff4d6" />
           <Tile label={tl("連續出航")} value={tl("{0} 天", { 0: r.streak })} />
-          <Tile label={tl("召喚次數")} value={r.summons} />
+          {r.echoes === undefined
+            ? <Tile label={tl("召喚次數")} value={r.summons} />
+            : <Tile label={tl("引路")} value={r.echoes} sub={tl("別人跟著你的光橋走")} tone="#ffe7a8" />}
           <Tile label={tl("完成的委託")} value={r.commissions} />
         </div>
         {mine && <p className="v3-muted v3-profile__note">{tl("累計帶回 {0} $RVYN（已扣出發成本）。收益的細節在金庫。", { 0: fmt(r.brought) })}</p>}
