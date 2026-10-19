@@ -501,6 +501,7 @@ function Tags({ d }: { d: SimDive }) {
   if (d.supply === 2) tags.push([tl("星圖殘頁 · 空手 −3%"), "/lightdive/items/star-chart-fragment.webp"]);
   if (d.bond) tags.push([tl("默契 {0} · 空手 −{0}%", { 0: d.bond }), null]);
   if (d.echo) tags.push([tl("光橋殘光 · 空手 −{0}%", { 0: d.echo }), null]);
+  if (d.first) tags.push([tl("今日首航"), null]);
   if (!tags.length) return null;
   // eslint-disable-next-line @next/next/no-img-element
   return <p className="v3-voyage__tags">{tags.map(([t, icon]) => <span key={t}>{icon && <img src={icon} alt="" />}{t}</span>)}</p>;

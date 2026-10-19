@@ -41,6 +41,7 @@ export type Records = {
   maxBond: number;
   supplyDays: number; // longest run of days with a supply on every departure
   commissions: number;
+  firsts: number; // 今日首航: days-and-places reached first
   echoes?: number; // v3.2: dives that followed this observer's bridges (undefined while echo bridges are off)
   // the profile
   brought: number; // $RVYN brought back, after departure costs
@@ -81,6 +82,7 @@ export function recordsFrom(s: SimState, today: number): Records {
     maxBond: Math.max(0, ...s.teams.map((t) => t.bond ?? 0), ...s.dives.map((d) => d.bond ?? 0)),
     supplyDays,
     commissions: s.commissionsDone ?? Object.values(s.commissionMarks ?? {}).reduce((a, m) => a + bit3(m), 0),
+    firsts: s.firsts ?? 0,
     echoes: s.echoesGiven, // v3.2 (undefined while echo bridges are off)
     brought: list.reduce((a, d) => a + (d.reward ?? 0), 0),
     summons: (s.pulls ?? []).length + s.mints.length,
@@ -121,6 +123,9 @@ function titlesOf(r: Records): Title[] {
     { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7, rank: 5 },
     { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10, rank: 4 },
     { name: tl("老練受託人"), how: tl("完成 50 個每日委託"), got: r.commissions >= 50, rank: 7 },
+    // 今日首航
+    { name: tl("破曉者"), how: tl("成為某個目的地當天第一位抵達的觀測者"), got: r.firsts > 0, rank: 2 },
+    { name: tl("先行者"), how: tl("當天第一位抵達 30 次"), got: r.firsts >= 30, rank: 6 },
     // v3.2: only once echo bridges are on
     ...(r.echoes === undefined ? [] : [
       { name: tl("引路人"), how: tl("你留下的光橋被別人跟著走 10 次"), got: r.echoes >= 10, rank: 4 },

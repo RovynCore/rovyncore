@@ -989,6 +989,7 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 /* v3.2 光橋殘光: someone else's bridge is here today */
 .hud.v3 .v3-spot.has-echo .v3-spot__orb { outline: 1px dashed rgba(255, 231, 168, 0.7); outline-offset: -8px; }
 .hud.v3 .v3-spot em.is-echo, .hud.v3 .v3-kv dd.is-echo { color: #ffe7a8; }
+.hud.v3 .v3-spot em.is-first, .hud.v3 .v3-kv dd.is-first { color: #bfe8ff; }
 .hud.v3 .v3-node.is-locked .v3-node__orb, .hud.v3 .v3-spot.is-locked .v3-spot__orb { filter: grayscale(0.9) brightness(0.6); }
 @media (max-width: 860px) { .hud.v3 .v3-node__label::before, .hud.v3 .v3-spot:not(.is-flip) .v3-spot__label::before { display: none; } }
 
@@ -1835,3 +1836,58 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .hud.v3.is-calm .v3-nft .v3-nft__art::after { animation: none; }
 /* 10-19: seekers stand in their light's own landscape (portrait art, already dark: less dimming, centred) */
 .v3-face.k2 .v3-face__scene { background-position: 50% 40%; filter: brightness(0.8) saturate(1); }
+/* 10-19: on the galaxy every cluster's label sits under its orb, centred, so the six never run past the map's edge
+   into the live log or into each other on 1024–1440px screens (the cluster view keeps labels beside the orbs) */
+@media (min-width: 861px) {
+  .hud.v3 .v3-galaxy .v3-node { flex-direction: column; gap: 6px; text-align: center; transform: translate(-50%, -36px); }
+  .hud.v3 .v3-galaxy .v3-node.is-core { transform: translate(-50%, -48px); }
+  .hud.v3 .v3-galaxy .v3-node__label { padding: 4px 10px; justify-items: center; }
+  .hud.v3 .v3-galaxy .v3-node__label::before, .hud.v3 .v3-galaxy .v3-node__label::after { display: none; }
+  .hud.v3 .v3-galaxy .v3-node__label b { justify-content: center; }
+}
+/* 10-19: on 861–1180px screens the star map takes the full width and the live log follows below it (side by side the
+   map was under 480px wide and the cluster labels ran into each other) */
+@media (min-width: 861px) and (max-width: 1180px) {
+  .v3-dive:not(:has(.v3-voyage)) { display: block; }
+  .v3-dive > .hud-live { border-left: 0; border-top: 1px solid var(--h-line); max-height: 60vh; }
+}
+/* on a map narrower than 1000px (laptops: the menu and the live log take the sides) the cluster labels are a size
+   smaller and drop the second-language subtitle, so the six keep clear of each other */
+@media (min-width: 861px) {
+@container (max-width: 1000px) {
+  .hud.v3 .v3-galaxy .v3-node__label b { font-size: 15px; }
+  .hud.v3 .v3-galaxy .v3-node__label small { display: none; }
+}
+}
+/* the hover details wrap inside the label instead of widening it while hidden */
+@media (min-width: 861px) {
+  .hud.v3 :is(.v3-galaxy, .v3-cluster) .v3-maplabel__more > span { width: 0; min-width: 100%; }
+}
+@media (min-width: 861px) {
+@container (max-width: 900px) {
+  .hud.v3 .v3-galaxy .v3-node__orb { width: 56px; height: 56px; }
+  .hud.v3 .v3-galaxy .v3-node.is-core .v3-node__orb { width: 72px; height: 72px; }
+  .hud.v3 .v3-galaxy .v3-node { transform: translate(-50%, -28px); }
+  .hud.v3 .v3-galaxy .v3-node.is-core { transform: translate(-50%, -36px); }
+}
+}
+/* on a narrow map the galaxy shows each cluster's name only; its power range and sky events move into the hover
+   details (the cluster view shows them all) */
+.hud.v3 .v3-galaxy .v3-narrow-only { display: none; }
+@media (min-width: 861px) {
+@container (max-width: 900px) {
+  .hud.v3 .v3-galaxy .v3-node__label { max-width: 170px; }
+  .hud.v3 .v3-galaxy .v3-node__label b { white-space: normal; font-size: 14px; letter-spacing: 0.02em; text-align: center; }
+  .hud.v3 .v3-galaxy .v3-node__label > .v3-maplabel__meta, .hud.v3 .v3-galaxy .v3-node__label > em.is-event { display: none; }
+  .hud.v3 .v3-galaxy .v3-narrow-only { display: block; }
+}
+}
+/* Rovyn's docked line on the star map sits over the map's title below 1600px wide: it only shows where there is room */
+@media (max-width: 1599px) { .v3-dock-rovyn { display: none; } }
+/* the cluster view on a narrow map: destination labels wrap at 200px so the four keep clear of each other */
+@media (min-width: 861px) {
+@container (max-width: 1000px) {
+  .hud.v3 .v3-cluster .v3-spot__label { max-width: 200px; }
+  .hud.v3 .v3-cluster .v3-spot__label b, .hud.v3 .v3-cluster .v3-spot__label .v3-maplabel__meta { white-space: normal; }
+}
+}

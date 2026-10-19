@@ -92,6 +92,25 @@ export function voyagesFromLogs(l: LedgerLogs): Voyage[] {
   return out;
 }
 
+/** 今日首航 (10-19): the first dive of each UTC day at each destination, by anyone (`${day}:${dest}`). */
+export type First = { owner: string; id: number };
+export function firstsOf(dived: Ev[]): Map<string, First> {
+  const out = new Map<string, First>();
+  const sorted = [...dived].sort((a, b) => (a.blockNumber === b.blockNumber ? a.logIndex - b.logIndex : a.blockNumber < b.blockNumber ? -1 : 1));
+  for (const e of sorted) {
+    const key = `${Number(e.args.day)}:${Number(e.args.dest)}`;
+    if (!out.has(key)) out.set(key, { owner: String(e.args.owner).toLowerCase(), id: Number(e.args.diveId) });
+  }
+  return out;
+}
+/** How many days-and-places an observer was the first to reach. */
+export const firstsBy = (firsts: Map<string, First>, address: string) => {
+  const a = address.toLowerCase();
+  let n = 0;
+  for (const f of firsts.values()) if (f.owner === a) n++;
+  return n;
+};
+
 /** A mark a card has earned, hardest first. */
 export type MarkKey = "legend" | "crown" | "abyss" | "harvest" | "veteran" | "renewed";
 export function marksOf(h: CardHistory | null | undefined, renewed?: boolean): MarkKey[] {

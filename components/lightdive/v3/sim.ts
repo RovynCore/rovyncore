@@ -88,6 +88,7 @@ export type SimDive = {
   attuned?: boolean;
   crew?: number[]; // spire, prism and seekers at departure (card histories)
   echo?: number; // v3.2: points its echo moved (it followed someone else's bridge)
+  first?: boolean; // 今日首航: the first dive of the day at this destination, by anyone
 };
 export type MintRequest = { id: number; kind: Kind; qty: number; at: number; revealAt: number; paid: number };
 /** A revealed summon, kept for the summon history: the request and the ids of the cards it gave. */
@@ -115,6 +116,7 @@ export type SimState = {
   commissionMarks?: Record<number, number>; // per day: bit i completed, bit i + 8 abandoned
   commissionsDone?: number; // live game: completed commissions read from the chain (the preview counts its marks)
   echoesGiven?: number; // v3.2: dives by others that followed this observer's bridges (undefined: echoes are off)
+  firsts?: number; // 今日首航: days-and-places this observer reached first
 };
 
 const addSpent = (st: SimState, key: "mint" | "renew" | "market" | "supply", v: number) => {
@@ -202,6 +204,27 @@ function othersLatest(t: number): Map<number, number> {
   }
   return out;
 }
+/** 今日首航 in the preview: the earliest dive by someone else at each destination today, before `t`. */
+function othersEarliest(t: number): Map<number, { at: number; who: string }> {
+  const day = dayOf(t);
+  const out = new Map<number, { at: number; who: string }>();
+  for (const r of otherDives(t, 500, Math.ceil((t - day * DAY) / 3_600_000) + 1)) {
+    if (dayOf(r.at) === day && r.at <= t) out.set(r.dest, { at: r.at, who: r.who }); // newest first: the last one wins
+  }
+  return out;
+}
+/** The preview's count of first arrivals: the player's dives that came before everyone else's there that day. */
+function firstsOfPreview(st: SimState, rows: FeedRow[]): number {
+  let n = 0;
+  const seen = new Set<string>();
+  for (const d of [...st.dives].sort((a, b) => a.at - b.at)) {
+    const day = dayOf(d.at), key = `${day}:${d.dest}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (d.first || !rows.some((r) => r.dest === d.dest && dayOf(r.at) === day && r.at < d.at)) n++;
+  }
+  return n;
+}
 /** Points a dive at `dest` gets now: someone else's bridge there is newer than the player's own (as Expedition3.lastDiver). */
 function echoOf(st: SimState, others: Map<number, number>, dest: number, t: number): number {
   if (!ECHO_PREVIEW) return 0;
@@ -277,6 +300,8 @@ export type Game = {
   history: (id: number) => CardHistory | null;
   /** 光橋回聲: points a dive at `dest` would get now from someone else's bridge (0: none, or echoes are off). */
   bridge: (dest: number) => number;
+  /** 今日首航: who reached `dest` first today (null: nobody yet). */
+  first: (dest: number) => { who: string; owner?: string; me: boolean } | null;
   /** Several teams at once (one transaction on chain); one result per team, in order. */
   diveMany: (teams: { spire: number; dest: number }[], supply?: number) => Promise<ActResult[]>;
   choose: (diveId: number, choice: Choice) => Promise<void>;
@@ -400,6 +425,7 @@ export function useSim(): Game {
       if (teamPower(input) < d.threshold) { error = "tooDim"; return; }
       const supply = opts.supply ?? 0;
       const echo = echoOf(st, othersLatest(t), dest, t);
+      const first = !othersEarliest(t).has(dest) && !st.dives.some((x) => x.dest === dest && dayOf(x.at) === day);
       const plan = planDive(input, d, skyOf(day), "none", { stability: stabilityOf(team.bond, supply, echo), deep: opts.deep });
       const paid = supplyCost(plan, opts.deep, rateOf(day), supply);
       if (paid > st.balance) { error = "balance"; return; }
@@ -413,6 +439,7 @@ export function useSim(): Game {
         deep: !!opts.deep, supply, supplyPaid: paid, bond: team.bond ?? 0, attuned: plan.bonus > 0,
         crew: [team.spire, ...(team.prism ? [team.prism] : []), ...team.seekers],
         ...(echo ? { echo } : {}),
+        ...(first ? { first } : {}),
       };
       st.dives.push(made);
     });
@@ -704,7 +731,14 @@ export function useSim(): Game {
   const histories = useMemo(() => (state ? historiesOf(voyagesOf(state)) : new Map<number, CardHistory>()), [dives]); // eslint-disable-line react-hooks/exhaustive-deps -- only the dives matter
   const minute = Math.floor(now / 60_000);
   const others = useMemo(() => (ECHO_PREVIEW && now ? othersLatest(now) : new Map<number, number>()), [minute]); // eslint-disable-line react-hooks/exhaustive-deps -- once a minute
-  const shown = useMemo(() => (state && ECHO_PREVIEW ? { ...state, echoesGiven: echoesGivenOf(state, week) } : state), [state, week]);
+  const earliest = useMemo(() => (now ? othersEarliest(now) : new Map<number, { at: number; who: string }>()), [minute]); // eslint-disable-line react-hooks/exhaustive-deps -- once a minute
+  const shown = useMemo(() => (state ? { ...state, firsts: firstsOfPreview(state, week), ...(ECHO_PREVIEW ? { echoesGiven: echoesGivenOf(state, week) } : {}) } : state), [state, week]);
+  const first = (dest: number) => {
+    const mine = state?.dives.filter((d) => d.dest === dest && dayOf(d.at) === today).sort((a, b) => a.at - b.at)[0];
+    const other = earliest.get(dest);
+    if (mine && (!other || mine.at <= other.at || mine.first)) return { who: tl("你"), me: true };
+    return other ? { who: other.who, me: false } : null;
+  };
   return {
     mode: "preview", state: shown, now, today, sky, rate, rateYesterday, pool,
     rateOn: rateOf,
@@ -715,6 +749,7 @@ export function useSim(): Game {
     chainOf,
     history: (id) => histories.get(id) ?? null,
     bridge: (dest) => (state ? echoOf(state, others, dest, now) : 0),
+    first,
     dive: a(dive), diveMany: async (teams, supply) => teams.map((t) => dive(t.spire, t.dest, { supply })), turnBack: a(turnBack), commissions, choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
     claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),
     hurry, reset, skipDay,

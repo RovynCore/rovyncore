@@ -30,7 +30,7 @@ import {
   type Commissions, type DiveOpts, type Game, type MintRequest, type PullRecord, type SimDive, type SimNft, type SimState, type SimTeam,
 } from "./sim";
 import { commissionsOf } from "@/lib/lightdive-v3/commissions";
-import { historiesOf, voyagesFromLogs, type CardHistory, type LedgerLogs } from "@/lib/lightdive-v3/history";
+import { firstsBy, firstsOf, historiesOf, voyagesFromLogs, type CardHistory, type First, type LedgerLogs } from "@/lib/lightdive-v3/history";
 
 const CHOICES: Choice[] = ["none", "steady", "bold", "detour"];
 const NAMES_KEY = "lightdive:v3:team-names";
@@ -106,7 +106,7 @@ const riskOf = (beam: number, dest: number, day: number) => {
 };
 
 type Prediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; signature: Hex };
-type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[]; histories: Map<number, CardHistory> };
+type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[]; histories: Map<number, CardHistory>; firsts: Map<string, First> };
 const NO_LOGS = (): LedgerLogs => ({ teamSet: [], disbanded: [], dived: [], details: [], turned: [], revealed: [] });
 
 function readNames(): Record<number, string> {
@@ -258,7 +258,8 @@ export function useChain(): Game {
           led.next = fresh.latest + 1n;
         }
         const histories = historiesOf(voyagesFromLogs(led.logs));
-        setData({ world, player, market, feed, week, onTeam, summons, histories });
+        const firsts = firstsOf(led.logs.dived);
+        setData({ world, player, market, feed, week, onTeam, summons, histories, firsts });
         setWalletChain(chainId);
         setFailed(false);
       } catch (e) {
@@ -304,14 +305,18 @@ export function useChain(): Game {
       return { version: 1, nextId: 1, balance: 0, credit: 0, lastClaimAt: 0, nfts: [], teams: [], dives: [], mints: [], pulls: [], claimed: 0, levyTotal: 0, listings: [], sales: [], spent: { mint: 0, renew: 0, market: 0 }, teamNames: names };
     }
     // predictions are read through the ref; `data` changes whenever one is added
-    return playerState(data.player, data.world, drafts, names, predictions.current);
-  }, [data, drafts, names]);
+    const st = playerState(data.player, data.world, drafts, names, predictions.current);
+    // 今日首航: the player's first arrivals, and which of their dives were first there that day
+    const firstIds = new Set([...data.firsts.values()].map((f) => f.id));
+    for (const d of st.dives) if (firstIds.has(d.id)) d.first = true;
+    return account ? { ...st, firsts: firstsBy(data.firsts, account) } : st;
+  }, [data, drafts, names, account]);
 
   const profile = useCallback(async (address: string): Promise<SimState | null> => {
     if (!ctx || !data || !/^0x[0-9a-fA-F]{40}$/.test(address)) return null;
     try {
       const p = await readPlayer(ctx, address as Address, data.world, G.testToken);
-      return playerState(p, data.world, {}, {}, new Map());
+      return { ...playerState(p, data.world, {}, {}, new Map()), firsts: firstsBy(data.firsts, address) };
     } catch (e) {
       console.warn("lightdive profile", e);
       return null;
@@ -712,6 +717,12 @@ export function useChain(): Game {
       };
     },
     history: (id: number) => data?.histories.get(id) ?? null,
+    first: (dest: number) => {
+      const f = data?.firsts.get(`${today}:${dest}`);
+      if (!f) return null;
+      const me = !!account && f.owner === account.toLowerCase();
+      return { who: me ? tl("你") : `${f.owner.slice(0, 6)}…${f.owner.slice(-4)}`, owner: me ? undefined : f.owner, me };
+    },
     bridge: (dest: number) => {
       const w = data?.world;
       const last = w?.bridges[dest];

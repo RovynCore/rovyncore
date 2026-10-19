@@ -313,7 +313,7 @@ function Backdrop({ scene, api }: { scene: GalaxyState; api: RefObject<GalaxyGl 
 // ---------------------------------------------------------------- level 0: the galaxy
 
 const NODE = [
-  { x: 14, y: 70 }, { x: 30, y: 30 }, { x: 52, y: 78 }, { x: 70, y: 32 }, { x: 80, y: 66 }, { x: 52, y: 50 },
+  { x: 14, y: 66 }, { x: 28, y: 30 }, { x: 40, y: 64 }, { x: 70, y: 30 }, { x: 84, y: 56 }, { x: 50, y: 44 },
 ];
 
 function Galaxy({ sim, best, pending, onOpen, onHover, onWatch }: { sim: Sim; best: number; pending: SimDive[]; onOpen: (c: number) => void; onHover: (i: number | null) => void; onWatch: (id: number) => void }) {
@@ -356,6 +356,8 @@ function Galaxy({ sim, best, pending, onOpen, onHover, onWatch }: { sim: Sim; be
               <span className="v3-maplabel__meta">{tl("戰力 {0}", { 0: lo })}–{hi}</span>
               {ev.length > 0 && <em className="is-event">{ev.map(([, e]) => STAR[e].name).join(tl("・"))}</em>}
               <span className="v3-maplabel__more"><span>
+                <em className="v3-narrow-only">{tl("戰力 {0}", { 0: lo })}–{hi}</em>
+                {ev.length > 0 && <em className="is-event v3-narrow-only">{ev.map(([, e]) => STAR[e].name).join(tl("・"))}</em>}
                 <em>{tl("風險：{0}", { 0: RISK[c] })}</em>
                 <em className="is-base">{tl("基礎收益 {0}", { 0: fmt(destinationBase(DESTINATIONS[c * 4], sim.rate)) })}–{fmt(destinationBase(DESTINATIONS[c * 4 + 3], sim.rate))} $RVYN</em>
                 {locked ? <em className="is-lock"><Lock aria-hidden="true" />{tl("需要戰力 {0}", { 0: lo })}</em> : <em className="is-go">{tl("點一下進入星團")}</em>}
@@ -370,7 +372,7 @@ function Galaxy({ sim, best, pending, onOpen, onHover, onWatch }: { sim: Sim; be
 
 // ---------------------------------------------------------------- level 1: one cluster
 
-const SPOT = [{ x: 14, y: 72 }, { x: 34, y: 40 }, { x: 54, y: 72 }, { x: 76, y: 34 }];
+const SPOT = [{ x: 14, y: 72 }, { x: 34, y: 40 }, { x: 54, y: 72 }, { x: 80, y: 34 }];
 
 /** Where each team is on its light bridge right now: the same curve the backdrop draws (from the observatory at the
  *  bottom left), a marker you can hover for the destination, team and time left, and click to open the voyage. */
@@ -445,6 +447,7 @@ function ClusterView({ sim, c, best, dest, pending, onBack, onPick, onHover, onW
         const ev = sim.sky.events.get(id);
         const locked = best < d.threshold;
         const echo = sim.bridge(id);
+        const first = sim.first(id);
         return (
           <button
             key={id}
@@ -466,6 +469,7 @@ function ClusterView({ sim, c, best, dest, pending, onBack, onPick, onHover, onW
               <span className="v3-maplabel__more"><span>
                 <em className="is-base">{tl("基礎收益 {0} $RVYN 起", { 0: fmt(destinationBase(d, sim.rate)) })}</em>
                 {echo > 0 && <em className="is-echo">{tl("今天有人走過這裡，空手 −{0}%", { 0: echo })}</em>}
+                {first && <em className="is-first">{tl("今日首航 {0}", { 0: first.who })}</em>}
                 {ev && <em>{STAR[ev].effect}</em>}
                 {locked ? <em className="is-lock"><Lock aria-hidden="true" />{tl("還差 {0} 戰力", { 0: d.threshold - best })}</em> : <em className="is-go">{tl("點一下看詳情、派隊伍")}</em>}
               </span></span>
@@ -496,6 +500,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
   const [asking, setAsking] = useState(false);
   const team = s.teams.find((t) => t.spire === pick);
   const echo = sim.bridge(id);
+  const first = sim.first(id);
   const plan: DivePlan | null = useMemo(
     () => (team ? planDive(teamInput(s, team), d, sim.sky, "none", { stability: stabilityOf(team.bond, 0, echo), deep: canDeep && deep }) : null),
     [team, s, d, sim.sky, deep, canDeep, echo],
@@ -529,6 +534,9 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
         <div><dt>{tl("耗損")}</dt><dd>{d.wear2 + d.wear3 === 0 || plan?.wear2 === 0 ? tl("一律 1 次航程") : tl("{0} 耗損 2、{1} 耗損 3", { 0: pct(plan?.wear2 ?? d.wear2, 1), 1: pct(plan?.wear3 ?? d.wear3, 1) })}</dd></div>
         {ev && <div><dt>{tl("今日星象")}</dt><dd style={{ color: STAR[ev].color }}>{tl("{0}：{1}", { 0: STAR[ev].name, 1: STAR[ev].effect })}</dd></div>}
         {echo > 0 && <div><dt>{tl("光橋殘光")}</dt><dd className="is-echo">{tl("今天有人走過這裡，空手 −{0}%", { 0: echo })}</dd></div>}
+        <div><dt>{tl("今日首航")}</dt><dd className="is-first">{first
+          ? (first.owner ? <button type="button" className="v3-who" onClick={() => openProfile(first.owner!)} title={tl("看這位觀測者的檔案")}>{first.who}</button> : first.who)
+          : tl("還沒有人來過，現在出發就是今天的第一位")}</dd></div>
       </dl>
 
       <h3>{tl("選擇隊伍")}</h3>
