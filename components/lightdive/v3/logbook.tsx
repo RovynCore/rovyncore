@@ -14,6 +14,7 @@ import { gameLocale, tl } from "@/lib/lightdive-v3/i18n";
 import { PageHead } from "../game/hud";
 import { Tile } from "./kit";
 import { CardFace, Foil } from "./cards";
+import { ProfileShare } from "./profile-card";
 import { CIRCLED, CLUSTER_HUE, OUTCOME, OUTCOME_TONE, SLOT, fmt } from "./copy";
 import { dayOf, owned, type FeedRow, type Sim, type SimDive, type SimState } from "./sim";
 
@@ -250,6 +251,7 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
           {mine && address && (
             <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={share}><Copy aria-hidden="true" />{copied ? tl("已複製連結") : tl("複製我的檔案連結")}</button>
           )}
+          {mine && r.dives > 0 && <ProfileShare r={r} best={best} top={top} address={address} />}
           <p className="v3-muted">{mine ? tl("代表稱號是你拿到的稱號裡最難的一個，會顯示在排行榜和分享圖上。") : tl("代表稱號是這位觀測者拿到的稱號裡最難的一個。")}</p>
         </div>
         <div className="v3-tiles is-4 v3-profile__tiles">

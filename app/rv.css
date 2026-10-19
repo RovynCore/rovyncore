@@ -589,3 +589,17 @@ html.intro-on body { overflow: hidden; }
 
 /* Lightdive (components/lightdive/lightdive.css) was written against the old console tokens; map them onto this palette. */
 .ld { --c-text: var(--rv-text); --c-dim: var(--rv-text-2); --c-lime: var(--rv-lime); --c-line: var(--rv-line); --c-line-2: var(--rv-line-2); --c-mono: var(--rv-mono); }
+
+/* 觀測站日報 (10-19): yesterday in Lightdive on the home page */
+.rv-daily__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.rv-daily__rovyn { display: flex; align-items: center; gap: 16px; margin-top: 12px; max-width: 760px; }
+.rv-daily__rovyn img { flex: none; width: 96px; height: 117px; object-fit: cover; object-position: 50% 10%; border-radius: 16px; border: 1px solid var(--rv-line-2); background: #05080a; }
+.rv-daily__rovyn p { margin: 0; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.55; color: var(--rv-text); }
+.rv-daily__rovyn small { display: block; margin-top: 6px; font-size: 13px; color: var(--rv-text-3); }
+.rv-daily__tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.rv-daily__tile { display: grid; gap: 6px; align-content: start; padding: 16px; min-height: 112px; }
+.rv-daily__tile b { font-size: 24px; color: var(--rv-text); }
+.rv-daily__tile small { font-size: 12.5px; line-height: 1.45; color: var(--rv-text-3); overflow-wrap: anywhere; }
+.rv-daily__tile.is-loading { opacity: 0.45; }
+@media (max-width: 1080px) { .rv-daily__tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .rv-daily__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rv-daily__rovyn img { width: 72px; height: 88px; } }

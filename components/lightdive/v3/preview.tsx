@@ -36,6 +36,7 @@ import { clock, fmt } from "./copy";
 import { Broadcast } from "./extras";
 import { WelcomeBack } from "./welcome";
 import { ALL_UNLOCKED, UnlockNotice, unlocksOf } from "./unlocks";
+import { ChatDock } from "./chat";
 import { play, useMusic, useMusicToggle, useMute, useVolume } from "./audio";
 import "../game/game.css";
 import "../game/app.css";
@@ -204,6 +205,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
         <Broadcast sim={sim} />
         <WelcomeBack sim={sim} go={go} />
         <UnlockNotice unlocks={unlocks} go={go} />
+        <ChatDock sim={sim} />
         {view === "dive" && <div className="v3-dock-rovyn">{rovyn}</div>}
         {view !== "dive" && <ObservatoryMusic quiet={view === "story" || view === "whitepaper"} />}
       </div>

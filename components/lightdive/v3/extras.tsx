@@ -139,7 +139,7 @@ async function drawCard(d: SimDive, title?: string | null): Promise<HTMLCanvasEl
   c.width = 1200; c.height = 630;
   const g = c.getContext("2d")!;
   const tone = OUTCOME_TONE[r.outcome];
-  const load = async (src: string) => { const img = new Image(); img.src = src; await img.decode(); return img; };
+  const load = (src: string) => new Promise<HTMLImageElement>((ok, no) => { const img = new Image(); img.onload = () => ok(img); img.onerror = no; img.src = src; }); // onload, not decode(): decode never settles in a hidden tab
   // the founder's share background (10-18): the left 55% stays clear for the text, Rovyn stands on the right
   g.fillStyle = "#020405"; g.fillRect(0, 0, 1200, 630);
   try { g.drawImage(await load("/lightdive/share-bg.webp"), 0, 0, 1200, 630); } catch {}

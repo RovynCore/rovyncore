@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/language-provider";
 import { Address, Countdown, formatUtc8, Head, useSaleStatus, type Copy4 } from "@/components/rv/ui";
 import { RVYN_MODEL } from "@/lib/rvyn-model";
 import { AllocationBar } from "@/components/rv/allocation";
+import { DailyBulletin } from "@/components/rv/daily-bulletin";
 
 const T = {
   heroEyebrow: { en: "Robinhood Chain · First game in development", "zh-Hant": "Robinhood Chain · 第一款遊戲開發中", "zh-Hans": "Robinhood Chain · 第一款游戏开发中", ko: "Robinhood Chain · 첫 게임 개발 중" },
@@ -28,6 +29,8 @@ const T = {
   unavailable: { en: "Status unavailable", "zh-Hant": "暫時無法讀取", "zh-Hans": "暂时无法读取", ko: "확인 불가" },
   notOpen: { en: "Not open", "zh-Hant": "尚未開放", "zh-Hans": "尚未开放", ko: "미개시" },
   noDate: { en: "No date set yet", "zh-Hant": "尚未訂定日期", "zh-Hans": "尚未确定日期", ko: "일정 미정" },
+  testnetOpen: { en: "Testnet open", "zh-Hant": "測試網開放中", "zh-Hans": "测试网开放中", ko: "테스트넷 오픈" },
+  testnetNote: { en: "Lightdive · test tokens, no value", "zh-Hant": "潛光遠征 · 測試幣，沒有價值", "zh-Hans": "潜光远征 · 测试币，没有价值", ko: "라이트다이브 · 테스트 토큰, 가치 없음" },
   inDev: { en: "In development", "zh-Hant": "開發中", "zh-Hans": "开发中", ko: "개발 중" },
   firstLook: { en: "First look coming to this site", "zh-Hant": "首次公開將發布在本站", "zh-Hans": "首次公开将发布在本站", ko: "첫 공개는 이 사이트에서" },
   closesOn: { en: "Closes", "zh-Hant": "截止", "zh-Hans": "截止", ko: "마감" },
@@ -137,12 +140,14 @@ export default function Home() {
             </div>
             <div>
               <span className="rv-stat__label">{t(T.game)}</span>
-              <span className="rv-pill rv-pill--ok">{t(T.inDev)}</span>
-              <span className="rv-caption">{t(T.firstLook)}</span>
+              <span className="rv-pill rv-pill--live">{t(T.testnetOpen)}</span>
+              <Link className="rv-caption" href="/game/lightdive">{t(T.testnetNote)}</Link>
             </div>
           </div>
         </div>
       </section>
+
+      <DailyBulletin />
 
       <section className="rv-section rv-section--line">
         <div className="rv-container">

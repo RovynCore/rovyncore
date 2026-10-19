@@ -22,6 +22,13 @@
       "when": 1790370000000,
       "tag": "0002_rvyn_sale_desk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792540800000,
+      "tag": "0003_lightdive_chat",
+      "breakpoints": true
     }
   ]
 }

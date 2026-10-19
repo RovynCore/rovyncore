@@ -20,7 +20,7 @@ const KIND_FILE: Record<Kind, string> = { 0: "spire", 1: "prism", 2: "seeker" };
 export const backImage = (kind: Kind) => `/lightdive/back/${KIND_FILE[kind]}.webp`;
 /** The scene behind a full-art card: a seeker stands in its light's own landscape (the founder's art, 10-19); spires
  *  and prisms use their kind's banner. */
-const sceneImage = (kind: Kind, trait: number) =>
+export const sceneImage = (kind: Kind, trait: number) =>
   kind === 2 && trait >= 0 && trait <= 5 ? `/lightdive/cards/bg/seeker-bg-l${trait}.webp` : `/lightdive/banner/${KIND_FILE[kind]}.webp`;
 /** 稜光 and 曜核 are full-art foil cards. */
 export const isFoil = (rarity: number) => rarity >= 3;

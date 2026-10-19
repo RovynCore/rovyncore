@@ -1,1 +1,14 @@
 # Lightdive strings still missing an English translation, by first file that uses them
+
+## components\lightdive\v3\chat.tsx (11)
+送出失敗，請稍後再試
+打開潛光頻道
+頻道
+潛光頻道
+所有觀測者共用
+頻道還很安靜。說聲嗨吧。
+連接錢包後就能發言
+說點什麼…（{0} 字以內）
+訊息
+送出
+頻道是公開的。持有潛光卡才能發言；不能貼連結。任何人向你要私鑰或助記詞都是詐騙。

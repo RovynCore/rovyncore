@@ -24,5 +24,7 @@ import { V32 } from "./v32";
 import { V33 } from "./v33";
 import { V34 } from "./v34";
 import { V35 } from "./v35";
+import { V36 } from "./v36";
+import { V37 } from "./v37";
 
-export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS, LIVE, V31, V32, V33, V34, V35];
+export const ROWS: string[] = [COMMON, PAGES, STARMAP, VOYAGE, PLAIN, ASSETS, SUMMON, MARKET, MORE, TEXTS_PLACES, TEXTS_ROVYN, TEXTS_VOYAGE, TEXTS_LOGS_A, TEXTS_LOGS_B, PUNCT, IDLE, NEXT, ALERTS, LIVE, V31, V32, V33, V34, V35, V36, V37];

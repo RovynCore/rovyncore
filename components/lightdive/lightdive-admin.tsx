@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/components/language-provider";
 import { usePlatform } from "@/components/platform-context";
 import { AnnouncementsAdmin } from "./announcements-admin";
+import { ChatAdmin } from "./chat-admin";
 import { RulesCalculator } from "./v3/calculator";
 import { ABI, CONTRACTS, ERC20_ABI, GAME_CHAIN, GAME_RPC, readOverview, type Contracts, type Overview } from "@/lib/lightdive";
 import { KIND_NAME, RARITY, type Copy } from "@/lib/lightdive-copy";
@@ -134,6 +135,7 @@ function Admin({ c: k, t }: { c: Contracts; t: (v: Copy) => string }) {
       <h1 className="ld-admin-title">{t(A.title)}</h1>
       {/* used by the v3 game: the observatory announcements and the internal reward calculator */}
       <AnnouncementsAdmin />
+      <ChatAdmin />
       <RulesCalculator />
       {/* 10-19: the retired v2 game's contract tools stay available, folded away so they are not mistaken for v3 */}
       <details className="ld-v2">
