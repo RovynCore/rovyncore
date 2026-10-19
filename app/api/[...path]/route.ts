@@ -2,7 +2,7 @@ import { waitUntil } from "cloudflare:workers";
 import { ANNOUNCEMENTS_KEY, activeAnnouncements, announcementListSchema, type Announcement } from "@/lib/lightdive-announcements";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readDaily, type Daily } from "@/lib/lightdive-v3/daily";
-import { CHAT_DAILY, CHAT_GAP_SECONDS, CHAT_KEEP_DAYS, CHAT_PAGE, checkChat, type ChatMessage } from "@/lib/lightdive-chat";
+import { CHAT_CHANNELS, CHAT_DAILY, CHAT_GAP_SECONDS, CHAT_KEEP_DAYS, CHAT_PAGE, CHAT_REPORTS_HIDE, checkChat, isChannel, type ChatChannel, type ChatMessage } from "@/lib/lightdive-chat";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
 import {
@@ -190,13 +190,19 @@ async function readAllowlist(chainId: number) {
 }
 // 潛光頻道: the latest messages are kept at the edge for 3 seconds, so every open chat polling the channel costs at
 // most one database read per 3 seconds per Cloudflare location
-const CHAT_CACHE_KEY = "https://chat.lightdive.internal/latest";
+const chatKey = (channel: ChatChannel) => `https://chat.lightdive.internal/latest/${channel}`;
 const chatCache = () => (typeof caches !== "undefined" ? (caches as unknown as { default: Cache }).default : null);
-async function readChat(): Promise<ChatMessage[]> {
-  const rows = await db().prepare("SELECT id,account,body,created FROM lightdive_chat WHERE hidden=0 ORDER BY id DESC LIMIT ?")
-    .bind(CHAT_PAGE).all<{ id: number; account: string; body: string; created: number }>();
-  return rows.results.reverse().map((r) => ({ id: r.id, account: r.account, body: r.body, at: r.created }));
+const OFFICIAL = OWNER.toLowerCase(); // the admin wallet: its messages carry the 官方 mark
+async function readChat(channel: ChatChannel): Promise<ChatMessage[]> {
+  const rows = await db().prepare("SELECT id,account,body,created FROM lightdive_chat WHERE channel=? AND hidden=0 ORDER BY id DESC LIMIT ?")
+    .bind(channel, CHAT_PAGE).all<{ id: number; account: string; body: string; created: number }>();
+  return rows.results.reverse().map((r) => ({ id: r.id, account: r.account, body: r.body, at: r.created, ...(r.account === OFFICIAL ? { official: true } : {}) }));
 }
+const clearChat = async (channel?: string) => {
+  const cache = chatCache();
+  if (!cache) return;
+  await Promise.all(CHAT_CHANNELS.filter((c) => !channel || c === channel).map((c) => cache.delete(chatKey(c))));
+};
 const cardHolders = new Map<string, number>(); // account -> until when "holds a card" is trusted (this isolate only)
 async function holdsCard(account: string) {
   const until = cardHolders.get(account);
@@ -246,18 +252,15 @@ async function handle(request: Request) {
         return respond({ items: activeAnnouncements(saved.items ?? [], now()) });
       }
       if (route === "lightdive" && path[1] === "chat" && path.length === 2) {
+        const asked = url.searchParams.get("channel") ?? "global";
+        const channel: ChatChannel = isChannel(asked) ? asked : "global";
         const cache = chatCache();
-        const hit = cache ? await cache.match(CHAT_CACHE_KEY) : undefined;
+        const hit = cache ? await cache.match(chatKey(channel)) : undefined;
         if (hit) return new Response(hit.body, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
-        // until the chat tables exist (the founder approves their migration) the channel reports itself off
-        const messages = await readChat().catch((e: unknown) => { if (/no such table/i.test(String(e))) return null; throw e; });
-        if (!messages) {
-          const offData = { messages: [], off: true, now: now() };
-          if (cache) await cache.put(CHAT_CACHE_KEY, new Response(JSON.stringify(offData), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=60" } }));
-          return respond(offData);
-        }
-        const data = { messages, now: now() };
-        if (cache) await cache.put(CHAT_CACHE_KEY, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=3" } }));
+        // until the chat tables exist the channel reports itself off
+        const messages = await readChat(channel).catch((e: unknown) => { if (/no such (table|column)/i.test(String(e))) return null; throw e; });
+        const data = messages ? { channel, messages, now: now() } : { channel, messages: [], off: true, now: now() };
+        if (cache) await cache.put(chatKey(channel), new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${messages ? 3 : 60}` } }));
         return respond(data);
       }
       if (route === "lightdive" && path[1] === "daily" && path.length === 2) {
@@ -528,24 +531,47 @@ async function handle(request: Request) {
       return respond({ url: `/api/media/${key}` });
     }
     const body = await jsonBody(request);
-    if (route === "lightdive" && path[1] === "chat" && path.length === 2) {
+    if (route === "lightdive" && path[1] === "chat" && (path.length === 2 || (path.length === 3 && path[2] === "report"))) {
       const actor = await walletSessionAccount(request, db());
       if (!actor) fail(401, "請先連接錢包並簽名登入，才能在頻道發言");
       const account = actor!.toLowerCase();
+      const official = account === OFFICIAL;
       const t = now();
+      // a report: one per wallet per message; enough different wallets hide it until the admin looks
+      if (path[2] === "report") {
+        const id = Number((body as { id?: unknown })?.id);
+        if (!Number.isInteger(id) || id <= 0) fail(400, "訊息格式不正確");
+        const msg = await db().prepare("SELECT channel,account FROM lightdive_chat WHERE id=?").bind(id).first<{ channel: string; account: string }>();
+        if (!msg) fail(404, "找不到這則訊息");
+        if (msg!.account === account) fail(400, "不能回報自己的訊息");
+        await db().prepare("INSERT INTO lightdive_chat_reports(message_id,account,created) VALUES(?,?,?) ON CONFLICT DO NOTHING").bind(id, account, t).run();
+        const n = await db().prepare("SELECT COUNT(*) AS n FROM lightdive_chat_reports WHERE message_id=?").bind(id).first<{ n: number }>();
+        if ((n?.n ?? 0) >= CHAT_REPORTS_HIDE && msg!.account !== OFFICIAL) {
+          await db().prepare("UPDATE lightdive_chat SET hidden=1 WHERE id=? AND hidden=0").bind(id).run();
+          await clearChat(msg!.channel);
+        }
+        return respond({ ok: true });
+      }
+      const channel = (body as { channel?: unknown })?.channel ?? "global";
+      if (!isChannel(channel)) fail(400, "沒有這個頻道");
       const muted = await db().prepare("SELECT until FROM lightdive_chat_mutes WHERE account=? AND until>?").bind(account, t).first<{ until: number }>();
       if (muted) fail(403, "這個錢包暫時不能在頻道發言");
-      const checked = checkChat((body as { body?: unknown })?.body);
+      const checked = checkChat((body as { body?: unknown })?.body, official);
       if ("error" in checked) fail(400, checked.error);
-      if (!(await holdsCard(account))) fail(403, "持有至少一張潛光卡才能在頻道發言");
+      if (!official && !(await holdsCard(account))) fail(403, "持有至少一張潛光卡才能在頻道發言");
       const last = await db().prepare("SELECT created FROM lightdive_chat WHERE account=? ORDER BY id DESC LIMIT 1").bind(account).first<{ created: number }>();
-      if (last && t - last.created < CHAT_GAP_SECONDS) fail(429, "說得太快了，請稍等幾秒");
+      if (!official && last && t - last.created < CHAT_GAP_SECONDS) fail(429, "說得太快了，請稍等幾秒");
       const today = await db().prepare("SELECT COUNT(*) AS n FROM lightdive_chat WHERE account=? AND created>=?").bind(account, t - (t % 86_400)).first<{ n: number }>();
-      if ((today?.n ?? 0) >= CHAT_DAILY) fail(429, "今天的發言次數已經用完");
-      const row = await db().prepare("INSERT INTO lightdive_chat(account,body,created,hidden) VALUES(?,?,?,0) RETURNING id")
-        .bind(account, (checked as { body: string }).body, t).first<{ id: number }>();
-      if (row && row.id % 200 === 0) await db().prepare("DELETE FROM lightdive_chat WHERE created<?").bind(t - CHAT_KEEP_DAYS * 86_400).run();
-      await chatCache()?.delete(CHAT_CACHE_KEY);
+      if (!official && (today?.n ?? 0) >= CHAT_DAILY) fail(429, "今天的發言次數已經用完");
+      const row = await db().prepare("INSERT INTO lightdive_chat(channel,account,body,created,hidden) VALUES(?,?,?,?,0) RETURNING id")
+        .bind(channel, account, (checked as { body: string }).body, t).first<{ id: number }>();
+      if (row && row.id % 200 === 0) {
+        await db().batch([
+          db().prepare("DELETE FROM lightdive_chat_reports WHERE message_id IN (SELECT id FROM lightdive_chat WHERE created<?)").bind(t - CHAT_KEEP_DAYS * 86_400),
+          db().prepare("DELETE FROM lightdive_chat WHERE created<?").bind(t - CHAT_KEEP_DAYS * 86_400),
+        ]);
+      }
+      await clearChat(channel as string);
       return respond({ ok: true, id: row?.id });
     }
     if (route === "rvyn" && path[1] === "register") {
@@ -767,7 +793,7 @@ async function handle(request: Request) {
         return respond({ items: p.items });
       }
       if (action === "lightdive-chat-read") {
-        const rows = await db().prepare("SELECT id,account,body,created,hidden FROM lightdive_chat ORDER BY id DESC LIMIT 200").all();
+        const rows = await db().prepare("SELECT c.id,c.channel,c.account,c.body,c.created,c.hidden,(SELECT COUNT(*) FROM lightdive_chat_reports r WHERE r.message_id=c.id) AS reports FROM lightdive_chat c ORDER BY c.id DESC LIMIT 200").all();
         const mutes = await db().prepare("SELECT account,until,reason,created FROM lightdive_chat_mutes WHERE until>? ORDER BY created DESC").bind(now()).all();
         return respond({ messages: rows.results, mutes: mutes.results });
       }
@@ -777,7 +803,7 @@ async function handle(request: Request) {
           db().prepare("UPDATE lightdive_chat SET hidden=? WHERE id=?").bind(p.hidden ? 1 : 0, p.id),
           db().prepare("INSERT INTO audit(id,action,detail,created) VALUES(?,?,?,?)").bind(crypto.randomUUID(), "lightdive-chat-hide", JSON.stringify(p), now()),
         ]);
-        await chatCache()?.delete(CHAT_CACHE_KEY);
+        await clearChat();
         return respond({ ok: true });
       }
       if (action === "lightdive-chat-mute") {

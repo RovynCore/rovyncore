@@ -6,7 +6,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { usePlatform } from "@/components/platform-context";
 
-type Row = { id: number; account: string; body: string; created: number; hidden: number };
+type Row = { id: number; channel: string; account: string; body: string; created: number; hidden: number; reports: number };
+const CHANNEL: Record<string, string> = { global: "全球", "zh-Hant": "繁中", "zh-Hans": "简中", en: "EN", ko: "韓文" };
 type Mute = { account: string; until: number; reason: string; created: number };
 const time = (s: number) => new Date(s * 1000).toLocaleString("zh-TW", { hour12: false });
 
@@ -34,7 +35,7 @@ export function ChatAdmin() {
   return (
     <section className="ld-sub ld-announce">
       <h3>潛光頻道管理</h3>
-      <p className="ld-dim">全伺服器聊天的最近 200 則訊息。可以隱藏單則訊息，或讓某個錢包暫時不能發言。每個動作都要管理錢包簽名，並記在稽核紀錄。</p>
+      <p className="ld-dim">五個頻道（全球、繁中、简中、EN、韓文）最近 200 則訊息。被 3 個不同錢包回報的訊息會自動隱藏，等你確認後可以重新顯示。也可以讓某個錢包暫時不能發言。管理錢包發的訊息會帶「官方」標記，也不受連結限制。每個動作都要管理錢包簽名，並記在稽核紀錄。</p>
       <div className="ld-actions">
         <button type="button" className="ld-btn" disabled={busy} onClick={() => void load()}>{rows ? "重新讀取" : "簽名並讀取訊息"}</button>
       </div>
@@ -53,7 +54,7 @@ export function ChatAdmin() {
           {rows.map((r) => (
             <li key={r.id} style={r.hidden ? { opacity: 0.5 } : undefined}>
               <div className="ld-announce__row">
-                <small>#{r.id} · {time(r.created)} · <code>{r.account}</code>{r.hidden ? " · 已隱藏" : ""}</small>
+                <small>#{r.id} · {CHANNEL[r.channel] ?? r.channel} · {time(r.created)} · <code>{r.account}</code>{r.reports ? ` · 被回報 ${r.reports} 次` : ""}{r.hidden ? " · 已隱藏" : ""}</small>
                 <button type="button" className="ld-btn ld-btn--ghost" disabled={busy} onClick={() => void hide(r)}>{r.hidden ? "重新顯示" : "隱藏"}</button>
                 <button type="button" className="ld-btn ld-btn--ghost" disabled={busy} onClick={() => void mute(r.account, 24)}>禁言 24 小時</button>
                 <button type="button" className="ld-btn ld-btn--ghost" disabled={busy} onClick={() => void mute(r.account, 24 * 30)}>禁言 30 天</button>
