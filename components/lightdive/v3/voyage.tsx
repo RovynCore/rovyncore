@@ -9,7 +9,7 @@ import { FastForward, Sparkles, X } from "lucide-react";
 import { DECISION_AT, DESTINATIONS, basePoints, planDive, skyOf, type Choice, type DivePlan } from "@/lib/lightdive-v3/rules";
 import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
 import { NftArt } from "../game/art";
-import { flyLight } from "./kit";
+import { LightIcon, flyLight } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { play } from "./audio";
 import { decisionAt, deciding, rateOf, stabilityOf, teamInput, teamName as teamNameOf, turnOpenAt, turning, type Sim, type SimDive, type SimNft } from "./sim";
@@ -189,7 +189,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
       <div className="v3-voyage__side">
         <div className="v3-voyage__sidehead">
           <b>{tl("航行日誌")}</b>
-          <span>{tl("今天的光：")}<i style={{ color: LIGHT_COLOR[light] }}>{LIGHT[light]}</i></span>
+          <span>{tl("今天的光：")}<i style={{ color: LIGHT_COLOR[light] }}><LightIcon light={light} />{LIGHT[light]}</i></span>
         </div>
         <ol className="v3-voyage__log" ref={body}>
           {list.map((e, i) => (

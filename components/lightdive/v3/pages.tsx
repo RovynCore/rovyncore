@@ -1,6 +1,7 @@
 "use client";
 
 // Every page of the v3 preview except the dive page. One page answers one question.
+import { LightIcon } from "./kit";
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import {
@@ -372,7 +373,7 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
       </div>
       <p className="v3-route-hero__lead">{tl("依今天的光和星象，{0}（戰力 {1}）最適合去這裡。", { 0: teamName(s, team.t.spire), 1: team.power })}</p>
       <ul className="v3-route-hero__why">
-        <li className="is-light"><i />{attuned ? tl("今天的光：{0} · 你有 {1} 位探索者同頻", { 0: LIGHT[light], 1: attuned }) : tl("今天的光：{0}", { 0: LIGHT[light] })}</li>
+        <li className="is-light"><LightIcon light={light} />{attuned ? tl("今天的光：{0} · 你有 {1} 位探索者同頻", { 0: LIGHT[light], 1: attuned }) : tl("今天的光：{0}", { 0: LIGHT[light] })}</li>
         {ev && <li className="is-event" style={{ ["--ec" as string]: STAR[ev].color }}><i />{tl("星象：{0} · {1}", { 0: STAR[ev].name, 1: STAR[ev].effect })}</li>}
         <li className="is-reach"><i />{tl("門檻 {0} · 你的隊伍高出 {1}", { 0: d.threshold, 1: team.power - d.threshold })}</li>
         {deepOk && <li className="is-deep"><i />{tl("也可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2（在目的地卡選「深潛」）")}</li>}

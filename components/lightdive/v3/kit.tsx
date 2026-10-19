@@ -85,10 +85,21 @@ export function Modal({ label, onClose, children, className }: { label: string; 
 }
 
 /** What makes the card a spire, prism or seeker: berths, beam or light. */
+/** The light emblem (the founder's art, 10-19): 曦光 to 淵光. */
+export function LightIcon({ light, className = "" }: { light: number; className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={`v3-ico ${className}`} src={`/lightdive/icons/light-l${light}.webp`} alt="" aria-hidden="true" draggable={false} />;
+}
+/** The prism beam emblem: 廣域, 聚焦, 針芒. */
+export function BeamIcon({ beam, className = "" }: { beam: number; className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={`v3-ico ${className}`} src={`/lightdive/icons/beam-b${beam}.webp`} alt="" aria-hidden="true" draggable={false} />;
+}
+
 export function Trait({ n }: { n: Pick<SimNft, "kind" | "trait"> }) {
   if (n.kind === 0) return <span className="v3-trait">{tl("{0} 泊位", { 0: n.trait })}</span>;
-  if (n.kind === 1) return <span className="v3-trait">{BEAM[n.trait]} · {BEAM_HINT[n.trait]}</span>;
-  return <span className="v3-trait" style={{ color: LIGHT_COLOR[n.trait] }}>● {LIGHT[n.trait]}</span>;
+  if (n.kind === 1) return <span className="v3-trait"><BeamIcon beam={n.trait} />{BEAM[n.trait]} · {BEAM_HINT[n.trait]}</span>;
+  return <span className="v3-trait" style={{ color: LIGHT_COLOR[n.trait] }}><LightIcon light={n.trait} />{LIGHT[n.trait]}</span>;
 }
 
 export const traitName = (kind: number) => (kind === 0 ? tl("泊位") : kind === 1 ? tl("光束") : tl("光紋"));

@@ -19,7 +19,7 @@ import { commissionTitle, readyBonus } from "./commissions";
 import { unlocksOf } from "./unlocks";
 import { bestTitle, openProfile, recordsOf } from "./logbook";
 import { VoyageLog } from "./voyage";
-import { flyLight } from "./kit";
+import { BeamIcon, LightIcon, flyLight } from "./kit";
 import { fxQuality } from "./settings";
 import {
   BEAM, BEAM_HINT, CHOICE, CIRCLED, CLUSTER_HUE, ERROR, LIGHT, LIGHT_COLOR, OUTCOME, OUTCOME_TONE, RISK, SLOT, STAR, ago, clock, fmt, pct,
@@ -459,7 +459,7 @@ function ClusterView({ sim, c, best, dest, pending, onBack, onPick, onHover, onW
             <span className="v3-spot__orb" />
             <span className="v3-spot__label">
               <b><i>{SLOT[i]}</i>{info.destinations[i].name}{locked && <Lock aria-label={tl("未解鎖")} />}</b>
-              <span className="v3-maplabel__meta">{tl("門檻 {0} · 今天的光", { 0: d.threshold })} <i style={{ color: LIGHT_COLOR[light] }}>{LIGHT[light]}</i></span>
+              <span className="v3-maplabel__meta">{tl("門檻 {0} · 今天的光", { 0: d.threshold })} <i style={{ color: LIGHT_COLOR[light] }}><LightIcon light={light} />{LIGHT[light]}</i></span>
               {ev && <em style={{ color: STAR[ev].color }}>{STAR[ev].name}</em>}
               <span className="v3-maplabel__more"><span>
                 <em className="is-base">{tl("基礎收益 {0} $RVYN 起", { 0: fmt(destinationBase(d, sim.rate)) })}</em>
@@ -519,7 +519,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
       <p className="v3-dest__intro">{info.intro}</p>
       <dl className="v3-kv">
         <div><dt>{tl("戰力門檻")}</dt><dd>{d.threshold}</dd></div>
-        <div><dt>{tl("今天的光")}</dt><dd style={{ color: LIGHT_COLOR[light] }}>{LIGHT[light]}</dd></div>
+        <div><dt>{tl("今天的光")}</dt><dd style={{ color: LIGHT_COLOR[light] }}><LightIcon light={light} />{LIGHT[light]}</dd></div>
         <div><dt>{tl("收益係數")}</dt><dd>×{(plan?.coef ?? d.coef).toFixed(3)}</dd></div>
         <div><dt>{tl("出發成本")}</dt><dd>{tl("收益的 {0}（回來後扣）", { 0: pct(plan?.levy ?? d.levy) })}</dd></div>
         <div><dt>{tl("耗損")}</dt><dd>{d.wear2 + d.wear3 === 0 || plan?.wear2 === 0 ? tl("一律 1 次航程") : tl("{0} 耗損 2、{1} 耗損 3", { 0: pct(plan?.wear2 ?? d.wear2, 1), 1: pct(plan?.wear3 ?? d.wear3, 1) })}</dd></div>
@@ -562,7 +562,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
       )}
       {plan && (
         <>
-          <h3>{tl("這次的勝算")} <small>{tl("稜鏡：{0}（{1}）", { 0: BEAM[plan.risk], 1: BEAM_HINT[plan.risk] })}</small></h3>
+          <h3>{tl("這次的勝算")} <small><BeamIcon beam={plan.risk} />{tl("稜鏡：{0}（{1}）", { 0: BEAM[plan.risk], 1: BEAM_HINT[plan.risk] })}</small></h3>
           <div className="v3-base">
             <div>
               <small>{tl("這支隊伍的基礎收益")}</small>

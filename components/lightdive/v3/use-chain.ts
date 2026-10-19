@@ -21,7 +21,7 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  TURNED_BACK, drandSignature, predictDive, readFeed, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
+  TURNED_BACK, drandSignature, predictDive, readFeed, readLedger, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
   type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type World,
 } from "@/lib/lightdive-v3/onchain";
 import type { Listing, Supply } from "./market-data";
@@ -30,6 +30,7 @@ import {
   type Commissions, type DiveOpts, type Game, type MintRequest, type PullRecord, type SimDive, type SimNft, type SimState, type SimTeam,
 } from "./sim";
 import { commissionsOf } from "@/lib/lightdive-v3/commissions";
+import { historiesOf, voyagesFromLogs, type CardHistory, type LedgerLogs } from "@/lib/lightdive-v3/history";
 
 const CHOICES: Choice[] = ["none", "steady", "bold", "detour"];
 const NAMES_KEY = "lightdive:v3:team-names";
@@ -105,7 +106,8 @@ const riskOf = (beam: number, dest: number, day: number) => {
 };
 
 type Prediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; signature: Hex };
-type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[] };
+type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[]; histories: Map<number, CardHistory> };
+const NO_LOGS = (): LedgerLogs => ({ teamSet: [], disbanded: [], dived: [], details: [], turned: [], revealed: [] });
 
 function readNames(): Record<number, string> {
   try { return JSON.parse(localStorage.getItem(NAMES_KEY) ?? "{}"); } catch { return {}; }
@@ -202,6 +204,7 @@ export function useChain(): Game {
   const [now, setNow] = useState(0);
   const offset = useRef(0); // chain time minus local time, ms
   const predictions = useRef(new Map<number, Prediction>());
+  const ledger = useRef<{ next: bigint; logs: LedgerLogs; seen: Set<string> }>({ next: BigInt(G.deployment.deploymentBlock ?? 0), logs: NO_LOGS(), seen: new Set() });
   const [drafts, setDrafts] = useState<Record<number, SimTeam | null>>({}); // spire -> unsaved team (null = take apart)
   const [names, setNames] = useState<Record<number, string>>({});
   const [tx, setTx] = useState<TxState | null>(null);
@@ -239,7 +242,22 @@ export function useChain(): Game {
             predictions.current.set(Number(d.id), { tier: p.tier, multX100: p.multX100, wear: p.wear, reward: p.reward, levy: p.levy, signature: sig });
           }));
         }
-        setData({ world, player, market, feed, week, onTeam, summons });
+        // card histories: only the new blocks each time, merged without duplicates
+        const led = ledger.current;
+        const fresh = await readLedger(ctx, led.next).catch(() => null);
+        if (fresh) {
+          for (const k of Object.keys(fresh.logs) as (keyof LedgerLogs)[]) {
+            for (const e of fresh.logs[k]) {
+              const key = `${k}:${e.transactionHash}:${e.logIndex}`;
+              if (led.seen.has(key)) continue;
+              led.seen.add(key);
+              led.logs[k].push(e);
+            }
+          }
+          led.next = fresh.latest + 1n;
+        }
+        const histories = historiesOf(voyagesFromLogs(led.logs));
+        setData({ world, player, market, feed, week, onTeam, summons, histories });
         setWalletChain(chainId);
         setFailed(false);
       } catch (e) {
@@ -692,6 +710,7 @@ export function useChain(): Game {
         explorer: G.explorer && c ? `${G.explorer}/token/${c.nft}/instance/${n.id}` : null,
       };
     },
+    history: (id: number) => data?.histories.get(id) ?? null,
     dive, diveMany, turnBack, commissions, choose, collect, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
     chain: {
       account,

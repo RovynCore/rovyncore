@@ -74,4 +74,21 @@ export const V33 = `讀取鏈上資料失敗，請稍後再試。|Couldn't read 
 召喚次數|Summons|召唤次数|소환 횟수
 完成的委託|Commissions completed|完成的委托|완료한 의뢰
 回到觀測站|Back to the Observatory|回到观测站|관측소로 돌아가기
-下載 CSV|Download CSV|下载 CSV|CSV 다운로드`;
+下載 CSV|Download CSV|下载 CSV|CSV 다운로드
+傳說見證|Legend witness|传说见证|전설의 증인
+曾經隨隊帶回傳說|Sailed with a team that brought back a Legendary|曾经随队带回传说|팀과 함께 전설을 가져온 적이 있음
+星冠見證|Corona witness|星冠见证|성관의 증인
+到過核心星冠（⑥）|Reached the Core Corona (⑥)|到过核心星冠（⑥）|핵심 성관(⑥)에 도달
+深淵歸來|Back from the deep|深渊归来|심연에서 귀환
+完成過一趟深潛|Completed a deep dive|完成过一趟深潜|딥 다이브 완료
+豐收常客|Harvest regular|丰收常客|풍작 단골
+大豐收以上 10 次|Great haul or better 10 times|大丰收以上 10 次|대풍작 이상 10회
+老兵|Veteran|老兵|베테랑
+出航 30 次以上|30 voyages or more|出航 30 次以上|30회 이상 출항
+續航者|Renewed|续航者|연장된 카드
+續航過一次|Renewed once|续航过一次|한 번 연장됨
+卡片履歷|Card history|卡片履历|카드 이력
+這張卡還沒有出航過。它的每一趟都會記在這裡，跟著卡一起轉手。|This card hasn't sailed yet. Every voyage it makes is kept here and goes with the card when it changes hands.|这张卡还没有出航过。它的每一趟都会记在这里，跟着卡一起转手。|이 카드는 아직 출항한 적이 없습니다. 모든 항해가 여기에 기록되며 카드와 함께 주인이 바뀌어도 따라갑니다.
+跟過的隊伍|Teams sailed with|跟过的队伍|함께한 팀
+第一次出航：{0}|First voyage: {0}|第一次出航：{0}|첫 출항: {0}
+履歷和標記只是紀錄與榮譽，不影響戰力、勝算或收益。|History and marks are records and honours only: they don't change power, odds or rewards.|履历和标记只是纪录与荣誉，不影响战力、胜算或收益。|이력과 표시는 기록과 명예일 뿐이며 전투력, 확률, 보상에 영향을 주지 않습니다.`;

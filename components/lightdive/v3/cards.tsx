@@ -10,13 +10,18 @@ import { useRef, type CSSProperties, type PointerEvent, type ReactNode } from "r
 import type { Kind } from "@/lib/lightdive-v3/rules";
 import { NftArt } from "../game/art";
 import { RarityTag, Trait } from "./kit";
-import { KIND, RARITY_COLOR, TIER } from "./copy";
+import { CIRCLED, KIND, RARITY_COLOR, SLOT, TIER } from "./copy";
+import { DESTINATIONS } from "@/lib/lightdive-v3/rules";
+import { marksOf, type CardHistory, type MarkKey } from "@/lib/lightdive-v3/history";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 import type { SimNft } from "./sim";
 
 const KIND_FILE: Record<Kind, string> = { 0: "spire", 1: "prism", 2: "seeker" };
 export const backImage = (kind: Kind) => `/lightdive/back/${KIND_FILE[kind]}.webp`;
-const sceneImage = (kind: Kind) => `/lightdive/banner/${KIND_FILE[kind]}.webp`;
+/** The scene behind a full-art card: a seeker stands in its light's own landscape (the founder's art, 10-19); spires
+ *  and prisms use their kind's banner. */
+const sceneImage = (kind: Kind, trait: number) =>
+  kind === 2 && trait >= 0 && trait <= 5 ? `/lightdive/cards/bg/seeker-bg-l${trait}.webp` : `/lightdive/banner/${KIND_FILE[kind]}.webp`;
 /** 稜光 and 曜核 are full-art foil cards. */
 export const isFoil = (rarity: number) => rarity >= 3;
 
@@ -58,9 +63,9 @@ export function Foil({ rarity, children, className = "", tilt = true }: { rarity
 /** The front of a card. `size` only changes the type scale (the grid and the showcase). */
 export function CardFace({ n, size = "md" }: { n: Face; size?: "sm" | "md" | "lg" }) {
   const full = isFoil(n.rarity);
-  const style = { ["--rc" as string]: RARITY_COLOR[n.rarity], ["--scene" as string]: `url(${sceneImage(n.kind)})` } as CSSProperties;
+  const style = { ["--rc" as string]: RARITY_COLOR[n.rarity], ["--scene" as string]: `url(${sceneImage(n.kind, n.trait)})` } as CSSProperties;
   return (
-    <span className={`v3-face r${n.rarity} is-${size}${full ? " is-full" : ""}`} style={style}>
+    <span className={`v3-face r${n.rarity} k${n.kind} is-${size}${full ? " is-full" : ""}`} style={style}>
       {full && <span className="v3-face__scene" aria-hidden="true" />}
       <span className="v3-face__top"><RarityTag rarity={n.rarity} compact /><small>#{n.id}</small></span>
       <span className="v3-face__art"><NftArt a={{ kind: n.kind, rarity: n.rarity, trait: n.trait, variant: 0 }} /></span>
@@ -82,5 +87,57 @@ export function CardBackFace({ kind, hint }: { kind: Kind; hint?: number }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={backImage(kind)} alt="" draggable={false} />
     </span>
+  );
+}
+
+// ---------------------------------------------------------------- 卡片履歷 (10-19)
+
+const MARK: Record<MarkKey, { name: () => string; how: () => string; tone: string }> = {
+  legend: { name: () => tl("傳說見證"), how: () => tl("曾經隨隊帶回傳說"), tone: "#fff4d6" },
+  crown: { name: () => tl("星冠見證"), how: () => tl("到過核心星冠（⑥）"), tone: "#f0c766" },
+  abyss: { name: () => tl("深淵歸來"), how: () => tl("完成過一趟深潛"), tone: "#3de7e0" },
+  harvest: { name: () => tl("豐收常客"), how: () => tl("大豐收以上 10 次"), tone: "#c9ff55" },
+  veteran: { name: () => tl("老兵"), how: () => tl("出航 30 次以上"), tone: "#cfd8c8" },
+  renewed: { name: () => tl("續航者"), how: () => tl("續航過一次"), tone: "#7fd3ff" },
+};
+
+/** The marks a card has earned, as small chips (`max` keeps grids tidy). */
+export function Marks({ keys, max }: { keys: MarkKey[]; max?: number }) {
+  if (!keys.length) return null;
+  const shown = max ? keys.slice(0, max) : keys;
+  return (
+    <span className="v3-marks">
+      {shown.map((k) => <em key={k} style={{ ["--mk" as string]: MARK[k].tone }} title={MARK[k].how()}>{MARK[k].name()}</em>)}
+      {max && keys.length > max && <em className="is-more">+{keys.length - max}</em>}
+    </span>
+  );
+}
+
+/** The card's history in the detail views: what it has lived through, and the marks with how each was earned. */
+export function HistoryPanel({ h, renewed }: { h: CardHistory | null; renewed?: boolean }) {
+  const marks = marksOf(h, renewed);
+  return (
+    <div className="v3-history">
+      <h4>{tl("卡片履歷")}</h4>
+      {!h || !h.dives ? <p className="v3-muted">{tl("這張卡還沒有出航過。它的每一趟都會記在這裡，跟著卡一起轉手。")}</p> : (
+        <>
+          <dl>
+            <div><dt>{tl("出航")}</dt><dd>{tl("{0} 趟", { 0: h.dives })}</dd></div>
+            <div><dt>{tl("最深到達")}</dt><dd>{h.deepest >= 0 ? `${CIRCLED[DESTINATIONS[h.deepest].cluster]}${SLOT[DESTINATIONS[h.deepest].slot]}` : "—"}</dd></div>
+            <div><dt>{tl("最高倍率")}</dt><dd>{h.best ? `×${(h.best / 100).toFixed(2)}` : "—"}</dd></div>
+            <div><dt>{tl("大豐收以上")}</dt><dd>{h.greats}</dd></div>
+            <div><dt>{tl("傳說")}</dt><dd>{h.legends}</dd></div>
+            <div><dt>{tl("跟過的隊伍")}</dt><dd>{h.spires}</dd></div>
+          </dl>
+          {h.first !== null && <small className="v3-muted">{tl("第一次出航：{0}", { 0: new Date(h.first * 86_400_000).toISOString().slice(0, 10) })}</small>}
+        </>
+      )}
+      {marks.length > 0 && (
+        <ul className="v3-history__marks">
+          {marks.map((k) => <li key={k} style={{ ["--mk" as string]: MARK[k].tone }}><b>{MARK[k].name()}</b><small>{MARK[k].how()}</small></li>)}
+        </ul>
+      )}
+      <p className="v3-muted">{tl("履歷和標記只是紀錄與榮譽，不影響戰力、勝算或收益。")}</p>
+    </div>
   );
 }

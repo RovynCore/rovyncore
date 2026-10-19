@@ -553,3 +553,17 @@ export async function readWeek(ctx: Ctx, days = 7): Promise<FeedItem[]> {
   }
   return readFeed(ctx, latest - from + 1n);
 }
+
+/** The events the card histories are built from (lib/lightdive-v3/history.ts), from a block on: the caller keeps
+ *  what it already has and asks only for what is new. */
+export async function readLedger(ctx: Ctx, from: bigint) {
+  const { c, abi } = ctx;
+  const E = abi.Expedition3;
+  type A = Record<string, unknown>;
+  const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
+  if (from > latest) return { latest, logs: { teamSet: [], disbanded: [], dived: [], details: [], turned: [], revealed: [] } };
+  const [teamSet, disbanded, dived, details, turned, revealed] = await Promise.all(
+    ["TeamSet", "TeamDisbanded", "Dived", "DiveDetails", "TurnedBack", "Revealed"].map((n) => events<A>(ctx, c.expedition, E, n, undefined, from)),
+  );
+  return { latest, logs: { teamSet, disbanded, dived, details, turned, revealed } };
+}

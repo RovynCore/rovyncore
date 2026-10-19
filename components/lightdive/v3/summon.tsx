@@ -18,7 +18,7 @@ import { SummonFeed } from "./feeds";
 import { SummonHistory } from "./history";
 import { calm, fxQuality } from "./settings";
 import { owned, type Sim, type SimNft } from "./sim";
-import { RarityGem, RarityTag, Trait, Voyages, traitName } from "./kit";
+import { LightIcon, RarityGem, RarityTag, Trait, Voyages, traitName } from "./kit";
 import { NftDetail } from "./assets";
 import { CardSupply } from "./supply";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, clock, fmt } from "./copy";
@@ -424,7 +424,7 @@ function ResultPanel({ sim, n, onInspect }: { sim: Sim; n: SimNft; onInspect: ()
             </dd>
           </div>
         )}
-        {n.kind === 2 && <div><dt>{tl("光紋")}</dt><dd style={{ color: LIGHT_COLOR[n.trait] }}>{LIGHT[n.trait]}<small>{tl("每天的光會變，同頻的目的地也會換。")}</small></dd></div>}
+        {n.kind === 2 && <div><dt>{tl("光紋")}</dt><dd style={{ color: LIGHT_COLOR[n.trait] }}><LightIcon light={n.trait} />{LIGHT[n.trait]}<small>{tl("每天的光會變，同頻的目的地也會換。")}</small></dd></div>}
       </dl>
       <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={onInspect}>{tl("完整資料（含鏈上資料）")}</button>
     </div>

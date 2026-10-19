@@ -15,6 +15,8 @@ import type { View } from "./pages";
 import { short } from "./chain";
 import type { Listing } from "./market-data";
 import { Modal, RarityGem, RarityTag, Tile, Trait, Voyages, traitName } from "./kit";
+import { CardFace, Foil, HistoryPanel, Marks } from "./cards";
+import { marksOf, type MarkKey } from "@/lib/lightdive-v3/history";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, ago, fmt } from "./copy";
 import { play } from "./audio";
 import { DockKeeper } from "./feeds";
@@ -96,14 +98,14 @@ export function Market({ sim, go }: { sim: Sim; go: (v: View) => void }) {
             </label>
           </div>
           <div className="v3-nftgrid">
-            {shop.map((l) => <ListingCard key={l.id} l={l} onOpen={() => { setOpen(l); play("click"); }} />)}
+            {shop.map((l) => <ListingCard key={l.id} l={l} marks={marksOf(sim.history(l.nftId ?? l.id), l.renewed)} onOpen={() => { setOpen(l); play("click"); }} />)}
             {!shop.length && <p className="v3-empty">{tl("沒有符合條件的商品。")}</p>}
           </div>
         </>
       )}
       {tab === "mine" && (
         <div className="v3-nftgrid">
-          {mineListings.map((l) => <ListingCard key={l.id} l={l} onOpen={() => setOpen(l)} />)}
+          {mineListings.map((l) => <ListingCard key={l.id} l={l} marks={marksOf(sim.history(l.nftId ?? l.id), l.renewed)} onOpen={() => setOpen(l)} />)}
           {!mineListings.length && <p className="v3-empty">{tl("你還沒有上架任何卡。到光塔、稜鏡或探索者頁，打開一張閒置的卡就能上架。")}</p>}
         </div>
       )}
@@ -132,13 +134,14 @@ export function Market({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   );
 }
 
-function ListingCard({ l, onOpen }: { l: Listing; onOpen: () => void }) {
+function ListingCard({ l, onOpen, marks }: { l: Listing; onOpen: () => void; marks: MarkKey[] }) {
   return (
     <button type="button" className={`v3-nft v3-shopitem r${l.rarity}${l.mine ? " is-mine" : ""}`} style={{ ["--rc" as string]: RARITY_COLOR[l.rarity] }} onClick={onOpen}>
       <span className="v3-nft__art"><NftArt a={{ kind: l.kind, rarity: l.rarity, trait: l.trait, variant: 0 }} /></span>
       {l.mine && <span className="v3-nft__badge is-listed">{tl("我的掛單")}</span>}
       <RarityTag rarity={l.rarity} compact />
       <span className="v3-nft__name">{KIND[l.kind]}</span>
+      <Marks keys={marks} max={2} />
       <span className="v3-nft__power"><small>{tl("戰力")}</small><b>{l.power}</b></span>
       <Trait n={l} />
       <Voyages n={l} />
@@ -173,9 +176,9 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
         {sim.mode === "preview" && <p className="v3-nftdetail__note">{tl("預覽模式：掛單和購買都是模擬的。")}</p>}
       </section>
       <section className="v3-nftdetail__hero" style={{ ["--rc" as string]: RARITY_COLOR[l.rarity] }}>
-        <div className="v3-nftdetail__art"><NftArt a={{ kind: l.kind, rarity: l.rarity, trait: l.trait, variant: 0 }} /></div>
-        <RarityTag rarity={l.rarity} />
-        <h2>{KIND[l.kind]}</h2>
+        {/* the same card face as everywhere (10-19): 稜光 and 曜核 are full-art foil */}
+        <div className="v3-nftdetail__art is-card"><Foil rarity={l.rarity}><CardFace n={{ id: l.nftId ?? l.id, kind: l.kind, rarity: l.rarity, power: l.power, trait: l.trait }} size="lg" /></Foil></div>
+        <h2>{KIND[l.kind]} #{l.nftId ?? l.id}</h2>
       </section>
       <section className="v3-nftdetail__game" aria-label={tl("遊戲數據")}>
         <h3>{tl("遊戲數據")}</h3>
@@ -191,6 +194,7 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
             <ul>{DESTINATIONS.filter((d) => sim.sky.lights[d.id] === l.trait).map((d) => <li key={d.id} style={{ color: LIGHT_COLOR[l.trait] }}>{CIRCLED[d.cluster]}{SLOT[d.slot]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}<small>{tl("門檻 {0}", { 0: d.threshold })}</small></li>)}</ul>
           </div>
         )}
+        <HistoryPanel h={sim.history(l.nftId ?? l.id)} renewed={l.renewed} />
       </section>
       <footer className="v3-nftdetail__actions v3-buybar">
         <div className="v3-buybar__price"><small>{tl("售價")}</small><b>{fmt(l.price)}</b><em>$RVYN</em></div>

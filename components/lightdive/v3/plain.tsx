@@ -11,7 +11,7 @@ import { PageHead } from "../game/hud";
 import { play } from "./audio";
 import { TEAM_NAME_MAX, passesOn, owned, teamInput, teamName, type Sim, type SimNft, type SimTeam } from "./sim";
 import { BatchSell } from "./batch-sell";
-import { CountUp, Modal, RarityGem, RarityTag, Tile, Trait, Voyages } from "./kit";
+import { BeamIcon, CountUp, LightIcon, Modal, RarityGem, RarityTag, Tile, Trait, Voyages } from "./kit";
 import { BEAM, BEAM_HINT, CIRCLED, CLUSTER_HUE, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT } from "./copy";
 import type { View } from "./pages";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
@@ -236,7 +236,7 @@ export function Plain({ sim, go }: { sim: Sim; go: (v: View) => void }) {
                 {attuned.slice(0, 6).map(({ d, bonus }) => (
                   <li key={d.id} style={{ ["--lc" as string]: LIGHT_COLOR[sim.sky.lights[d.id]], ["--hue" as string]: CLUSTER_HUE[d.cluster] }}>
                     <span>{destName(d.id)}</span>
-                    <i>{LIGHT[sim.sky.lights[d.id]]}</i>
+                    <i><LightIcon light={sim.sky.lights[d.id]} />{LIGHT[sim.sky.lights[d.id]]}</i>
                     <b>+{((bonus / power) * 100).toFixed(1)}%</b>
                   </li>
                 ))}
@@ -396,7 +396,7 @@ function Seat({ n, label, style, prism, busy, onAdd, onRemove }: { n?: SimNft; l
         <NftArt a={{ kind: n.kind, rarity: n.rarity, trait: n.trait, variant: 0 }} className="v3-seat__art" />
         <RarityGem rarity={n.rarity} size={14} className="v3-seat__gem" />
       </button>
-      <small><b>{n.power}</b>{n.kind === 2 ? <i style={{ color: LIGHT_COLOR[n.trait] }}>{LIGHT[n.trait]}</i> : <i>{BEAM[n.trait]}</i>}</small>
+      <small><b>{n.power}</b>{n.kind === 2 ? <i style={{ color: LIGHT_COLOR[n.trait] }}><LightIcon light={n.trait} />{LIGHT[n.trait]}</i> : <i><BeamIcon beam={n.trait} />{BEAM[n.trait]}</i>}</small>
       {!busy && <button type="button" className="v3-seat__x" onClick={onRemove} aria-label={tl("拿下 {0} #{1}", { 0: KIND[n.kind], 1: n.id })}><X aria-hidden="true" /></button>}
     </div>
   );
@@ -455,7 +455,7 @@ function Picker({ sim, team, spire, slot, onClose, onPick, onRemove }: {
             <button type="button" className={light === null ? "is-on" : ""} onClick={() => setLight(null)}>{tl("全部")}</button>
             {lights.map(({ l, today }) => (
               <button key={l} type="button" className={light === l ? "is-on" : ""} onClick={() => setLight(l)} style={{ ["--lc" as string]: LIGHT_COLOR[l] }}>
-                <i />{LIGHT[l]}{today ? <em>{today}</em> : null}
+                <LightIcon light={l} />{LIGHT[l]}{today ? <em>{today}</em> : null}
               </button>
             ))}
           </div>

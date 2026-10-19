@@ -16,6 +16,7 @@ import { averagePrice, othersListings, simulatedSupply, type Listing, type Suppl
 import { chainOf, type ChainFacts } from "./chain";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { commissionsOf, meetsCommission, type Commission } from "@/lib/lightdive-v3/commissions";
+import { historiesOf, type CardHistory, type Voyage } from "@/lib/lightdive-v3/history";
 
 const KEY = "lightdive:preview:v3";
 const VERSION = 1;
@@ -85,6 +86,7 @@ export type SimDive = {
   bond?: number; // the team's bond at departure
   turnedBack?: boolean; // a deep dive that turned back (x1.00)
   attuned?: boolean;
+  crew?: number[]; // spire, prism and seekers at departure (card histories)
 };
 export type MintRequest = { id: number; kind: Kind; qty: number; at: number; revealAt: number; paid: number };
 /** A revealed summon, kept for the summon history: the request and the ids of the cards it gave. */
@@ -190,6 +192,13 @@ export const turning = (d: SimDive, now: number) => !!d.deep && !d.result && now
 /** Points of empty-handed chance a dive moves to "normal": its crew bond and a star chart. */
 export const stabilityOf = (bond: number | undefined, supply: number | undefined) => (bond ?? 0) + (supply === 2 ? CHART_STABILITY : 0);
 export type DiveOpts = { supply?: number; deep?: boolean };
+/** Voyages of the player's own state (the preview; older saves without a crew count the spire only). */
+export function voyagesOf(s: SimState): Voyage[] {
+  return s.dives.map((d) => ({
+    crew: d.crew ?? [d.spire], spire: d.spire, dest: d.dest, day: dayOf(d.at), deep: d.deep, turnedBack: d.turnedBack,
+    outcome: d.result && !d.pending ? (d.turnedBack ? "turnedBack" : d.result.outcome) : undefined, multX100: d.result?.multX100,
+  }));
+}
 /** A supply's price: its share of the dive's x1.00 reward (twice the points on a deep dive). */
 export const supplyCost = (plan: DivePlan, deep: boolean | undefined, rate: number, supply: number) =>
   basePoints(plan) * (deep ? 2 : 1) * rate * (SUPPLY_PRICE[supply] ?? 0);
@@ -235,6 +244,8 @@ export type Game = {
   turnBack: (diveId: number, back: boolean) => Promise<void>;
   /** The day's commissions and the player's progress on them. */
   commissions: Commissions;
+  /** 卡片履歷: what a card has lived through (null when it has never sailed). */
+  history: (id: number) => CardHistory | null;
   /** Several teams at once (one transaction on chain); one result per team, in order. */
   diveMany: (teams: { spire: number; dest: number }[], supply?: number) => Promise<ActResult[]>;
   choose: (diveId: number, choice: Choice) => Promise<void>;
@@ -368,6 +379,7 @@ export function useSim(): Game {
       made = {
         id: st.nextId++, spire, dest, at: t, revealAt: t + (opts.deep ? DEEP_MINUTES * 60_000 : REVEAL_MS), plan, card,
         deep: !!opts.deep, supply, supplyPaid: paid, bond: team.bond ?? 0, attuned: plan.bonus > 0,
+        crew: [team.spire, ...(team.prism ? [team.prism] : []), ...team.seekers],
       };
       st.dives.push(made);
     });
@@ -655,6 +667,8 @@ export function useSim(): Game {
   const sold = state?.sold;
   const market = useMemo(() => othersListings(today * DAY + DAY - 1000, sold ?? []), [today, sold]);
   const a = <A extends unknown[], R>(f: (...args: A) => R) => async (...args: A) => f(...args);
+  const dives = state?.dives;
+  const histories = useMemo(() => (state ? historiesOf(voyagesOf(state)) : new Map<number, CardHistory>()), [dives]); // eslint-disable-line react-hooks/exhaustive-deps -- only the dives matter
   return {
     mode: "preview", state, now, today, sky, rate, rateYesterday, pool,
     rateOn: rateOf,
@@ -663,6 +677,7 @@ export function useSim(): Game {
     feed: otherDives,
     week,
     chainOf,
+    history: (id) => histories.get(id) ?? null,
     dive: a(dive), diveMany: async (teams, supply) => teams.map((t) => dive(t.spire, t.dest, { supply })), turnBack: a(turnBack), commissions, choose: a(choose), collect: a(collect), setTeam: a(setTeam), nameTeam, mint: a(mint), renew: a(renew), sendHome: a(sendHome),
     claim: a(claim), listNft: a(listNft), listMany: a(listMany), unlist: a(unlist), buy: a(buy),
     hurry, reset, skipDay,

@@ -2,7 +2,8 @@
 
 // Asset pages (spires, prisms, seekers): a clear card wall, and an NFT detail with on-chain data on the left,
 // the art in the middle and in-game data on the right. Listing opens a sell dialog with market references.
-import { CardFace, Foil } from "./cards";
+import { CardFace, Foil, HistoryPanel, Marks } from "./cards";
+import { marksOf } from "@/lib/lightdive-v3/history";
 import { useState } from "react";
 import { Anchor, ExternalLink, Store, Tag } from "lucide-react";
 import { DESTINATIONS, MARKET_TAX, POWER, PRICE, RENEW_SHARE, TAX_TO_POOL, VOYAGES, type Kind } from "@/lib/lightdive-v3/rules";
@@ -12,7 +13,7 @@ import { PageHead } from "../game/hud";
 import { owned, teamName, type Sim, type SimNft } from "./sim";
 import { short } from "./chain";
 import { averagePrice } from "./market-data";
-import { Modal, RarityGem, RarityTag, Tile, Trait, Voyages, traitName } from "./kit";
+import { BeamIcon, LightIcon, Modal, RarityGem, RarityTag, Tile, Trait, Voyages, traitName } from "./kit";
 import { BEAM, CIRCLED, ERROR, KIND, LIGHT, LIGHT_COLOR, RARITY_COLOR, SLOT, TIER, fmt } from "./copy";
 import { play } from "./audio";
 import { gap, tl, localized } from "@/lib/lightdive-v3/i18n";
@@ -70,7 +71,7 @@ export function Collection({ sim, kind }: { sim: Sim; kind: Kind }) {
             return (
               <button key={v} type="button" className={trait === v ? "is-on" : ""} onClick={() => setTrait(v)} style={kind === 2 ? { ["--lc" as string]: LIGHT_COLOR[v] } : undefined}
                 title={kind === 2 ? tl("今天有 {0} 個目的地是{1}", { 0: today, 1: LIGHT[v] }) : undefined} disabled={!have}>
-                {kind === 2 && <i />}{kind === 1 ? BEAM[v] : LIGHT[v]}<em>{have}</em>
+                {kind === 2 ? <LightIcon light={v} /> : <BeamIcon beam={v} />}{kind === 1 ? BEAM[v] : LIGHT[v]}<em>{have}</em>
               </button>
             );
           })}
@@ -95,6 +96,7 @@ export function Collection({ sim, kind }: { sim: Sim; kind: Kind }) {
               {w !== "idle" && <span className={`v3-nft__badge is-${w}`}>{w === "listed" ? tl("上架 {0}", { 0: fmt(n.listed ?? 0, 0) }) : WHERE[w]}</span>}
               <RarityTag rarity={n.rarity} compact />
               <span className="v3-nft__name">{KIND[n.kind]} #{n.id}</span>
+              <Marks keys={marksOf(sim.history(n.id), n.renewed)} max={2} />
               <span className="v3-nft__power"><small>{tl("戰力")}</small><b>{n.power}</b></span>
               <Trait n={n} />
               <Voyages n={n} />
@@ -168,6 +170,7 @@ export function NftDetail({ sim, id, onClose, onMsg }: { sim: Sim; id: number; o
             {attuned.length ? <ul>{attuned.map((d) => <li key={d.id} style={{ color: LIGHT_COLOR[n.trait] }}>{CIRCLED[d.cluster]}{SLOT[d.slot]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}<small>{tl("門檻 {0}", { 0: d.threshold })}</small></li>)}</ul> : <p>{tl("今天沒有。")}</p>}
           </div>
         )}
+        <HistoryPanel h={sim.history(n.id)} renewed={n.renewed} />
         {n.kind === 1 && <p className="v3-nftdetail__hint">{tl("{0}稜鏡：", { 0: BEAM[n.trait] })}{n.trait === 0 ? tl("空手機率較低，大獎較小。") : n.trait === 1 ? tl("標準的風險和報酬。") : tl("空手機率較高，大獎較大。")}{gap()}{tl("平均倍率都相同。")}</p>}
         {n.kind === 0 && <p className="v3-nftdetail__hint">{tl("這座光塔可坐 {0} 位探索者，外加 1 面稜鏡。", { 0: n.trait })}</p>}
       </section>

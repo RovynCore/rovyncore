@@ -2,7 +2,8 @@
 // Run again whenever new art arrives:
 //   node scripts/lightdive-art-webp.mjs
 // Cards are transparent 1024x1366; card backs 1400x2000; banners 1920x1080; characters 1000x1220 transparent;
-// backgrounds 2560x1440; supply icons 512x512 transparent; the share and link-preview images 1200x630.
+// backgrounds 2560x1440; supply, light and beam icons 512x512 transparent; seeker card backgrounds 1024x1366; the share
+// and link-preview images 1200x630.
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
@@ -19,6 +20,10 @@ const JOBS = [
   { dir: "misc", match: /^(galaxy|cluster-[1-6])\.png$/, out: "space", resize: { width: 1920 }, webp: { quality: 78 } },
   { dir: "misc", match: /^light-bg-.*\.png$/, out: "bg", resize: { width: 1920 }, webp: { quality: 80 } },
   { dir: "misc", match: /^(lamp-oil|star-chart-fragment)\.png$/, out: "items", resize: { width: 256 }, webp: { quality: 86, alphaQuality: 92 } },
+  // light and beam emblems: 128 px covers the largest use at 2x density
+  { dir: "misc", match: /^(light-l[0-5]|beam-b[0-2])\.png$/, out: "icons", resize: { width: 128 }, webp: { quality: 88, alphaQuality: 92 } },
+  // the seeker full-art card backgrounds, one per light
+  { dir: "misc", match: /^seeker-bg-l[0-5]\.png$/, out: "cards/bg", resize: { width: 720 }, webp: { quality: 80 } },
   { dir: "misc", match: /^share-bg\.png$/, out: ".", webp: { quality: 86 } },
   // link previews must be a format every crawler reads
   { dir: "misc", match: /^og-lightdive\.png$/, out: ".", jpeg: { quality: 86, mozjpeg: true } },
