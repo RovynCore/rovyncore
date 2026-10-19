@@ -603,3 +603,6 @@ html.intro-on body { overflow: hidden; }
 .rv-daily__tile.is-loading { opacity: 0.45; }
 @media (max-width: 1080px) { .rv-daily__tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .rv-daily__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rv-daily__rovyn img { width: 72px; height: 88px; } }
+/* 10-19: paragraphs avoid a lone last character; headings balance */
+:is(.rv-lead, .rv-small, .rv-caption, .rv-card p) { text-wrap-style: pretty; }
+:is(.rv-display, .rv-h1, .rv-h2, .rv-h3) { text-wrap-style: balance; }

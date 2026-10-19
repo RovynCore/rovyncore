@@ -1942,3 +1942,41 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .v3-chat__report:disabled { opacity: 0.6; color: #ff8a6a; cursor: default; }
 .v3-chat__report svg { width: 13px; height: 13px; }
 @media (hover: none) { .v3-chat__report { opacity: 0.7; } }
+
+/* 10-19 UI pass — 每日委託: each kind has its emblem and colour, the reward is a chip, the action sits at the bottom */
+.hud.v3 .v3-comm { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 20px 18px 18px; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--ck, #c9ff55) 9%, rgba(0, 0, 0, 0.4)), rgba(0, 0, 0, 0.42) 55%); border-color: color-mix(in srgb, var(--ck, #c9ff55) 22%, var(--h-line)); }
+.hud.v3 .v3-comm::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--ck, #c9ff55), transparent 80%); opacity: 0.85; }
+.hud.v3 .v3-comm__head { display: flex; align-items: center; gap: 10px; }
+.hud.v3 .v3-comm__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: color-mix(in srgb, var(--ck, #c9ff55) 16%, transparent); border: 1px solid color-mix(in srgb, var(--ck, #c9ff55) 40%, transparent); color: var(--ck, #c9ff55); }
+.hud.v3 .v3-comm__icon svg { width: 21px; height: 21px; }
+.hud.v3 .v3-comm > b { font-size: 21px; letter-spacing: 0.02em; }
+.hud.v3 .v3-comm__reward { align-self: flex-start; padding: 5px 10px; border-radius: 8px; background: rgba(240, 199, 102, 0.1); border: 1px solid rgba(240, 199, 102, 0.28); color: #f3d68a !important; font-size: 12.5px; line-height: 1.45; }
+.hud.v3 .v3-comm__foot { display: grid; gap: 8px; margin-top: auto; padding-top: 6px; }
+.hud.v3 .v3-comms__list.is-compact .v3-comm { padding: 14px 14px 14px; }
+.hud.v3 .v3-comms__list.is-compact .v3-comm__icon { width: 32px; height: 32px; border-radius: 10px; }
+.hud.v3 .v3-comms__list.is-compact .v3-comm > b { font-size: 17px; }
+/* 10-19 UI pass — line breaks: paragraphs avoid leaving one or two characters alone on the last line, headings balance */
+.hud.v3 :is(p, li, small, dd, .hud-note) { text-wrap-style: pretty; } /* the longhand: it keeps any nowrap */
+.hud.v3 :is(h1, h2, h3, .hud-kicker) { text-wrap-style: balance; }
+/* 10-19 UI pass — 碑原 seats: a light or beam name never breaks into a column; on a narrow seat it drops under the power */
+.v3-seat small { flex-wrap: wrap; justify-content: center; row-gap: 0; white-space: normal; text-align: center; }
+.v3-seat small i { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.v3-seat small i img, .v3-seat small i svg { flex: none; }
+/* 10-19 UI pass — the brand line under 潛光遠征 stays on one line */
+.hud-brand small { white-space: nowrap; letter-spacing: 0.12em; overflow: hidden; text-overflow: ellipsis; }
+/* 10-19 UI pass — a page title starts at the top even when the side holds a tall card (the market's 渡) */
+.hud.v3 .hud-pagehead { align-items: flex-start; }
+/* 10-19 UI pass — titles that count show how far along you are */
+.v3-titles__progress { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 4px; }
+.v3-titles__progress::before { content: ""; grid-area: 1 / 1; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); }
+.v3-titles__progress i { grid-area: 1 / 1; height: 5px; border-radius: 3px; background: linear-gradient(90deg, rgba(240, 199, 102, 0.5), #f0c766); }
+.v3-titles__progress em { font: 600 12px var(--h-hud); font-style: normal; color: var(--h-text-2); }
+/* 10-19 UI pass — the chat button is a small round icon (the word shows on hover), so it covers less of a page */
+.v3-chat__fab { width: 48px; height: 48px; justify-content: center; padding: 0; border-radius: 50%; }
+.v3-chat__fab svg { width: 22px; height: 22px; }
+.v3-chat__fablabel { display: none; }
+.v3-chat__fab em { position: absolute; top: -4px; right: -4px; }
+@media (hover: hover) {
+  .v3-chat__fab:hover { width: auto; padding: 0 16px; border-radius: 999px; }
+  .v3-chat__fab:hover .v3-chat__fablabel { display: inline; }
+}

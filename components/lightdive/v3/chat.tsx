@@ -130,8 +130,8 @@ export function ChatDock({ sim }: { sim: Sim }) {
   if (off) return null;
   if (!open) {
     return (
-      <button type="button" className="v3-chat__fab" onClick={() => toggle(true)} aria-label={tl("打開潛光頻道")}>
-        <MessageCircle aria-hidden="true" />{tl("頻道")}{unread > 0 && <em>{unread > 99 ? "99+" : unread}</em>}
+      <button type="button" className="v3-chat__fab" onClick={() => toggle(true)} aria-label={tl("打開潛光頻道")} title={tl("潛光頻道")}>
+        <MessageCircle aria-hidden="true" /><span className="v3-chat__fablabel">{tl("頻道")}</span>{unread > 0 && <em>{unread > 99 ? "99+" : unread}</em>}
       </button>
     );
   }

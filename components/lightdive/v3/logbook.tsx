@@ -102,7 +102,7 @@ export function unseenFootprints(r: Records) {
 }
 
 /** A title; `rank` orders them by how hard they are (the highest earned one represents the observer). */
-type Title = { name: string; how: string; got: boolean; rank: number };
+type Title = { name: string; how: string; got: boolean; rank: number; progress?: [number, number] }; // progress: [now, goal] for titles that count
 function titlesOf(r: Records): Title[] {
   const deepCluster = r.deepest === null ? -1 : DESTINATIONS[r.deepest].cluster;
   const cluster = (c: number, name: string, rank: number) => ({ name, how: tl("在 {0} {1} 收下結果", { 0: CIRCLED[c], 1: TEXTS.clusters[c].name }), got: deepCluster >= c, rank });
@@ -114,23 +114,23 @@ function titlesOf(r: Records): Title[] {
     cluster(4, tl("裂光倖存者"), 6),
     cluster(5, tl("星冠見證者"), 8),
     { name: tl("傳說帶回者"), how: tl("帶回一次傳說"), got: r.legends > 0, rank: 7 },
-    { name: tl("恆光航者"), how: tl("連續 7 天出航"), got: r.streak >= 7, rank: 6 },
-    { name: tl("二十四地"), how: tl("二十四個目的地都去過"), got: r.places >= 24, rank: 9 },
+    { name: tl("恆光航者"), how: tl("連續 7 天出航"), got: r.streak >= 7, rank: 6, progress: [r.streak, 7] },
+    { name: tl("二十四地"), how: tl("二十四個目的地都去過"), got: r.places >= 24, rank: 9, progress: [r.places, 24] },
     // v3.1
     { name: tl("深淵初探"), how: tl("完成第一趟深潛"), got: r.deepDives > 0, rank: 3 },
     { name: tl("深淵帶光者"), how: tl("深潛帶回一次傳說"), got: r.deepLegends > 0, rank: 9 },
     { name: tl("知進退"), how: tl("深潛時選擇回航一次"), got: r.turnedBack > 0, rank: 3 },
-    { name: tl("同舟"), how: tl("一支隊伍的默契達到 5"), got: r.maxBond >= 5, rank: 5 },
-    { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7, rank: 5 },
-    { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10, rank: 4 },
-    { name: tl("老練受託人"), how: tl("完成 50 個每日委託"), got: r.commissions >= 50, rank: 7 },
+    { name: tl("同舟"), how: tl("一支隊伍的默契達到 5"), got: r.maxBond >= 5, rank: 5, progress: [r.maxBond, 5] },
+    { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7, rank: 5, progress: [r.supplyDays, 7] },
+    { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10, rank: 4, progress: [r.commissions, 10] },
+    { name: tl("老練受託人"), how: tl("完成 50 個每日委託"), got: r.commissions >= 50, rank: 7, progress: [r.commissions, 50] },
     // 今日首航
     { name: tl("破曉者"), how: tl("成為某個目的地當天第一位抵達的觀測者"), got: r.firsts > 0, rank: 2 },
-    { name: tl("先行者"), how: tl("當天第一位抵達 30 次"), got: r.firsts >= 30, rank: 6 },
+    { name: tl("先行者"), how: tl("當天第一位抵達 30 次"), got: r.firsts >= 30, rank: 6, progress: [r.firsts, 30] },
     // v3.2: only once echo bridges are on
     ...(r.echoes === undefined ? [] : [
-      { name: tl("引路人"), how: tl("你留下的光橋被別人跟著走 10 次"), got: r.echoes >= 10, rank: 4 },
-      { name: tl("光橋守望者"), how: tl("你留下的光橋被別人跟著走 100 次"), got: r.echoes >= 100, rank: 8 },
+      { name: tl("引路人"), how: tl("你留下的光橋被別人跟著走 10 次"), got: r.echoes >= 10, rank: 4, progress: [r.echoes, 10] as [number, number] },
+      { name: tl("光橋守望者"), how: tl("你留下的光橋被別人跟著走 100 次"), got: r.echoes >= 100, rank: 8, progress: [r.echoes, 100] as [number, number] },
     ]),
   ];
 }
@@ -276,6 +276,11 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
             <li key={t.name} className={`${t.got ? "is-got" : ""}${t.name === best ? " is-best" : ""}`}>
               <b>{t.got ? t.name : <><Lock aria-hidden="true" />{t.name}</>}</b>
               <small>{t.how}</small>
+              {!t.got && t.progress && t.progress[0] > 0 && (
+                <span className="v3-titles__progress" aria-label={`${t.progress[0]} / ${t.progress[1]}`}>
+                  <i style={{ width: `${Math.min(100, (t.progress[0] / t.progress[1]) * 100)}%` }} /><em>{Math.min(t.progress[0], t.progress[1])} / {t.progress[1]}</em>
+                </span>
+              )}
             </li>
           ))}
         </ul>

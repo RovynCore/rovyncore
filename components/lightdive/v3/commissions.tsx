@@ -4,7 +4,7 @@
 // them). One at a time; a voyage that departs after accepting and meets the commission completes it, for 10% of that
 // voyage's x1.00 reward. Every action is one button.
 import { useState } from "react";
-import { Check, Rocket, X } from "lucide-react";
+import { Anchor, Check, Compass, Gem, Orbit, Package, Rocket, Sparkles, Star, X, type LucideIcon } from "lucide-react";
 import { basePoints } from "@/lib/lightdive-v3/rules";
 import type { Commission } from "@/lib/lightdive-v3/commissions";
 import { tl } from "@/lib/lightdive-v3/i18n";
@@ -25,6 +25,16 @@ const TITLES: Record<Commission["kind"], () => string> = {
 };
 
 export const commissionTitle = (c: Commission) => TITLES[c.kind]();
+/** Each kind's emblem and colour on its card (10-19). */
+const KIND_LOOK: Record<Commission["kind"], { icon: LucideIcon; hue: string }> = {
+  cluster: { icon: Orbit, hue: "#3de7e0" },
+  good: { icon: Gem, hue: "#f0c766" },
+  decision: { icon: Compass, hue: "#9fe8d6" },
+  attuned: { icon: Sparkles, hue: "#c9ff55" },
+  sky: { icon: Star, hue: "#b8c4ff" },
+  deep: { icon: Anchor, hue: "#7fd3ff" },
+  supply: { icon: Package, hue: "#ffb37a" },
+};
 
 /** What the commission asks, in one sentence. */
 export function commissionText(c: Commission) {
@@ -78,12 +88,18 @@ function CommissionCard({ sim, c, go, compact }: { sim: Sim; c: Commission; go: 
   const blocked = cm.active !== null && !active;
   const bonus = active ? readyBonus(sim) : null;
   const state = done ? "is-done" : dropped ? "is-dropped" : blocked ? "is-blocked" : active ? (cm.ready !== null ? "is-ready" : "is-active") : "";
+  const look = KIND_LOOK[c.kind];
+  const Icon = look.icon;
   return (
-    <li className={`v3-comm ${state}`}>
-      <span className="v3-comm__kicker">{done ? tl("已完成") : dropped ? tl("已放棄") : active ? (cm.ready !== null ? tl("可以完成") : tl("進行中")) : tl("委託 {0}", { 0: c.index + 1 })}</span>
+    <li className={`v3-comm ${state}`} style={{ ["--ck" as string]: look.hue }}>
+      <div className="v3-comm__head">
+        <span className="v3-comm__icon" aria-hidden="true"><Icon /></span>
+        <span className="v3-comm__kicker">{done ? tl("已完成") : dropped ? tl("已放棄") : active ? (cm.ready !== null ? tl("可以完成") : tl("進行中")) : tl("委託 {0}", { 0: c.index + 1 })}</span>
+      </div>
       <b>{TITLES[c.kind]()}</b>
       <p>{commissionText(c)}</p>
-      {!compact && <small>{tl("獎勵：符合的那一趟基礎收益的 {0}，進金庫。", { 0: pct(cm.bonus) })}</small>}
+      {!compact && <small className="v3-comm__reward">{tl("獎勵：符合的那一趟基礎收益的 {0}，進金庫。", { 0: pct(cm.bonus) })}</small>}
+      <div className="v3-comm__foot">
       {done ? (
         <span className="v3-comm__mark"><Check aria-hidden="true" />{tl("今天完成了")}</span>
       ) : dropped ? (
@@ -106,6 +122,7 @@ function CommissionCard({ sim, c, go, compact }: { sim: Sim; c: Commission; go: 
       )}
       {active && cm.ready === null && <small className="v3-comm__hint">{tl("接下之後出發的航程才算；結果還沒收取的話，完成時會一起收取。")}</small>}
       {error && <p className="v3-error" role="alert">{error}</p>}
+      </div>
     </li>
   );
 }
