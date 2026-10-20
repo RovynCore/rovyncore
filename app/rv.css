@@ -606,3 +606,6 @@ html.intro-on body { overflow: hidden; }
 /* 10-19: paragraphs avoid a lone last character; headings balance */
 :is(.rv-lead, .rv-small, .rv-caption, .rv-card p) { text-wrap-style: pretty; }
 :is(.rv-display, .rv-h1, .rv-h2, .rv-h3) { text-wrap-style: balance; }
+/* 10-20: Chinese has no spaces to break at, so the hero headline is sized to keep each sentence on one line
+   (「一個正在成形的世界。」 used to split mid-word) */
+:is(:lang(zh-Hant), :lang(zh-Hans)) .rv-display { font-size: clamp(30px, 5vw, 68px); }

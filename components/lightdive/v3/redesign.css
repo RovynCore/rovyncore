@@ -1996,3 +1996,16 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
   .hud-top__space { flex: 1 1 0; min-width: 0; }
   .hud-top .v3-badge { max-width: 300px; }
 }
+/* 10-20: the new star-map art is much brighter (微光淺域 is a glowing shoal), so map labels sit on a soft dark plate
+   to stay readable; hovering still opens the full details */
+@media (min-width: 861px) {
+  .hud.v3 :is(.v3-spot, .v3-node) :is(.v3-spot__label, .v3-node__label) { background: linear-gradient(135deg, rgba(3, 7, 6, 0.72), rgba(3, 7, 6, 0.42)); border-radius: 10px; backdrop-filter: blur(3px); }
+  .hud.v3 .v3-cluster .v3-spot:not(.is-flip) .v3-spot__label { padding: 6px 12px 7px 14px; }
+}
+.v3-maplabel__meta i { white-space: nowrap; }
+/* 10-20: the map title and intro stay readable over the brighter art (核心星冠's sun sits right behind them) */
+@media (min-width: 861px) {
+  .hud.v3 :is(.v3-galaxy, .v3-cluster) > .v3-map__head { isolation: isolate; }
+  .hud.v3 :is(.v3-galaxy, .v3-cluster) > .v3-map__head::before { content: ""; position: absolute; z-index: -1; left: -40px; top: -30px; width: min(760px, 75%); height: calc(100% + 60px); background: radial-gradient(ellipse 70% 80% at 30% 45%, rgba(2, 5, 8, 0.86), rgba(2, 5, 8, 0.5) 60%, transparent 85%); pointer-events: none; }
+  .hud.v3 :is(.v3-galaxy, .v3-cluster) > .v3-map__head :is(h1, p) { text-shadow: 0 1px 2px #000, 0 0 18px rgba(0, 0, 0, 0.85); }
+}

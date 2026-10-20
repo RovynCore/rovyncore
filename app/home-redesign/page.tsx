@@ -10,7 +10,8 @@ import { AllocationBar } from "@/components/rv/allocation";
 import { DailyBulletin } from "@/components/rv/daily-bulletin";
 
 const T = {
-  heroEyebrow: { en: "Robinhood Chain · First game in development", "zh-Hant": "Robinhood Chain · 第一款遊戲開發中", "zh-Hans": "Robinhood Chain · 第一款游戏开发中", ko: "Robinhood Chain · 첫 게임 개발 중" },
+  heroEyebrow: { en: "Robinhood Chain · First game: testnet open", "zh-Hant": "Robinhood Chain · 第一款遊戲：測試網開放中", "zh-Hans": "Robinhood Chain · 第一款游戏：测试网开放中", ko: "Robinhood Chain · 첫 게임: 테스트넷 오픈" },
+  playGame: { en: "Play Lightdive (testnet)", "zh-Hant": "玩潛光遠征（測試網）", "zh-Hans": "玩潜光远征（测试网）", ko: "라이트다이브 플레이 (테스트넷)" },
   heroA: { en: "A world in the making.", "zh-Hant": "一個正在成形的世界。", "zh-Hans": "一个正在成形的世界。", ko: "만들어지고 있는 세계." },
   heroB: { en: "RVYN at its core.", "zh-Hant": "RVYN 是它的核心。", "zh-Hans": "RVYN 是它的核心。", ko: "그 중심에 RVYN." },
   heroLead: { en: "ROVYN CORE is building a game world on Robinhood Chain, with RVYN as its planned core currency. We build in public: contracts are verified and every step is on record.", "zh-Hant": "ROVYN CORE 正在 Robinhood Chain 上打造一個遊戲世界，RVYN 規劃為它的核心貨幣。我們公開建置：合約公開驗證，每一步都有紀錄。", "zh-Hans": "ROVYN CORE 正在 Robinhood Chain 上打造一个游戏世界，RVYN 规划为它的核心货币。我们公开建置：合约公开验证，每一步都有记录。", ko: "ROVYN CORE는 Robinhood Chain에서 게임 세계를 만들고 있으며 RVYN은 그 핵심 화폐로 계획되어 있습니다. 공개적으로 만듭니다. 계약은 검증되어 있고 모든 단계가 기록됩니다." },
@@ -37,7 +38,7 @@ const T = {
   whatEyebrow: { en: "What we are building", "zh-Hant": "我們在做什麼", "zh-Hans": "我们在做什么", ko: "우리가 만드는 것" },
   whatTitle: { en: "One brand. A game, its currency, and the tools around it.", "zh-Hant": "一個品牌：一款遊戲、它的貨幣，以及周邊工具。", "zh-Hans": "一个品牌：一款游戏、它的货币，以及周边工具。", ko: "하나의 브랜드. 게임, 그 화폐, 그리고 주변 도구." },
   gameTitle: { en: "The game", "zh-Hant": "遊戲", "zh-Hans": "游戏", ko: "게임" },
-  gameBody: { en: "Our first game is in development. Gameplay and how RVYN is used in it will be published here once they are confirmed.", "zh-Hant": "第一款遊戲開發中。玩法與 RVYN 在遊戲中的用途，確定後會在這裡公布。", "zh-Hans": "第一款游戏开发中。玩法与 RVYN 在游戏中的用途，确定后会在这里公布。", ko: "첫 게임을 개발 중입니다. 게임 방식과 RVYN의 쓰임은 확정되면 이곳에 공개합니다." },
+  gameBody: { en: "Lightdive, a card expedition game, is open on the testnet. Anyone can play it now with test tokens that have no value.", "zh-Hant": "第一款遊戲《潛光遠征》是卡片遠征遊戲，測試網已開放，任何人都能用沒有價值的測試幣遊玩。", "zh-Hans": "第一款游戏《潜光远征》是卡片远征游戏，测试网已开放，任何人都能用没有价值的测试币游玩。", ko: "첫 게임 라이트다이브는 카드 원정 게임으로 테스트넷이 열려 있습니다. 누구나 가치 없는 테스트 토큰으로 지금 플레이할 수 있습니다." },
   rvynTitle: { en: "RVYN", "zh-Hant": "RVYN", "zh-Hans": "RVYN", ko: "RVYN" },
   rvynBody: { en: "A fixed supply of 10,000,000 tokens, planned as the game's core currency. No staking, profit-sharing or promised returns.", "zh-Hant": "固定供應 10,000,000 枚，規劃為遊戲的核心貨幣。沒有 staking、分潤或收益承諾。", "zh-Hans": "固定供应 10,000,000 枚，规划为游戏的核心货币。没有 staking、分润或收益承诺。", ko: "고정 공급 10,000,000개, 게임의 핵심 화폐로 계획. 스테이킹, 수익 배분, 수익 약속 없음." },
   toolsTitle: { en: "Tools, already live", "zh-Hant": "已上線的工具", "zh-Hans": "已上线的工具", ko: "이미 운영 중인 도구" },
@@ -74,6 +75,7 @@ const T = {
   d2: { en: "Launchpad and Onchain Records", "zh-Hant": "發射台與鏈上紀錄", "zh-Hans": "发射台与链上记录", ko: "런치패드와 온체인 기록" },
   d3: { en: "Presale contract V6, source-verified", "zh-Hant": "預售合約 V6，原始碼已驗證", "zh-Hans": "预售合约 V6，源码已验证", ko: "프리세일 계약 V6, 소스 검증" },
   d4: { en: "Safe multisig and live transparency page", "zh-Hant": "Safe 多簽與即時透明頁", "zh-Hans": "Safe 多签与实时透明页", ko: "Safe 멀티시그와 실시간 투명성 페이지" },
+  d5: { en: "Lightdive open on the testnet", "zh-Hant": "潛光遠征測試網開放", "zh-Hans": "潜光远征测试网开放", ko: "라이트다이브 테스트넷 오픈" },
   n1: { en: "Whitelist registration", "zh-Hant": "白名單登記", "zh-Hans": "白名单登记", ko: "화이트리스트 신청" },
   n2: { en: "Presale (date to be announced)", "zh-Hant": "預售（日期待公布）", "zh-Hans": "预售（日期待公布）", ko: "프리세일 (일정 미정)" },
   n3: { en: "First look at the game", "zh-Hant": "遊戲首次公開", "zh-Hans": "游戏首次公开", ko: "게임 첫 공개" },
@@ -120,8 +122,8 @@ export default function Home() {
               <h1 className="rv-display">{t(T.heroA)}<br /><span className="rv-accent">{t(T.heroB)}</span></h1>
               <p className="rv-lead">{t(T.heroLead)}</p>
               <div className="rv-row">
-                <Link className="rv-btn rv-btn--primary rv-btn--lg" href={primary.href}>{primary.label}<ArrowRight aria-hidden="true" /></Link>
-                <Link className="rv-btn rv-btn--secondary rv-btn--lg" href="/game">{t(T.aboutGame)}</Link>
+                <Link className="rv-btn rv-btn--primary rv-btn--lg" href="/game/lightdive">{t(T.playGame)}<ArrowRight aria-hidden="true" /></Link>
+                <Link className="rv-btn rv-btn--secondary rv-btn--lg" href={primary.href}>{primary.label}</Link>
               </div>
             </div>
             <div className="rv-hero__art"><Image src="/rv-core.webp" alt="" width={900} height={900} priority unoptimized /></div>
@@ -154,7 +156,7 @@ export default function Home() {
           <Head eyebrow={t(T.whatEyebrow)} title={t(T.whatTitle)} />
           <div className="rv-grid rv-grid--3">
             {([
-              [Gamepad2, T.gameTitle, T.gameBody, "/game"],
+              [Gamepad2, T.gameTitle, T.gameBody, "/game/lightdive"],
               [Coins, T.rvynTitle, T.rvynBody, "/rvyn"],
               [Layers, T.toolsTitle, T.toolsBody, "/launchpad"],
             ] as const).map(([Icon, title, body, href]) => (
@@ -216,8 +218,8 @@ export default function Home() {
           <Head eyebrow={t(T.roadEyebrow)} title={t(T.roadTitle)} />
           <div className="rv-grid rv-grid--3">
             {([
-              [T.done, [T.d1, T.d2, T.d3, T.d4], "rv-pill--ok"],
-              [T.next, [T.n1, T.n2, T.n3], "rv-pill--live"],
+              [T.done, [T.d1, T.d2, T.d3, T.d4, T.d5], "rv-pill--ok"],
+              [T.next, [T.n1, T.n2], "rv-pill--live"],
               [T.later, [T.l1, T.l2, T.l3], ""],
             ] as const).map(([label, items, tone]) => (
               <div key={label.en} className="rv-card rv-reveal">
