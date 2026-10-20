@@ -17,8 +17,8 @@ import { deciding, passesOn, stabilityOf, teamInput, teamName, teamOut, turning,
 import { SUPPLIES, SupplyPrompt, forgetSupply, rememberedSupply, type Departure } from "./provisions";
 import { commissionTitle, readyBonus } from "./commissions";
 import { unlocksOf } from "./unlocks";
-import { bestTitle, openProfile, recordsOf } from "./logbook";
-import { VoyageLog } from "./voyage";
+import { featuredTitle, openProfile, recordsOf } from "./logbook";
+import { VoyageLog, omenOf } from "./voyage";
 import { BeamIcon, LightIcon, flyLight } from "./kit";
 import { fxQuality } from "./settings";
 import {
@@ -225,7 +225,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
         </div>
       </section>
       <LiveLog sim={sim} />
-      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={bestTitle(recordsOf(sim))} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
+      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={featuredTitle(recordsOf(sim), sim.chain?.account ?? null)} omen={omenOf(sim, revealed)} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
       {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={(supply) => departAgain(supplyFor, supply)} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
@@ -638,19 +638,23 @@ function Odds({ plan, base }: { plan: DivePlan; base?: number }) {
 
 /** The reveal: a short scan while the signal "comes back", then the result with a counting multiplier. */
 type RevealCommission = { title: string; bonus: number | null; complete: () => Promise<void> };
-function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission, title }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null }) {
+function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission, title, omen }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null; omen: string[] }) {
   const [completing, setCompleting] = useState(false);
   const r = d.result!;
   const dest = DESTINATIONS[d.dest];
   const reason = r.wear > 1 ? TEXTS.wearReasons[dest.cluster][d.id % Math.max(1, TEXTS.wearReasons[dest.cluster].length)] : null;
   const [stage, setStage] = useState<"scan" | "show">(skipScan ? "show" : "scan");
   const [shown, setShown] = useState(0);
+  // the scan shows the omen one line at a time (a better result has more lines, so the wait is a little longer)
+  const [line, setLine] = useState(0);
+  const lines = omen.length;
   useEffect(() => {
     if (skipScan) { play(r.outcome === "partial" ? "empty" : r.outcome); return; }
     play("scan");
-    const t = window.setTimeout(() => { setStage("show"); play(r.outcome === "partial" ? "empty" : r.outcome); }, 1700);
-    return () => window.clearTimeout(t);
-  }, [r.outcome, skipScan]);
+    const step = window.setInterval(() => setLine((x) => x + 1), 1100);
+    const t = window.setTimeout(() => { setStage("show"); play(r.outcome === "partial" ? "empty" : r.outcome); }, Math.max(1700, 700 + lines * 1100));
+    return () => { window.clearTimeout(t); window.clearInterval(step); };
+  }, [r.outcome, skipScan, lines]);
   useEffect(() => {
     if (stage !== "show") return;
     let raf = 0;
@@ -670,7 +674,7 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commi
         <div className="v3-modal__card v3-scan">
           <span className="hud-kicker">{tl("{0} · 訊號回傳中", { 0: name })}</span>
           <div className="v3-scan__radar" aria-hidden="true"><i /><i /><i /></div>
-          <p>{tl("Rovyn 正在對齊光橋……")}</p>
+          {lines ? <p key={Math.min(line, lines - 1)} className="v3-scan__omen">{omen[Math.min(line, lines - 1)]}</p> : <p>{tl("Rovyn 正在對齊光橋……")}</p>}
         </div>
       </div>
     );

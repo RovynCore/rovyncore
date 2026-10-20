@@ -5,16 +5,19 @@
 // collected there) and this week's boards. Anyone's profile can be opened: in the live game the boards and the dive
 // log link to other wallets, and a profile has a link of its own to share. Honour only: nothing here pays anything,
 // and nothing ranks earnings.
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Copy, Lock } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Copy, Lock, SlidersHorizontal } from "lucide-react";
 import { DESTINATIONS } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { FOOTPRINTS, FOOTPRINT_UNLOCK } from "@/lib/lightdive-v3/footprints";
 import { gameLocale, tl } from "@/lib/lightdive-v3/i18n";
 import { PageHead } from "../game/hud";
 import { Tile } from "./kit";
-import { CardFace, Foil } from "./cards";
-import { ProfileShare } from "./profile-card";
+import { CardFace, Foil, sceneImage } from "./cards";
+import { ProfileShare, type Postcard } from "./profile-card";
+import { ProfileEditor, SECTION_NAME } from "./profile-editor";
+import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
+import { MOTTOS, POSTCARD_STATS, SCENES, STYLE_DEFAULT, defaultStats, readStyle, useProfileStyle, type SectionKey, type StatKey } from "./profile-style";
 import { CIRCLED, CLUSTER_HUE, OUTCOME, OUTCOME_TONE, SLOT, fmt } from "./copy";
 import { dayOf, owned, type FeedRow, type Sim, type SimDive, type SimState } from "./sim";
 
@@ -141,6 +144,45 @@ export function bestTitle(r: Records): string | null {
   return got[0]?.name ?? null;
 }
 
+/** The title the observer chose to show (自訂檔案), as long as it is still earned; otherwise the hardest one. */
+function chosenTitle(r: Records, index: number | null): string | null {
+  const t = index === null ? undefined : titlesOf(r)[index];
+  return t?.got ? t.name : bestTitle(r);
+}
+/** One's own featured title, for the reveal's share image and the like. */
+export function featuredTitle(r: Records, address: string | null): string | null {
+  return chosenTitle(r, readStyle(address).title);
+}
+
+type Stat = { label: string; value: string | number; sub?: string; tone?: string };
+/** Every number a profile can show (自訂檔案 picks which); null where it does not apply yet. */
+function statsOf(r: Records, extra: { cards: number; titles: [number, number]; footprints: number }): Record<StatKey, Stat | null> {
+  const deep = r.deepest === null ? null : DESTINATIONS[r.deepest];
+  return {
+    dives: { label: tl("收下的結果"), value: r.dives, sub: tl("趟") },
+    places: { label: tl("到過的目的地"), value: `${r.places} / 24` },
+    deepest: { label: tl("最深到達"), value: deep ? `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}` : "—", sub: deep ? destName(deep.id) : undefined, tone: "#3de7e0" },
+    bestMult: { label: tl("最高倍率"), value: r.bestMult ? `×${(r.bestMult / 100).toFixed(2)}` : "—", tone: "#f0c766" },
+    legends: { label: tl("傳說"), value: r.legends, sub: tl("大豐收以上 {0} 次", { 0: r.greats }), tone: "#fff4d6" },
+    greats: { label: tl("大豐收以上"), value: r.greats, sub: tl("次"), tone: "#f0c766" },
+    streak: { label: tl("連續出航"), value: tl("{0} 天", { 0: r.streak }) },
+    summons: { label: tl("召喚次數"), value: r.summons },
+    echoes: r.echoes === undefined ? null : { label: tl("引路"), value: r.echoes, sub: tl("別人跟著你的光橋走"), tone: "#ffe7a8" },
+    commissions: { label: tl("完成的委託"), value: r.commissions },
+    firsts: { label: tl("首航次數"), value: r.firsts, sub: tl("當天第一位抵達") },
+    deepDives: { label: tl("深潛"), value: r.deepDives, sub: tl("趟") },
+    deepLegends: { label: tl("深潛傳說"), value: r.deepLegends, tone: "#fff4d6" },
+    turnedBack: { label: tl("選擇回航"), value: r.turnedBack, sub: tl("次") },
+    maxBond: { label: tl("最高默契"), value: r.maxBond },
+    supplyDays: { label: tl("連續帶補給"), value: tl("{0} 天", { 0: r.supplyDays }) },
+    cards: { label: tl("持有的卡"), value: extra.cards, sub: tl("張") },
+    titles: { label: tl("稱號"), value: `${extra.titles[0]} / ${extra.titles[1]}`, tone: "#f0c766" },
+    footprints: { label: tl("足跡"), value: `${extra.footprints} / ${FOOTPRINTS.length}` },
+    since: { label: tl("出航起始"), value: r.since ? new Date(r.since).toISOString().slice(0, 10) : "—" },
+  };
+}
+const STAT_ORDER: StatKey[] = ["dives", "places", "deepest", "bestMult", "legends", "greats", "streak", "echoes", "summons", "commissions", "firsts", "deepDives", "deepLegends", "turnedBack", "maxBond", "supplyDays", "cards", "titles", "footprints", "since"];
+
 type Row = { who: string; owner?: string; me: boolean; dives: number; deepest: number; best: number; legends: number };
 
 /** This week's boards: everyone's dives of the last 7 days, the player's own added from state. */
@@ -218,8 +260,13 @@ export function Logbook({ sim }: { sim: Sim }) {
 
 function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address: string | null; mine: boolean }) {
   const r = recordsFrom(s, sim.today);
-  const titles = titlesOf(r).sort((a, b) => Number(b.got) - Number(a.got) || b.rank - a.rank);
-  const best = bestTitle(r);
+  const all = titlesOf(r);
+  const titles = [...all].sort((a, b) => Number(b.got) - Number(a.got) || b.rank - a.rank);
+  // 自訂檔案: only one's own profile is styled; anyone else's shows the defaults
+  const [saved, update] = useProfileStyle(address);
+  const style = mine ? saved : STYLE_DEFAULT;
+  const [editing, setEditing] = useState(false);
+  const best = chosenTitle(r, style.title);
   const rows = useMemo(() => (mine ? boardsOf(sim) : []), [sim, mine]);
   const opened = openFootprints(r);
   // opening one's own profile counts every open fragment as seen (clears the menu badge)
@@ -229,7 +276,22 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   const [copied, setCopied] = useState(false);
   // the card that stands for this observer: the rarest, then the strongest, still in the wallet
   const cards = s.nfts.filter((n) => owned(n) && !n.soldAt);
-  const top = [...cards].sort((a, b) => b.rarity - a.rarity || b.power - a.power)[0];
+  const top = cards.find((n) => n.id === style.card) ?? [...cards].sort((a, b) => b.rarity - a.rarity || b.power - a.power)[0];
+  const cardScene = top ? sceneImage(top.kind, top.trait) : "/lightdive/share-bg.webp";
+  const scene = SCENES.find((x) => x.id === style.scene)?.src || cardScene;
+  const motto = style.motto === null ? null : tl(MOTTOS[style.motto]);
+  const catalog = statsOf(r, { cards: cards.length, titles: [all.filter((t) => t.got).length, all.length], footprints: opened });
+  const shownKeys = (style.stats ?? defaultStats(r.echoes !== undefined)).filter((k) => catalog[k]);
+  const shown = shownKeys.map((k) => catalog[k]!);
+  const sections = style.order.filter((k) => (k !== "boards" || mine) && !style.hidden.includes(k));
+  const deep = r.deepest === null ? null : DESTINATIONS[r.deepest];
+  const statSig = shown.map((x) => `${x.label}:${x.value}`).join("|");
+  const postcard = useMemo<Postcard>(() => ({
+    title: best, card: top, scene, motto, address, since: r.since, dives: r.dives, places: r.places,
+    stats: shown.slice(0, POSTCARD_STATS).map((x) => ({ label: x.label, value: String(x.value) })),
+    place: deep ? { code: `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}`, name: destName(deep.id), cluster: TEXTS.clusters[deep.cluster].name, stamp: CLUSTER_IMAGES[deep.cluster].src } : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- statSig stands for the shown numbers
+  }), [best, top?.id, scene, motto, address, r.since, r.dives, r.places, statSig, deep?.id]);
   const share = async () => {
     if (!address) return;
     try { await navigator.clipboard.writeText(`https://www.rovyncore.com/game/lightdive#logbook=${address}`); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch {}
@@ -240,35 +302,47 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
       <PageHead kicker={tl("個人檔案")} icon="voyage" title={mine ? tl("個人檔案") : tl("觀測者 {0}", { 0: address ? short(address) : "" })}
         lead={mine ? tl("你走過的地方、拿到的稱號、最強的卡，和每個目的地的故事。這一頁只記榮譽，不影響任何收益。") : tl("這位觀測者在鏈上的公開紀錄。")} />
 
-      <section className="v3-panel v3-profile">
+      <section className="v3-panel v3-profile" style={{ ["--scene" as string]: `url(${scene})` }}>
         <div className="v3-profile__card">
           {top ? <Foil rarity={top.rarity}><CardFace n={top} size="md" /></Foil> : <span className="v3-profile__nocard">{tl("還沒有卡")}</span>}
         </div>
         <div className="v3-profile__id">
           <small>{mine ? tl("我的代表稱號") : tl("代表稱號")}</small>
           <b className={best ? "is-title" : "is-none"}>{best ?? tl("還沒有稱號")}</b>
+          {motto && <q className="v3-profile__motto">{motto}</q>}
           <span>{address ? short(address) : tl("預覽模式")}{r.since ? tl(" · {0} 起出航", { 0: new Date(r.since).toISOString().slice(0, 10) }) : ""}</span>
-          {mine && address && (
-            <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={share}><Copy aria-hidden="true" />{copied ? tl("已複製連結") : tl("複製我的檔案連結")}</button>
+          {mine && (
+            <div className="v3-profile__actions">
+              <button type="button" className={`hud-btn hud-btn--sm ${editing ? "hud-btn--primary" : "hud-btn--ghost"}`} aria-expanded={editing} onClick={() => setEditing((x) => !x)}><SlidersHorizontal aria-hidden="true" />{editing ? tl("完成自訂") : tl("自訂檔案")}</button>
+              {address && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={share}><Copy aria-hidden="true" />{copied ? tl("已複製連結") : tl("複製我的檔案連結")}</button>}
+              {r.dives > 0 && <ProfileShare postcard={postcard} layout={style.layout} onLayout={(layout) => update({ layout })} />}
+            </div>
           )}
-          {mine && r.dives > 0 && <ProfileShare r={r} best={best} top={top} address={address} />}
-          <p className="v3-muted">{mine ? tl("代表稱號是你拿到的稱號裡最難的一個，會顯示在排行榜和分享圖上。") : tl("代表稱號是這位觀測者拿到的稱號裡最難的一個。")}</p>
+          <p className="v3-muted">{mine ? tl("代表稱號預設是你拿到的稱號裡最難的一個，也可以在「自訂檔案」裡換。它會顯示在揭曉的分享圖和明信片上。") : tl("代表稱號是這位觀測者拿到的稱號裡最難的一個。")}</p>
         </div>
         <div className="v3-tiles is-4 v3-profile__tiles">
-          <Tile label={tl("收下的結果")} value={r.dives} sub={tl("趟")} />
-          <Tile label={tl("到過的目的地")} value={`${r.places} / 24`} />
-          <Tile label={tl("最深到達")} value={r.deepest === null ? "—" : `${CIRCLED[DESTINATIONS[r.deepest].cluster]}${SLOT[DESTINATIONS[r.deepest].slot]}`} sub={r.deepest === null ? undefined : destName(r.deepest)} tone="#3de7e0" />
-          <Tile label={tl("最高倍率")} value={r.bestMult ? `×${(r.bestMult / 100).toFixed(2)}` : "—"} tone="#f0c766" />
-          <Tile label={tl("傳說")} value={r.legends} sub={tl("大豐收以上 {0} 次", { 0: r.greats })} tone="#fff4d6" />
-          <Tile label={tl("連續出航")} value={tl("{0} 天", { 0: r.streak })} />
-          {r.echoes === undefined
-            ? <Tile label={tl("召喚次數")} value={r.summons} />
-            : <Tile label={tl("引路")} value={r.echoes} sub={tl("別人跟著你的光橋走")} tone="#ffe7a8" />}
-          <Tile label={tl("完成的委託")} value={r.commissions} />
+          {shown.map((x) => <Tile key={x.label} label={x.label} value={x.value} sub={x.sub} tone={x.tone} />)}
         </div>
         {mine && <p className="v3-muted v3-profile__note">{tl("累計帶回 {0} $RVYN（已扣出發成本）。收益的細節在金庫。", { 0: fmt(r.brought) })}</p>}
       </section>
 
+      {mine && editing && (
+        <ProfileEditor style={saved} update={update} cardScene={cardScene}
+          titles={all.map((t, index) => ({ index, name: t.name, got: t.got, rank: t.rank })).filter((t) => t.got).sort((a, b) => b.rank - a.rank)}
+          cards={cards} shown={shownKeys} sections={["titles", "footprints", "boards"]}
+          stats={STAT_ORDER.filter((k) => catalog[k]).map((k) => ({ key: k, label: catalog[k]!.label }))} />
+      )}
+
+      {sections.map((k) => <Fragment key={k}>{section(k)}</Fragment>)}
+      {mine && style.hidden.length > 0 && (
+        <p className="v3-muted v3-profile__hidden">{tl("已隱藏：{0}。可以在「自訂檔案」裡打開。", { 0: style.hidden.map((k) => SECTION_NAME[k]()).join("、") })}</p>
+      )}
+    </>
+  );
+
+  // the sections, in the order the observer chose
+  function section(k: SectionKey) {
+    if (k === "titles") return (
       <section className="v3-panel">
         <h3>{tl("稱號")} <em>{titles.filter((t) => t.got).length}/{titles.length}</em></h3>
         <ul className="v3-titles">
@@ -285,7 +359,8 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
           ))}
         </ul>
       </section>
-
+    );
+    if (k === "footprints") return (
       <section className="v3-panel v3-footprints">
         <h3>{tl("足跡")} <em>{opened}/{FOOTPRINTS.length}</em></h3>
         <p className="v3-muted">{tl("在一個目的地第一次收下結果，會打開那裡的第一段故事；收下 {0} 次，打開第二段。", { 0: FOOTPRINT_UNLOCK[1] })}</p>
@@ -316,21 +391,20 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
           ))}
         </div>
       </section>
-
-      {mine && (
-        <section className="v3-panel">
-          <h3>{tl("本週排行")}</h3>
-          <p className="v3-muted">{sim.chain ? tl("最近 7 天全服的出航。只排榮譽：出航次數、最深到達、最高倍率和傳說次數。點名字看那位觀測者的檔案。") : tl("最近 7 天全服的出航。只排榮譽：出航次數、最深到達、最高倍率和傳說次數。")}</p>
-          <div className="v3-boards">
-            <Board title={tl("出航最多")} rows={rows} myTitle={best} value={(x) => x.dives} show={(x) => tl("{0} 趟", { 0: x.dives })} />
-            <Board title={tl("最深到達")} rows={rows.filter((x) => x.deepest >= 0)} myTitle={best} value={(x) => x.deepest} show={(x) => `${CIRCLED[DESTINATIONS[x.deepest].cluster]}${SLOT[DESTINATIONS[x.deepest].slot]} ${destName(x.deepest)}`} />
-            <Board title={tl("最高倍率")} rows={rows.filter((x) => x.best > 0)} myTitle={best} value={(x) => x.best} show={(x) => `×${(x.best / 100).toFixed(2)}`} />
-            <Board title={OUTCOME.legend} rows={rows.filter((x) => x.legends > 0)} myTitle={best} value={(x) => x.legends} show={(x) => tl("{0} 次", { 0: x.legends })} tone={OUTCOME_TONE.legend} />
-          </div>
-        </section>
-      )}
-    </>
-  );
+    );
+    return (
+      <section className="v3-panel">
+        <h3>{tl("本週排行")}</h3>
+        <p className="v3-muted">{sim.chain ? tl("最近 7 天全服的出航。只排榮譽：出航次數、最深到達、最高倍率和傳說次數。點名字看那位觀測者的檔案。") : tl("最近 7 天全服的出航。只排榮譽：出航次數、最深到達、最高倍率和傳說次數。")}</p>
+        <div className="v3-boards">
+          <Board title={tl("出航最多")} rows={rows} myTitle={best} value={(x) => x.dives} show={(x) => tl("{0} 趟", { 0: x.dives })} />
+          <Board title={tl("最深到達")} rows={rows.filter((x) => x.deepest >= 0)} myTitle={best} value={(x) => x.deepest} show={(x) => `${CIRCLED[DESTINATIONS[x.deepest].cluster]}${SLOT[DESTINATIONS[x.deepest].slot]} ${destName(x.deepest)}`} />
+          <Board title={tl("最高倍率")} rows={rows.filter((x) => x.best > 0)} myTitle={best} value={(x) => x.best} show={(x) => `×${(x.best / 100).toFixed(2)}`} />
+          <Board title={OUTCOME.legend} rows={rows.filter((x) => x.legends > 0)} myTitle={best} value={(x) => x.legends} show={(x) => tl("{0} 次", { 0: x.legends })} tone={OUTCOME_TONE.legend} />
+        </div>
+      </section>
+    );
+  }
 }
 
 function Board({ title, rows, value, show, tone, myTitle }: { title: string; rows: Row[]; value: (r: Row) => number; show: (r: Row) => string; tone?: string; myTitle: string | null }) {

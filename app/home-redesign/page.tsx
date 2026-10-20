@@ -8,6 +8,7 @@ import { Address, Countdown, formatUtc8, Head, useSaleStatus, type Copy4 } from 
 import { RVYN_MODEL } from "@/lib/rvyn-model";
 import { AllocationBar } from "@/components/rv/allocation";
 import { DailyBulletin } from "@/components/rv/daily-bulletin";
+import { GameLocale } from "@/components/lightdive/v3/game-locale";
 
 const T = {
   heroEyebrow: { en: "Robinhood Chain · First game: testnet open", "zh-Hant": "Robinhood Chain · 第一款遊戲：測試網開放中", "zh-Hans": "Robinhood Chain · 第一款游戏：测试网开放中", ko: "Robinhood Chain · 첫 게임: 테스트넷 오픈" },
@@ -149,7 +150,7 @@ export default function Home() {
         </div>
       </section>
 
-      <DailyBulletin />
+      <GameLocale><DailyBulletin /></GameLocale>
 
       <section className="rv-section rv-section--line">
         <div className="rv-container">

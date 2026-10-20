@@ -1,6 +1,7 @@
 "use client";
 
 // Every page of the v3 preview except the dive page. One page answers one question.
+import { paintingOf } from "./cards";
 import { LightIcon } from "./kit";
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
@@ -16,9 +17,7 @@ import { GameIcon } from "../game/icon";
 import { PageHead, Panel } from "../game/hud";
 import { dayOf, deciding, passesOn, owned, teamInput, teamName, teamOut, turning, type Sim, type SimNft, type SimState } from "./sim";
 import type { IconName } from "../game/icons";
-import {
-  CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt, outcomeName,
-} from "./copy";
+import { CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt, outcomeName, RARITY_COLOR } from "./copy";
 import { gap, plurals, tl } from "@/lib/lightdive-v3/i18n";
 import { CommissionsBrief } from "./commissions";
 import { unlocksOf } from "./unlocks";
@@ -539,6 +538,14 @@ function TeamsAtGlance({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <li key={x.spire}>
             <button type="button" onClick={() => { try { sessionStorage.setItem("lightdive:v3:team", String(x.spire)); } catch {} go("plain"); }}>
               <span className="v3-teamsglance__name"><b>{teamName(s, x.spire)}</b><small>{spire ? tl("{0}／{1} 泊位", { 0: x.seekers.length, 1: spire.trait }) : tl("{0} 位探索者", { 0: x.seekers.length })}{x.prism ? tl(" · 有稜鏡") : ""}</small></span>
+              {/* the crew at a glance: spire, prism and seekers (hidden on a narrow row) */}
+              <span className="v3-crew" aria-hidden="true">
+                {[x.spire, ...(x.prism ? [x.prism] : []), ...x.seekers].map((id) => {
+                  const n = s.nfts.find((c) => c.id === id);
+                  // eslint-disable-next-line @next/next/no-img-element
+                  return n ? <img key={id} src={paintingOf(n)} alt="" loading="lazy" style={{ ["--rc" as string]: RARITY_COLOR[n.rarity] }} /> : null;
+                })}
+              </span>
               <span className="v3-teamsglance__power"><b>{teamPower(teamInput(s, x))}</b><small>{tl("戰力")}</small></span>
               <span className={`v3-chip is-${st.c}`}>{st.t}</span>
             </button>

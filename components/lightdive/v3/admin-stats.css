@@ -28,3 +28,7 @@
 .lds__split li small { color: var(--lds-dim); text-align: right; }
 .lds__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .lds__btn.is-small { padding: 5px 12px; font-size: 13px; }
+/* 10-21: rows fill edge to edge (a short last row stretches instead of leaving a gap) */
+.lds__tiles, .lds__cols { display: flex; flex-wrap: wrap; }
+.lds__tiles > * { flex: 1 1 190px; min-width: 0; }
+.lds__cols > * { flex: 1 1 260px; min-width: 0; }

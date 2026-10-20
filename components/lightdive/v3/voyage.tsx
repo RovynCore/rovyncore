@@ -12,7 +12,7 @@ import { NftArt } from "../game/art";
 import { LightIcon, flyLight } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { play } from "./audio";
-import { decisionAt, deciding, rateOf, stabilityOf, teamInput, teamName as teamNameOf, turnOpenAt, turning, type Sim, type SimDive, type SimNft } from "./sim";
+import { dayOf, decisionAt, deciding, rateOf, stabilityOf, teamInput, teamName as teamNameOf, turnOpenAt, turning, type Sim, type SimDive, type SimNft } from "./sim";
 import { BEAM, CHOICE, CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, RARITY_COLOR, SLOT, STAR, TIER, clock, fmt, outcomeName, pct } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 import { ROUTE_P as P, alongRoute, routeIn } from "./voyage-route";
@@ -20,15 +20,32 @@ import type { VoyageGl, VoyageView } from "./voyage-engine";
 import { fxQuality } from "./settings";
 
 const DAY = 86_400_000;
-type Kind = "line" | "rovyn" | "seeker" | "star" | "decision" | "choice" | "after" | "result";
-type Entry = { key: string; at: number; kind: Kind; text: string; color?: string; who?: SimNft };
+type Kind = "line" | "rovyn" | "seeker" | "star" | "decision" | "choice" | "after" | "result" | "state" | "reading" | "attuned" | "omen";
+type Entry = { key: string; at: number; kind: Kind; text: string; color?: string; who?: SimNft; light?: number };
 
 const pick = <T,>(list: readonly T[], seed: number): T => list[Math.abs(Math.floor(seed)) % list.length];
+/** Successive lines from one pool without repeats (as long as the pool lasts), starting from the dive's seed. */
+function deal<T>(list: readonly T[], seed: number) {
+  const n = list.length, step = n % 7 ? 7 : 1;
+  let i = Math.abs(Math.floor(seed)) % n;
+  return () => { const x = list[i]; i = (i + step) % n; return x; };
+}
 const CHOICE_TONE: Record<Exclude<Choice, "none">, string> = { steady: "#7fd3ff", bold: "#ff8a5c", detour: "#c9ff55" };
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
+type TeamState = "echo" | "first" | "deep" | "oil" | "chart" | "bond";
+/** The empty-handed chance at which the readings turn from steady to even, and from even to hard. */
+const READING_AT = [0.06, 0.18];
+const READING_TONE = { steady: "#9fe8d6", even: "#e6f1ff", hard: "#ff8a6a" };
 
 /** Every line of one voyage that has happened by \`now\`, in order. Lines are picked from the dive id, so a voyage
- *  always tells the same story when you come back to it. */
+ *  always tells the same story when you come back to it.
+ *
+ *  The narrative (10-21, docs/lightdive/TEXTS-v3-draft.md section 八): departure, the team's state, the place, a
+ *  seeker, the readings, the decision, attunement or the cluster, the sky, the place again, a seeker, the deep
+ *  descent, the approach, the closing, and at the reveal an omen before the log. The team's state, the readings,
+ *  attunement and the sky follow the voyage's real conditions (what it carried, its chance of coming back empty), so a
+ *  well-prepared voyage reads better because it is better prepared; the words never change the odds. The omen is
+ *  written only once the result exists, and a better result gets a longer one. */
 function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
   const s = sim.state!;
   const dest = DESTINATIONS[d.dest];
@@ -37,23 +54,44 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
   // the Chinese lines put spaces around {目的地} for the source text only; other languages keep their spacing
   const fill = (text: string, seeker?: SimNft) => text.replaceAll(tl("{隊伍}"), team).replace(gap() ? /\{目的地\}/g : / ?\{目的地\} ?/g, destName(d.dest)).replaceAll(tl("{探索者}"), seeker ? `#${seeker.id}` : tl("探索者"));
   const V = TEXTS.voyage;
-  const travel = V.travel[dest.cluster];
+  const travel = deal(V.travel[dest.cluster], d.id * 3);
+  const place = deal(V.place[d.dest], d.id);
   const at = (k: number) => d.at + (d.revealAt - d.at) * k;
   const seekerLine = (n: number): Pick<Entry, "text" | "color" | "who"> => {
     const sk = seekers[(d.id + n) % Math.max(1, seekers.length)];
-    return sk ? { text: fill(pick(V.seeker[sk.trait], d.id * 7 + n * 3), sk), color: LIGHT_COLOR[sk.trait], who: sk } : { text: fill(pick(travel, d.id + 4 + n)) };
+    return sk ? { text: fill(pick(V.seeker[sk.trait], d.id * 7 + n * 5), sk), color: LIGHT_COLOR[sk.trait], who: sk } : { text: fill(travel()) };
   };
+  // what this voyage carried, most notable first: the first line about the team takes one, a later line the next
+  const states: TeamState[] = [];
+  if (d.echo) states.push("echo");
+  if (d.first) states.push("first");
+  if (d.deep) states.push("deep");
+  if (d.supply === 1) states.push("oil");
+  if (d.supply === 2) states.push("chart");
+  if ((d.bond ?? 0) >= 3) states.push("bond");
+  const stateLine = (st: TeamState | "plain") => fill(pick(V.state[st], d.id));
+  // the readings: the voyage's real chance of coming back empty, after power, bond, supplies, the sky and the beam
+  const empty = (d.plan.table[0]?.[0] ?? 0) / 10000;
+  const reading = empty <= READING_AT[0] ? "steady" : empty <= READING_AT[1] ? "even" : "hard";
+  const light = skyOf(dayOf(d.at)).lights[d.dest];
+  const tuned = d.plan.bonus > 0 ? seekers.find((n) => n.trait === light) : undefined;
   const ev = d.plan.event;
   const list: Entry[] = [
     { key: "start", at: at(0), kind: "line", text: fill(pick(V.start, d.id)) },
     { key: "rovyn", at: at(0.02), kind: "rovyn", text: tl("Rovyn：「{0}」", { 0: pick(TEXTS.departures[dest.cluster], d.id) }) },
-    { key: "t1", at: at(0.08), kind: "line", text: fill(pick(travel, d.id * 3)) },
-    { key: "s1", at: at(0.18), kind: "seeker", ...seekerLine(0) },
-    ev ? { key: "star", at: at(0.42), kind: "star", text: pick(V.star[ev], d.id), color: STAR[ev].color } : { key: "t2", at: at(0.42), kind: "line", text: fill(pick(travel, d.id * 3 + 1)) },
-    { key: "t3", at: at(0.56), kind: "line", text: fill(pick(travel, d.id * 3 + 2)) },
-    { key: "s2", at: at(0.68), kind: "seeker", ...seekerLine(1) },
-    { key: "near", at: at(0.8), kind: "line", text: fill(pick(V.approach, d.id)) },
-    { key: "close", at: at(0.92), kind: "line", text: fill(pick(V.closing, d.id)) },
+    { key: "state", at: at(0.05), kind: "state", text: stateLine(states[0] ?? "plain") },
+    { key: "p1", at: at(0.1), kind: "line", text: fill(place()) },
+    { key: "s1", at: at(0.17), kind: "seeker", ...seekerLine(0) },
+    { key: "reading", at: at(0.24), kind: "reading", text: fill(pick(V.reading[reading], d.id)), color: READING_TONE[reading] },
+    tuned ? { key: "tuned", at: at(0.36), kind: "attuned", text: fill(pick(V.attuned[light], d.id), tuned), color: LIGHT_COLOR[light], light, who: tuned } : { key: "t1", at: at(0.36), kind: "line", text: fill(travel()) },
+    ev ? { key: "star", at: at(0.42), kind: "star", text: pick(V.star[ev], d.id), color: STAR[ev].color } : { key: "t2", at: at(0.42), kind: "line", text: fill(travel()) },
+    { key: "t3", at: at(0.52), kind: "line", text: fill(travel()) },
+    { key: "p2", at: at(0.6), kind: "line", text: fill(place()) },
+    { key: "s2", at: at(0.67), kind: "seeker", ...seekerLine(1) },
+    states[1] ? { key: "state2", at: at(0.73), kind: "state", text: stateLine(states[1]) } : { key: "t4", at: at(0.73), kind: "line", text: fill(travel()) },
+    { key: "near", at: at(0.8), kind: "line", text: fill(pick(V.near[dest.cluster], d.id)) },
+    { key: "approach", at: at(0.86), kind: "line", text: fill(pick(V.approach, d.id)) },
+    { key: "close", at: at(0.93), kind: "line", text: fill(pick(V.closing, d.id)) },
   ];
   if (d.card !== undefined) {
     const card = TEXTS.cards[d.card];
@@ -69,9 +107,30 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
   if (d.deep) {
     list.push({ key: "deep", at: turnOpenAt(d), kind: "rovyn", text: tl("Rovyn：「到最深處了。光很亮，也很不穩——要繼續，還是回航？」") });
     if (d.turnedBack) list.push({ key: "back", at: d.revealAt - 60_000, kind: "choice", text: tl("你選擇回航：這趟固定 ×1.00，只耗損 1 次航程。") });
+    else {
+      // the descent past the destination, for a dive that kept going
+      const down = deal(V.deep[dest.cluster], d.id);
+      list.push({ key: "down1", at: at(0.47), kind: "line", text: fill(down()) }, { key: "down2", at: at(0.63), kind: "line", text: fill(down()) });
+    }
   }
-  if (d.result) list.push({ key: "result", at: d.revealAt, kind: "result", text: d.log ?? "", color: OUTCOME_TONE[d.result.outcome] });
+  if (d.result) {
+    const tone = d.turnedBack ? "#9fe8d6" : OUTCOME_TONE[d.result.outcome];
+    const omen = omenOf(sim, d);
+    omen.forEach((text, i) => list.push({ key: `omen${i}`, at: d.revealAt - (omen.length - i), kind: "omen", text, color: tone }));
+    list.push({ key: "result", at: d.revealAt, kind: "result", text: d.log ?? "", color: tone });
+  }
   return list.filter((e) => e.at <= now).sort((a, b) => a.at - b.at);
+}
+
+/** The omen: what the voyage home looked like, written once the result exists; longer for a better result (a legend:
+ *  three lines, rising). The voyage log shows it before the result, and the reveal while the signal comes in. */
+export function omenOf(sim: Sim, d: SimDive): string[] {
+  if (!d.result) return [];
+  const o = d.turnedBack ? "back" : d.result.outcome;
+  const L: readonly string[] = TEXTS.voyage.omen[o];
+  const lines = o === "legend" ? [L[d.id % 2], L[2 + (d.id % 2)], L[4]] : o === "good" || o === "great" ? [L[d.id % 4], L[4]] : [pick(L, d.id)];
+  const team = teamNameOf(sim.state!, d.spire);
+  return lines.map((text) => text.replaceAll(tl("{隊伍}"), team));
 }
 
 /** Types the newest line out letter by letter. */
@@ -543,5 +602,7 @@ function LogIcon({ e, d }: { e: Entry; d: SimDive }) {
   if (e.kind === "star") return <span className="v3-logicon is-star" aria-hidden="true" />;
   if (e.kind === "decision" || e.kind === "choice") return <span className={`v3-logicon is-decision${d.choice ? ` is-${d.choice}` : ""}`} aria-hidden="true" />;
   if (e.kind === "result" && d.result) return <span className="v3-logicon is-result" style={{ ["--tc" as string]: OUTCOME_TONE[d.result.outcome] }} aria-hidden="true" />;
+  if (e.kind === "attuned" && e.light !== undefined) return <span className="v3-logicon is-attuned" aria-hidden="true"><LightIcon light={e.light} /></span>;
+  if (e.kind === "omen" || e.kind === "reading" || e.kind === "state") return <span className={`v3-logicon is-${e.kind}`} aria-hidden="true" />;
   return <span className={`v3-logicon is-${e.kind === "after" ? "after" : "line"}`} aria-hidden="true" />;
 }

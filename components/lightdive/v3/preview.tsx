@@ -2,7 +2,7 @@
 
 // Lightdive v3: the game shell. The preview (/game/lightdive/preview) plays it on simulated state in this browser; the
 // live game (/game/lightdive, live.tsx) plays the same pages on the v3 contracts with the player's wallet.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { FlaskConical, LogOut, Music, Music2, Volume1, Volume2, VolumeX } from "lucide-react";
 import "@fontsource/chakra-petch/500.css";
 import "@fontsource/chakra-petch/600.css";
@@ -19,7 +19,8 @@ import { Credits, Lobby, Rovyn, rovynPool, type View } from "./pages";
 import { Guide } from "./guide";
 import { Story } from "./story";
 import { Buy } from "./buy";
-import { Whitepaper } from "./whitepaper";
+// the whitepaper (four languages, about 30 KB) loads only when it is opened
+const Whitepaper = lazy(() => import("./whitepaper").then((m) => ({ default: m.Whitepaper })));
 import { Plain } from "./plain";
 import { Collection } from "./assets";
 import { Summon } from "./summon";
@@ -198,7 +199,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
           : view === "story" ? <Story />
           : view === "buy" ? <Buy />
           : view === "faucet" && live ? <Faucet sim={sim} />
-          : view === "whitepaper" ? <Whitepaper />
+          : view === "whitepaper" ? <Suspense fallback={<p className="hud-dim">{tl("載入中…")}</p>}><Whitepaper /></Suspense>
           : view === "settings" ? <Settings sim={sim} muted={muted} toggleMute={toggleMute} musicOn={musicOn} toggleMusic={toggleMusic} />
           : <Guide sim={sim} go={go} />}
         </div>

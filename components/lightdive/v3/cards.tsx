@@ -18,6 +18,9 @@ import type { SimNft } from "./sim";
 
 const KIND_FILE: Record<Kind, string> = { 0: "spire", 1: "prism", 2: "seeker" };
 export const backImage = (kind: Kind) => `/lightdive/back/${KIND_FILE[kind]}.webp`;
+/** A card's painting (transparent), for thumbnails and share images. */
+export const paintingOf = (n: { kind: number; rarity: number; trait: number }) =>
+  n.kind === 0 ? `/lightdive/cards/spire-r${n.rarity}.webp` : n.kind === 1 ? `/lightdive/cards/prism-b${n.trait}-r${n.rarity}.webp` : `/lightdive/cards/seeker-l${n.trait}-r${n.rarity}.webp`;
 /** The scene behind a full-art card: a seeker stands in its light's own landscape (the founder's art, 10-19); spires
  *  and prisms use their kind's banner. */
 export const sceneImage = (kind: Kind, trait: number) =>
