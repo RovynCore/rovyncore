@@ -448,7 +448,8 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
   const mark = (v: number, b: number | undefined, higherIsGood: boolean) => (b === undefined || Math.abs(v - b) < 1e-9 ? "" : (v > b) === higherIsGood ? "is-up" : "is-down");
   return (
     <div className={`v3-decision${open ? " is-open" : ""}${stage ? " is-stage" : ""}`}>
-      <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}</span>
+      {/* which voyage this is, when several teams are out at once */}
+      <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}<em className="v3-decision__who">{teamNameOf(s, d.spire)} · {CIRCLED[DESTINATIONS[d.dest].cluster]}{SLOT[DESTINATIONS[d.dest].slot]} {TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name}</em></span>
       <b className="v3-decision__title">{card.title}</b>
       <p>{card.scene}</p>
       <div className="v3-decision__options">

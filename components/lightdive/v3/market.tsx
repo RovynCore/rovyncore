@@ -194,7 +194,8 @@ function ListingDetail({ sim, l, onClose, onMsg, onBought }: { sim: Sim; l: List
             <ul>{DESTINATIONS.filter((d) => sim.sky.lights[d.id] === l.trait).map((d) => <li key={d.id} style={{ color: LIGHT_COLOR[l.trait] }}>{CIRCLED[d.cluster]}{SLOT[d.slot]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}<small>{tl("門檻 {0}", { 0: d.threshold })}</small></li>)}</ul>
           </div>
         )}
-        <HistoryPanel h={sim.history(l.nftId ?? l.id)} renewed={l.renewed} />
+        {/* the preview's other sellers are simulated and have no voyages behind them (the live game reads them from the chain) */}
+        <HistoryPanel h={sim.history(l.nftId ?? l.id)} renewed={l.renewed} empty={sim.mode === "preview" ? tl("預覽模式裡，其他賣家的卡是模擬的，沒有履歷紀錄。正式版會顯示這張卡在鏈上的每一趟。") : undefined} />
       </section>
       <footer className="v3-nftdetail__actions v3-buybar">
         <div className="v3-buybar__price"><small>{tl("售價")}</small><b>{fmt(l.price)}</b><em>$RVYN</em></div>

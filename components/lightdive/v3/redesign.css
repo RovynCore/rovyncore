@@ -2009,3 +2009,7 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
   .hud.v3 :is(.v3-galaxy, .v3-cluster) > .v3-map__head::before { content: ""; position: absolute; z-index: -1; left: -40px; top: -30px; width: min(760px, 75%); height: calc(100% + 60px); background: radial-gradient(ellipse 70% 80% at 30% 45%, rgba(2, 5, 8, 0.86), rgba(2, 5, 8, 0.5) 60%, transparent 85%); pointer-events: none; }
   .hud.v3 :is(.v3-galaxy, .v3-cluster) > .v3-map__head :is(h1, p) { text-shadow: 0 1px 2px #000, 0 0 18px rgba(0, 0, 0, 0.85); }
 }
+/* 10-20 UI pass 3 — while a dialog is open (batch dispatch, a card, a purchase…) the chat button steps aside so it
+   never covers the dialog's buttons */
+body:has(.v3-modal) .v3-chat__fab { display: none; }
+.v3-decision__who { margin-left: 10px; padding-left: 10px; border-left: 1px solid rgba(255, 255, 255, 0.2); font-style: normal; font-weight: 600; color: var(--h-text-2); letter-spacing: 0.02em; }

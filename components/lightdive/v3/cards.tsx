@@ -114,12 +114,12 @@ export function Marks({ keys, max }: { keys: MarkKey[]; max?: number }) {
 }
 
 /** The card's history in the detail views: what it has lived through, and the marks with how each was earned. */
-export function HistoryPanel({ h, renewed }: { h: CardHistory | null; renewed?: boolean }) {
+export function HistoryPanel({ h, renewed, empty }: { h: CardHistory | null; renewed?: boolean; empty?: string }) {
   const marks = marksOf(h, renewed);
   return (
     <div className="v3-history">
       <h4>{tl("卡片履歷")}</h4>
-      {!h || !h.dives ? <p className="v3-muted">{tl("這張卡還沒有出航過。它的每一趟都會記在這裡，跟著卡一起轉手。")}</p> : (
+      {!h || !h.dives ? <p className="v3-muted">{empty ?? tl("這張卡還沒有出航過。它的每一趟都會記在這裡，跟著卡一起轉手。")}</p> : (
         <>
           <dl>
             <div><dt>{tl("出航")}</dt><dd>{tl("{0} 趟", { 0: h.dives })}</dd></div>
