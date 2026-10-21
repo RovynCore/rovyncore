@@ -2,6 +2,7 @@ import { waitUntil } from "cloudflare:workers";
 import { ANNOUNCEMENTS_KEY, activeAnnouncements, announcementListSchema, type Announcement } from "@/lib/lightdive-announcements";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readDaily, type Daily } from "@/lib/lightdive-v3/daily";
+import { cleanStyle } from "@/lib/lightdive-v3/profile";
 import { CHAT_CHANNELS, CHAT_DAILY, CHAT_GAP_SECONDS, CHAT_KEEP_DAYS, CHAT_PAGE, CHAT_REPORTS_HIDE, checkChat, isChannel, type ChatChannel, type ChatMessage } from "@/lib/lightdive-chat";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
@@ -203,6 +204,7 @@ const clearChat = async (channel?: string) => {
   if (!cache) return;
   await Promise.all(CHAT_CHANNELS.filter((c) => !channel || c === channel).map((c) => cache.delete(chatKey(c))));
 };
+const profileKey = (account: string) => `https://profile.lightdive.internal/${account}`;
 const cardHolders = new Map<string, number>(); // account -> until when "holds a card" is trusted (this isolate only)
 async function holdsCard(account: string) {
   const until = cardHolders.get(account);
@@ -261,6 +263,21 @@ async function handle(request: Request) {
         const messages = await readChat(channel).catch((e: unknown) => { if (/no such (table|column)/i.test(String(e))) return null; throw e; });
         const data = messages ? { channel, messages, now: now() } : { channel, messages: [], off: true, now: now() };
         if (cache) await cache.put(chatKey(channel), new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${messages ? 3 : 60}` } }));
+        return respond(data);
+      }
+      if (route === "lightdive" && path[1] === "profile" && path.length === 2) {
+        // 自訂檔案: what an observer chose to show; kept at the edge for 30 seconds
+        await rate(request, "lightdive-public", 120);
+        const account = (url.searchParams.get("account") ?? "").toLowerCase();
+        if (!/^0x[0-9a-f]{40}$/.test(account)) fail(400, "錢包地址格式不正確");
+        const cache = chatCache();
+        const hit = cache ? await cache.match(profileKey(account)) : undefined;
+        if (hit) return new Response(hit.body, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+        // until the table exists every profile shows its defaults
+        const row = await db().prepare("SELECT style FROM lightdive_profile WHERE account=?").bind(account).first<{ style: string }>()
+          .catch((e: unknown) => { if (/no such table/i.test(String(e))) return "off" as const; throw e; });
+        const data = row === "off" ? { style: null, off: true } : { style: row ? cleanStyle(JSON.parse(row.style)) : null };
+        if (cache) await cache.put(profileKey(account), new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=30" } }));
         return respond(data);
       }
       if (route === "lightdive" && path[1] === "daily" && path.length === 2) {
@@ -573,6 +590,17 @@ async function handle(request: Request) {
       }
       await clearChat(channel as string);
       return respond({ ok: true, id: row?.id });
+    }
+    if (route === "lightdive" && path[1] === "profile" && path.length === 2) {
+      const actor = await walletSessionAccount(request, db());
+      if (!actor) fail(401, "請先連接錢包並簽名登入，才能儲存自訂檔案");
+      const account = actor!.toLowerCase();
+      // presets only (indexes, ids and keys), cleaned again here: nothing free-form is stored or shown to others
+      const style = cleanStyle((body as { style?: unknown })?.style);
+      await db().prepare("INSERT INTO lightdive_profile(account,style,updated) VALUES(?,?,?) ON CONFLICT(account) DO UPDATE SET style=excluded.style,updated=excluded.updated")
+        .bind(account, JSON.stringify(style), now()).run();
+      await chatCache()?.delete(profileKey(account));
+      return respond({ ok: true, style });
     }
     if (route === "rvyn" && path[1] === "register") {
       z.object({}).strict().parse(body);

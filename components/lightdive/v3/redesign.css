@@ -2124,3 +2124,6 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 .v3-logicon.is-omen { background: none; overflow: visible; }
 .v3-logicon.is-omen::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--ec); box-shadow: 0 0 12px var(--ec); animation: v3-twinkle 1.8s ease-in-out infinite; }
 .v3-scan__omen { max-width: 30em; margin: 0; font-style: italic; font-size: 17px; line-height: 1.7; color: #eadfc4; animation: v3-fade 0.6s both; }
+.v3-pedit__sync { margin-left: 8px; padding: 2px 10px; border-radius: 999px; font-style: normal; font-size: 12.5px; background: rgba(255, 255, 255, 0.06); color: var(--h-text-2); white-space: nowrap; }
+.v3-pedit__sync.is-saved { background: rgba(201, 255, 85, 0.12); color: var(--h-lime); }
+.v3-pedit__sync.is-signin, .v3-pedit__sync.is-error { background: rgba(255, 138, 106, 0.14); color: #ff8a6a; white-space: normal; }

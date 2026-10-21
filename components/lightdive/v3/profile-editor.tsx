@@ -8,14 +8,23 @@ import { tl } from "@/lib/lightdive-v3/i18n";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { LIGHT, RARITY, RARITY_COLOR } from "./copy";
 import { paintingOf } from "./cards";
-import { MAX_STATS, MOTTOS, POSTCARD_STATS, SCENES, type ProfileStyle, type Scene, type SectionKey, type StatKey } from "./profile-style";
+import { MAX_STATS, MOTTOS, POSTCARD_STATS, SCENES, type ProfileStyle, type Scene, type SectionKey, type StatKey, type StyleSync } from "./profile-style";
 import type { SimNft } from "./sim";
 
 export const sceneName = (x: Scene) => (x.cluster !== undefined ? TEXTS.clusters[x.cluster].name : x.light !== undefined ? tl("{0}之地", { 0: LIGHT[x.light] }) : tl(x.name ?? ""));
 export const SECTION_NAME: Record<SectionKey, () => string> = { titles: () => tl("稱號"), footprints: () => tl("足跡"), boards: () => tl("本週排行") };
 
+const SYNC_TEXT: Record<Exclude<StyleSync, "local">, () => string> = {
+  loading: () => tl("讀取中…"),
+  saving: () => tl("儲存中…"),
+  saved: () => tl("已儲存"),
+  signin: () => tl("還沒存到伺服器：請重新連接錢包並簽名登入"),
+  error: () => tl("儲存失敗，請稍後再改一次"),
+};
+
 type Props = {
   style: ProfileStyle;
+  sync: StyleSync;
   update: (patch: Partial<ProfileStyle> | null) => void;
   titles: { index: number; name: string }[]; // the earned ones
   cards: SimNft[];
@@ -35,7 +44,7 @@ const TABS: { key: Tab; name: () => string }[] = [
   { key: "sections", name: () => tl("區塊與順序") },
 ];
 
-export function ProfileEditor({ style, update, titles, cards, cardScene, stats, shown, sections }: Props) {
+export function ProfileEditor({ style, sync, update, titles, cards, cardScene, stats, shown, sections }: Props) {
   const [tab, setTab] = useState<Tab>("title");
   const toggleStat = (k: StatKey) => {
     const next = shown.includes(k) ? shown.filter((x) => x !== k) : [...shown, k].slice(0, MAX_STATS);
@@ -58,7 +67,11 @@ export function ProfileEditor({ style, update, titles, cards, cardScene, stats, 
       <div className="v3-pedit__tabs" role="tablist">
         {TABS.map((t) => <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={tab === t.key ? "is-on" : ""} onClick={() => setTab(t.key)}>{t.name()}</button>)}
       </div>
-      <p className="v3-muted">{tl("選你今天想展示的樣子，上面的檔案和明信片會一起改。這些選擇存在這台裝置上；別人打開你的檔案時，看到的是預設樣式。")}</p>
+      <p className="v3-muted">
+        {tl("選你今天想展示的樣子，上面的檔案和明信片會一起改。")}
+        {sync === "local" ? tl("預覽模式的選擇只存在這台裝置上。") : tl("選擇會存到伺服器，別人打開你的檔案時也看得到。")}
+        {sync !== "local" && <em className={`v3-pedit__sync is-${sync}`}>{SYNC_TEXT[sync]()}</em>}
+      </p>
 
       {tab === "title" && (
       <div className="v3-pedit__group" role="tabpanel">

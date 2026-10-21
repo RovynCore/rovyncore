@@ -29,6 +29,13 @@
       "when": 1792540800000,
       "tag": "0003_lightdive_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792627200000,
+      "tag": "0004_lightdive_profile",
+      "breakpoints": true
     }
   ]
 }

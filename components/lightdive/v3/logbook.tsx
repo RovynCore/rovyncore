@@ -17,7 +17,7 @@ import { CardFace, Foil, sceneImage } from "./cards";
 import { ProfileShare, type Postcard } from "./profile-card";
 import { ProfileEditor, SECTION_NAME } from "./profile-editor";
 import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
-import { MOTTOS, POSTCARD_STATS, SCENES, STYLE_DEFAULT, defaultStats, readStyle, useProfileStyle, type SectionKey, type StatKey } from "./profile-style";
+import { MOTTOS, POSTCARD_STATS, SCENES, defaultStats, readStyle, useProfileStyle, type SectionKey, type StatKey } from "./profile-style";
 import { CIRCLED, CLUSTER_HUE, OUTCOME, OUTCOME_TONE, SLOT, fmt } from "./copy";
 import { dayOf, owned, type FeedRow, type Sim, type SimDive, type SimState } from "./sim";
 
@@ -262,9 +262,8 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   const r = recordsFrom(s, sim.today);
   const all = titlesOf(r);
   const titles = [...all].sort((a, b) => Number(b.got) - Number(a.got) || b.rank - a.rank);
-  // 自訂檔案: only one's own profile is styled; anyone else's shows the defaults
-  const [saved, update] = useProfileStyle(address);
-  const style = mine ? saved : STYLE_DEFAULT;
+  // 自訂檔案: one's own choices (editable); in the live game anyone else's are read from the server
+  const [style, update, sync] = useProfileStyle(address, { live: !!sim.chain, mine });
   const [editing, setEditing] = useState(false);
   const best = chosenTitle(r, style.title);
   const rows = useMemo(() => (mine ? boardsOf(sim) : []), [sim, mine]);
@@ -327,7 +326,7 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
       </section>
 
       {mine && editing && (
-        <ProfileEditor style={saved} update={update} cardScene={cardScene}
+        <ProfileEditor style={style} update={update} sync={sync} cardScene={cardScene}
           titles={all.map((t, index) => ({ index, name: t.name, got: t.got, rank: t.rank })).filter((t) => t.got).sort((a, b) => b.rank - a.rank)}
           cards={cards} shown={shownKeys} sections={["titles", "footprints", "boards"]}
           stats={STAT_ORDER.filter((k) => catalog[k]).map((k) => ({ key: k, label: catalog[k]!.label }))} />

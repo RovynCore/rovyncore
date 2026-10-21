@@ -1,99 +1,88 @@
 "use client";
 
-// 自訂檔案 (10-21): what one's own profile shows, chosen by the player — the featured title and card, the scene behind
-// them, which numbers, a motto, and the order of the sections. The postcard follows the same choices. Kept on this
-// device, per wallet (localStorage): anyone else who opens the profile sees its defaults.
-import { useCallback, useEffect, useState } from "react";
-import { CLUSTER_IMAGES, GALAXY_IMAGE } from "@/lib/lightdive-v3/credits";
+// 自訂檔案 (10-21): the profile's chosen look, read and saved for the game. In the live game one's own choices are
+// saved to the server (signed-in wallet only) so anyone who opens the profile sees them, with a copy on this device
+// for the reveal's share image; someone else's are read from the server. The preview keeps them on this device only.
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { STYLE_DEFAULT, cleanStyle, type ProfileStyle } from "@/lib/lightdive-v3/profile";
 
-export type StatKey =
-  | "dives" | "places" | "deepest" | "bestMult" | "legends" | "greats" | "streak" | "summons" | "echoes" | "commissions"
-  | "firsts" | "deepDives" | "deepLegends" | "turnedBack" | "maxBond" | "supplyDays" | "cards" | "titles" | "footprints" | "since";
-export type SectionKey = "titles" | "footprints" | "boards";
-export type Layout = "landscape" | "portrait";
-
-export type ProfileStyle = {
-  title: number | null; // index into titlesOf() (new titles are only ever appended); null = the hardest one earned
-  card: number | null; // a token id still in the wallet; null = the rarest
-  scene: string; // a SCENES id
-  stats: StatKey[] | null; // in the order shown; null = the default eight
-  motto: number | null; // a MOTTOS index; null = none
-  order: SectionKey[];
-  hidden: SectionKey[];
-  layout: Layout; // the postcard
-};
-
-export const MAX_STATS = 8;
-export const POSTCARD_STATS = 6;
-export const SECTIONS: SectionKey[] = ["titles", "footprints", "boards"];
-export const defaultStats = (echoes: boolean): StatKey[] =>
-  ["dives", "places", "deepest", "bestMult", "legends", "streak", echoes ? "echoes" : "summons", "commissions"];
-
-/** Scenes behind the profile and on the postcard: the card's own, the star map, the six clusters, two observatory views
- *  and the six seeker landscapes. `src` is empty for "card" (it follows the featured card). */
-export type Scene = { id: string; src: string; name?: string; cluster?: number; light?: number }; // named by `name`, a cluster or a light
-export const SCENES: Scene[] = [
-  { id: "card", src: "", name: "卡片的場景" },
-  { id: "galaxy", src: GALAXY_IMAGE.src, name: GALAXY_IMAGE.name },
-  ...CLUSTER_IMAGES.map((c, i) => ({ id: `c${i}`, src: c.src, cluster: i })),
-  { id: "observatory", src: "/lightdive/bg/light-bg-observatory.webp", name: "觀測站" },
-  { id: "dawn", src: "/lightdive/bg/light-bg-stele-dawn.webp", name: "碑原黎明" },
-  ...[0, 1, 2, 3, 4, 5].map((light) => ({ id: `l${light}`, src: `/lightdive/cards/bg/seeker-bg-l${light}.webp`, light })),
-];
-
-/** One line the observer signs with (Traditional Chinese, the dictionary key). */
-export const MOTTOS = [
-  "光在哪裡，我就往哪裡。",
-  "每一趟，都算數。",
-  "霧再濃，也有回來的路。",
-  "走得慢，才走得遠。",
-  "替後來的人，留一座橋。",
-  "今天也出航了。",
-  "深處，也有光。",
-  "不問收穫，只問方向。",
-  "我在星冠下等你。",
-  "回來，是最好的結果。",
-  "知道何時回頭，也是本事。",
-  "把每一個名字，都去過一次。",
-];
-
-export const STYLE_DEFAULT: ProfileStyle = { title: null, card: null, scene: "card", stats: null, motto: null, order: SECTIONS, hidden: [], layout: "landscape" };
+export * from "@/lib/lightdive-v3/profile";
 
 const keyOf = (address: string | null) => `lightdive:v3:profile-style:${address ? address.toLowerCase() : "preview"}`;
 const EVENT = "lightdive:profile-style";
 
-/** The saved style, cleaned of anything stale (a section renamed, a scene removed). */
+/** The style saved on this device. */
 export function readStyle(address: string | null): ProfileStyle {
-  let saved: Partial<ProfileStyle> = {};
-  try { saved = JSON.parse(localStorage.getItem(keyOf(address)) ?? "{}") ?? {}; } catch {}
-  const s = { ...STYLE_DEFAULT, ...saved };
-  const order = (Array.isArray(s.order) ? s.order : []).filter((k) => SECTIONS.includes(k));
-  return {
-    title: typeof s.title === "number" ? s.title : null,
-    card: typeof s.card === "number" ? s.card : null,
-    scene: SCENES.some((x) => x.id === s.scene) ? s.scene : "card",
-    stats: Array.isArray(s.stats) && s.stats.length ? s.stats.slice(0, MAX_STATS) : null,
-    motto: typeof s.motto === "number" && s.motto >= 0 && s.motto < MOTTOS.length ? s.motto : null,
-    order: [...new Set([...order, ...SECTIONS])],
-    hidden: (Array.isArray(s.hidden) ? s.hidden : []).filter((k) => SECTIONS.includes(k)),
-    layout: s.layout === "portrait" ? "portrait" : "landscape",
-  };
+  try { return cleanStyle(JSON.parse(localStorage.getItem(keyOf(address)) ?? "{}")); } catch { return STYLE_DEFAULT; }
+}
+function keep(address: string | null, style: ProfileStyle) {
+  try { localStorage.setItem(keyOf(address), JSON.stringify(style)); } catch {}
+  window.dispatchEvent(new Event(EVENT));
 }
 
-/** The style and a setter that saves it (and tells every other reader on the page, like the reveal's share image). */
-export function useProfileStyle(address: string | null): [ProfileStyle, (patch: Partial<ProfileStyle> | null) => void] {
-  const [style, setStyle] = useState<ProfileStyle>(STYLE_DEFAULT);
+const post = (style: ProfileStyle): Promise<StyleSync> =>
+  fetch("/api/lightdive/profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style }) })
+    .then((r) => (r.ok ? "saved" : r.status === 401 ? "signin" : "error"), () => "error");
+
+/** "local": kept on this device only (preview); the rest describe the last read or save on the server. */
+export type StyleSync = "local" | "loading" | "saved" | "saving" | "signin" | "error";
+
+/** The style saved on this device, as a subscription (it changes when the player picks something, here or in
+ *  another tab). */
+function useLocalStyle(address: string | null): ProfileStyle {
+  const subscribe = useCallback((on: () => void) => {
+    window.addEventListener(EVENT, on);
+    window.addEventListener("storage", on);
+    return () => { window.removeEventListener(EVENT, on); window.removeEventListener("storage", on); };
+  }, []);
+  const raw = useSyncExternalStore(subscribe, () => { try { return localStorage.getItem(keyOf(address)) ?? ""; } catch { return ""; } }, () => "");
+  return useMemo(() => { try { return raw ? cleanStyle(JSON.parse(raw)) : STYLE_DEFAULT; } catch { return STYLE_DEFAULT; } }, [raw]);
+}
+
+/** The style to show and, for one's own profile, a setter that saves it (null resets). `live`: the live game, where
+ *  styles live on the server; `mine`: the profile is the player's own. */
+export function useProfileStyle(address: string | null, { live, mine }: { live: boolean; mine: boolean }): [ProfileStyle, (patch: Partial<ProfileStyle> | null) => void, StyleSync] {
+  const local = useLocalStyle(address);
+  const key = address?.toLowerCase() ?? "";
+  // the server's answer for this address, and the state of the last save (both tagged with the address they are for)
+  const [remote, setRemote] = useState<{ key: string; style: ProfileStyle | null; sync: StyleSync } | null>(null);
+  const [saving, setSaving] = useState<{ key: string; sync: StyleSync } | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const online = live && !!address;
+
   useEffect(() => {
-    const sync = () => setStyle(readStyle(address));
-    sync();
-    window.addEventListener(EVENT, sync);
-    return () => window.removeEventListener(EVENT, sync);
-  }, [address]);
+    if (!online) return;
+    let dead = false;
+    void fetch(`/api/lightdive/profile?account=${address}`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ style?: unknown }>) : null))
+      .then((d) => {
+        if (dead) return;
+        const style = d?.style ? cleanStyle(d.style) : null;
+        if (mine && style) keep(address, style);
+        // chosen on this device before the server kept styles: send it up once
+        if (mine && !style && JSON.stringify(readStyle(address)) !== JSON.stringify(STYLE_DEFAULT)) {
+          void post(readStyle(address)).then((x) => { if (!dead) setSaving({ key, sync: x }); });
+        }
+        setRemote({ key, style, sync: d ? "saved" : "error" });
+      })
+      .catch(() => { if (!dead) setRemote({ key, style: null, sync: "error" }); });
+    return () => { dead = true; };
+  }, [address, key, online, mine]);
+
   const update = useCallback((patch: Partial<ProfileStyle> | null) => {
-    const next = patch ? { ...readStyle(address), ...patch } : STYLE_DEFAULT; // null resets
-    try { localStorage.setItem(keyOf(address), JSON.stringify(next)); } catch {}
-    setStyle(readStyle(address));
-    window.dispatchEvent(new Event(EVENT));
-  }, [address]);
-  return [style, update];
+    if (!mine) return;
+    const next = cleanStyle(patch ? { ...readStyle(address), ...patch } : STYLE_DEFAULT);
+    keep(address, next);
+    if (!online) return;
+    // a burst of clicks is saved once
+    setSaving({ key, sync: "saving" });
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => { void post(next).then((x) => setSaving({ key, sync: x })); }, 700);
+  }, [address, key, online, mine]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const theirs = remote?.key === key ? remote : null;
+  const style = mine ? local : theirs?.style ?? STYLE_DEFAULT;
+  const sync: StyleSync = !online ? "local" : saving?.key === key ? saving.sync : theirs?.sync ?? "loading";
+  return [style, update, sync];
 }
