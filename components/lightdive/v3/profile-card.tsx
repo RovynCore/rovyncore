@@ -26,6 +26,7 @@ export type Postcard = {
   place: { code: string; name: string; cluster: string; stamp: string } | null;
   dives: number;
   places: number;
+  badge: string | null; // the title's badge
 };
 
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -159,11 +160,14 @@ async function picture(g: CanvasRenderingContext2D, p: Postcard, P: Rect) {
   const plateMax = Math.min(P.w * 0.6, cardLeft - lx - 24);
   const tpx = fit(g, title, (s) => `800 ${s}px ${SERIF}`, 60, 30, plateMax - 64);
   const tw = Math.min(plateMax, g.measureText(title).width + 64);
-  const plate = { x: lx - 8, y: P.y + P.h - 90 - tpx - 44, w: tw, h: tpx + 62 };
+  const badge = p.title && p.badge ? await load(p.badge) : null;
+  const bw = badge ? tpx + 40 : 0; // the badge sits at the plate's left end
+  const plate = { x: lx - 8, y: P.y + P.h - 90 - tpx - 44, w: Math.min(plateMax, tw + bw), h: tpx + 62 };
   g.fillStyle = "rgba(10,12,10,0.62)"; rounded(g, plate, 12); g.fill();
   g.strokeStyle = "rgba(240,199,102,0.8)"; g.lineWidth = 2; rounded(g, plate, 12); g.stroke();
   g.strokeStyle = "rgba(240,199,102,0.3)"; g.lineWidth = 1; rounded(g, { x: plate.x + 7, y: plate.y + 7, w: plate.w - 14, h: plate.h - 14 }, 8); g.stroke();
-  g.fillStyle = p.title ? GOLD : DIM; g.fillText(title, plate.x + 32, plate.y + tpx + 18);
+  if (badge) g.drawImage(badge, plate.x + 14, plate.y + (plate.h - (tpx + 30)) / 2, tpx + 30, tpx + 30);
+  g.fillStyle = p.title ? GOLD : DIM; g.fillText(title, plate.x + 32 + bw, plate.y + tpx + 18, plate.w - 64 - bw);
   g.fillStyle = "rgba(234,223,196,0.75)"; g.font = `700 20px ${SANS}`;
   spaced(g, label, plate.x + 4, plate.y - 16, 4);
   g.restore();

@@ -25,6 +25,14 @@ const JOBS = [
   // the seeker full-art card backgrounds, one per light
   { dir: "misc", match: /^seeker-bg-l[0-5]\.png$/, out: "cards/bg", resize: { width: 720 }, webp: { quality: 80 } },
   { dir: "misc", match: /^share-bg\.png$/, out: ".", webp: { quality: 86 } },
+  // 10-21 supplement: a painting per destination (voyage scene, profile, postcard, footprints), the reveal by result,
+  // the decision cards, the sky events (emblem and banner) and the title badges
+  { dir: "misc/dest", match: /^dest-\d\d\.png$/, out: "dest", resize: { width: 1600 }, webp: { quality: 78 } },
+  { dir: "misc/reveal", match: /^reveal-[a-z]+\.png$/, out: "reveal", resize: { width: 1200 }, webp: { quality: 78 } },
+  { dir: "misc/event", match: /^event-\d\d\.png$/, out: "event", resize: { width: 900 }, webp: { quality: 80 } },
+  { dir: "misc/sky", match: /^sky-[a-z]+\.png$/, out: "sky", resize: { width: 128 }, webp: { quality: 88, alphaQuality: 92 } },
+  { dir: "misc/sky", match: /^sky-[a-z]+-banner\.png$/, out: "sky", resize: { width: 1200 }, webp: { quality: 80 } },
+  { dir: "misc/titles", match: /^title-\d\d\.png$/, out: "titles", resize: { width: 128 }, webp: { quality: 88, alphaQuality: 92 } },
   // link previews must be a format every crawler reads
   { dir: "misc", match: /^og-lightdive\.png$/, out: ".", jpeg: { quality: 86, mozjpeg: true } },
 ];

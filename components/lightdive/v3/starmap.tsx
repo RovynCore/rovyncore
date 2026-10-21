@@ -7,6 +7,7 @@ import type { Galaxy as GalaxyGl, GalaxyState } from "./galaxy-engine";
 import { Burst, Dispatch, Ranking, ShareButtons } from "./extras";
 import { play, useAmbience, useMusic } from "./audio";
 import { CLUSTER_IMAGES, GALAXY_IMAGE } from "@/lib/lightdive-v3/credits";
+import { destImage, revealImage } from "@/lib/lightdive-v3/art";
 import { ArrowLeft, Lock, Rocket, X } from "lucide-react";
 import {
   DEEP_MIN_CLUSTER, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, baseReward, basePoints, clusterRange, destinationBase, outcomesOf, overflowPoints, planDive, teamPower,
@@ -522,7 +523,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
   return (
     <aside className="v3-dest" aria-label={info.name}>
       <button type="button" className="v3-dest__close" onClick={onClose} aria-label={tl("關閉")}><X aria-hidden="true" /></button>
-      <div className="v3-dest__banner" style={{ ["--photo" as string]: `url(${CLUSTER_IMAGES[d.cluster].src})`, ["--lc" as string]: LIGHT_COLOR[sim.sky.lights[id]] }} aria-hidden="true" />
+      <div className="v3-dest__banner" style={{ ["--photo" as string]: `url(${destImage(id)})`, ["--lc" as string]: LIGHT_COLOR[sim.sky.lights[id]] }} aria-hidden="true" />
       <span className="hud-kicker">{tl("{0}{1} · 目的地", { 0: CIRCLED[d.cluster], 1: SLOT[d.slot] })}</span>
       <h2>{info.name}</h2>
       <p className="v3-dest__intro">{info.intro}</p>
@@ -682,7 +683,7 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commi
   return (
     <div className="v3-modal" role="dialog" aria-label={tl("揭曉")}>
       {r.outcome === "legend" && <div className="v3-flash" aria-hidden="true" />}
-      <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome] }} onClick={(e) => e.stopPropagation()}>
+      <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome], ["--reveal" as string]: `url(${revealImage(d.turnedBack ? "normal" : r.outcome)})` }} onClick={(e) => e.stopPropagation()}>
         <Burst tone={OUTCOME_TONE[r.outcome]} level={{ empty: 0, partial: 0, normal: 1, good: 2, great: 4, legend: 7 }[r.outcome]} />
         <span className="hud-kicker">{tl("{0} · 光橋揭曉", { 0: name })}</span>
         <h2>{d.turnedBack ? tl("回航") : OUTCOME[r.outcome]}</h2>

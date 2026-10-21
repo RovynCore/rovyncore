@@ -8,6 +8,7 @@ import { tl } from "@/lib/lightdive-v3/i18n";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { LIGHT, RARITY, RARITY_COLOR } from "./copy";
 import { paintingOf } from "./cards";
+import { destImage } from "@/lib/lightdive-v3/art";
 import { MAX_STATS, MOTTOS, POSTCARD_STATS, SCENES, type ProfileStyle, type Scene, type SectionKey, type StatKey, type StyleSync } from "./profile-style";
 import type { SimNft } from "./sim";
 
@@ -29,6 +30,7 @@ type Props = {
   titles: { index: number; name: string }[]; // the earned ones
   cards: SimNft[];
   cardScene: string; // the "card" scene, as the featured card paints it
+  places: { id: number; name: string }[]; // destinations with a collected result: their paintings can be chosen
   stats: { key: StatKey; label: string }[]; // every number this observer can show
   shown: StatKey[];
   sections: SectionKey[]; // the ones this page has
@@ -44,7 +46,7 @@ const TABS: { key: Tab; name: () => string }[] = [
   { key: "sections", name: () => tl("區塊與順序") },
 ];
 
-export function ProfileEditor({ style, sync, update, titles, cards, cardScene, stats, shown, sections }: Props) {
+export function ProfileEditor({ style, sync, update, titles, cards, cardScene, places, stats, shown, sections }: Props) {
   const [tab, setTab] = useState<Tab>("title");
   const toggleStat = (k: StatKey) => {
     const next = shown.includes(k) ? shown.filter((x) => x !== k) : [...shown, k].slice(0, MAX_STATS);
@@ -110,6 +112,16 @@ export function ProfileEditor({ style, sync, update, titles, cards, cardScene, s
             <button key={x.id} type="button" role="radio" aria-checked={style.scene === x.id} className={style.scene === x.id ? "is-on" : ""} onClick={() => update({ scene: x.id })}>
               <span style={{ backgroundImage: `url(${x.src || cardScene})` }} />
               <small>{sceneName(x)}</small>
+            </button>
+          ))}
+        </div>
+        <h4>{tl("到過的目的地")} <em>{places.length}/24</em></h4>
+        <p className="v3-muted">{tl("在一個目的地收下結果，就能用那裡的畫當背景。")}</p>
+        <div className="v3-pedit__scenes" role="radiogroup" aria-label={tl("到過的目的地")}>
+          {places.map((x) => (
+            <button key={x.id} type="button" role="radio" aria-checked={style.scene === `d${x.id}`} className={style.scene === `d${x.id}` ? "is-on" : ""} onClick={() => update({ scene: `d${x.id}` })}>
+              <span style={{ backgroundImage: `url(${destImage(x.id)})` }} />
+              <small>{x.name}</small>
             </button>
           ))}
         </div>

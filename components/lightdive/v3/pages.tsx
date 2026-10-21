@@ -10,6 +10,7 @@ import {
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { CLUSTER_IMAGES, GALAXY_IMAGE, ICON_CREDIT, MUSIC, SFX_CREDIT } from "@/lib/lightdive-v3/credits";
+import { skyBanner, skyIcon } from "@/lib/lightdive-v3/art";
 import { isDaylight, useSettings } from "./settings";
 
 const DAY_OBSERVATORY = "/lightdive/bg/light-bg-observatory.webp";
@@ -159,6 +160,7 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
           </Panel>
         )}
         <Panel title={tl("今日星象")} index="04" icon="crystal">
+          <SkyEvents sim={sim} go={go} />
           <p className="v3-skylegend"><span><i className="is-light" />{tl("點的顏色：這個目的地今天的光")}</span><span><i className="is-event" />{tl("外圈：今天有星象")}</span></p>
           <div className="v3-sky">
             {TEXTS.clusters.map((c, ci) => (
@@ -182,6 +184,28 @@ export function Lobby({ sim, go, rovyn }: { sim: Sim; go: (v: View) => void; rov
         </div>
       </div>
     </div>
+  );
+}
+
+/** Today's sky events, each on its banner: where, what it does, and a way there. */
+function SkyEvents({ sim, go }: { sim: Sim; go: (v: View) => void }) {
+  const list = [...sim.sky.events.entries()].sort((a, b) => a[0] - b[0]);
+  if (!list.length) return null;
+  return (
+    <ul className="v3-skyevents">
+      {list.map(([id, ev]) => {
+        const d = DESTINATIONS[id];
+        return (
+          <li key={id} style={{ ["--banner" as string]: `url(${skyBanner(ev)})`, ["--ec" as string]: STAR[ev].color }}>
+            <button type="button" onClick={() => { try { sessionStorage.setItem("lightdive:v3:focus", String(id)); } catch {} go("dive"); }} aria-label={tl("前往 {0}", { 0: TEXTS.clusters[d.cluster].destinations[d.slot].name })}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={skyIcon(ev)} alt="" />
+              <span><b>{STAR[ev].name}<em>{CIRCLED[d.cluster]}{SLOT[d.slot]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}</em></b><small>{STAR[ev].effect}</small></span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

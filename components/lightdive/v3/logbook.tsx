@@ -16,7 +16,8 @@ import { Tile } from "./kit";
 import { CardFace, Foil, sceneImage } from "./cards";
 import { ProfileShare, type Postcard } from "./profile-card";
 import { ProfileEditor, SECTION_NAME } from "./profile-editor";
-import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
+import { ProfileFinder } from "./profile-finder";
+import { TITLE_BADGES, destImage, titleBadge } from "@/lib/lightdive-v3/art";
 import { MOTTOS, POSTCARD_STATS, SCENES, defaultStats, readStyle, useProfileStyle, type SectionKey, type StatKey } from "./profile-style";
 import { CIRCLED, CLUSTER_HUE, OUTCOME, OUTCOME_TONE, SLOT, fmt } from "./copy";
 import { dayOf, owned, type FeedRow, type Sim, type SimDive, type SimState } from "./sim";
@@ -105,8 +106,11 @@ export function unseenFootprints(r: Records) {
 }
 
 /** A title; `rank` orders them by how hard they are (the highest earned one represents the observer). */
-type Title = { name: string; how: string; got: boolean; rank: number; progress?: [number, number] }; // progress: [now, goal] for titles that count
+type Title = { name: string; how: string; got: boolean; rank: number; progress?: [number, number]; index?: number }; // progress: [now, goal] for titles that count
 function titlesOf(r: Records): Title[] {
+  return titleList(r).map((t, index) => ({ ...t, index }));
+}
+function titleList(r: Records): Title[] {
   const deepCluster = r.deepest === null ? -1 : DESTINATIONS[r.deepest].cluster;
   const cluster = (c: number, name: string, rank: number) => ({ name, how: tl("在 {0} {1} 收下結果", { 0: CIRCLED[c], 1: TEXTS.clusters[c].name }), got: deepCluster >= c, rank });
   return [
@@ -140,8 +144,14 @@ function titlesOf(r: Records): Title[] {
 
 /** The representative title: the hardest one earned (a newcomer has none). */
 export function bestTitle(r: Records): string | null {
-  const got = titlesOf(r).filter((t) => t.got).sort((a, b) => b.rank - a.rank);
-  return got[0]?.name ?? null;
+  return bestOf(r)?.name ?? null;
+}
+const bestOf = (r: Records) => titlesOf(r).filter((t) => t.got).sort((a, b) => b.rank - a.rank)[0];
+/** The badge of the title an observer shows (chosen, or the hardest earned). */
+function badgeOf(r: Records, index: number | null): string | null {
+  const all = titlesOf(r);
+  const t = index !== null && all[index]?.got ? all[index] : bestOf(r);
+  return t && t.index! < TITLE_BADGES ? titleBadge(t.index!) : null;
 }
 
 /** The title the observer chose to show (自訂檔案), as long as it is still earned; otherwise the hardest one. */
@@ -277,7 +287,10 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   const cards = s.nfts.filter((n) => owned(n) && !n.soldAt);
   const top = cards.find((n) => n.id === style.card) ?? [...cards].sort((a, b) => b.rarity - a.rarity || b.power - a.power)[0];
   const cardScene = top ? sceneImage(top.kind, top.trait) : "/lightdive/share-bg.webp";
-  const scene = SCENES.find((x) => x.id === style.scene)?.src || cardScene;
+  // a destination's painting can be chosen once the observer has collected a result there
+  const destScene = /^d(\d+)$/.exec(style.scene);
+  const scene = destScene ? (r.visited[Number(destScene[1])] ? destImage(Number(destScene[1])) : cardScene) : SCENES.find((x) => x.id === style.scene)?.src || cardScene;
+  const badge = badgeOf(r, style.title);
   const motto = style.motto === null ? null : tl(MOTTOS[style.motto]);
   const catalog = statsOf(r, { cards: cards.length, titles: [all.filter((t) => t.got).length, all.length], footprints: opened });
   const shownKeys = (style.stats ?? defaultStats(r.echoes !== undefined)).filter((k) => catalog[k]);
@@ -288,9 +301,14 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   const postcard = useMemo<Postcard>(() => ({
     title: best, card: top, scene, motto, address, since: r.since, dives: r.dives, places: r.places,
     stats: shown.slice(0, POSTCARD_STATS).map((x) => ({ label: x.label, value: String(x.value) })),
-    place: deep ? { code: `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}`, name: destName(deep.id), cluster: TEXTS.clusters[deep.cluster].name, stamp: CLUSTER_IMAGES[deep.cluster].src } : null,
+    place: deep ? { code: `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}`, name: destName(deep.id), cluster: TEXTS.clusters[deep.cluster].name, stamp: destImage(deep.id) } : null,
+    badge,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- statSig stands for the shown numbers
-  }), [best, top?.id, scene, motto, address, r.since, r.dives, r.places, statSig, deep?.id]);
+  }), [best, top?.id, scene, motto, address, r.since, r.dives, r.places, statSig, deep?.id, badge]);
+  const copyAddress = async () => {
+    if (!address) return;
+    try { await navigator.clipboard.writeText(address); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch {}
+  };
   const share = async () => {
     if (!address) return;
     try { await navigator.clipboard.writeText(`https://www.rovyncore.com/game/lightdive#logbook=${address}`); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch {}
@@ -299,7 +317,8 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   return (
     <>
       <PageHead kicker={tl("個人檔案")} icon="voyage" title={mine ? tl("個人檔案") : tl("觀測者 {0}", { 0: address ? short(address) : "" })}
-        lead={mine ? tl("你走過的地方、拿到的稱號、最強的卡，和每個目的地的故事。這一頁只記榮譽，不影響任何收益。") : tl("這位觀測者在鏈上的公開紀錄。")} />
+        lead={mine ? tl("你走過的地方、拿到的稱號、最強的卡，和每個目的地的故事。這一頁只記榮譽，不影響任何收益。") : tl("這位觀測者在鏈上的公開紀錄。")}
+        side={<ProfileFinder live={!!sim.chain} me={sim.chain?.account ?? null} />} />
 
       <section className="v3-panel v3-profile" style={{ ["--scene" as string]: `url(${scene})` }}>
         <div className="v3-profile__card">
@@ -307,9 +326,18 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
         </div>
         <div className="v3-profile__id">
           <small>{mine ? tl("我的代表稱號") : tl("代表稱號")}</small>
-          <b className={best ? "is-title" : "is-none"}>{best ?? tl("還沒有稱號")}</b>
+          <b className={best ? "is-title" : "is-none"}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {badge && <img src={badge} alt="" />}
+            {best ?? tl("還沒有稱號")}
+          </b>
           {motto && <q className="v3-profile__motto">{motto}</q>}
           <span>{address ? short(address) : tl("預覽模式")}{r.since ? tl(" · {0} 起出航", { 0: new Date(r.since).toISOString().slice(0, 10) }) : ""}</span>
+          {!mine && address && (
+            <div className="v3-profile__actions">
+              <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={copyAddress}><Copy aria-hidden="true" />{copied ? tl("已複製") : tl("複製這個地址")}</button>
+            </div>
+          )}
           {mine && (
             <div className="v3-profile__actions">
               <button type="button" className={`hud-btn hud-btn--sm ${editing ? "hud-btn--primary" : "hud-btn--ghost"}`} aria-expanded={editing} onClick={() => setEditing((x) => !x)}><SlidersHorizontal aria-hidden="true" />{editing ? tl("完成自訂") : tl("自訂檔案")}</button>
@@ -328,6 +356,7 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
       {mine && editing && (
         <ProfileEditor style={style} update={update} sync={sync} cardScene={cardScene}
           titles={all.map((t, index) => ({ index, name: t.name, got: t.got, rank: t.rank })).filter((t) => t.got).sort((a, b) => b.rank - a.rank)}
+          places={DESTINATIONS.filter((d) => r.visited[d.id] > 0).map((d) => ({ id: d.id, name: `${CIRCLED[d.cluster]}${SLOT[d.slot]} ${destName(d.id)}` }))}
           cards={cards} shown={shownKeys} sections={["titles", "footprints", "boards"]}
           stats={STAT_ORDER.filter((k) => catalog[k]).map((k) => ({ key: k, label: catalog[k]!.label }))} />
       )}
@@ -347,6 +376,8 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
         <ul className="v3-titles">
           {titles.map((t) => (
             <li key={t.name} className={`${t.got ? "is-got" : ""}${t.name === best ? " is-best" : ""}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {t.index! < TITLE_BADGES && <img className="v3-titles__badge" src={titleBadge(t.index!)} alt="" loading="lazy" />}
               <b>{t.got ? t.name : <><Lock aria-hidden="true" />{t.name}</>}</b>
               <small>{t.how}</small>
               {!t.got && t.progress && t.progress[0] > 0 && (
@@ -375,7 +406,7 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
         </div>
         <div className="v3-footprints__list">
           {DESTINATIONS.filter((d) => d.cluster === cluster).map((d) => (
-            <article key={d.id} style={{ ["--hue" as string]: CLUSTER_HUE[d.cluster] }}>
+            <article key={d.id} className={r.visited[d.id] ? "is-visited" : ""} style={{ ["--hue" as string]: CLUSTER_HUE[d.cluster], ["--photo" as string]: `url(${destImage(d.id)})` }}>
               <header>
                 <b>{SLOT[d.slot]} {destName(d.id)}</b>
                 <small>{r.visited[d.id] ? tl("收下 {0} 次", { 0: r.visited[d.id] }) : tl("還沒去過")}</small>

@@ -1,10 +1,16 @@
 # Lightdive strings still missing an English translation, by first file that uses them
 
-## components\lightdive\v3\profile-editor.tsx (7)
-儲存中…
-已儲存
-還沒存到伺服器：請重新連接錢包並簽名登入
-儲存失敗，請稍後再改一次
-選你今天想展示的樣子，上面的檔案和明信片會一起改。
-預覽模式的選擇只存在這台裝置上。
-選擇會存到伺服器，別人打開你的檔案時也看得到。
+## components\lightdive\v3\logbook.tsx (2)
+已複製
+複製這個地址
+
+## components\lightdive\v3\profile-editor.tsx (1)
+在一個目的地收下結果，就能用那裡的畫當背景。
+
+## components\lightdive\v3\profile-finder.tsx (6)
+預覽模式裡的其他觀測者是模擬的，正式遊戲才能用地址查看檔案。
+請貼上完整的錢包地址（0x 開頭，共 42 個字元）。
+查看觀測者
+貼上錢包地址，查看觀測者
+查看
+最近看過

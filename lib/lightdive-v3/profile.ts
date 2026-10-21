@@ -15,7 +15,7 @@ export type Layout = "landscape" | "portrait";
 export type ProfileStyle = {
   title: number | null; // index into the titles list (new titles are only ever appended); null = the hardest one earned
   card: number | null; // a token id still in the wallet; null = the rarest
-  scene: string; // a SCENES id
+  scene: string; // a SCENES id, or d0..d23 for a destination's painting (shown once the observer has been there)
   stats: StatKey[] | null; // in the order shown; null = the default eight
   motto: number | null; // a MOTTOS index; null = none
   order: SectionKey[];
@@ -71,7 +71,7 @@ export function cleanStyle(raw: unknown): ProfileStyle {
   return {
     title: index(s.title, MAX_TITLES),
     card: typeof s.card === "number" && Number.isSafeInteger(s.card) && s.card >= 0 ? s.card : null,
-    scene: SCENES.some((x) => x.id === s.scene) ? (s.scene as string) : "card",
+    scene: SCENES.some((x) => x.id === s.scene) || (typeof s.scene === "string" && /^d(1?\d|2[0-3])$/.test(s.scene)) ? (s.scene as string) : "card",
     stats: stats.length ? stats : null,
     motto: index(s.motto, MOTTOS.length),
     order: [...new Set([...order, ...SECTIONS])],

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { createPortal } from "react-dom";
 import { FastForward, Sparkles, X } from "lucide-react";
 import { DECISION_AT, DESTINATIONS, basePoints, planDive, skyOf, type Choice, type DivePlan } from "@/lib/lightdive-v3/rules";
-import { CLUSTER_IMAGES } from "@/lib/lightdive-v3/credits";
+import { destImage, eventImage, skyIcon } from "@/lib/lightdive-v3/art";
 import { NftArt } from "../game/art";
 import { LightIcon, flyLight } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
@@ -198,7 +198,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
   };
   return (
     <section className={`v3-voyage${gl ? " has-gl" : ""}${arriving && d.result && (d.result.outcome === "great" || d.result.outcome === "legend") ? " is-flash" : ""}`} aria-label={tl("航行：{0}", { 0: destName(d.dest) })}
-      style={{ ["--photo" as string]: `url(${CLUSTER_IMAGES[dest.cluster].src})`, ["--hue" as string]: CLUSTER_HUE[dest.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
+      style={{ ["--photo" as string]: `url(${destImage(d.dest)})`, ["--hue" as string]: CLUSTER_HUE[dest.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
       <button type="button" className="v3-dest__close v3-voyage__close" onClick={onClose} aria-label={tl("關閉航行畫面")}><X aria-hidden="true" /></button>
       <div className="v3-voyage__scene" ref={sceneRef}>
         <header className="v3-voyage__head">
@@ -258,7 +258,10 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
               <LogIcon e={e} d={d} />
               {e.kind === "decision" ? (
                 staged ? (
-                  <div className="v3-decision is-note"><span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}</span><b className="v3-decision__title">{TEXTS.cards[d.card!].title}</b><p>{TEXTS.cards[d.card!].scene}</p>{!showStage && <button type="button" className="hud-btn hud-btn--gold hud-btn--sm" onClick={() => setAside(null)}>{tl("做出選擇")}</button>}</div>
+                  <div className="v3-decision is-note">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="v3-decision__art" src={eventImage(d.card!)} alt="" loading="lazy" />
+                    <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}</span><b className="v3-decision__title">{TEXTS.cards[d.card!].title}</b><p>{TEXTS.cards[d.card!].scene}</p>{!showStage && <button type="button" className="hud-btn hud-btn--gold hud-btn--sm" onClick={() => setAside(null)}>{tl("做出選擇")}</button>}</div>
                 ) : <Decision sim={sim} d={d} />
               ) : e.kind === "result" && d.result ? (
                 <div className="v3-voyage__result">
@@ -285,6 +288,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
   const [on, setOn] = useState(false);
   const id = d?.id;
   const cluster = d ? DESTINATIONS[d.dest].cluster : 0;
+  const destId = d?.dest ?? 0;
   useEffect(() => {
     if (id === undefined || !sceneRef.current || !routeRef.current) return;
     if (window.matchMedia("(max-width: 1100px)").matches || fxQuality() === "low") return;
@@ -292,7 +296,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
     let made: VoyageGl | null = null;
     const host = sceneRef.current, route = routeRef.current;
     import("./voyage-engine")
-      .then((m) => m.createVoyage(host, route, CLUSTER_IMAGES[cluster].src, CLUSTER_HUE[cluster]))
+      .then((m) => m.createVoyage(host, route, destImage(destId), CLUSTER_HUE[cluster]))
       .then((g) => {
         if (dead) { g.destroy(); return; }
         made = g;
@@ -301,7 +305,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
       })
       .catch(() => {});
     return () => { dead = true; made?.destroy(); api.current = null; setOn(false); };
-  }, [id, cluster, sceneRef, routeRef]);
+  }, [id, cluster, destId, sceneRef, routeRef]);
 
   // what the scene needs this render
   const s = sim.state!;
@@ -509,6 +513,8 @@ function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: bo
     <div className={`v3-decision${open ? " is-open" : ""}${stage ? " is-stage" : ""}`}>
       {/* which voyage this is, when several teams are out at once */}
       <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}<em className="v3-decision__who">{teamNameOf(s, d.spire)} · {CIRCLED[DESTINATIONS[d.dest].cluster]}{SLOT[DESTINATIONS[d.dest].slot]} {TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name}</em></span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="v3-decision__art" src={eventImage(d.card!)} alt="" loading="lazy" />
       <b className="v3-decision__title">{card.title}</b>
       <p>{card.scene}</p>
       <div className="v3-decision__options">
@@ -599,7 +605,8 @@ function LogIcon({ e, d }: { e: Entry; d: SimDive }) {
   if (e.kind === "seeker" && e.who) {
     return <span className="v3-logicon is-seeker" title={tl("探索者 #{0}", { 0: e.who.id })}><NftArt a={{ kind: 2, rarity: e.who.rarity, trait: e.who.trait, variant: 0 }} /></span>;
   }
-  if (e.kind === "star") return <span className="v3-logicon is-star" aria-hidden="true" />;
+  // eslint-disable-next-line @next/next/no-img-element
+  if (e.kind === "star") return d.plan.event ? <span className="v3-logicon is-sky" aria-hidden="true"><img src={skyIcon(d.plan.event)} alt="" /></span> : <span className="v3-logicon is-star" aria-hidden="true" />;
   if (e.kind === "decision" || e.kind === "choice") return <span className={`v3-logicon is-decision${d.choice ? ` is-${d.choice}` : ""}`} aria-hidden="true" />;
   if (e.kind === "result" && d.result) return <span className="v3-logicon is-result" style={{ ["--tc" as string]: OUTCOME_TONE[d.result.outcome] }} aria-hidden="true" />;
   if (e.kind === "attuned" && e.light !== undefined) return <span className="v3-logicon is-attuned" aria-hidden="true"><LightIcon light={e.light} /></span>;
