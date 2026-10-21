@@ -261,6 +261,20 @@ export function Logbook({ sim }: { sim: Sim }) {
       </div>
     );
   }
+  if (!sim.state!.dives.some(done)) {
+    return (
+      <div className="hud-page v3-logbook">
+        <PageHead kicker={tl("個人檔案")} icon="voyage" title={tl("個人檔案")} lead={tl("你走過的地方、拿到的稱號、最強的卡，和每個目的地的故事。這一頁只記榮譽，不影響任何收益。")}
+          side={<ProfileFinder live={!!sim.chain} me={me} />} />
+        <section className="v3-panel v3-locked">
+          <Lock aria-hidden="true" />
+          <h3>{tl("收下第一趟結果後開放")}</h3>
+          <p className="v3-muted">{tl("出航一趟、回到碑原收下結果，這裡就會開始記錄你的稱號、足跡和每週排行。")}</p>
+          <button type="button" className="hud-btn hud-btn--primary" onClick={() => { window.location.hash = "dive"; }}>{tl("去星圖出航")}</button>
+        </section>
+      </div>
+    );
+  }
   return (
     <div className="hud-page v3-logbook">
       <ProfileBody sim={sim} s={sim.state!} address={me} mine />

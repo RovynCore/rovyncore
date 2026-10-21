@@ -19,12 +19,12 @@ export function CardSupply({ sim }: { sim: Sim }) {
     market.filter((l) => l.kind === k).length + mine.filter((l) => s.nfts.find((n) => n.id === l.nftId)?.kind === k).length) as [number, number, number];
   const supply = sim.supply(listed);
   return (
-    <section className="v3-supply" aria-labelledby="v3-supply-title">
+    <section className="v3-cardcap" aria-labelledby="v3-cardcap-title">
       <header>
-        <h3 id="v3-supply-title">{tl("全服卡片數量")}</h3>
+        <h3 id="v3-cardcap-title">{tl("全服卡片數量")}</h3>
         <p>{tl("每種卡同時存在的數量有上限。停泊中和上架中的卡也算在內，卡歸航後名額才會空出來。")}</p>
       </header>
-      <div className="v3-supply__grid">
+      <div className="v3-cardcap__grid">
         {([0, 1, 2] as Kind[]).map((k) => <KindSupply key={k} kind={k} v={supply[k]} />)}
       </div>
       <p className="v3-nftdetail__note">{sim.mode === "preview" ? tl("預覽模式：數字是模擬的。合約部署後會直接讀取鏈上的數量。") : tl("數字直接讀取鏈上：存在的張數、在隊伍上和市集上架的張數。")}</p>
@@ -41,9 +41,9 @@ function KindSupply({ kind, v }: { kind: Kind; v: Supply }) {
     return mid <= v.onTeam ? "is-team" : mid <= v.onTeam + v.listed ? "is-listed" : mid <= v.alive ? "is-other" : "";
   });
   return (
-    <div className="v3-supply__kind" style={{ ["--accent" as string]: ACCENT[kind] }}>
-      <div className="v3-supply__head"><b>{KIND[kind]}</b><span><em>{v.alive.toLocaleString()}</em> / {cap.toLocaleString()}</span></div>
-      <div className="v3-supply__blocks" aria-hidden="true">{blocks.map((c, i) => <i key={i} className={c} />)}</div>
+    <div className="v3-cardcap__kind" style={{ ["--accent" as string]: ACCENT[kind] }}>
+      <div className="v3-cardcap__head"><b>{KIND[kind]}</b><span><em>{v.alive.toLocaleString()}</em> / {cap.toLocaleString()}</span></div>
+      <div className="v3-cardcap__blocks" aria-hidden="true">{blocks.map((c, i) => <i key={i} className={c} />)}</div>
       <dl>
         <div className="is-team"><dt>{tl("在隊伍上")}</dt><dd>{v.onTeam.toLocaleString()}</dd></div>
         <div className="is-listed"><dt>{tl("市集上架中")}</dt><dd>{v.listed.toLocaleString()}</dd></div>

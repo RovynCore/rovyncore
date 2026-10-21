@@ -3,7 +3,7 @@
 // Lightdive v3: the game shell. The preview (/game/lightdive/preview) plays it on simulated state in this browser; the
 // live game (/game/lightdive, live.tsx) plays the same pages on the v3 contracts with the player's wallet.
 import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { FlaskConical, LogOut, Music, Music2, Volume1, Volume2, VolumeX } from "lucide-react";
+import { FlaskConical, Lock, LogOut, Music, Music2, Volume1, Volume2, VolumeX } from "lucide-react";
 import "@fontsource/chakra-petch/500.css";
 import "@fontsource/chakra-petch/600.css";
 import "@fontsource/chakra-petch/700.css";
@@ -86,12 +86,11 @@ export function LightdivePreview() {
 
 export function LightdiveApp({ sim }: { sim: Game }) {
   const live = sim.mode === "chain";
-  // step-by-step unlocks: the profile and the daily commissions join the menu as the player gets there
+  // step-by-step unlocks: every page stays in the menu; one that is not open yet shows a lock and says how it opens
   const unlocks = sim.state ? unlocksOf(sim.state) : ALL_UNLOCKED;
-  const hidden = `${unlocks.profile ? "" : "logbook,"}${unlocks.commissions ? "" : "commissions"}`;
+  const locked = unlocks.profile ? "" : "logbook";
   const baseMenu = live && sim.chain?.testToken ? FAUCET_MENU : MENU;
-  // (the group name stays a getter: the menu objects read the current language when they render)
-  const menu = useMemo(() => baseMenu.map((m) => ({ get group() { return m.group; }, items: m.items.filter((i) => !hidden.includes(i.key)) })), [baseMenu, hidden]);
+  const menu = baseMenu;
   const ITEMS = useMemo(() => menu.flatMap((m) => m.items), [menu]);
   // routing knows every page: a locked page is only left out of the menu (a shared profile link must still open)
   const ROUTES = useMemo(() => baseMenu.flatMap((m) => m.items), [baseMenu]);
@@ -132,8 +131,8 @@ export function LightdiveApp({ sim }: { sim: Game }) {
 
   const rovyn = <Rovyn sim={sim} line={line} onNext={next} />;
   const nav = (i: (typeof ITEMS)[number]) => (
-    <button key={i.key} type="button" className={`hud-nav${view === i.key ? " is-on" : ""}`} aria-current={view === i.key ? "page" : undefined} onClick={() => { setMore(false); go(i.key); play("click"); }}>
-      <GameIcon name={i.icon} />{i.label}
+    <button key={i.key} type="button" className={`hud-nav${view === i.key ? " is-on" : ""}${locked === i.key ? " is-locked" : ""}`} aria-current={view === i.key ? "page" : undefined} title={locked === i.key ? tl("收下第一趟結果後開放") : undefined} onClick={() => { setMore(false); go(i.key); play("click"); }}>
+      <GameIcon name={i.icon} />{i.label}{locked === i.key && <Lock className="hud-nav__lock" aria-label={tl("尚未開放")} />}
       {badges[i.key] ? <i className="hud-badge">{badges[i.key]}</i> : null}
     </button>
   );

@@ -1566,26 +1566,26 @@ button.v3-seat:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.0
 .v3-freed__cards li { display: grid; justify-items: center; gap: 4px; padding: 10px; border: 1px solid color-mix(in srgb, var(--rc) 40%, transparent); border-radius: 12px; text-align: center; }
 .v3-freed__art { width: 72px; aspect-ratio: 1; overflow: hidden; border-radius: 10px; }
 .v3-freed__cards small { font-size: 13px; color: var(--h-text-2); }
-.v3-supply { display: grid; gap: 14px; padding: 20px 22px; border: 1px solid var(--v-tile-line); border-radius: 20px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25)); }
-.v3-supply > header h3 { margin: 0; font-size: 20px; }
-.v3-supply > header p { margin: 4px 0 0; font-size: 15px; color: var(--h-text-2); }
-.v3-supply__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.v3-supply__kind { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 16px; }
-.v3-supply__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.v3-supply__head b { font-size: 18px; color: var(--accent); }
-.v3-supply__head span { font: 600 15px var(--h-hud); color: var(--h-text-2); }
-.v3-supply__head em { font-style: normal; font-size: 22px; font-weight: 700; color: var(--h-text); }
-.v3-supply__blocks { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
-.v3-supply__blocks i { aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 4px; background: rgba(255, 255, 255, 0.03); }
-.v3-supply__blocks i.is-team, .v3-supply__kind dl .is-team dt::before { background: var(--accent); border-color: var(--accent); }
-.v3-supply__blocks i.is-listed, .v3-supply__kind dl .is-listed dt::before { background: #4aa8ff; border-color: #4aa8ff; }
-.v3-supply__blocks i.is-other, .v3-supply__kind dl .is-other dt::before { background: rgba(255, 157, 106, 0.55); border-color: #ff9d6a; }
-.v3-supply__kind dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; }
-.v3-supply__kind dl div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.v3-supply__kind dt { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--h-text-2); }
-.v3-supply__kind dl div[class] dt::before { content: ""; width: 10px; height: 10px; border: 1px solid; border-radius: 3px; }
-.v3-supply__kind dd { margin: 0; font: 700 16px var(--h-hud); }
-@media (max-width: 1100px) { .v3-supply__grid { grid-template-columns: minmax(0, 1fr); } }
+.v3-cardcap { display: grid; gap: 14px; padding: 20px 22px; border: 1px solid var(--v-tile-line); border-radius: 20px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25)); }
+.v3-cardcap > header h3 { margin: 0; font-size: 20px; }
+.v3-cardcap > header p { margin: 4px 0 0; font-size: 15px; color: var(--h-text-2); }
+.v3-cardcap__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.v3-cardcap__kind { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 16px; }
+.v3-cardcap__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.v3-cardcap__head b { font-size: 18px; color: var(--accent); }
+.v3-cardcap__head span { font: 600 15px var(--h-hud); color: var(--h-text-2); }
+.v3-cardcap__head em { font-style: normal; font-size: 22px; font-weight: 700; color: var(--h-text); }
+.v3-cardcap__blocks { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.v3-cardcap__blocks i { aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 4px; background: rgba(255, 255, 255, 0.03); }
+.v3-cardcap__blocks i.is-team, .v3-cardcap__kind dl .is-team dt::before { background: var(--accent); border-color: var(--accent); }
+.v3-cardcap__blocks i.is-listed, .v3-cardcap__kind dl .is-listed dt::before { background: #4aa8ff; border-color: #4aa8ff; }
+.v3-cardcap__blocks i.is-other, .v3-cardcap__kind dl .is-other dt::before { background: rgba(255, 157, 106, 0.55); border-color: #ff9d6a; }
+.v3-cardcap__kind dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; }
+.v3-cardcap__kind dl div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.v3-cardcap__kind dt { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--h-text-2); }
+.v3-cardcap__kind dl div[class] dt::before { content: ""; width: 10px; height: 10px; border: 1px solid; border-radius: 3px; }
+.v3-cardcap__kind dd { margin: 0; font: 700 16px var(--h-hud); }
+@media (max-width: 1100px) { .v3-cardcap__grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
   .v3-batchsell__list li { grid-template-columns: minmax(0, 1fr); }
   .v3-modal__card.v3-batchsell, .v3-modal__card.v3-freed { padding: 20px 16px; }
@@ -2170,3 +2170,15 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 /* P3 (10-22): Rovyn reacts on the reveal (cheer for great and legend, comfort for empty and partial) */
 .v3-reveal__rovyn { position: relative; z-index: 1; width: auto; height: 150px; margin: -8px auto -6px; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 18px color-mix(in srgb, var(--tc) 35%, transparent)); }
 @media (max-height: 760px) { .v3-reveal__rovyn { height: 110px; } }
+
+/* 10-22: the server-wide card counts take the full row (it used to share .v3-supply with the supply dialog, 560px wide) */
+.v3-cardcap__kind dt { white-space: nowrap; }
+.v3-cardcap__kind dl { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+/* 10-22: a page not open yet stays in the menu with a lock */
+.hud-nav.is-locked { opacity: 0.62; }
+.hud-nav__lock { width: 13px; height: 13px; margin-left: auto; color: var(--h-text-3); }
+.v3-locked { justify-items: center; gap: 10px; padding: 40px 24px; text-align: center; }
+.v3-locked > svg { width: 30px; height: 30px; color: var(--h-text-3); }
+.v3-locked h3 { margin: 0; }
+.v3-locked p { max-width: 46ch; margin: 0; }
+.v3-locked .hud-btn { width: auto; }

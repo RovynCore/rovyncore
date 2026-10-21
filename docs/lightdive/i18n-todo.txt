@@ -1,16 +1,9 @@
 # Lightdive strings still missing an English translation, by first file that uses them
 
-## components\lightdive\v3\logbook.tsx (2)
-已複製
-複製這個地址
+## components\lightdive\v3\logbook.tsx (3)
+收下第一趟結果後開放
+出航一趟、回到碑原收下結果，這裡就會開始記錄你的稱號、足跡和每週排行。你也可以先用上面的地址欄查看其他觀測者的檔案。
+去星圖出航
 
-## components\lightdive\v3\profile-editor.tsx (1)
-在一個目的地收下結果，就能用那裡的畫當背景。
-
-## components\lightdive\v3\profile-finder.tsx (6)
-預覽模式裡的其他觀測者是模擬的，正式遊戲才能用地址查看檔案。
-請貼上完整的錢包地址（0x 開頭，共 42 個字元）。
-查看觀測者
-貼上錢包地址，查看觀測者
-查看
-最近看過
+## components\lightdive\v3\preview.tsx (1)
+尚未開放

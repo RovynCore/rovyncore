@@ -20,11 +20,10 @@ export function unlocksOf(s: SimState): Unlocks {
   const done = s.dives.filter((d) => d.result && !d.pending).length;
   const strongest = Math.max(0, ...s.teams.filter((t) => t.seekers.length).map((t) => teamPower(teamInput(s, t))));
   const usedSupply = s.dives.some((d) => (d.supply ?? 0) > 0);
-  const usedCommission = !!s.commission || Object.keys(s.commissionMarks ?? {}).length > 0 || (s.commissionsDone ?? 0) > 0;
   return {
     profile: done >= 1,
     supplies: done >= SUPPLIES_AT || usedSupply,
-    commissions: done >= SUPPLIES_AT || usedCommission,
+    commissions: true, // open from the start since 10-22: a daily task should not wait
     deep: s.dives.some((d) => d.deep) || DESTINATIONS.some((d) => d.cluster >= DEEP_MIN_CLUSTER && strongest >= d.threshold),
   };
 }
