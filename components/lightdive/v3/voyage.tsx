@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { createPortal } from "react-dom";
 import { FastForward, Sparkles, X } from "lucide-react";
 import { DECISION_AT, DESTINATIONS, basePoints, planDive, skyOf, type Choice, type DivePlan } from "@/lib/lightdive-v3/rules";
-import { destImage, eventImage, skyIcon } from "@/lib/lightdive-v3/art";
+import { DESCENT_AT, deepImage, destImage, eventImage, skyIcon } from "@/lib/lightdive-v3/art";
 import { NftArt } from "../game/art";
 import { LightIcon, flyLight } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
@@ -110,7 +110,7 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
     else {
       // the descent past the destination, for a dive that kept going
       const down = deal(V.deep[dest.cluster], d.id);
-      list.push({ key: "down1", at: at(0.47), kind: "line", text: fill(down()) }, { key: "down2", at: at(0.63), kind: "line", text: fill(down()) });
+      list.push({ key: "down1", at: at(DESCENT_AT), kind: "line", text: fill(down()) }, { key: "down2", at: at(0.63), kind: "line", text: fill(down()) });
     }
   }
   if (d.result) {
@@ -120,6 +120,13 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
     list.push({ key: "result", at: d.revealAt, kind: "result", text: d.log ?? "", color: tone });
   }
   return list.filter((e) => e.at <= now).sort((a, b) => a.at - b.at);
+}
+
+/** The picture behind a voyage: its destination, or for a deep dive that kept going, the layer below its cluster once
+ *  the descent begins. */
+function backdropOf(d: SimDive, now: number) {
+  const descending = d.deep && !d.turnedBack && now >= d.at + (d.revealAt - d.at) * DESCENT_AT;
+  return descending ? deepImage(DESTINATIONS[d.dest].cluster) : destImage(d.dest);
 }
 
 /** The omen: what the voyage home looked like, written once the result exists; longer for a better result (a legend:
@@ -198,7 +205,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
   };
   return (
     <section className={`v3-voyage${gl ? " has-gl" : ""}${arriving && d.result && (d.result.outcome === "great" || d.result.outcome === "legend") ? " is-flash" : ""}`} aria-label={tl("航行：{0}", { 0: destName(d.dest) })}
-      style={{ ["--photo" as string]: `url(${destImage(d.dest)})`, ["--hue" as string]: CLUSTER_HUE[dest.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
+      style={{ ["--photo" as string]: `url(${backdropOf(d, sim.now)})`, ["--hue" as string]: CLUSTER_HUE[dest.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
       <button type="button" className="v3-dest__close v3-voyage__close" onClick={onClose} aria-label={tl("關閉航行畫面")}><X aria-hidden="true" /></button>
       <div className="v3-voyage__scene" ref={sceneRef}>
         <header className="v3-voyage__head">
@@ -288,7 +295,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
   const [on, setOn] = useState(false);
   const id = d?.id;
   const cluster = d ? DESTINATIONS[d.dest].cluster : 0;
-  const destId = d?.dest ?? 0;
+  const photo = d ? backdropOf(d, sim.now) : ""; // a change (the deep descent) rebuilds the scene once
   useEffect(() => {
     if (id === undefined || !sceneRef.current || !routeRef.current) return;
     if (window.matchMedia("(max-width: 1100px)").matches || fxQuality() === "low") return;
@@ -296,7 +303,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
     let made: VoyageGl | null = null;
     const host = sceneRef.current, route = routeRef.current;
     import("./voyage-engine")
-      .then((m) => m.createVoyage(host, route, destImage(destId), CLUSTER_HUE[cluster]))
+      .then((m) => m.createVoyage(host, route, photo, CLUSTER_HUE[cluster]))
       .then((g) => {
         if (dead) { g.destroy(); return; }
         made = g;
@@ -305,7 +312,7 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
       })
       .catch(() => {});
     return () => { dead = true; made?.destroy(); api.current = null; setOn(false); };
-  }, [id, cluster, destId, sceneRef, routeRef]);
+  }, [id, cluster, photo, sceneRef, routeRef]);
 
   // what the scene needs this render
   const s = sim.state!;

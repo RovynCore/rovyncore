@@ -2167,3 +2167,6 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 .v3-finder__recent button { padding: 2px 10px; border: 1px solid var(--v-tile-line); border-radius: 999px; background: rgba(0, 0, 0, 0.3); color: var(--h-text-2); font: 600 12px var(--h-hud); cursor: pointer; }
 .v3-finder__recent button:hover { border-color: var(--h-lime); color: var(--h-lime); }
 @media (max-width: 860px) { .v3-finder { width: 100%; } .v3-finder.is-off { max-width: none; text-align: left; } }
+/* P3 (10-22): Rovyn reacts on the reveal (cheer for great and legend, comfort for empty and partial) */
+.v3-reveal__rovyn { position: relative; z-index: 1; width: auto; height: 150px; margin: -8px auto -6px; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 18px color-mix(in srgb, var(--tc) 35%, transparent)); }
+@media (max-height: 760px) { .v3-reveal__rovyn { height: 110px; } }

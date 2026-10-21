@@ -13,3 +13,9 @@ export const skyBanner = (e: StarEvent) => `/lightdive/sky/sky-${e}-banner.webp`
 /** A title badge, by the title's index in the titles list. */
 export const titleBadge = (index: number) => `/lightdive/titles/title-${two(index)}.webp`;
 export const TITLE_BADGES = 20;
+/** P3 (10-22): the layer below a cluster, behind a deep dive once it keeps going past its destination. */
+export const deepImage = (cluster: number) => `/lightdive/deep/deep-${cluster + 1}.webp`;
+/** P3: the postcard stamp of a cluster. */
+export const stampImage = (cluster: number) => `/lightdive/stamp/stamp-${cluster + 1}.webp`;
+/** The descent starts here (as a share of the voyage), matching the deep-descent lines in the log. */
+export const DESCENT_AT = 0.47;

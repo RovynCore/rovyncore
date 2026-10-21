@@ -20,6 +20,7 @@ import { commissionTitle, readyBonus } from "./commissions";
 import { unlocksOf } from "./unlocks";
 import { featuredTitle, openProfile, recordsOf } from "./logbook";
 import { VoyageLog, omenOf } from "./voyage";
+import { rovynFor, rovynImage } from "./pages";
 import { BeamIcon, LightIcon, flyLight } from "./kit";
 import { fxQuality } from "./settings";
 import {
@@ -685,6 +686,8 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commi
       {r.outcome === "legend" && <div className="v3-flash" aria-hidden="true" />}
       <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome], ["--reveal" as string]: `url(${revealImage(d.turnedBack ? "normal" : r.outcome)})` }} onClick={(e) => e.stopPropagation()}>
         <Burst tone={OUTCOME_TONE[r.outcome]} level={{ empty: 0, partial: 0, normal: 1, good: 2, great: 4, legend: 7 }[r.outcome]} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={`v3-reveal__rovyn is-${rovynFor(d)}`} src={rovynImage(rovynFor(d))} alt="" />
         <span className="hud-kicker">{tl("{0} · 光橋揭曉", { 0: name })}</span>
         <h2>{d.turnedBack ? tl("回航") : OUTCOME[r.outcome]}</h2>
         <b className="v3-reveal__mult">×{(shown / 100).toFixed(2)}</b>

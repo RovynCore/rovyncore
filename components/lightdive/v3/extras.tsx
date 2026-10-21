@@ -15,6 +15,7 @@ import { SupplyPrompt, rememberedSupply } from "./provisions";
 import { unlocksOf } from "./unlocks";
 import { openProfile } from "./logbook";
 import { tl } from "@/lib/lightdive-v3/i18n";
+import { rovynFor } from "./pages";
 
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
 
@@ -149,7 +150,7 @@ async function drawCard(d: SimDive, title?: string | null): Promise<HTMLCanvasEl
   const glow = g.createRadialGradient(930, 330, 0, 930, 330, 280);
   glow.addColorStop(0, `${tone}aa`); glow.addColorStop(0.3, `${tone}44`); glow.addColorStop(1, "transparent");
   g.fillStyle = glow; g.fillRect(620, 0, 580, 630);
-  const pose = d.turnedBack ? "guide" : r.outcome === "empty" ? "quiet" : r.outcome === "great" || r.outcome === "legend" || r.outcome === "good" ? "bright" : "guide";
+  const pose = rovynFor(d);
   try { g.drawImage(await load(`/lightdive/npc/rovyn-pose-${pose}.webp`), 760, 60, 470, 574); } catch {}
   g.fillStyle = "#c9ff55"; g.font = "700 26px 'Chakra Petch', sans-serif";
   g.fillText(tl("LIGHTDIVE · 潛光遠征"), 70, 90);

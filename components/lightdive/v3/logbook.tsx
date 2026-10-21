@@ -17,7 +17,7 @@ import { CardFace, Foil, sceneImage } from "./cards";
 import { ProfileShare, type Postcard } from "./profile-card";
 import { ProfileEditor, SECTION_NAME } from "./profile-editor";
 import { ProfileFinder } from "./profile-finder";
-import { TITLE_BADGES, destImage, titleBadge } from "@/lib/lightdive-v3/art";
+import { TITLE_BADGES, destImage, stampImage, titleBadge } from "@/lib/lightdive-v3/art";
 import { MOTTOS, POSTCARD_STATS, SCENES, defaultStats, readStyle, useProfileStyle, type SectionKey, type StatKey } from "./profile-style";
 import { CIRCLED, CLUSTER_HUE, OUTCOME, OUTCOME_TONE, SLOT, fmt } from "./copy";
 import { dayOf, owned, type FeedRow, type Sim, type SimDive, type SimState } from "./sim";
@@ -301,7 +301,7 @@ function ProfileBody({ sim, s, address, mine }: { sim: Sim; s: SimState; address
   const postcard = useMemo<Postcard>(() => ({
     title: best, card: top, scene, motto, address, since: r.since, dives: r.dives, places: r.places,
     stats: shown.slice(0, POSTCARD_STATS).map((x) => ({ label: x.label, value: String(x.value) })),
-    place: deep ? { code: `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}`, name: destName(deep.id), cluster: TEXTS.clusters[deep.cluster].name, stamp: destImage(deep.id) } : null,
+    place: deep ? { code: `${CIRCLED[deep.cluster]}${SLOT[deep.slot]}`, name: destName(deep.id), cluster: TEXTS.clusters[deep.cluster].name, stamp: stampImage(deep.cluster) } : null,
     badge,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- statSig stands for the shown numbers
   }), [best, top?.id, scene, motto, address, r.since, r.dives, r.places, statSig, deep?.id, badge]);

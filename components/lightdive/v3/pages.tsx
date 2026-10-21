@@ -54,13 +54,19 @@ export function rovynPool(sim: Sim): readonly string[] {
 
 /** Rovyn's pose for the moment (the founder's four poses, 10-18): bright after a great result, leaning in when
  *  something needs the player soon, quiet when the day is done or a voyage came back empty, otherwise guiding. */
-export type RovynPose = "guide" | "bright" | "warn" | "quiet";
+export type RovynPose = "guide" | "bright" | "warn" | "quiet" | "cheer" | "comfort";
+/** Rovyn's reaction to one result (10-22: cheer and comfort are the founder's P3 poses). */
+export const rovynFor = (d: { turnedBack?: boolean; result?: { outcome: string } }): RovynPose =>
+  d.turnedBack || !d.result ? "guide"
+    : d.result.outcome === "great" || d.result.outcome === "legend" ? "cheer"
+      : d.result.outcome === "good" ? "bright"
+        : d.result.outcome === "empty" || d.result.outcome === "partial" ? "comfort" : "guide";
 export function rovynPose(sim: Sim): RovynPose {
   const s = sim.state!;
   const recent = s.dives.filter((d) => d.result && sim.now - d.revealAt < 15 * 60_000).sort((a, b) => b.revealAt - a.revealAt)[0];
-  if (recent && (recent.result!.outcome === "great" || recent.result!.outcome === "legend")) return "bright";
+  if (recent && (recent.result!.outcome === "great" || recent.result!.outcome === "legend")) return "cheer";
   if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt) || s.dives.some((d) => deciding(d, sim.now) && !d.choice) || s.dives.some((d) => turning(d, sim.now))) return "warn";
-  if (recent && recent.result!.outcome === "empty") return "quiet";
+  if (recent && recent.result!.outcome === "empty") return "comfort";
   if (passesOn(s, sim.today) >= DIVES_PER_DAY && !s.dives.some((d) => !d.result || d.pending)) return "quiet";
   return "guide";
 }

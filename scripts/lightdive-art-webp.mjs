@@ -33,6 +33,9 @@ const JOBS = [
   { dir: "misc/sky", match: /^sky-[a-z]+\.png$/, out: "sky", resize: { width: 128 }, webp: { quality: 88, alphaQuality: 92 } },
   { dir: "misc/sky", match: /^sky-[a-z]+-banner\.png$/, out: "sky", resize: { width: 1200 }, webp: { quality: 80 } },
   { dir: "misc/titles", match: /^title-\d\d\.png$/, out: "titles", resize: { width: 128 }, webp: { quality: 88, alphaQuality: 92 } },
+  // P3 (10-22): the layer below each cluster for a deep dive that keeps going, and a postcard stamp per cluster
+  { dir: "misc/deep", match: /^deep-[1-6]\.png$/, out: "deep", resize: { width: 1600 }, webp: { quality: 78 } },
+  { dir: "misc/stamp", match: /^stamp-[1-6]\.png$/, out: "stamp", resize: { width: 360 }, webp: { quality: 84 } },
   // link previews must be a format every crawler reads
   { dir: "misc", match: /^og-lightdive\.png$/, out: ".", jpeg: { quality: 86, mozjpeg: true } },
 ];
