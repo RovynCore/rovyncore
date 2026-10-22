@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPublicClient, http } from "viem";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readStats, type Stats } from "@/lib/lightdive-v3/stats";
+import type { KeeperStatus } from "@/lib/lightdive-v3/keeper";
 import { useLanguage } from "@/components/language-provider";
 import { syncGameLocale, tl } from "@/lib/lightdive-v3/i18n";
 import { CIRCLED, OUTCOME } from "./copy";
@@ -54,6 +55,7 @@ export function AdminStats() {
         <button type="button" className="lds__btn" disabled={busy} onClick={() => void load()}>{busy ? tl("讀取中…") : tl("重新讀取")}</button>
       </header>
       {error && <p className="lds__error">{error}</p>}
+      <KeeperState />
       {!stats ? <p className="lds__dim">{busy ? tl("讀取鏈上資料…") : ""}</p> : (
         <>
           <p className="lds__dim">{tl("資料時間 {0}（UTC）", { 0: new Date(stats.readAt).toISOString().slice(0, 16).replace("T", " ") })}</p>
@@ -117,6 +119,30 @@ function downloadCsv(stats: Stats) {
   a.download = `lightdive-stats-${new Date(stats.readAt).toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+/** 自動揭曉: whether the keeper runs, when it last ran, what it revealed and how much gas it has left. */
+function KeeperState() {
+  const [read, setRead] = useState<{ k: KeeperStatus | null; at: number } | null>(null);
+  useEffect(() => {
+    let dead = false;
+    void fetch("/api/lightdive/keeper", { cache: "no-store" }).then((r) => r.json() as Promise<{ status: KeeperStatus | null }>)
+      .then((d) => { if (!dead) setRead({ k: d.status, at: Date.now() }); }).catch(() => { if (!dead) setRead({ k: null, at: Date.now() }); });
+    return () => { dead = true; };
+  }, []);
+  if (!read) return null;
+  const k = read.k;
+  if (!k) return <p className="lds__warn">{tl("自動揭曉尚未啟用：還沒有設定揭曉錢包（Worker 機密 LIGHTDIVE_KEEPER_KEY）。啟用前，玩家可以先看結果、不收壞結果，等一天後拿 ×1.00 保底。")}</p>;
+  const ago = Math.max(0, Math.round((read.at / 1000 - k.at) / 60));
+  const eth = k.balanceWei ? Number(BigInt(k.balanceWei) / 10n ** 12n) / 1e6 : null;
+  return (
+    <div className={`lds__keeper${k.error || ago > 10 || (eth !== null && eth < 0.005) ? " is-warn" : ""}`}>
+      <b>{tl("自動揭曉")}</b>
+      <span>{tl("{0} 分鐘前執行 · 這次揭曉出航 {1}、召喚 {2} · 累計 {3} / {4}", { 0: ago, 1: k.revealed.dives, 2: k.revealed.summons, 3: k.total.dives, 4: k.total.summons })}</span>
+      <span>{tl("揭曉錢包 {0} · 餘額 {1}", { 0: k.keeper ? `${k.keeper.slice(0, 6)}…${k.keeper.slice(-4)}` : "—", 1: eth === null ? "—" : eth.toFixed(4) })}</span>
+      {k.error && <span className="lds__error">{k.error}</span>}
+    </div>
+  );
 }
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {

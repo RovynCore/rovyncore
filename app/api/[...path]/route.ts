@@ -3,6 +3,7 @@ import { ANNOUNCEMENTS_KEY, activeAnnouncements, announcementListSchema, type An
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readDaily, type Daily } from "@/lib/lightdive-v3/daily";
 import { cleanStyle } from "@/lib/lightdive-v3/profile";
+import { KEEPER_STATUS, type KeeperStatus } from "@/lib/lightdive-v3/keeper";
 import { CHAT_CHANNELS, CHAT_DAILY, CHAT_GAP_SECONDS, CHAT_KEEP_DAYS, CHAT_PAGE, CHAT_REPORTS_HIDE, checkChat, isChannel, type ChatChannel, type ChatMessage } from "@/lib/lightdive-chat";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
@@ -279,6 +280,10 @@ async function handle(request: Request) {
         const data = row === "off" ? { style: null, off: true } : { style: row ? cleanStyle(JSON.parse(row.style)) : null };
         if (cache) await cache.put(profileKey(account), new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=30" } }));
         return respond(data);
+      }
+      if (route === "lightdive" && path[1] === "keeper" && path.length === 2) {
+        await rate(request, "lightdive-public", 120);
+        return respond({ status: await setting<KeeperStatus | null>(KEEPER_STATUS, null) });
       }
       if (route === "lightdive" && path[1] === "daily" && path.length === 2) {
         // 觀測站日報: yesterday (UTC) in numbers, from the chain; stored once the day's reveals are in (30 minutes after

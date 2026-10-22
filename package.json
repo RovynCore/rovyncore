@@ -28,6 +28,7 @@
     "lightdive:v3:deploy": "node scripts/compile-contracts-lightdive-v3.mjs && node --experimental-strip-types scripts/lightdive-v3-deploy.mjs",
     "lightdive:v3:deploy:testnet": "node scripts/compile-contracts-lightdive-v3.mjs && node --experimental-strip-types scripts/lightdive-v3-deploy.mjs --network testnet",
     "lightdive:v3:deploy:web": "node scripts/compile-contracts-lightdive-v3.mjs && node --experimental-strip-types scripts/lightdive-v3-deploy-web.mjs",
+    "lightdive:v3:owner:web": "node --experimental-strip-types scripts/lightdive-v3-owner-web.mjs",
     "lightdive:v3:localnet": "node scripts/compile-contracts-lightdive-v3.mjs && node --experimental-strip-types scripts/lightdive-v3-localnet.mjs",
     "test:contracts": "node --test tests/contracts.test.mjs",
     "test:validation": "node --experimental-strip-types --test tests/validation.test.ts",

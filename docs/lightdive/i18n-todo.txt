@@ -1,9 +1,7 @@
 # Lightdive strings still missing an English translation, by first file that uses them
 
-## components\lightdive\v3\logbook.tsx (3)
-收下第一趟結果後開放
-出航一趟、回到碑原收下結果，這裡就會開始記錄你的稱號、足跡和每週排行。你也可以先用上面的地址欄查看其他觀測者的檔案。
-去星圖出航
-
-## components\lightdive\v3\preview.tsx (1)
-尚未開放
+## components\lightdive\v3\admin-stats.tsx (4)
+自動揭曉尚未啟用：還沒有設定揭曉錢包（Worker 機密 LIGHTDIVE_KEEPER_KEY）。啟用前，玩家可以先看結果、不收壞結果，等一天後拿 ×1.00 保底。
+自動揭曉
+{0} 分鐘前執行 · 這次揭曉出航 {1}、召喚 {2} · 累計 {3} / {4}
+揭曉錢包 {0} · 餘額 {1}
