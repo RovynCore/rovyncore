@@ -39,7 +39,6 @@ export const ERROR: Record<string, string> = localized({
   noTickets: "今天的 3 張出發令都用完了，換日後重置。",
   teamLimit: "這支隊伍今天已經出發 3 次了。",
   onBridge: "這支隊伍還在光橋上，等這趟揭曉再出發。",
-  uncollected: "這支隊伍上一趟帶回的光還沒收取，先確認收取再出發。",
   tooDim: "隊伍戰力不夠這個目的地的門檻。",
   balance: "$RVYN 不夠。",
   cannotRenew: "這張卡不能續航（沒有停泊，或已經續航過）。",
@@ -54,7 +53,7 @@ export const ERROR: Record<string, string> = localized({
   saleClosed: "召喚還沒開放。",
   soldOut: "這種卡的數量已經到上限，等有卡歸航後才能再召喚。",
   earlyLimit: "開放後 48 小時內，每個錢包最多召喚 3 座光塔。",
-  decisionClosed: "抉擇已經截止（揭曉前 1 分鐘）。",
+  sealed: "這張卡的召喚結果還沒寫入鏈上，請稍候幾秒再試。",
   gone: "這張卡已經被買走或下架了。",
   priceChanged: "賣家剛改了價格，請重新確認。",
   notDue: "停泊滿 7 天後才會歸航。",
@@ -76,8 +75,8 @@ export const ERROR: Record<string, string> = localized({
   commissionNotMet: "還沒有符合這個委託的航程（接下委託後出發、已經揭曉的航程才算）。",
 });
 
-/** The result's name for a revealed dive ("回航" for a deep dive that turned back). */
-export const outcomeName = (d: { turnedBack?: boolean; result?: { outcome: Outcome } }) => (d.turnedBack ? tl("回航") : d.result ? OUTCOME[d.result.outcome] : "");
+/** The result's name for a revealed dive. */
+export const outcomeName = (d: { result?: { outcome: Outcome } }) => (d.result ? OUTCOME[d.result.outcome] : "");
 export const fmt = (n: number, digits = 2) => n.toLocaleString("zh-Hant", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 export const pct = (x: number, digits = 0) => `${(x * 100).toFixed(digits)}%`;
 export const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{([^}]+)\}/g, (m, k) => (k in v ? String(v[k]) : m));

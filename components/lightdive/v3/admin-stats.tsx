@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPublicClient, http } from "viem";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readStats, type Stats } from "@/lib/lightdive-v3/stats";
-import type { KeeperStatus } from "@/lib/lightdive-v3/keeper";
 import { useLanguage } from "@/components/language-provider";
 import { syncGameLocale, tl } from "@/lib/lightdive-v3/i18n";
 import { CIRCLED, OUTCOME } from "./copy";
@@ -55,7 +54,6 @@ export function AdminStats() {
         <button type="button" className="lds__btn" disabled={busy} onClick={() => void load()}>{busy ? tl("讀取中…") : tl("重新讀取")}</button>
       </header>
       {error && <p className="lds__error">{error}</p>}
-      <KeeperState />
       {!stats ? <p className="lds__dim">{busy ? tl("讀取鏈上資料…") : ""}</p> : (
         <>
           <p className="lds__dim">{tl("資料時間 {0}（UTC）", { 0: new Date(stats.readAt).toISOString().slice(0, 16).replace("T", " ") })}</p>
@@ -64,7 +62,7 @@ export function AdminStats() {
             <Tile label={tl("玩過的錢包")} value={n0(stats.wallets)} sub={tl("今天出航 {0}", { 0: n0(stats.activeToday) })} />
             <Tile label={tl("次日留存")} value={pct(stats.retention.d1)} sub={tl("第 7 天 {0}", { 0: pct(stats.retention.d7) })} />
             <Tile label={tl("核光池")} value={n0(stats.pool)} sub={tl("今日分配率 {0}", { 0: stats.rate.toFixed(5) })} />
-            <Tile label={tl("出航")} value={n0(t!.dives)} sub={t!.echoes ? tl("深潛 {0} · 回航 {1} · 光橋回聲 {2}", { 0: n0(t!.deep), 1: n0(t!.turnedBack), 2: n0(t!.echoes) }) : tl("深潛 {0} · 回航 {1}", { 0: n0(t!.deep), 1: n0(t!.turnedBack) })} />
+            <Tile label={tl("出航")} value={n0(t!.dives)} sub={t!.echoes ? tl("深潛 {0} · 光橋回聲 {1}", { 0: n0(t!.deep), 1: n0(t!.echoes) }) : tl("深潛 {0}", { 0: n0(t!.deep) })} />
             <Tile label={tl("召喚的卡")} value={n0(t!.summons)} sub={tl("{0} $RVYN", { 0: n2(t!.summonPaid) })} />
             <Tile label={tl("帶回（已扣出發成本）")} value={n2(t!.rewards)} sub={tl("出發成本 {0}", { 0: n2(t!.levy) })} />
             <Tile label={tl("提領")} value={n2(t!.claimed)} sub={tl("手續費 {0}", { 0: n2(t!.claimFees) })} />
@@ -98,8 +96,7 @@ export function AdminStats() {
 
           <div className="lds__cols">
             <Split title={tl("出航的星團")} rows={stats.clusters.map((v, i) => [`${CIRCLED[i]}`, v])} />
-            <Split title={tl("航行抉擇")} rows={[[tl("順其自然"), stats.decisions[0]], [tl("求穩"), stats.decisions[1]], [tl("求險"), stats.decisions[2]], [tl("繞道"), stats.decisions[3]]]} />
-            <Split title={tl("揭曉結果")} rows={Object.entries(stats.outcomes).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k === "turnedBack" ? tl("回航") : (OUTCOME as Record<string, string>)[k] ?? k, v])} />
+            <Split title={tl("揭曉結果")} rows={Object.entries(stats.outcomes).sort((a, b) => b[1] - a[1]).map(([k, v]) => [(OUTCOME as Record<string, string>)[k] ?? k, v])} />
             <Split title={tl("召喚出的稀有度")} rows={[0, 1, 2, 3, 4].map((r) => [[tl("微光"), tl("輝脈"), tl("澄晶"), tl("稜光"), tl("曜核")][r], stats.rarities.reduce((a, k) => a + k[r], 0)])} />
           </div>
           <p className="lds__dim">{tl("留存：在某天第一次出現的錢包，隔天（或第 7 天）又出航或召喚的比例；只算已經過完那一天的錢包。")}</p>
@@ -119,30 +116,6 @@ function downloadCsv(stats: Stats) {
   a.download = `lightdive-stats-${new Date(stats.readAt).toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
-}
-
-/** 自動揭曉: whether the keeper runs, when it last ran, what it revealed and how much gas it has left. */
-function KeeperState() {
-  const [read, setRead] = useState<{ k: KeeperStatus | null; at: number } | null>(null);
-  useEffect(() => {
-    let dead = false;
-    void fetch("/api/lightdive/keeper", { cache: "no-store" }).then((r) => r.json() as Promise<{ status: KeeperStatus | null }>)
-      .then((d) => { if (!dead) setRead({ k: d.status, at: Date.now() }); }).catch(() => { if (!dead) setRead({ k: null, at: Date.now() }); });
-    return () => { dead = true; };
-  }, []);
-  if (!read) return null;
-  const k = read.k;
-  if (!k) return <p className="lds__warn">{tl("自動揭曉尚未啟用：還沒有設定揭曉錢包（Worker 機密 LIGHTDIVE_KEEPER_KEY）。啟用前，玩家可以先看結果、不收壞結果，等一天後拿 ×1.00 保底。")}</p>;
-  const ago = Math.max(0, Math.round((read.at / 1000 - k.at) / 60));
-  const eth = k.balanceWei ? Number(BigInt(k.balanceWei) / 10n ** 12n) / 1e6 : null;
-  return (
-    <div className={`lds__keeper${k.error || ago > 10 || (eth !== null && eth < 0.005) ? " is-warn" : ""}`}>
-      <b>{tl("自動揭曉")}</b>
-      <span>{tl("{0} 分鐘前執行 · 這次揭曉出航 {1}、召喚 {2} · 累計 {3} / {4}", { 0: ago, 1: k.revealed.dives, 2: k.revealed.summons, 3: k.total.dives, 4: k.total.summons })}</span>
-      <span>{tl("揭曉錢包 {0} · 餘額 {1}", { 0: k.keeper ? `${k.keeper.slice(0, 6)}…${k.keeper.slice(-4)}` : "—", 1: eth === null ? "—" : eth.toFixed(4) })}</span>
-      {k.error && <span className="lds__error">{k.error}</span>}
-    </div>
-  );
 }
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {

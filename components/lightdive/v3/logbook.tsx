@@ -27,8 +27,8 @@ const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destin
 const SEEN_KEY = "lightdive:v3:footprints-seen";
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-/** Results the player has collected (the only ones that count here). */
-const done = (d: SimDive) => !!d.result && !d.pending;
+/** Voyages with a result (the only ones that count here). */
+const done = (d: SimDive) => !!d.result;
 
 export type Records = {
   dives: number;
@@ -42,7 +42,6 @@ export type Records = {
   // v3.1
   deepDives: number;
   deepLegends: number;
-  turnedBack: number;
   maxBond: number;
   supplyDays: number; // longest run of days with a supply on every departure
   commissions: number;
@@ -82,8 +81,7 @@ export function recordsFrom(s: SimState, today: number): Records {
     greats: list.filter((d) => d.result!.outcome === "great" || d.result!.outcome === "legend").length,
     streak,
     deepDives: list.filter((d) => d.deep).length,
-    deepLegends: list.filter((d) => d.deep && !d.turnedBack && d.result!.outcome === "legend").length,
-    turnedBack: list.filter((d) => d.turnedBack).length,
+    deepLegends: list.filter((d) => d.deep && d.result!.outcome === "legend").length,
     maxBond: Math.max(0, ...s.teams.map((t) => t.bond ?? 0), ...s.dives.map((d) => d.bond ?? 0)),
     supplyDays,
     commissions: s.commissionsDone ?? Object.values(s.commissionMarks ?? {}).reduce((a, m) => a + bit3(m), 0),
@@ -126,7 +124,6 @@ function titleList(r: Records): Title[] {
     // v3.1
     { name: tl("深淵初探"), how: tl("完成第一趟深潛"), got: r.deepDives > 0, rank: 3 },
     { name: tl("深淵帶光者"), how: tl("深潛帶回一次傳說"), got: r.deepLegends > 0, rank: 9 },
-    { name: tl("知進退"), how: tl("深潛時選擇回航一次"), got: r.turnedBack > 0, rank: 3 },
     { name: tl("同舟"), how: tl("一支隊伍的默契達到 5"), got: r.maxBond >= 5, rank: 5, progress: [r.maxBond, 5] },
     { name: tl("有備而行"), how: tl("連續 7 天，每一趟出發都帶補給"), got: r.supplyDays >= 7, rank: 5, progress: [r.supplyDays, 7] },
     { name: tl("受託人"), how: tl("完成 10 個每日委託"), got: r.commissions >= 10, rank: 4, progress: [r.commissions, 10] },
@@ -182,7 +179,6 @@ function statsOf(r: Records, extra: { cards: number; titles: [number, number]; f
     firsts: { label: tl("首航次數"), value: r.firsts, sub: tl("當天第一位抵達") },
     deepDives: { label: tl("深潛"), value: r.deepDives, sub: tl("趟") },
     deepLegends: { label: tl("深潛傳說"), value: r.deepLegends, tone: "#fff4d6" },
-    turnedBack: { label: tl("選擇回航"), value: r.turnedBack, sub: tl("次") },
     maxBond: { label: tl("最高默契"), value: r.maxBond },
     supplyDays: { label: tl("連續帶補給"), value: tl("{0} 天", { 0: r.supplyDays }) },
     cards: { label: tl("持有的卡"), value: extra.cards, sub: tl("張") },
@@ -191,7 +187,7 @@ function statsOf(r: Records, extra: { cards: number; titles: [number, number]; f
     since: { label: tl("出航起始"), value: r.since ? new Date(r.since).toISOString().slice(0, 10) : "—" },
   };
 }
-const STAT_ORDER: StatKey[] = ["dives", "places", "deepest", "bestMult", "legends", "greats", "streak", "echoes", "summons", "commissions", "firsts", "deepDives", "deepLegends", "turnedBack", "maxBond", "supplyDays", "cards", "titles", "footprints", "since"];
+const STAT_ORDER: StatKey[] = ["dives", "places", "deepest", "bestMult", "legends", "greats", "streak", "echoes", "summons", "commissions", "firsts", "deepDives", "deepLegends", "maxBond", "supplyDays", "cards", "titles", "footprints", "since"];
 
 type Row = { who: string; owner?: string; me: boolean; dives: number; deepest: number; best: number; legends: number };
 
@@ -251,8 +247,8 @@ export function Logbook({ sim }: { sim: Sim }) {
     return (
       <div className="hud-page v3-logbook">
         {/* a visitor without a wallet (or before their own profile opens) goes back to the observatory instead */}
-        <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-profile__back" onClick={() => { if (me && sim.state?.dives.some((d) => d.result && !d.pending)) openProfile(); else window.location.hash = "lobby"; }}>
-          <ArrowLeft aria-hidden="true" />{me && sim.state?.dives.some((d) => d.result && !d.pending) ? tl("回到我的檔案") : tl("回到觀測站")}
+        <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-profile__back" onClick={() => { if (me && sim.state?.dives.some(done)) openProfile(); else window.location.hash = "lobby"; }}>
+          <ArrowLeft aria-hidden="true" />{me && sim.state?.dives.some(done) ? tl("回到我的檔案") : tl("回到觀測站")}
         </button>
         {!sim.chain ? <p className="v3-muted">{tl("預覽模式裡的其他觀測者是模擬的，沒有個人檔案。")}</p>
           : !loaded ? <p className="v3-muted">{tl("從鏈上讀取 {0} 的檔案…", { 0: short(other) })}</p>

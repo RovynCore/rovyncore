@@ -2116,6 +2116,10 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 .v3-voyage__log li.is-reading p { color: color-mix(in srgb, var(--ec) 70%, #f3f7f0); }
 .v3-voyage__log li.is-attuned p { color: color-mix(in srgb, var(--ec) 60%, #f3f7f0); font-weight: 600; }
 .v3-voyage__log li.is-omen p { color: color-mix(in srgb, var(--ec) 75%, #f3f7f0); font-style: italic; }
+/* v3.3 (10-23): the voyage told as a story: short stories, the event card and a crew member's line */
+.v3-voyage__log li.is-episode p { color: #dfe7ef; line-height: 1.75; }
+.v3-voyage__log li.is-voice p { color: color-mix(in srgb, var(--ec) 55%, #f3f7f0); font-weight: 600; }
+.v3-voyage__log li.is-story > .v3-decision { margin-top: -2px; }
 .v3-logicon.is-state::after { content: ""; width: 10px; height: 10px; border: 2px solid #c9ff55; border-radius: 50%; }
 .v3-logicon.is-reading { background: none; overflow: visible; }
 .v3-logicon.is-reading::after { content: ""; width: 20px; height: 12px; background: var(--ec); clip-path: polygon(0 55%, 22% 55%, 32% 0, 46% 100%, 60% 20%, 70% 55%, 100% 55%, 100% 72%, 64% 72%, 60% 52%, 46% 100%, 32% 28%, 26% 72%, 0 72%); }
@@ -2182,3 +2186,24 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 .v3-locked h3 { margin: 0; }
 .v3-locked p { max-width: 46ch; margin: 0; }
 .v3-locked .hud-btn { width: auto; }
+
+/* G3 (10-23): the link from the live log to the big-screen wall */
+.hud-live__wall { float: right; color: #c9ff55; font-size: 12px; letter-spacing: 0; text-decoration: none; }
+.hud-live__wall:hover { text-decoration: underline; }
+
+/* G5 (10-23): 世界觀投票 */
+.v3-vote__lead { margin: 0 0 14px; font-size: 16px; }
+.v3-vote__close { color: #c9ff55; font-variant-numeric: tabular-nums; }
+.v3-vote__options { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.v3-vote__options li { display: grid; align-content: start; gap: 8px; padding: 16px; border: 1px solid var(--h-line); border-radius: 14px; background: rgba(255, 255, 255, 0.03); }
+.v3-vote__options li.is-mine { border-color: #f0c766; background: rgba(240, 199, 102, 0.08); }
+.v3-vote__options b { font-size: 17px; }
+.v3-vote__options p { margin: 0; color: var(--h-text-2); }
+.v3-vote__options .hud-btn { justify-self: start; }
+.v3-vote__bars { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.v3-vote__bars li { position: relative; display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); overflow: hidden; }
+.v3-vote__bars li > i { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.06); }
+.v3-vote__bars li > i > i { display: block; height: 100%; width: calc(var(--k) * 100%); background: #7fd3ff; }
+.v3-vote__bars li.is-top > i > i { background: #c9ff55; }
+.v3-vote__bars li.is-mine b::after { content: " ✓"; color: #f0c766; }
+.v3-vote__bars span { color: var(--h-text-2); font-variant-numeric: tabular-nums; }

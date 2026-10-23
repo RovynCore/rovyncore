@@ -1,14 +1,14 @@
 {
   "chainId": 46630,
-  "deploymentBlock": 138772592,
+  "deploymentBlock": 141179519,
   "testToken": true,
-  "rvyn": "0x0e761415f8b3e555abff25d657b20dac4b668787",
-  "rng": "0xfb2de5a338c628d6e0a910dd2923523993a35a72",
-  "config": "0x080f0f82233e25123223188378ed920362443741",
-  "nft": "0x22a4c77e7b0d10dc61bbb4f0180324b4feffd6cc",
-  "pool": "0x33c5984c4a17e636580474dd892b35e7ecb3460c",
-  "minter": "0x89375e894ca9a7dfde02d8bb42acb06fe78611d6",
-  "expedition": "0xe659ccb0173c1ffab7abe7a5185313069b028438",
-  "market": "0xf8667a649480870d23fd0ca82c5a604497e22218",
-  "commissions": "0x25b50be66a290d3843459aa559c69966bdb8170b"
+  "rvyn": "0x85bc234c9553e59ab518e97465196953d44ecee6",
+  "rng": "0x86ce1db46baafd924f9fc0119ddd5cf9792750f8",
+  "config": "0xf50e2951da9896bbba4704befe7ef1429eddd16b",
+  "nft": "0x8dd7d9a87d091cff4d6c4cf20c571190966c76b4",
+  "pool": "0x710fdc0e74ca52f68b32d702de0ba693c877a470",
+  "minter": "0xbb7d682db46ee3894c64026ee098cfe53204c7a3",
+  "expedition": "0x04a2c83047394c0194e1bc19cdc977b160aed91e",
+  "market": "0x6919cd2aa700679fd4a2383ea2affb92b00102f5",
+  "commissions": "0x869d2d6c9356f83cb85a1337bd201530bd711f82"
 }

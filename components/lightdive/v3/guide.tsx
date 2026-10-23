@@ -15,14 +15,14 @@ import { PageHead } from "../game/hud";
 import { RarityGem } from "./kit";
 import type { Sim } from "./sim";
 import type { View } from "./pages";
-import { BEAM, BEAM_HINT, CHOICE, CIRCLED, KIND, LIGHT, LIGHT_COLOR, OUTCOME, RARITY_COLOR, RISK, SLOT, STAR, TIER, fmt, pct } from "./copy";
+import { BEAM, BEAM_HINT, CIRCLED, KIND, LIGHT, LIGHT_COLOR, OUTCOME, RARITY_COLOR, RISK, SLOT, STAR, TIER, fmt, pct } from "./copy";
 import { tl, localized } from "@/lib/lightdive-v3/i18n";
 import { BOND_MAX, COMMISSION_BONUS, SUPPLY_PRICE } from "@/lib/lightdive-v3/rules";
 
 const STEPS: { n: string; icon: IconName; title: string; text: string; to: View; cta: string }[] = localized([
   { n: "1", icon: "fleets", title: "組隊", text: "光塔＋稜鏡＋探索者＝一支隊伍。戰力越高，能去越深的地方。", to: "plain", cta: "去碑原組隊" },
-  { n: "2", icon: "expedition", title: "潛光", text: "挑一個目的地出發。航行 {0} 分鐘，途中做一次抉擇。", to: "dive", cta: "去星圖出發" },
-  { n: "3", icon: "claim", title: "收取", text: "揭曉後親手收取，收益進金庫，隨時可以提領到錢包。", to: "treasury", cta: "看我的金庫" },
+  { n: "2", icon: "expedition", title: "潛光", text: "挑一個目的地出發。航行 {0} 分鐘，航行日誌像一段故事一樣寫出來。", to: "dive", cta: "去星圖出發" },
+  { n: "3", icon: "claim", title: "入帳", text: "揭曉時收益自動進金庫，隨時可以提領到錢包。", to: "treasury", cta: "看我的金庫" },
 ]);
 
 export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
@@ -30,7 +30,7 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   const [more, setMore] = useState(false);
   return (
     <div className="hud-page v3-guide2">
-      <PageHead kicker={tl("玩法")} icon="guide" title={tl("潛光遠征怎麼玩")} lead={tl("組隊 → 出發 → 收取。每天 {0} 張出發令。", { 0: DIVES_PER_DAY })} />
+      <PageHead kicker={tl("玩法")} icon="guide" title={tl("潛光遠征怎麼玩")} lead={tl("組隊 → 出發 → 自動入帳。每天 {0} 張出發令。", { 0: DIVES_PER_DAY })} />
 
       <section className="v3-steps3" aria-label={tl("三個步驟")}>
         {STEPS.map((s) => (
@@ -50,7 +50,7 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <li><GameIcon name="pool" /><b>{tl("核光池")}</b><small>{tl("預先注入的 $RVYN")}</small></li>
           <li><GameIcon name="clock" /><b>{tl("每天釋出 {0}", { 0: pct(EMISSION) })}</b><small>{tl("池子餘額的 {0}", { 0: pct(EMISSION) })}</small></li>
           <li><GameIcon name="lightdust" /><b>{tl("按光塵比例分")}</b><small>{tl("分給當天出發的所有人")}</small></li>
-          <li><GameIcon name="treasury" /><b>{tl("你的金庫")}</b><small>{tl("親手收取後入帳")}</small></li>
+          <li><GameIcon name="treasury" /><b>{tl("你的金庫")}</b><small>{tl("揭曉時自動入帳")}</small></li>
           <li><GameIcon name="rvyn" /><b>{tl("提領到錢包")}</b><small>{tl("手續費 15% 起，每天 −1%，第 15 天起免費")}</small></li>
         </ol>
         <div className="v3-tiles is-3">
@@ -95,8 +95,8 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <div className="v3-tile"><span>{tl("同一隊")}</span><b>{tl("{0} 次／天", { 0: DIVES_PER_TEAM_PER_DAY })}</b></div>
           <div className="v3-tile"><span>{tl("隊伍上限")}</span><b>{tl("{0} 支", { 0: MAX_TEAMS })}</b><small>{tl("同時組建")}</small></div>
           <div className="v3-tile"><span>{tl("隊伍戰力")}</span><b>{MIN_TEAM}–{MAX_TEAM}</b></div>
-          <div className="v3-tile"><span>{tl("航行")}</span><b>{tl("{0} 分鐘", { 0: VOYAGE_MINUTES })}</b><small>{tl("一次抉擇")}</small></div>
-          <div className="v3-tile"><span>{tl("揭曉後")}</span><b>{tl("親手收取")}</b><small>{tl("沒收取不能再出發")}</small></div>
+          <div className="v3-tile"><span>{tl("航行")}</span><b>{tl("{0} 分鐘", { 0: VOYAGE_MINUTES })}</b><small>{tl("途中不用做決定")}</small></div>
+          <div className="v3-tile"><span>{tl("揭曉後")}</span><b>{tl("自動入帳")}</b><small>{tl("隊伍可以馬上再出發")}</small></div>
         </div>
       </section>
 
@@ -108,17 +108,16 @@ export function Guide({ sim, go }: { sim: Sim; go: (v: View) => void }) {
           <article><h4>{tl("光紋同頻")}</h4><p>{tl("探索者光紋和目的地今天的光相同：每位 +15% 自身戰力，整隊最多 +10%。")}<span className="v3-lights">{LIGHT.map((l, i) => <i key={l} style={{ color: LIGHT_COLOR[i] }}>● {l}</i>)}</span></p></article>
           <article><h4>{tl("今日星象")}</h4><p>{(["tide", "surge", "storm", "calm"] as const).map((e) => <span key={e} className="v3-star" style={{ color: STAR[e].color }}>{STAR[e].name}<small>{STAR[e].effect}</small></span>)}</p></article>
           <article><h4>{tl("超出門檻")}</h4><p>{tl("戰力每超過目的地門檻 20%，空手機率 −1 個百分點，最多 −5。")}</p></article>
-          <article><h4>{tl("航行抉擇")}</h4><p>{(["steady", "bold", "detour", "none"] as const).map((x) => <span key={x} className="v3-star"><b>{CHOICE[x].name}</b><small>{CHOICE[x].effect}</small></span>)}</p></article>
         </div>
       </section>
 
       <section className="v3-panel" aria-label={tl("更多玩法")}>
         <h3>{tl("更多玩法")}</h3>
         <div className="v3-factors">
-          <article><h4>{tl("深潛")}</h4><p>{tl("第③星團以後的目的地可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2，稜鏡風險高一級。前段有一次抉擇；最後 10 分鐘可以回航，回航固定 ×1.00、只耗損 1 次航程。")}</p></article>
+          <article><h4>{tl("深潛")}</h4><p>{tl("第③星團以後的目的地可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2，稜鏡風險高一級。")}</p></article>
           <article><h4>{tl("默契")}</h4><p>{tl("同一組人每平安回來一趟，默契 +1（最多 {0}）；每 1 點默契讓空手機率少 1 個百分點。換掉任何一張卡就歸零。", { 0: BOND_MAX })}</p></article>
           <article><h4>{tl("出航補給")}</h4><p>{tl("出發前可以花一點 $RVYN 帶一種補給：燈油（這趟基礎收益的 {0}）讓這趟只耗損 1 次航程；星圖殘頁（{1}）讓空手機率少 3 個百分點。付的 $RVYN 有 95% 進核光池、5% 銷毀。", { 0: pct(SUPPLY_PRICE[1]), 1: pct(SUPPLY_PRICE[2]) })}</p></article>
-          <article><h4>{tl("每日委託")}</h4><p>{tl("每天 3 個委託，所有人都一樣，由日期決定。一次接一個；接下後出發的航程符合條件，就能完成，領到那趟基礎收益的 {0}。", { 0: pct(COMMISSION_BONUS) })}</p></article>
+          <article><h4>{tl("每日委託")}</h4><p>{tl("每天 3 個委託，所有人都一樣，由日期決定。一次接一個；接下後出發的航程符合條件，揭曉時自動完成，多領那趟基礎收益的 {0}。", { 0: pct(COMMISSION_BONUS) })}</p></article>
         </div>
       </section>
 

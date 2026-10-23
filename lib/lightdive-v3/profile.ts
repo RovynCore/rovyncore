@@ -5,7 +5,7 @@ import { CLUSTER_IMAGES, GALAXY_IMAGE } from "./credits";
 
 export const STAT_KEYS = [
   "dives", "places", "deepest", "bestMult", "legends", "greats", "streak", "summons", "echoes", "commissions",
-  "firsts", "deepDives", "deepLegends", "turnedBack", "maxBond", "supplyDays", "cards", "titles", "footprints", "since",
+  "firsts", "deepDives", "deepLegends", "maxBond", "supplyDays", "cards", "titles", "footprints", "since",
 ] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
 export const SECTIONS = ["titles", "footprints", "boards"] as const;

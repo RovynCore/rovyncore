@@ -1,0 +1,76 @@
+/* 觀測牆 (G3, 10-23): a big screen of everyone's voyages. Dark only, like the game. */
+.ldw {
+  --ldw-bg: #05080d;
+  --ldw-panel: rgba(255, 255, 255, 0.04);
+  --ldw-line: rgba(255, 255, 255, 0.1);
+  --ldw-text: #eef3ea;
+  --ldw-dim: #93a0ae;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr) minmax(280px, 1fr);
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  padding: 18px 22px;
+  background: radial-gradient(120% 80% at 50% 0%, #0d1622 0%, var(--ldw-bg) 60%);
+  color: var(--ldw-text);
+  font-family: inherit;
+}
+.ldw.is-empty { display: grid; place-items: center; grid-template-columns: 1fr; color: var(--ldw-dim); font-size: 20px; }
+.ldw h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: 0.08em; color: var(--ldw-dim); font-weight: 700; }
+.ldw h2 small { margin-left: 6px; color: #c9ff55; font-size: 15px; }
+.ldw__muted { color: var(--ldw-dim); }
+.ldw ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.ldw__head { grid-column: 1 / -1; display: flex; align-items: center; gap: 28px; padding-bottom: 14px; border-bottom: 1px solid var(--ldw-line); }
+.ldw__brand { display: grid; }
+.ldw__brand b { font-size: 26px; letter-spacing: 0.06em; }
+.ldw__brand span { color: #c9ff55; font-size: 14px; letter-spacing: 0.12em; }
+.ldw__stats { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 0; flex: 1; }
+.ldw__stats div { display: grid; }
+.ldw__stats dt { color: var(--ldw-dim); font-size: 13px; }
+.ldw__stats dd { margin: 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ldw__clock { font-size: 22px; font-variant-numeric: tabular-nums; color: var(--ldw-dim); }
+
+.ldw__flying li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 12px 14px; border: 1px solid var(--ldw-line); border-radius: 12px; background: var(--ldw-panel); overflow: hidden; }
+.ldw__where { display: grid; min-width: 0; }
+.ldw__where b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ldw__where small { color: var(--ldw-dim); }
+.ldw__flying em { font-style: normal; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--hue); }
+.ldw__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.06); }
+.ldw__bar i { display: block; height: 100%; width: calc(var(--k) * 100%); background: var(--hue); box-shadow: 0 0 12px var(--hue); transition: width 1s linear; }
+
+.ldw__spot { display: grid; grid-template-rows: 1fr auto; gap: 14px; min-height: 0; }
+.ldw__card { position: relative; display: grid; align-content: end; gap: 6px; padding: 32px 36px; min-height: 420px; border: 1px solid color-mix(in srgb, var(--tc) 55%, transparent); border-radius: 20px; background: linear-gradient(180deg, rgba(5, 8, 13, 0.1), rgba(5, 8, 13, 0.92) 75%), var(--photo) center / cover no-repeat; box-shadow: 0 0 60px color-mix(in srgb, var(--tc) 22%, transparent) inset; animation: ldw-in 0.8s both; overflow: hidden; }
+.ldw__card.is-legend, .ldw__card.is-great { animation: ldw-in 0.8s both, ldw-glow 2.4s ease-in-out 0.8s infinite; }
+.ldw__kicker { color: var(--ldw-dim); font-size: 15px; letter-spacing: 0.08em; }
+.ldw__card h1 { margin: 0; font-size: clamp(40px, 5vw, 76px); line-height: 1.05; color: var(--tc); text-shadow: 0 0 30px color-mix(in srgb, var(--tc) 60%, transparent); }
+.ldw__mult { font-size: clamp(36px, 4vw, 64px); font-variant-numeric: tabular-nums; }
+.ldw__card p { margin: 0; font-size: 20px; }
+.ldw__sky { display: flex; flex-wrap: wrap; gap: 8px; }
+.ldw__sky span { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1px solid color-mix(in srgb, var(--sc) 50%, transparent); border-radius: 999px; background: var(--ldw-panel); font-size: 14px; }
+.ldw__sky b { color: var(--sc); }
+
+.ldw__side { display: grid; grid-template-rows: auto auto; align-content: start; gap: 20px; min-width: 0; }
+.ldw__reveals li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; padding: 8px 12px; border-left: 3px solid var(--tc); border-radius: 8px; background: var(--ldw-panel); }
+.ldw__reveals li.is-big { background: color-mix(in srgb, var(--tc) 14%, transparent); }
+.ldw__reveals span { font-size: 16px; font-variant-numeric: tabular-nums; }
+.ldw__reveals span b { color: var(--tc); }
+.ldw__reveals small { grid-column: 1; color: var(--ldw-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ldw__reveals time { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--ldw-dim); font-size: 13px; }
+.ldw__summons li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; align-items: center; padding: 6px 10px; border-radius: 8px; background: var(--ldw-panel); }
+.ldw__summons li.is-rare { box-shadow: 0 0 0 1px var(--rc) inset; }
+.ldw__summons span b { color: var(--rc); }
+.ldw__summons small { grid-column: 2; color: var(--ldw-dim); }
+
+.ldw__foot { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 16px; color: var(--ldw-dim); font-size: 13px; }
+.ldw__foot a { color: #c9ff55; }
+
+@keyframes ldw-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ldw-glow { 50% { box-shadow: 0 0 90px color-mix(in srgb, var(--tc) 40%, transparent) inset, 0 0 40px color-mix(in srgb, var(--tc) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .ldw__card, .ldw__card.is-legend, .ldw__card.is-great { animation: none; } }
+
+@media (max-width: 1100px) {
+  .ldw { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; }
+  .ldw__head { flex-wrap: wrap; gap: 12px 20px; }
+  .ldw__card { min-height: 280px; padding: 22px; }
+}

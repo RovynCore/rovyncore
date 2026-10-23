@@ -11,12 +11,13 @@ import { destImage, revealImage } from "@/lib/lightdive-v3/art";
 import { ArrowLeft, Lock, Rocket, X } from "lucide-react";
 import {
   DEEP_MIN_CLUSTER, DESTINATIONS, DIVES_PER_DAY, DIVES_PER_TEAM_PER_DAY, baseReward, basePoints, clusterRange, destinationBase, outcomesOf, overflowPoints, planDive, teamPower,
-  type Choice, type DivePlan,
+  type DivePlan,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
-import { deciding, passesOn, stabilityOf, teamInput, teamName, teamOut, turning, type Sim, type SimDive, type SimState } from "./sim";
+import { dayOf, passesOn, stabilityOf, teamInput, teamName, teamOut, type Sim, type SimDive, type SimState } from "./sim";
 import { SUPPLIES, SupplyPrompt, forgetSupply, rememberedSupply, type Departure } from "./provisions";
-import { commissionTitle, readyBonus } from "./commissions";
+import { commissionTitle } from "./commissions";
+import { commissionsOf } from "@/lib/lightdive-v3/commissions";
 import { unlocksOf } from "./unlocks";
 import { featuredTitle, openProfile, recordsOf } from "./logbook";
 import { VoyageLog, omenOf } from "./voyage";
@@ -24,11 +25,11 @@ import { rovynFor, rovynImage } from "./pages";
 import { BeamIcon, LightIcon, flyLight } from "./kit";
 import { fxQuality } from "./settings";
 import {
-  BEAM, BEAM_HINT, CHOICE, CIRCLED, CLUSTER_HUE, ERROR, LIGHT, LIGHT_COLOR, OUTCOME, OUTCOME_TONE, RISK, SLOT, STAR, ago, clock, fmt, pct,
+  BEAM, BEAM_HINT, CIRCLED, CLUSTER_HUE, ERROR, LIGHT, LIGHT_COLOR, OUTCOME, OUTCOME_TONE, RISK, SLOT, STAR, ago, clock, fmt, pct,
 } from "./copy";
 import { gameLocale, tl, localized } from "@/lib/lightdive-v3/i18n";
 
-type TeamView = { spire: number; power: number; name: string; busy: boolean; waiting: boolean; teamToday: number };
+type TeamView = { spire: number; power: number; name: string; busy: boolean; teamToday: number };
 
 function teamsOf(s: SimState, today: number): TeamView[] {
   return s.teams
@@ -40,7 +41,6 @@ function teamsOf(s: SimState, today: number): TeamView[] {
         power: teamPower(teamInput(s, t)),
         name: teamName(s, spire.id),
         busy: teamOut(s, t.spire),
-        waiting: s.dives.some((d) => d.spire === t.spire && d.pending),
         teamToday: passesOn(s, today, t.spire),
       };
     })
@@ -71,14 +71,14 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
   const best = teams[0]?.power ?? 0;
   const used = passesOn(s, sim.today);
 
-  // A result pops up once when it comes back; its reward only counts after the player collects it.
-  const revealed = s.dives.find((d) => d.result && d.pending && d.id > seenUpTo);
+  // A result pops up once when it comes back; it counts at once (v3.3: nothing waits to be collected).
+  const fresh = s.dives.filter((d) => d.result && d.id > seenUpTo);
+  const revealed = fresh[0];
   // when the voyage screen of the revealed dive is open, its arrival plays first and the dialog skips the radar scan
   const [arrived, setArrived] = useState<number | null>(null);
   const arriving = !!revealed && watch === revealed.id && arrived !== revealed.id;
-  const waiting = s.dives.filter((d) => d.pending);
-  const collectOne = async (d: SimDive) => {
-    await sim.collect([d.id]);
+  /** The light flies into the treasury and Rovyn says a word about the result. */
+  const celebrate = (d: SimDive) => {
     play("claim");
     const where = spotOf(d.dest);
     if (where) {
@@ -89,42 +89,32 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
     const pool = d.result!.wear > 1 ? TEXTS.rovyn.outcome.wear : TEXTS.rovyn.outcome[d.result!.outcome];
     say(pool[d.id % pool.length]);
   };
-  // Collect every waiting result at once; Rovyn sums them up.
-  const collectAll = async () => {
-    if (!waiting.length) return;
-    setSeenUpTo(Math.max(seenUpTo, ...waiting.map((d) => d.id)));
-    const total = await sim.collect();
-    play("claim");
-    const best = waiting.reduce((a, d) => (d.result!.multX100 > a.result!.multX100 ? d : a));
-    say(tl("{0} 道光橋的光都收下了，一共 {1}，最好的一趟是 ×{2}。", { 0: waiting.length, 1: fmt(total), 2: (best.result!.multX100 / 100).toFixed(2) }));
-  };
-  const closeReveal = async (collectIt: boolean) => {
+  const closeReveal = () => {
     if (!revealed) return;
     setSeenUpTo(revealed.id);
-    if (collectIt) await collectOne(revealed);
+    celebrate(revealed);
+  };
+  // Several results came back while away: skip the rest; Rovyn sums them up.
+  const seeAll = () => {
+    if (!fresh.length) return;
+    setSeenUpTo(Math.max(seenUpTo, ...fresh.map((d) => d.id)));
+    play("claim");
+    const best = fresh.reduce((a, d) => (d.result!.multX100 > a.result!.multX100 ? d : a));
+    say(tl("{0} 道光橋都回來了，一共 {1}，最好的一趟是 ×{2}。", { 0: fresh.length, 1: fmt(fresh.reduce((a, d) => a + (d.reward ?? 0), 0)), 2: (best.result!.multX100 / 100).toFixed(2) }));
   };
 
   const pending = s.dives.filter((d) => !d.result);
   const [notice, setNotice] = useState<string | null>(null);
   // Same team, same destination, one more ticket.
   const [supplyFor, setSupplyFor] = useState<Departure | null>(null);
-  // the revealed voyage meets the accepted commission: complete it from the reveal (it collects the result too)
-  const cm = sim.commissions;
-  const commissionHere = revealed && cm.active !== null && cm.ready === revealed.id ? {
-    title: commissionTitle(cm.list[cm.active]),
-    bonus: readyBonus(sim),
-    complete: async () => {
-      const id = revealed.id;
-      const e = await cm.complete();
-      setSeenUpTo(Math.max(seenUpTo, id));
-      if (e) { setNotice(ERROR[e] ?? e); return; }
-      play("claim");
-      say(tl("委託完成。這趟的光和委託的獎勵都進了「可領取」。"));
-    },
+  // the revealed voyage completed the day's commission on its own
+  const commissionHere = revealed?.commission ? {
+    title: commissionTitle(commissionsOf(dayOf(revealed.at))[revealed.commission.index]),
+    bonus: revealed.commission.bonus,
   } : null;
   const again = async () => {
     if (!revealed) return;
-    await closeReveal(true);
+    closeReveal();
     // a deep dive again only when today's passes still allow one; otherwise the same trip at normal depth
     const deep = !!revealed.deep && passesOn(s, sim.today) + 2 <= DIVES_PER_DAY && passesOn(s, sim.today, revealed.spire) + 2 <= DIVES_PER_TEAM_PER_DAY;
     const g = { spire: revealed.spire, dest: revealed.dest, deep };
@@ -149,22 +139,6 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
     setDest(null);
     setWatch(id);
   };
-  // A chime and a word from Rovyn when a voyage reaches its decision.
-  const notified = useRef(new Set<number>());
-  useEffect(() => {
-    for (const d of s.dives) {
-      if (turning(d, sim.now) && !notified.current.has(-d.id)) {
-        notified.current.add(-d.id);
-        play("event");
-        say(tl("深潛到了最深處，要繼續還是回航？打開那趟航行就能決定。"));
-      }
-      if (!deciding(d, sim.now) || notified.current.has(d.id)) continue;
-      notified.current.add(d.id);
-      play("event");
-      const name = TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name;
-      say(TEXTS.rovyn.eventPending[d.id % TEXTS.rovyn.eventPending.length].replaceAll(tl("{目的地}"), name));
-    }
-  }, [s.dives, sim.now, say]);
   const scene: GalaxyState = cluster === null
     ? {
         orbs: NODE.map((p, c) => ({ x: p.x, y: p.y, color: CLUSTER_HUE[c], hue: CLUSTER_HUE[c], seed: c + 1, locked: best < clusterRange(c)[0], core: c === 5, photo: CLUSTER_IMAGES[c].src })),
@@ -194,8 +168,8 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
         {cluster !== null && dest !== null && (
           <DestinationCard key={dest} sim={sim} id={dest} teams={teams} used={used} onClose={() => setDest(null)} say={say} onDeparted={departed} />
         )}
-        {watch !== null && dest === null && <VoyageLog sim={sim} id={watch} arriving={arriving} onArrived={() => setArrived(revealed?.id ?? null)} onClose={() => setWatch(null)} onSwitch={setWatch} onCollect={(d) => { setSeenUpTo((v) => Math.max(v, d.id)); collectOne(d); }} />}
-        <Coach voyageOpen={watch !== null} step={waiting.length > 0 || revealed ? 4 : watch !== null || pending.length > 0 ? 3 : dest !== null ? 2 : cluster !== null ? 1 : 0}
+        {watch !== null && dest === null && <VoyageLog sim={sim} id={watch} arriving={arriving} onArrived={() => setArrived(revealed?.id ?? null)} onClose={() => setWatch(null)} onSwitch={setWatch} />}
+        <Coach voyageOpen={watch !== null} step={revealed ? 4 : watch !== null || pending.length > 0 ? 3 : dest !== null ? 2 : cluster !== null ? 1 : 0}
           onOpenCluster={() => { setCluster(0); setDest(null); setHover(null); play("open"); }}
           onPickDest={() => {
             // the deepest destination the strongest team reaches in the open cluster (or its first one)
@@ -209,25 +183,17 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
           <span className="v3-flight__rate" title={tl("核光池每天釋出 1%，依當天所有人的光塵分；人越多，每點光塵分到越少")}>{tl("今日分配率")} <b>{sim.rate.toFixed(5)}</b> <RateChange sim={sim} /></span>
           <span className="v3-flight__tickets">{tl("出發令")} <b>{Math.max(0, DIVES_PER_DAY - used)}</b>{tl("／{0}", { 0: DIVES_PER_DAY })}</span>
           {used < DIVES_PER_DAY && teams.some((t) => !t.busy) && <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={() => setDispatching(true)}><Rocket aria-hidden="true" />{tl("一次派遣")}</button>}
-          {waiting.length > 1 && <button type="button" className="hud-btn hud-btn--gold hud-btn--sm" onClick={(e) => { flyLight(e.currentTarget, ".hud-res--claim"); collectAll(); }}>{tl("全部收取（{0} 趟）", { 0: waiting.length })}</button>}
-          {waiting.map((d) => (
-            <button key={d.id} type="button" className={`v3-flight__item is-ready${watch === d.id ? " is-on" : ""}`} onClick={() => { setWatch(d.id); setDest(null); play("open"); }}>
-              <Rocket aria-hidden="true" />
-              <span>{TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name}</span>
-              <small>{tl("待收取 +")}{fmt(d.reward ?? 0)}</small>
-            </button>
-          ))}
           {pending.map((d) => (
-            <button key={d.id} type="button" className={`v3-flight__item${deciding(d, sim.now) ? " is-event" : ""}${watch === d.id ? " is-on" : ""}`} onClick={() => { setWatch(d.id); setDest(null); play("open"); }}>
+            <button key={d.id} type="button" className={`v3-flight__item${watch === d.id ? " is-on" : ""}`} onClick={() => { setWatch(d.id); setDest(null); play("open"); }}>
               <Rocket aria-hidden="true" />
               <span>{TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name}</span>
-              <small>{deciding(d, sim.now) ? tl("抉擇！點我") : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</small>
+              <small>{tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</small>
             </button>
           ))}
         </div>
       </section>
       <LiveLog sim={sim} />
-      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={featuredTitle(recordsOf(sim), sim.chain?.account ?? null)} omen={omenOf(sim, revealed)} onCollect={() => closeReveal(true)} onLater={() => closeReveal(false)} onAgain={again} queued={waiting.length - 1} onAll={collectAll} />}
+      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={featuredTitle(recordsOf(sim), sim.chain?.account ?? null)} omen={omenOf(sim, revealed)} onDone={closeReveal} onAgain={again} queued={fresh.length - 1} onAll={seeAll} />}
       {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={(supply) => departAgain(supplyFor, supply)} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
@@ -241,8 +207,8 @@ const COACH = localized([
   { title: "這是今天的星圖", text: "六個星團由外往內，越靠近核心越危險、帶回的也越多。先點最外圈的 ① 微光淺域。出發後，你的隊伍會變成光橋上的一個光點。", pos: "is-right" },
   { title: "挑一個目的地", text: "每個目的地今天都有自己的光；和你的探索者同頻會多帶回一些。點一個亮著的目的地。", pos: "is-right-low" },
   { title: "看勝算，再出發", text: "目的地卡會算出這支隊伍的基礎收益和每種結果的機率。選好隊伍，按「出發」，會用掉 1 張出發令，並打開航行畫面。", pos: "is-mid" },
-  { title: "出發之後：航行畫面", text: "光點沿著航線前進約 5 分鐘，右邊的日誌一段一段寫出路上發生的事。走到三成會跳出抉擇卡：求穩保底、求險搏大，或繞道護隊；揭曉前 1 分鐘截止。", pos: "is-voyage" },
-  { title: "抵達，然後親手收下", text: "光點抵達目的地時，光環的顏色會先透露結果，接著揭曉倍率。按「收取」，光會飛進上方的「可領取」；之後到金庫提領到錢包。", pos: "is-voyage" },
+  { title: "出發之後：航行畫面", text: "光點沿著航線前進約 5 分鐘，右邊的日誌一段一段寫出路上發生的事：隊員的對話、星象、路上遇到的故事。你只要看著它走完。", pos: "is-voyage" },
+  { title: "抵達，結果自動入帳", text: "光點抵達目的地時，光環的顏色會先透露結果，接著揭曉倍率。帶回的光自動進到上方的「可領取」，不用另外收取；之後到金庫提領到錢包。", pos: "is-voyage" },
 ]);
 
 /** Rovyn walks a first-time player through one dive, then never shows again. */
@@ -389,18 +355,17 @@ function FlightMarkers({ sim, pending, at, onWatch }: { sim: Sim; pending: SimDi
         const k = Math.min(1, Math.max(0, (sim.now - d.at) / Math.max(1, d.revealAt - d.at)));
         const x = (1 - k) ** 2 * from.x + 2 * (1 - k) * k * ctrl.x + k * k * to.x;
         const y = (1 - k) ** 2 * from.y + 2 * (1 - k) * k * ctrl.y + k * k * to.y;
-        const decide = deciding(d, sim.now);
         const name = TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name;
         return (
-          <button key={d.id} type="button" className={`v3-flightmark${decide ? " is-decide" : ""}`} style={{ left: `${x}%`, top: `${y}%` }} onClick={() => onWatch(d.id)}
-            aria-label={tl("{0} 前往{1}，{2}", { 0: teamName(s, d.spire), 1: name, 2: decide ? tl("等你抉擇") : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) }) })}>
-            <i>{decide ? "!" : ""}</i>
+          <button key={d.id} type="button" className="v3-flightmark" style={{ left: `${x}%`, top: `${y}%` }} onClick={() => onWatch(d.id)}
+            aria-label={tl("{0} 前往{1}，{2}", { 0: teamName(s, d.spire), 1: name, 2: tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) }) })}>
+            <i />
             <span className="v3-flightmark__tip">
               <b>{name}</b>
               <small>{teamName(s, d.spire)}</small>
-              <em>{decide ? tl("等你抉擇 · 點一下去選") : tl("{0} 後揭曉 · 點一下看航行", { 0: clock(d.revealAt - sim.now) })}</em>
+              <em>{tl("{0} 後揭曉 · 點一下看航行", { 0: clock(d.revealAt - sim.now) })}</em>
             </span>
-            <span className="v3-flightmark__time">{decide ? tl("抉擇") : clock(d.revealAt - sim.now)}</span>
+            <span className="v3-flightmark__time">{clock(d.revealAt - sim.now)}</span>
           </button>
         );
       })}
@@ -554,7 +519,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
               <button key={t.spire} type="button" disabled={!ok || t.busy} className={pick === t.spire ? "is-on" : ""} onClick={() => setPick(t.spire)}>
                 <b>{t.name}</b>
                 <span>{tl("戰力 {0}", { 0: t.power })}{!ok ? tl("（差 {0}）", { 0: d.threshold - t.power }) : overflowPoints(t.power, d.threshold) ? tl(" · 穩定 −{0}%", { 0: overflowPoints(t.power, d.threshold) }) : ""}</span>
-                <small>{t.waiting ? tl("上一趟還沒收取") : t.busy ? tl("光橋上") : tl("今天已出發 {0}/3", { 0: t.teamToday })}{attuned ? tl(" · 同頻 {0} 位", { 0: attuned }) : ""}{team.bond ? tl(" · 默契 {0}", { 0: team.bond }) : ""}</small>
+                <small>{t.busy ? tl("光橋上") : tl("今天已出發 {0}/3", { 0: t.teamToday })}{attuned ? tl(" · 同頻 {0} 位", { 0: attuned }) : ""}{team.bond ? tl(" · 默契 {0}", { 0: team.bond }) : ""}</small>
               </button>
             );
           })}
@@ -572,7 +537,7 @@ function DestinationCard({ sim, id, teams, used, onClose, say, onDeparted }: { s
               <b>{tl("深潛")}</b><span>{tl("15 分鐘 · 2 張出發令 · 光塵 ×2 · 稜鏡風險高一級")}</span>
             </button>
           </div>
-          {deep && <p className="hud-note">{tl("深潛前段有一次抉擇；最後 10 分鐘可以選擇回航，回航固定 ×1.00、只耗損 1 次航程。")}</p>}
+          {deep && <p className="hud-note">{tl("深潛的航程更長，途中會經過目的地下方更深的一層；揭曉時直接結算。")}</p>}
         </>
       )}
       {plan && (
@@ -639,9 +604,8 @@ function Odds({ plan, base }: { plan: DivePlan; base?: number }) {
 // ---------------------------------------------------------------- voyage choice and reveal
 
 /** The reveal: a short scan while the signal "comes back", then the result with a counting multiplier. */
-type RevealCommission = { title: string; bonus: number | null; complete: () => Promise<void> };
-function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commission, title, omen }: { d: SimDive; skipScan?: boolean; onCollect: () => void; onLater: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null; omen: string[] }) {
-  const [completing, setCompleting] = useState(false);
+type RevealCommission = { title: string; bonus: number };
+function Reveal({ d, skipScan, onDone, onAgain, queued, onAll, commission, title, omen }: { d: SimDive; skipScan?: boolean; onDone: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null; omen: string[] }) {
   const r = d.result!;
   const dest = DESTINATIONS[d.dest];
   const reason = r.wear > 1 ? TEXTS.wearReasons[dest.cluster][d.id % Math.max(1, TEXTS.wearReasons[dest.cluster].length)] : null;
@@ -684,35 +648,31 @@ function Reveal({ d, skipScan, onCollect, onLater, onAgain, queued, onAll, commi
   return (
     <div className="v3-modal" role="dialog" aria-label={tl("揭曉")}>
       {r.outcome === "legend" && <div className="v3-flash" aria-hidden="true" />}
-      <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome], ["--reveal" as string]: `url(${revealImage(d.turnedBack ? "normal" : r.outcome)})` }} onClick={(e) => e.stopPropagation()}>
+      <div className={`v3-modal__card v3-reveal is-${r.outcome}`} style={{ ["--tc" as string]: OUTCOME_TONE[r.outcome], ["--reveal" as string]: `url(${revealImage(r.outcome)})` }} onClick={(e) => e.stopPropagation()}>
         <Burst tone={OUTCOME_TONE[r.outcome]} level={{ empty: 0, partial: 0, normal: 1, good: 2, great: 4, legend: 7 }[r.outcome]} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className={`v3-reveal__rovyn is-${rovynFor(d)}`} src={rovynImage(rovynFor(d))} alt="" />
         <span className="hud-kicker">{tl("{0} · 光橋揭曉", { 0: name })}</span>
-        <h2>{d.turnedBack ? tl("回航") : OUTCOME[r.outcome]}</h2>
+        <h2>{OUTCOME[r.outcome]}</h2>
         <b className="v3-reveal__mult">×{(shown / 100).toFixed(2)}</b>
         <p className="v3-reveal__log">{tl("「{0}」", { 0: d.log })}</p>
         <dl className="v3-kv">
           <div><dt>{tl("帶回（已扣出發成本）")}</dt><dd>{fmt(d.reward ?? 0)} $RVYN</dd></div>
           <div><dt>{tl("出發成本")}</dt><dd>{fmt(d.levyPaid ?? 0)}</dd></div>
           <div><dt>{tl("耗損航程")}</dt><dd>{tl("{0} 次", { 0: r.wear })}{reason ? tl("：{0}", { 0: reason }) : ""}</dd></div>
-          {d.choice && <div><dt>{tl("你的抉擇")}</dt><dd>{tl("{0}（{1}）", { 0: CHOICE[d.choice].name, 1: CHOICE[d.choice].tag })}</dd></div>}
         </dl>
         <ShareButtons d={d} title={title} />
-        {queued > 0 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-acceptall" onClick={onAll}>{tl("還有 {0} 趟等著收取 · 全部收取", { 0: queued })}</button>}
+        {queued > 0 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-acceptall" onClick={onAll}>{tl("還有 {0} 趟結果 · 全部略過", { 0: queued })}</button>}
         {commission && (
           <div className="v3-reveal__commission">
-            <span>{tl("這趟符合今天的委託「{0}」", { 0: commission.title })}</span>
-            <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" disabled={completing} onClick={async (e) => { setCompleting(true); flyLight(e.currentTarget, ".hud-res--claim", "#c9ff55"); await commission.complete(); }}>
-              {commission.bonus !== null ? tl("收取並完成委託（+{0}）", { 0: fmt(commission.bonus) }) : tl("收取並完成委託")}
-            </button>
+            <span>{tl("這趟完成了委託「{0}」，獎勵 +{1} 已進金庫", { 0: commission.title, 1: fmt(commission.bonus) })}</span>
           </div>
         )}
         <div className="v3-reveal__actions">
-          <button type="button" className="hud-btn hud-btn--gold" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onCollect(); }}>{r.outcome === "empty" ? tl("確認") : tl("收取 +{0}", { 0: fmt(d.reward ?? 0) })}</button>
-          <button type="button" className="hud-btn hud-btn--primary" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onAgain(); }}><Rocket aria-hidden="true" />{tl("收取並同隊再出發")}</button>
+          <button type="button" className="hud-btn hud-btn--gold" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onDone(); }}>{r.outcome === "empty" ? tl("確認") : tl("好 · +{0} 已進金庫", { 0: fmt(d.reward ?? 0) })}</button>
+          <button type="button" className="hud-btn hud-btn--primary" onClick={(e) => { if (r.outcome !== "empty") flyLight(e.currentTarget, ".hud-res--claim", OUTCOME_TONE[r.outcome]); onAgain(); }}><Rocket aria-hidden="true" />{tl("同隊再出發")}</button>
         </div>
-        <button type="button" className="v3-reveal__later" onClick={onLater}>{tl("稍後再收（結果會留在潛光頁下方）")}</button>
+        {d.unsettled && <p className="v3-reveal__later">{tl("結果由 drand 決定，已經算進金庫；下次出發、召喚或領取時會一起寫入鏈上，不用另外簽錢包。")}</p>}
       </div>
     </div>
   );
@@ -733,13 +693,13 @@ function LiveLog({ sim }: { sim: Sim }) {
   const mine = tab === "mine";
   const bucket = Math.floor(sim.now / 30_000);
   const others = useMemo(() => sim.feed(bucket * 30_000), [sim, bucket]);
-  const own = s.dives.slice(-20).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, outcome: d.result?.outcome, mult: d.result?.multX100, at: d.at, choice: d.choice, me: true }));
+  const own = s.dives.slice(-20).map((d) => ({ id: `me-${d.id}`, who: tl("你"), dest: d.dest, outcome: d.result?.outcome, mult: d.result?.multX100, at: d.at, me: true }));
   const items = [...own, ...(mine ? [] : others.map((o) => ({ ...o, me: false })))].sort((a, b) => b.at - a.at).slice(0, 30);
   const todayCount = others.filter((o) => Math.floor(o.at / 86_400_000) === sim.today).length + passesOn(s, sim.today);
   return (
     <aside className="hud-live" aria-label={tl("即時探索日誌")}>
       <header>
-        <span className="hud-kicker">{tl("即時探索日誌")}</span>
+        <span className="hud-kicker">{tl("即時探索日誌")}<a className="hud-live__wall" href="/game/lightdive/wall" target="_blank" rel="noopener">{tl("觀測牆")} ↗</a></span>
         <p>{sim.mode === "preview" ? tl("所有觀測者的光橋。預覽模式：其他人的動態是模擬的。") : tl("所有觀測者的光橋，直接讀取鏈上紀錄。")}</p>
         <div className="hud-live__stats">
           <span><small>{tl("今天出發")}</small><b>{todayCount}</b></span>
@@ -763,7 +723,7 @@ function LiveLog({ sim }: { sim: Sim }) {
               <div>
                 <p>{"owner" in x && x.owner ? <button type="button" className="v3-who" onClick={() => openProfile(x.owner)} title={tl("看這位觀測者的檔案")}>{x.who}</button> : <b>{x.who}</b>} · {CIRCLED[d.cluster]} {TEXTS.clusters[d.cluster].destinations[d.slot].name}</p>
                 {x.outcome ? (
-                  <p className="hud-live__result" style={{ ["--tc" as string]: OUTCOME_TONE[x.outcome as keyof typeof OUTCOME_TONE] }}>{OUTCOME[x.outcome as keyof typeof OUTCOME]} ×{((x.mult ?? 0) / 100).toFixed(2)}{x.choice && x.choice !== "none" ? ` · ${CHOICE[x.choice as Choice].name}` : ""}</p>
+                  <p className="hud-live__result" style={{ ["--tc" as string]: OUTCOME_TONE[x.outcome as keyof typeof OUTCOME_TONE] }}>{OUTCOME[x.outcome as keyof typeof OUTCOME]} ×{((x.mult ?? 0) / 100).toFixed(2)}</p>
                 ) : (
                   <p className="hud-live__result is-flight">{tl("光橋上")}</p>
                 )}

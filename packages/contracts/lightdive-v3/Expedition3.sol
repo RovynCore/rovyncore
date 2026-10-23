@@ -9,21 +9,33 @@ import {LightdiveNFT3} from "./LightdiveNFT3.sol";
 import {IRoundRandomness} from "./RoundRandomness.sol";
 import {CoreLightPool3} from "./CoreLightPool3.sol";
 
-/// @notice Teams, dives, reveals and claims for Lightdive v3 (v3.1: deep dives, crew bond, supplies, commission bonus).
+interface IMinterReveal {
+    function revealPending(uint256[] calldata ids, bytes[] calldata proofs) external;
+}
+
+interface ICommissionHooks {
+    function acceptFor(address player, uint8 index) external;
+    function settled(address owner, uint256 diveId) external returns (uint256 bonus);
+}
+
+/// @notice Teams, dives, reveals and claims for Lightdive v3 (v3.1: deep dives, crew bond, supplies, commission bonus;
+/// v3.3: reveals ride along with the player's own transactions, no voyage decisions, a fallback that is never better
+/// than a draw).
 ///
 /// Team: a spire, at most one prism and 1..berths seekers. The cards stay in the owner's wallet, locked while on the
 /// team. A wallet may have 5 teams; a team cannot change while it is out on a dive.
 ///
 /// Dive: uses one of the wallet's 3 daily Dive Passes (and one of the team's 3 dives that day). The dive is tied to
-/// the drand round published `voyageSeconds` after departure. Until `decisionCloseSeconds` before that round, the
-/// owner may pick a decision (steady, bold, detour). Once drand publishes the round, anyone can reveal the dive with
-/// the round's signature: the outcome, multiplier and wear are drawn from it and the reward is credited at once. A
-/// team must be revealed (collected) before it can dive again.
+/// the drand round published `voyageSeconds` after departure; nothing about it can be chosen after departure. Once
+/// drand publishes the round, the dive is settled with the round's signature: the outcome, multiplier and wear are
+/// drawn from it and the reward is credited. Settling needs no transaction of its own (v3.3): the player's next dive,
+/// team change or claim carries the proofs (`Settle`) and settles first; anyone may also settle with `settle`. A team
+/// must be settled before it dives again. A dive left without a proof for `fallbackSeconds` settles as empty-handed
+/// with the most wear, never better than any draw, so leaving a result unrevealed gains nothing.
 ///
 /// Deep dive (v3.1): from `longMinCluster` on, a dive may go deep. It uses 2 passes and 2 of the team's dives, takes
 /// `longVoyageSeconds`, brings back twice the points and draws from the odds table one risk level up (the average
-/// stays 1.00). Its first decision closes `longTurnSeconds` before the reveal; then, until `decisionCloseSeconds`
-/// before the reveal, the owner may turn back: the dive then ends at x1.00 with 1 voyage of wear.
+/// stays 1.00).
 ///
 /// Crew bond (v3.1): a team whose members do not change gains a level of bond with every revealed dive (up to
 /// `bondMax`); each level moves 1 point of empty-handed chance to "normal". Any change to the team resets it.
@@ -55,8 +67,7 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     uint256 public constant DOCK_SECONDS = 7 days;
     uint8 public constant OIL = 1;
     uint8 public constant CHART = 2;
-    uint8 public constant TURNED_BACK = 254; // result tier of a deep dive that turned back
-    uint8 public constant FALLBACK = 255; // result tier of a dive settled without a drand proof
+    uint8 public constant NO_COMMISSION = 255;
 
     struct Team {
         address owner;
@@ -72,21 +83,29 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         uint32 day;
         uint8 dest;
         uint8 beam;
-        uint8 decision;
+        uint8 decision; // always 0 since v3.3 (kept so the record keeps its shape)
         bool revealed;
         uint16 power;
         uint64 round;
         uint256 pointsE2; // points of Lightdust x 100 (attunement, a light surge and a deep dive included)
         uint256 rate; // RVYN wei per point, fixed for the day
         bool long; // a deep dive
-        bool turnedBack; // a deep dive whose owner turned back
+        bool turnedBack; // always false since v3.3
         bool attuned; // a seeker on the team shared the destination's light that day
         uint8 supply; // 0 none, OIL, CHART
         uint8 bond; // the team's bond at departure
     }
 
+    /// @notice Reveals a transaction carries: dives to settle and summons to unseal, each with its round's signature.
+    struct Settle {
+        uint256[] dives;
+        bytes[] diveProofs;
+        uint256[] summons;
+        bytes[] summonProofs;
+    }
+
     struct Result {
-        uint8 tier; // row of the odds table; TURNED_BACK or FALLBACK
+        uint8 tier; // row of the odds table (0 = empty-handed, also for a fallback)
         uint16 multX100;
         uint8 wear;
         uint256 reward; // credited, after the departure cost
@@ -97,6 +116,7 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     LightdiveConfig3 public immutable config;
     IRoundRandomness public immutable rng;
     CoreLightPool3 public immutable pool;
+    IMinterReveal public immutable minter;
     address public commissions;
 
     mapping(uint256 => Team) internal _teams; // by spire id
@@ -124,8 +144,6 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     event DayOpened(uint32 indexed day, uint256 rate, uint256 ceiling);
     event Dived(uint256 indexed diveId, address indexed owner, uint256 indexed spire, uint8 dest, uint16 power, uint256 pointsE2, uint8 beam, uint32 day, uint64 round);
     event DiveDetails(uint256 indexed diveId, bool long, uint8 supply, uint256 supplyPaid, uint8 bond, bool attuned);
-    event Decided(uint256 indexed diveId, uint8 decision);
-    event TurnedBack(uint256 indexed diveId, bool turnBack);
     event Revealed(uint256 indexed diveId, address indexed owner, uint8 tier, uint16 multX100, uint8 wear, uint256 reward, uint256 levy, bool fallbackUsed);
     event BondChanged(uint256 indexed spire, uint8 bond);
     event Claimed(address indexed owner, uint256 gross, uint256 fee);
@@ -143,23 +161,22 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     error TeamTired();
     error TooWeak();
     error DayFull();
-    error DecisionClosed();
     error AlreadyRevealed();
     error NotYet();
     error NothingToClaim();
     error NotDue();
     error NotDeep();
     error BadSupply();
-    error NotCommissions();
     error AlreadySet();
 
-    constructor(address owner_, LightdiveNFT3 nft_, LightdiveConfig3 config_, IRoundRandomness rng_, CoreLightPool3 pool_)
+    constructor(address owner_, LightdiveNFT3 nft_, LightdiveConfig3 config_, IRoundRandomness rng_, CoreLightPool3 pool_, IMinterReveal minter_)
         Ownable(owner_)
     {
         nft = nft_;
         config = config_;
         rng = rng_;
         pool = pool_;
+        minter = minter_;
     }
 
     // ---------------------------------------------------------------- views
@@ -218,8 +235,10 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
 
     // ---------------------------------------------------------------- teams
 
-    /// @notice Builds a team, or changes one that is not out on a dive. Any change resets the crew bond.
-    function setTeam(uint256 spire, uint256 prism, uint256[] calldata seekers) external whenNotPaused nonReentrant {
+    /// @notice Builds a team, or changes one that is not out on a dive. Any change resets the crew bond. `s`: reveals
+    /// to apply first (a team's last dive, freshly summoned cards).
+    function setTeam(uint256 spire, uint256 prism, uint256[] calldata seekers, Settle calldata s) external whenNotPaused nonReentrant {
+        _settleAll(s);
         Team storage t = _teams[spire];
         if (t.owner != address(0)) {
             if (t.owner != msg.sender) revert NotOwner();
@@ -231,8 +250,8 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
             t.owner = msg.sender;
             _join(spire, SPIRE);
         }
-        LightdiveNFT3.Attributes memory s = nft.attributes(spire);
-        if (seekers.length == 0 || seekers.length > s.trait) revert BadTeam();
+        LightdiveNFT3.Attributes memory sp = nft.attributes(spire);
+        if (seekers.length == 0 || seekers.length > sp.trait) revert BadTeam();
         t.prism = prism;
         if (prism != 0) _join(prism, PRISM);
         delete t.seekers;
@@ -258,66 +277,34 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
     // ---------------------------------------------------------------- diving
 
     /// @notice One dive. `supply`: 0 none, 1 lamp oil, 2 star chart. `deep`: a deep dive (2 passes, from
-    /// `longMinCluster` on). A supply is paid in RVYN; the owner must have approved the pool for it.
-    function dive(uint256 spire, uint8 dest, uint8 supply, bool deep) external whenNotPaused nonReentrant returns (uint256) {
+    /// `longMinCluster` on). `commission`: today's commission to take with it (NO_COMMISSION for none). A supply is
+    /// paid in RVYN; the owner must have approved the pool for it. `s`: reveals to apply first.
+    function dive(uint256 spire, uint8 dest, uint8 supply, bool deep, uint8 commission, Settle calldata s) external whenNotPaused nonReentrant returns (uint256) {
+        _settleAll(s);
+        if (commission != NO_COMMISSION) ICommissionHooks(commissions).acceptFor(msg.sender, commission);
         return _dive(spire, dest, supply, deep);
     }
 
     /// @notice Several teams in one transaction (ordinary dives), each with the same supply.
-    function diveMany(uint256[] calldata spires, uint8[] calldata dests, uint8 supply) external whenNotPaused nonReentrant returns (uint256[] memory ids) {
+    function diveMany(uint256[] calldata spires, uint8[] calldata dests, uint8 supply, uint8 commission, Settle calldata s) external whenNotPaused nonReentrant returns (uint256[] memory ids) {
+        _settleAll(s);
         if (spires.length != dests.length) revert BadTeam();
+        if (commission != NO_COMMISSION) ICommissionHooks(commissions).acceptFor(msg.sender, commission);
         ids = new uint256[](spires.length);
         for (uint256 i; i < spires.length; ++i) ids[i] = _dive(spires[i], dests[i], supply, false);
     }
 
-    /// @notice Picks the voyage decision: 0 let it ride, 1 steady, 2 bold, 3 detour. Open until shortly before the
-    /// dive's drand round is published (a deep dive: until its turn-back decision opens); it can be changed until then.
-    function decide(uint256 id, uint8 decision) external {
-        Dive storage d = _dives[id];
-        if (d.owner != msg.sender) revert NotOwner();
-        if (d.revealed) revert AlreadyRevealed();
-        if (decision > 3) revert BadTeam();
-        LightdiveConfig3.Rules memory k = config.rules();
-        uint256 close = d.long ? k.longTurnSeconds : k.decisionCloseSeconds;
-        if (block.timestamp + close >= rng.roundTime(d.round)) revert DecisionClosed();
-        d.decision = decision;
-        emit Decided(id, decision);
+    /// @notice Applies reveals on their own: anyone may settle any dive or unseal any summon whose round is out.
+    function settle(Settle calldata s) external nonReentrant {
+        _settleAll(s);
     }
 
-    /// @notice A deep dive's second decision: press on (false) or turn back (true). Open from `longTurnSeconds` until
-    /// `decisionCloseSeconds` before the reveal; it can be changed until then.
-    function turnBack(uint256 id, bool back) external {
-        Dive storage d = _dives[id];
-        if (d.owner != msg.sender) revert NotOwner();
-        if (!d.long) revert NotDeep();
-        if (d.revealed) revert AlreadyRevealed();
-        uint256 at = rng.roundTime(d.round);
-        LightdiveConfig3.Rules memory k = config.rules();
-        if (block.timestamp + k.longTurnSeconds < at) revert NotYet();
-        if (block.timestamp + k.decisionCloseSeconds >= at) revert DecisionClosed();
-        d.turnedBack = back;
-        emit TurnedBack(id, back);
-    }
-
-    /// @notice Reveals a dive with the signature of its drand round. Anyone may call it; the reward goes to the owner.
-    function reveal(uint256 id, bytes calldata proof) external nonReentrant {
-        Dive storage d = _dives[id];
-        if (d.revealed) revert AlreadyRevealed();
-        _settle(id, d, uint256(keccak256(abi.encode(rng.randomness(d.round, proof), id))), false);
-    }
-
-    function revealMany(uint256[] calldata ids, bytes[] calldata proofs) external nonReentrant {
-        if (ids.length != proofs.length) revert BadTeam();
-        for (uint256 i; i < ids.length; ++i) {
-            Dive storage d = _dives[ids[i]];
-            if (d.revealed) continue;
-            _settle(ids[i], d, uint256(keccak256(abi.encode(rng.randomness(d.round, proofs[i]), ids[i]))), false);
-        }
-    }
-
-    /// @notice If a dive's round has no proof a day after it was due, it ends neutral: x1.00, one voyage of wear.
+    /// @notice A dive with no proof `fallbackSeconds` after its round settles as empty-handed with the most wear
+    /// (one voyage with lamp oil), never better than any draw. Only its owner may use it, so nobody else can erase a
+    /// result the owner has seen but not settled yet.
     function revealFallback(uint256 id) external nonReentrant {
         Dive storage d = _dives[id];
+        if (msg.sender != d.owner) revert NotOwner();
         if (d.revealed) revert AlreadyRevealed();
         if (block.timestamp < rng.roundTime(d.round) + config.rules().fallbackSeconds) revert NotYet();
         _settle(id, d, 0, true);
@@ -330,7 +317,10 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         nft.burn(id);
     }
 
-    function claim() external nonReentrant {
+    /// @notice Withdraws the claimable balance, after settling the dives `s` carries (so a result the player has seen
+    /// is paid in the same transaction).
+    function claim(Settle calldata s) external nonReentrant {
+        _settleAll(s);
         uint256 gross = credit[msg.sender];
         if (gross == 0) revert NothingToClaim();
         uint256 fee = gross * config.claimFeeBp(block.timestamp - lastClaimAt[msg.sender]) / BP;
@@ -340,15 +330,14 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         emit Claimed(msg.sender, gross, fee);
     }
 
-    /// @notice Credits a commission bonus (only the commissions contract), within what is left of the day's ceiling.
-    function creditBonus(address owner, uint256 amount) external nonReentrant returns (uint256 credited) {
-        if (msg.sender != commissions) revert NotCommissions();
+    /// @dev Credits a commission bonus within what is left of the day's ceiling.
+    function _creditBonus(address owner, uint256 amount) internal {
         uint32 day = today();
         _openDay(day);
         uint256 left = dayCeiling[day] > dayReserved[day] ? dayCeiling[day] - dayReserved[day] : 0;
         if (amount > left) amount = left;
         dayReserved[day] += amount;
-        credited = pool.credit(amount);
+        uint256 credited = pool.credit(amount);
         credit[owner] += credited;
         emit BonusCredited(owner, credited);
     }
@@ -371,10 +360,19 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
 
     // ---------------------------------------------------------------- internal
 
+    function _settleAll(Settle calldata s) internal {
+        if (s.summons.length != 0) minter.revealPending(s.summons, s.summonProofs);
+        if (s.dives.length != s.diveProofs.length) revert BadTeam();
+        for (uint256 i; i < s.dives.length; ++i) {
+            Dive storage d = _dives[s.dives[i]];
+            if (!d.revealed) _settle(s.dives[i], d, uint256(keccak256(abi.encode(rng.randomness(d.round, s.diveProofs[i]), s.dives[i]))), false);
+        }
+    }
+
     function _join(uint256 id, uint8 kind) internal {
         if (nft.ownerOf(id) != msg.sender) revert NotOwner();
         LightdiveNFT3.Attributes memory a = nft.attributes(id);
-        if (a.kind != kind) revert WrongKind();
+        if (a.kind != kind || a.rarity == 255) revert WrongKind(); // a sealed card is unsealed first (see Settle)
         if (a.dockedAt != 0) revert Docked();
         if (nft.locked(id)) revert Busy(); // already on a team (also catches duplicates)
         nft.setLocked(id, true);
@@ -496,13 +494,7 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         LightdiveConfig3.Rules memory k = config.rules();
         LightdiveConfig3.Plan memory p = config.plan(d.dest, d.power, d.beam, d.day, d.decision, _stability(id, d, k), d.long);
         if (fallbackUsed) {
-            res.multX100 = 100;
-            res.wear = 1;
-            res.tier = FALLBACK;
-        } else if (d.turnedBack) {
-            res.multX100 = 100;
-            res.wear = 1;
-            res.tier = TURNED_BACK;
+            res.wear = d.supply == OIL ? 1 : 3; // empty-handed (tier 0, x0) with the most wear
         } else {
             (res.tier, res.multX100) = _draw(p.table, r);
             uint256 w = (r >> 64) % BP;
@@ -519,6 +511,11 @@ contract Expedition3 is Ownable2Step, Pausable, ReentrancyGuard {
         _results[id] = res;
         _wear(d.spire, res.wear, k.bondMax);
         emit Revealed(id, d.owner, res.tier, res.multX100, res.wear, res.reward, res.levy, fallbackUsed);
+        // a commission taken before this dive completes on its own when the result meets it
+        if (commissions != address(0)) {
+            uint256 bonus = ICommissionHooks(commissions).settled(d.owner, id);
+            if (bonus != 0) _creditBonus(d.owner, bonus);
+        }
     }
 
     /// @dev Outcome row from the low bits, multiplier within the row's range from the high bits.

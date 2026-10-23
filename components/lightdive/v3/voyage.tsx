@@ -1,26 +1,25 @@
 "use client";
 
 // The voyage screen: a five-minute dive shown as a route from 碑原 to the destination with the team's light moving
-// along it, the crew, the odds, and a log that writes itself beside it. Lines unlock as the voyage goes on, the
-// decision appears 30% in and stays open until the reveal, and the last line is the result.
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { createPortal } from "react-dom";
+// along it, the crew, the odds, and a log that writes itself beside it like a short story (v3.3: nothing to decide on
+// the way). Lines unlock as the voyage goes on, and the last line is the result.
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { FastForward, Sparkles, X } from "lucide-react";
-import { DECISION_AT, DESTINATIONS, basePoints, planDive, skyOf, type Choice, type DivePlan } from "@/lib/lightdive-v3/rules";
+import { DESTINATIONS, basePoints, skyOf } from "@/lib/lightdive-v3/rules";
 import { DESCENT_AT, deepImage, destImage, eventImage, skyIcon } from "@/lib/lightdive-v3/art";
 import { NftArt } from "../game/art";
-import { LightIcon, flyLight } from "./kit";
+import { LightIcon } from "./kit";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { play } from "./audio";
-import { dayOf, decisionAt, deciding, rateOf, stabilityOf, teamInput, teamName as teamNameOf, turnOpenAt, turning, type Sim, type SimDive, type SimNft } from "./sim";
-import { BEAM, CHOICE, CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, RARITY_COLOR, SLOT, STAR, TIER, clock, fmt, outcomeName, pct } from "./copy";
+import { dayOf, rateOf, storyAt, teamName as teamNameOf, type Sim, type SimDive, type SimNft } from "./sim";
+import { BEAM, CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, RARITY_COLOR, SLOT, STAR, TIER, clock, fmt, outcomeName, pct } from "./copy";
 import { gap, tl } from "@/lib/lightdive-v3/i18n";
 import { ROUTE_P as P, alongRoute, routeIn } from "./voyage-route";
 import type { VoyageGl, VoyageView } from "./voyage-engine";
 import { fxQuality } from "./settings";
 
 const DAY = 86_400_000;
-type Kind = "line" | "rovyn" | "seeker" | "star" | "decision" | "choice" | "after" | "result" | "state" | "reading" | "attuned" | "omen";
+type Kind = "line" | "rovyn" | "seeker" | "star" | "story" | "voice" | "episode" | "result" | "state" | "reading" | "attuned" | "omen";
 type Entry = { key: string; at: number; kind: Kind; text: string; color?: string; who?: SimNft; light?: number };
 
 const pick = <T,>(list: readonly T[], seed: number): T => list[Math.abs(Math.floor(seed)) % list.length];
@@ -30,7 +29,7 @@ function deal<T>(list: readonly T[], seed: number) {
   let i = Math.abs(Math.floor(seed)) % n;
   return () => { const x = list[i]; i = (i + step) % n; return x; };
 }
-const CHOICE_TONE: Record<Exclude<Choice, "none">, string> = { steady: "#7fd3ff", bold: "#ff8a5c", detour: "#c9ff55" };
+const STORY_TONE = "#f0c766";
 const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
 type TeamState = "echo" | "first" | "deep" | "oil" | "chart" | "bond";
 /** The empty-handed chance at which the readings turn from steady to even, and from even to hard. */
@@ -40,9 +39,11 @@ const READING_TONE = { steady: "#9fe8d6", even: "#e6f1ff", hard: "#ff8a6a" };
 /** Every line of one voyage that has happened by \`now\`, in order. Lines are picked from the dive id, so a voyage
  *  always tells the same story when you come back to it.
  *
- *  The narrative (10-21, docs/lightdive/TEXTS-v3-draft.md section 八): departure, the team's state, the place, a
- *  seeker, the readings, the decision, attunement or the cluster, the sky, the place again, a seeker, the deep
- *  descent, the approach, the closing, and at the reveal an omen before the log. The team's state, the readings,
+ *  The narrative (10-21, v3.3 10-23; docs/lightdive/TEXTS-v3-draft.md section 八): departure, the team's state, the
+ *  place, a short story of the cluster, a seeker, the readings, attunement or the cluster, an event card told as a
+ *  story (a crew member says one of its lines, then what followed), the sky, the place again, a second short story, a
+ *  seeker, Rovyn from the observatory, the deep descent, the approach, the closing, and at the reveal an omen before
+ *  the log. The event card's line is only words: nothing on the way changes the result. The team's state, the readings,
  *  attunement and the sky follow the voyage's real conditions (what it carried, its chance of coming back empty), so a
  *  well-prepared voyage reads better because it is better prepared; the words never change the odds. The omen is
  *  written only once the result exists, and a better result gets a longer one. */
@@ -76,45 +77,50 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
   const light = skyOf(dayOf(d.at)).lights[d.dest];
   const tuned = d.plan.bonus > 0 ? seekers.find((n) => n.trait === light) : undefined;
   const ev = d.plan.event;
+  // two short stories, three lines each: one of the destination's cluster, one that could happen anywhere; one seeker
+  // of the team plays the part in each
+  const story = (pool: readonly (readonly string[])[], seed: number, key: string, from: number) => {
+    const sk = seekers[(d.id + seed) % Math.max(1, seekers.length)];
+    return pick(pool, d.id * 3 + seed).map((text, i): Entry => ({ key: `${key}${i}`, at: at(from + i * 0.03), kind: "episode", text: fill(text, sk) }));
+  };
   const list: Entry[] = [
     { key: "start", at: at(0), kind: "line", text: fill(pick(V.start, d.id)) },
     { key: "rovyn", at: at(0.02), kind: "rovyn", text: tl("Rovyn：「{0}」", { 0: pick(TEXTS.departures[dest.cluster], d.id) }) },
     { key: "state", at: at(0.05), kind: "state", text: stateLine(states[0] ?? "plain") },
-    { key: "p1", at: at(0.1), kind: "line", text: fill(place()) },
-    { key: "s1", at: at(0.17), kind: "seeker", ...seekerLine(0) },
-    { key: "reading", at: at(0.24), kind: "reading", text: fill(pick(V.reading[reading], d.id)), color: READING_TONE[reading] },
-    tuned ? { key: "tuned", at: at(0.36), kind: "attuned", text: fill(pick(V.attuned[light], d.id), tuned), color: LIGHT_COLOR[light], light, who: tuned } : { key: "t1", at: at(0.36), kind: "line", text: fill(travel()) },
-    ev ? { key: "star", at: at(0.42), kind: "star", text: pick(V.star[ev], d.id), color: STAR[ev].color } : { key: "t2", at: at(0.42), kind: "line", text: fill(travel()) },
-    { key: "t3", at: at(0.52), kind: "line", text: fill(travel()) },
-    { key: "p2", at: at(0.6), kind: "line", text: fill(place()) },
+    { key: "p1", at: at(0.08), kind: "line", text: fill(place()) },
+    ...story(V.episode[dest.cluster], 0, "e1", 0.12),
+    { key: "s1", at: at(0.22), kind: "seeker", ...seekerLine(0) },
+    { key: "reading", at: at(0.26), kind: "reading", text: fill(pick(V.reading[reading], d.id)), color: READING_TONE[reading] },
+    { key: "t1", at: at(0.3), kind: "line", text: fill(travel()) },
+    tuned ? { key: "tuned", at: at(0.34), kind: "attuned", text: fill(pick(V.attuned[light], d.id), tuned), color: LIGHT_COLOR[light], light, who: tuned } : { key: "t2", at: at(0.34), kind: "line", text: fill(travel()) },
+    ev ? { key: "star", at: at(0.49), kind: "star", text: pick(V.star[ev], d.id), color: STAR[ev].color } : { key: "t3", at: at(0.49), kind: "line", text: fill(travel()) },
+    { key: "p2", at: at(0.53), kind: "line", text: fill(place()) },
+    ...story(V.episode[6], 1, "e2", 0.57),
     { key: "s2", at: at(0.67), kind: "seeker", ...seekerLine(1) },
-    states[1] ? { key: "state2", at: at(0.73), kind: "state", text: stateLine(states[1]) } : { key: "t4", at: at(0.73), kind: "line", text: fill(travel()) },
+    states[1] ? { key: "state2", at: at(0.71), kind: "state", text: stateLine(states[1]) } : { key: "t4", at: at(0.71), kind: "line", text: fill(travel()) },
+    { key: "midway", at: at(0.75), kind: "rovyn", text: pick(V.midway, d.id * 7 + 3) },
     { key: "near", at: at(0.8), kind: "line", text: fill(pick(V.near[dest.cluster], d.id)) },
     { key: "approach", at: at(0.86), kind: "line", text: fill(pick(V.approach, d.id)) },
     { key: "close", at: at(0.93), kind: "line", text: fill(pick(V.closing, d.id)) },
   ];
   if (d.card !== undefined) {
+    // the event card, told: the scene, one crew member's line (its options are only words now), what followed
     const card = TEXTS.cards[d.card];
-    list.push({ key: "decision", at: decisionAt(d), kind: "decision", text: card.scene });
-    if (d.choice && d.choiceAt) {
-      const option = card.options.find((o) => o.choice === d.choice);
-      list.push({ key: "choice", at: d.choiceAt, kind: "choice", text: tl("你選擇「{0}」——{1}：{2}。", { 0: option?.text ?? CHOICE[d.choice].name, 1: CHOICE[d.choice].name, 2: CHOICE[d.choice].effect }) });
-      list.push({ key: "after", at: d.choiceAt + 1500, kind: "after", text: fill(pick(V.after[d.choice], d.id)) });
-    } else if (d.result) {
-      list.push({ key: "choice", at: d.revealAt - 1, kind: "choice", text: tl("沒有做出抉擇，這趟順其自然。") });
-    }
+    const sk = seekers[(d.id + 2) % Math.max(1, seekers.length)];
+    const said = card.options[d.id % card.options.length].text;
+    list.push(
+      { key: "story", at: storyAt(d), kind: "story", text: card.scene, color: STORY_TONE },
+      { key: "voice", at: storyAt(d) + (d.revealAt - d.at) * 0.03, kind: "voice", text: sk ? tl("#{0}：「{1}」", { 0: sk.id, 1: said }) : tl("「{0}」", { 0: said }), color: sk ? LIGHT_COLOR[sk.trait] : STORY_TONE, who: sk },
+      { key: "aftermath", at: storyAt(d) + (d.revealAt - d.at) * 0.06, kind: "line", text: fill(pick(V.aftermath, d.id), sk) },
+    );
   }
   if (d.deep) {
-    list.push({ key: "deep", at: turnOpenAt(d), kind: "rovyn", text: tl("Rovyn：「到最深處了。光很亮，也很不穩——要繼續，還是回航？」") });
-    if (d.turnedBack) list.push({ key: "back", at: d.revealAt - 60_000, kind: "choice", text: tl("你選擇回航：這趟固定 ×1.00，只耗損 1 次航程。") });
-    else {
-      // the descent past the destination, for a dive that kept going
-      const down = deal(V.deep[dest.cluster], d.id);
-      list.push({ key: "down1", at: at(DESCENT_AT), kind: "line", text: fill(down()) }, { key: "down2", at: at(0.63), kind: "line", text: fill(down()) });
-    }
+    // the descent past the destination
+    const down = deal(V.deep[dest.cluster], d.id);
+    list.push({ key: "down1", at: at(DESCENT_AT), kind: "line", text: fill(down()) }, { key: "down2", at: at(0.69), kind: "line", text: fill(down()) });
   }
   if (d.result) {
-    const tone = d.turnedBack ? "#9fe8d6" : OUTCOME_TONE[d.result.outcome];
+    const tone = OUTCOME_TONE[d.result.outcome];
     const omen = omenOf(sim, d);
     omen.forEach((text, i) => list.push({ key: `omen${i}`, at: d.revealAt - (omen.length - i), kind: "omen", text, color: tone }));
     list.push({ key: "result", at: d.revealAt, kind: "result", text: d.log ?? "", color: tone });
@@ -125,7 +131,7 @@ function entriesOf(sim: Sim, d: SimDive, now: number): Entry[] {
 /** The picture behind a voyage: its destination, or for a deep dive that kept going, the layer below its cluster once
  *  the descent begins. */
 function backdropOf(d: SimDive, now: number) {
-  const descending = d.deep && !d.turnedBack && now >= d.at + (d.revealAt - d.at) * DESCENT_AT;
+  const descending = d.deep && now >= d.at + (d.revealAt - d.at) * DESCENT_AT;
   return descending ? deepImage(DESTINATIONS[d.dest].cluster) : destImage(d.dest);
 }
 
@@ -133,7 +139,7 @@ function backdropOf(d: SimDive, now: number) {
  *  three lines, rising). The voyage log shows it before the result, and the reveal while the signal comes in. */
 export function omenOf(sim: Sim, d: SimDive): string[] {
   if (!d.result) return [];
-  const o = d.turnedBack ? "back" : d.result.outcome;
+  const o = d.result.outcome;
   const L: readonly string[] = TEXTS.voyage.omen[o];
   const lines = o === "legend" ? [L[d.id % 2], L[2 + (d.id % 2)], L[4]] : o === "good" || o === "great" ? [L[d.id % 4], L[4]] : [pick(L, d.id)];
   const team = teamNameOf(sim.state!, d.spire);
@@ -155,13 +161,12 @@ function Typewriter({ text }: { text: string }) {
   return <>{text.slice(0, n)}{n < text.length && <i className="v3-voyage__caret" aria-hidden="true">▍</i>}</>;
 }
 
-export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onCollect }: { sim: Sim; id: number; arriving?: boolean; onArrived?: () => void; onClose: () => void; onSwitch: (id: number) => void; onCollect: (d: SimDive) => void }) {
+export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch }: { sim: Sim; id: number; arriving?: boolean; onArrived?: () => void; onClose: () => void; onSwitch: (id: number) => void }) {
   const s = sim.state!;
   const d = s.dives.find((x) => x.id === id);
   const list = d ? entriesOf(sim, d, sim.now) : [];
   const body = useRef<HTMLOListElement>(null);
   const count = list.length;
-  const [aside, setAside] = useState<number | null>(null);
   const [focusKey, setFocusKey] = useState<string | null>(null); // a log line under the pointer, lit on the route
   const sceneRef = useRef<HTMLDivElement>(null);
   const routeRef = useRef<HTMLDivElement>(null);
@@ -194,33 +199,25 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
   const dest = DESTINATIONS[d.dest];
   const span = d.revealAt - d.at;
   const k = Math.min(1, Math.max(0, (sim.now - d.at) / span));
-  const others = s.dives.filter((x) => !x.result || x.pending || x.id === d.id).sort((a, b) => a.id - b.id);
-  const open = deciding(d, sim.now);
+  const others = s.dives.filter((x) => !x.result || x.id === d.id).sort((a, b) => a.id - b.id);
   const light = sim.sky.lights[d.dest];
-  const staged = open && !d.choice;
-  const showStage = staged && aside !== d.id;
-  const collect = (el: Element) => {
-    if (d.result && d.result.outcome !== "empty") flyLight(el, ".hud-res--claim", OUTCOME_TONE[d.result.outcome]);
-    onCollect(d);
-  };
   return (
     <section className={`v3-voyage${gl ? " has-gl" : ""}${arriving && d.result && (d.result.outcome === "great" || d.result.outcome === "legend") ? " is-flash" : ""}`} aria-label={tl("航行：{0}", { 0: destName(d.dest) })}
       style={{ ["--photo" as string]: `url(${backdropOf(d, sim.now)})`, ["--hue" as string]: CLUSTER_HUE[dest.cluster], ["--lc" as string]: LIGHT_COLOR[light] }}>
       <button type="button" className="v3-dest__close v3-voyage__close" onClick={onClose} aria-label={tl("關閉航行畫面")}><X aria-hidden="true" /></button>
       <div className="v3-voyage__scene" ref={sceneRef}>
         <header className="v3-voyage__head">
-          <span className="hud-kicker">{CIRCLED[dest.cluster]}{SLOT[dest.slot]} · {TEXTS.clusters[dest.cluster].name} · {d.result ? (d.pending ? tl("已揭曉，待收取") : tl("已收取")) : open ? tl("抉擇中") : tl("航行中")}</span>
+          <span className="hud-kicker">{CIRCLED[dest.cluster]}{SLOT[dest.slot]} · {TEXTS.clusters[dest.cluster].name} · {d.result ? tl("已揭曉") : tl("航行中")}</span>
           <h2>{destName(d.dest)} <small>{teamNameOf(s, d.spire)}</small></h2>
           {others.length > 1 && (
             <div className="v3-voyage__tabs" role="tablist" aria-label={tl("航行中的隊伍")}>
               {others.map((x) => {
                 const xk = Math.min(1, Math.max(0, (sim.now - x.at) / Math.max(1, x.revealAt - x.at)));
-                const ev = deciding(x, sim.now);
-                const state = x.pending ? tl("待收取") : x.result ? tl("已收取") : ev ? tl("抉擇！") : `${clock(x.revealAt - sim.now)}`;
+                const state = x.result ? tl("已揭曉") : `${clock(x.revealAt - sim.now)}`;
                 const xd = DESTINATIONS[x.dest];
                 return (
                   <button key={x.id} type="button" role="tab" aria-selected={x.id === d.id} onClick={() => onSwitch(x.id)}
-                    className={`v3-vtab${x.id === d.id ? " is-on" : ""}${ev ? " is-event" : ""}${x.pending ? " is-ready" : ""}${x.result && !x.pending ? " is-done" : ""}`}
+                    className={`v3-vtab${x.id === d.id ? " is-on" : ""}${x.result ? " is-done" : ""}`}
                     style={{ ["--k" as string]: xk, ["--hue" as string]: CLUSTER_HUE[xd.cluster] }}>
                     <span className="v3-vtab__top"><b>{CIRCLED[xd.cluster]}{SLOT[xd.slot]} {destName(x.dest)}</b><em>{state}</em></span>
                     <small>{teamNameOf(s, x.spire)}</small>
@@ -232,25 +229,14 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
           )}
         </header>
         <Route d={d} k={k} list={list} arriving={arriving} focus={focusKey} boxRef={routeRef} />
-        {staged && !showStage && (
-          <button type="button" className="v3-decidebar" onClick={() => setAside(null)}><Sparkles aria-hidden="true" />{tl("航行抉擇：{0} · 點這裡做出選擇", { 0: TEXTS.cards[d.card!].title })}</button>
-        )}
-        <div className="v3-voyage__progress" style={{ ["--k" as string]: k, ["--d" as string]: (decisionAt(d) - d.at) / span }}>
+        <div className="v3-voyage__progress" style={{ ["--k" as string]: k }}>
           <i />
-          <span>{d.result ? tl("已揭曉") : open ? (d.deep ? tl("抉擇中 · 回航時刻前截止") : tl("抉擇中 · 揭曉前 1 分鐘截止")) : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</span>
+          <span>{d.result ? tl("已揭曉") : tl("{0} 後揭曉", { 0: clock(d.revealAt - sim.now) })}</span>
           {!d.result && sim.hurry && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => sim.hurry?.(d.id, 60_000)} title={tl("預覽用：讓這趟航行往前 1 分鐘")}><FastForward aria-hidden="true" />{tl("快轉 1 分鐘")}</button>}
         </div>
         <Tags d={d} />
-        {d.deep && !d.result && <TurnBack sim={sim} d={d} />}
         <Crew sim={sim} d={d} />
-        {d.result && arriving ? <p className="v3-voyage__signal"><i /><i /><i />{tl("光橋抵達{0}，訊號回傳中…", { 0: destName(d.dest) })}</p> : d.result ? <Outcome d={d} onCollect={collect} /> : <Odds d={d} />}
-        {showStage && (
-          <StageLayer>
-            <div className="v3-decisionstage" role="dialog" aria-label={tl("航行抉擇：{0}", { 0: TEXTS.cards[d.card!].title })}>
-              <Decision sim={sim} d={d} stage onLater={() => setAside(d.id)} />
-            </div>
-          </StageLayer>
-        )}
+        {d.result && arriving ? <p className="v3-voyage__signal"><i /><i /><i />{tl("光橋抵達{0}，訊號回傳中…", { 0: destName(d.dest) })}</p> : d.result ? <Outcome d={d} /> : <Odds d={d} />}
       </div>
       <div className="v3-voyage__side">
         <div className="v3-voyage__sidehead">
@@ -263,13 +249,12 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
               onMouseEnter={() => setFocusKey(e.key)} onMouseLeave={() => setFocusKey((x) => (x === e.key ? null : x))}>
               <time>{clock(e.at - d.at)}</time>
               <LogIcon e={e} d={d} />
-              {e.kind === "decision" ? (
-                staged ? (
-                  <div className="v3-decision is-note">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="v3-decision__art" src={eventImage(d.card!)} alt="" loading="lazy" />
-                    <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}</span><b className="v3-decision__title">{TEXTS.cards[d.card!].title}</b><p>{TEXTS.cards[d.card!].scene}</p>{!showStage && <button type="button" className="hud-btn hud-btn--gold hud-btn--sm" onClick={() => setAside(null)}>{tl("做出選擇")}</button>}</div>
-                ) : <Decision sim={sim} d={d} />
+              {e.kind === "story" && d.card !== undefined ? (
+                <div className="v3-decision is-note is-story">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="v3-decision__art" src={eventImage(d.card)} alt="" loading="lazy" />
+                  <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行插曲")}</span><b className="v3-decision__title">{TEXTS.cards[d.card].title}</b><p>{i === list.length - 1 ? <Typewriter text={e.text} /> : e.text}</p>
+                </div>
               ) : e.kind === "result" && d.result ? (
                 <div className="v3-voyage__result">
                   <b style={{ color: OUTCOME_TONE[d.result.outcome] }}>{outcomeName(d)} ×{(d.result.multX100 / 100).toFixed(2)}</b>
@@ -280,7 +265,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
               )}
             </li>
           ))}
-          {!d.result && !open && <li className="is-wait" aria-hidden="true"><time /><span className="v3-logicon is-line" /><p><i /><i /><i /></p></li>}
+          {!d.result && <li className="is-wait" aria-hidden="true"><time /><span className="v3-logicon is-line" /><p><i /><i /><i /></p></li>}
         </ol>
       </div>
     </section>
@@ -288,7 +273,7 @@ export function VoyageLog({ sim, id, arriving, onArrived, onClose, onSwitch, onC
 }
 
 /** The WebGL scene behind a voyage (desktop, effects not set to low): created per voyage, fed every render, and told
- *  when something happens on the way: a crew line, the star event, the choice, the arrival. Returns whether it runs;
+ *  when something happens on the way: a crew line, the star event, the story card, the arrival. Returns whether it runs;
  *  without it the CSS version of the scene stays as it was. */
 function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: boolean | undefined, sceneRef: RefObject<HTMLDivElement | null>, routeRef: RefObject<HTMLDivElement | null>) {
   const api = useRef<VoyageGl | null>(null);
@@ -323,14 +308,14 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
     ...(team?.prism !== undefined ? [{ color: "#7fd3ff", attuned: false }] : []),
     ...(team?.seekers ?? []).map((x) => s.nfts.find((n) => n.id === x)).filter((n): n is SimNft => !!n).map((n) => ({ color: LIGHT_COLOR[n.trait], attuned: n.trait === light })),
   ] : [];
-  const tone = !d ? "#c9ff55" : d.result ? OUTCOME_TONE[d.result.outcome] : d.choice && d.choice !== "none" ? CHOICE_TONE[d.choice] : "#c9ff55";
+  const tone = !d ? "#c9ff55" : d.result ? OUTCOME_TONE[d.result.outcome] : "#c9ff55";
   useEffect(() => {
     if (!d) return;
-    api.current?.update({ at: d.at, revealAt: d.revealAt, deciding: deciding(d, sim.now) && !d.choice, tone, crew, done: !!d.result });
+    api.current?.update({ at: d.at, revealAt: d.revealAt, deciding: false, tone, crew, done: !!d.result });
   });
 
   // events: compared with what this voyage looked like on the previous render
-  const seen = useRef<{ id?: number; k: number; seekers: number; choice?: Choice; arrived: boolean }>({ k: 0, seekers: 0, arrived: false });
+  const seen = useRef<{ id?: number; k: number; seekers: number; arrived: boolean }>({ k: 0, seekers: 0, arrived: false });
   const k = d ? Math.min(1, Math.max(0, (sim.now - d.at) / Math.max(1, d.revealAt - d.at))) : 0;
   const seekerLines = list.filter((e) => e.kind === "seeker");
   useEffect(() => {
@@ -340,10 +325,11 @@ function useVoyageGl(sim: Sim, d: SimDive | undefined, list: Entry[], arriving: 
     if (prev.id === d.id && g) {
       if (d.plan.event && prev.k < 0.42 && k >= 0.42 && !d.result) g.storm(STAR[d.plan.event].color);
       if (seekerLines.length > prev.seekers) g.pulse(seekerLines[seekerLines.length - 1].color ?? "#c9ff55");
-      if (!prev.choice && d.choice && d.choice !== "none") g.choose(CHOICE_TONE[d.choice]);
+      const u = d.card !== undefined ? (storyAt(d) - d.at) / Math.max(1, d.revealAt - d.at) : 2;
+      if (prev.k < u && k >= u && !d.result) g.choose(STORY_TONE);
       if (arriving && d.result && !prev.arrived) g.arrive(d.result.outcome, OUTCOME_TONE[d.result.outcome]);
     }
-    seen.current = { id: d.id, k, seekers: seekerLines.length, choice: d.choice, arrived: prev.id === d.id ? prev.arrived || !!(arriving && d.result && g) : !!(arriving && d.result) };
+    seen.current = { id: d.id, k, seekers: seekerLines.length, arrived: prev.id === d.id ? prev.arrived || !!(arriving && d.result && g) : !!(arriving && d.result) };
   });
   return on;
 }
@@ -358,7 +344,10 @@ function Route({ d, k, list, arriving, focus, boxRef }: { d: SimDive; k: number;
     if (e.kind === "seeker") marks.push({ key: e.key, u: (e.at - d.at) / span, kind: "seeker", color: e.color, done: true });
   }
   if (ev) marks.push({ key: "star", u: 0.42, kind: "star", label: STAR[ev].name, color: STAR[ev].color, done: k >= 0.42 });
-  if (d.card !== undefined) marks.push({ key: "decision", u: DECISION_AT, kind: "decision", label: d.choice ? CHOICE[d.choice].name : tl("抉擇"), color: "#f0c766", done: k >= DECISION_AT });
+  if (d.card !== undefined) {
+    const u = (storyAt(d) - d.at) / span;
+    marks.push({ key: "story", u, kind: "decision", label: tl("插曲"), color: STORY_TONE, done: k >= u });
+  }
   const own = useRef<HTMLDivElement>(null);
   const box = boxRef ?? own;
   const [size, setSize] = useState({ w: 100, h: 100 });
@@ -372,7 +361,7 @@ function Route({ d, k, list, arriving, focus, boxRef }: { d: SimDive; k: number;
   const ROUTE = routeIn(size.w, size.h);
   const along = alongRoute(size.w, size.h);
   const ship = along(k);
-  const tone = d.result ? OUTCOME_TONE[d.result.outcome] : d.choice && d.choice !== "none" ? CHOICE_TONE[d.choice] : "#c9ff55";
+  const tone = d.result ? OUTCOME_TONE[d.result.outcome] : "#c9ff55";
   return (
     <div ref={box} className={`v3-route2${d.result ? " is-done" : ""}`} style={{ ["--tone" as string]: tone }}>
       <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true">
@@ -390,7 +379,7 @@ function Route({ d, k, list, arriving, focus, boxRef }: { d: SimDive; k: number;
           </span>
         );
       })}
-      {!d.result && <span className={`v3-route2__ship${d.choice ? ` is-${d.choice}` : ""}`} style={{ left: `${ship.x}%`, top: `${ship.y}%` }} aria-hidden="true"><i />{d.choice && <b key={d.choice} className="v3-route2__burst" />}</span>}
+      {!d.result && <span className="v3-route2__ship" style={{ left: `${ship.x}%`, top: `${ship.y}%` }} aria-hidden="true"><i /></span>}
       <span className="v3-route2__dust" aria-hidden="true" />
       {arriving && d.result && (
         <span className={`v3-route2__arrive is-${d.result.outcome}`} style={{ left: `${P[3][0]}%`, top: `${P[3][1]}%`, ["--tone" as string]: OUTCOME_TONE[d.result.outcome] }} aria-hidden="true">
@@ -402,7 +391,7 @@ function Route({ d, k, list, arriving, focus, boxRef }: { d: SimDive; k: number;
 }
 
 /** Who is on the bridge: the spire, its prism and the seekers. Seekers whose light matches today's light here glow and
- *  carry a 同頻 badge; hovering any member shows what it brings to this trip. After the decision the crew takes its colour. */
+ *  carry a 同頻 badge; hovering any member shows what it brings to this trip. */
 function Crew({ sim, d }: { sim: Sim; d: SimDive }) {
   const s = sim.state!;
   const team = s.teams.find((x) => x.spire === d.spire);
@@ -412,10 +401,9 @@ function Crew({ sim, d }: { sim: Sim; d: SimDive }) {
   // each attuned seeker's share of the team's attunement bonus (15% of its power, the team capped at +10%)
   const raw = cards.filter((n) => n.kind === 2 && n.trait === here).reduce((x, n) => x + 0.15 * n.power, 0);
   const scale = raw > 0 ? d.plan.bonus / raw : 0;
-  const tone = d.choice && d.choice !== "none" ? CHOICE_TONE[d.choice] : undefined;
   return (
-    <div className={`v3-voyage__crew${tone ? " has-choice" : ""}`} aria-label={tl("出發隊伍")} style={tone ? { ["--cc" as string]: tone } : undefined}>
-      <small>{tl("隊伍戰力")} <b>{d.plan.power}</b>{d.plan.bonus ? <em>{tl("同頻加成 +{0}", { 0: Math.round(d.plan.bonus) })}</em> : null}{tone && d.choice ? <i>{CHOICE[d.choice].name} · {CHOICE[d.choice].tag}</i> : null}</small>
+    <div className="v3-voyage__crew" aria-label={tl("出發隊伍")}>
+      <small>{tl("隊伍戰力")} <b>{d.plan.power}</b>{d.plan.bonus ? <em>{tl("同頻加成 +{0}", { 0: Math.round(d.plan.bonus) })}</em> : null}</small>
       <ul>
         {cards.map((n) => {
           const attuned = n.kind === 2 && n.trait === here;
@@ -459,8 +447,8 @@ function Odds({ d }: { d: SimDive }) {
   );
 }
 
-/** After the reveal: the outcome, the multiplier and the reward rolling up, and the collect button. */
-function Outcome({ d, onCollect }: { d: SimDive; onCollect: (el: Element) => void }) {
+/** After the reveal: the outcome, the multiplier and the reward rolling up (counted at once, v3.3). */
+function Outcome({ d }: { d: SimDive }) {
   const r = d.result!;
   const base = basePoints(d.plan) * (d.deep ? 2 : 1) * (d.rate ?? rateOf(Math.floor(d.at / DAY)));
   return (
@@ -471,9 +459,7 @@ function Outcome({ d, onCollect }: { d: SimDive; onCollect: (el: Element) => voi
       </div>
       <p>{tl("基礎 {0}", { 0: fmt(base) })} × {tl("{0} − 出發成本", { 0: (r.multX100 / 100).toFixed(2) })} {fmt(d.levyPaid ?? 0)} {tl("· 耗損 {0} 次航程", { 0: r.wear })}</p>
       <strong>+<Roll value={d.reward ?? 0} /> <small>$RVYN</small></strong>
-      {d.pending ? (
-        <button type="button" className="hud-btn hud-btn--gold" onClick={(e) => onCollect(e.currentTarget)}>{r.outcome === "empty" ? tl("確認") : tl("收取 +{0}", { 0: fmt(d.reward ?? 0) })}</button>
-      ) : <em className="v3-voyage__done">{tl("已收取，在「可領取」裡")}</em>}
+      <em className="v3-voyage__done">{d.unsettled ? tl("已算進「可領取」· 下次交易時一起寫入鏈上") : tl("已算進「可領取」")}</em>
     </div>
   );
 }
@@ -495,77 +481,6 @@ function Roll({ value }: { value: number }) {
   return <>{v.toFixed(2)}</>;
 }
 
-/** The decision of this voyage: the scene, and each option with what it does to this dive in numbers. */
-function Decision({ sim, d, stage, onLater }: { sim: Sim; d: SimDive; stage?: boolean; onLater?: () => void }) {
-  const s = sim.state!;
-  const card = TEXTS.cards[d.card!];
-  const team = s.teams.find((x) => x.spire === d.spire);
-  const plan = (c: Choice): DivePlan | null =>
-    (team ? planDive(teamInput(s, team), DESTINATIONS[d.dest], skyOf(Math.floor(d.at / DAY)), c, { stability: stabilityOf(d.bond, d.supply, d.echo), deep: d.deep }) : null);
-  const stats = (p: DivePlan | null) => {
-    if (!p) return null;
-    const names = p.names ?? [];
-    return {
-      empty: p.table[0][0] / 100,
-      big: p.table.reduce((a, [prob], i) => a + (names[i] === "great" || names[i] === "legend" ? prob : 0), 0) / 100,
-      wear: p.wear2 + p.wear3,
-      levy: p.levy,
-    };
-  };
-  const base = stats(plan("none"));
-  const open = deciding(d, sim.now);
-  const choose = (c: Choice) => { sim.choose(d.id, c); play(c === "bold" ? "great" : "toggle"); };
-  const mark = (v: number, b: number | undefined, higherIsGood: boolean) => (b === undefined || Math.abs(v - b) < 1e-9 ? "" : (v > b) === higherIsGood ? "is-up" : "is-down");
-  return (
-    <div className={`v3-decision${open ? " is-open" : ""}${stage ? " is-stage" : ""}`}>
-      {/* which voyage this is, when several teams are out at once */}
-      <span className="v3-decision__kicker"><Sparkles aria-hidden="true" />{tl("航行抉擇")}<em className="v3-decision__who">{teamNameOf(s, d.spire)} · {CIRCLED[DESTINATIONS[d.dest].cluster]}{SLOT[DESTINATIONS[d.dest].slot]} {TEXTS.clusters[DESTINATIONS[d.dest].cluster].destinations[DESTINATIONS[d.dest].slot].name}</em></span>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="v3-decision__art" src={eventImage(d.card!)} alt="" loading="lazy" />
-      <b className="v3-decision__title">{card.title}</b>
-      <p>{card.scene}</p>
-      <div className="v3-decision__options">
-        {card.options.map((o, oi) => {
-          const c = o.choice as Choice;
-          const st = stats(plan(c));
-          const chosen = d.choice === c;
-          return (
-            <button key={o.text} type="button" className={`is-${c}${chosen ? " is-chosen" : ""}`} disabled={!open} onClick={() => choose(c)} style={{ ["--n" as string]: oi }}>
-              <span className="v3-decision__text">{o.text}</span>
-              <span className="v3-decision__tag">{CHOICE[c].name} · {CHOICE[c].tag}</span>
-              {st && (
-                <span className="v3-decision__stats">
-                  <span className={mark(st.empty, base?.empty, false)}><small>{tl("空手")}</small>{st.empty.toFixed(st.empty % 1 ? 1 : 0)}%</span>
-                  <span className={mark(st.big, base?.big, true)}><small>{tl("大豐收以上")}</small>{st.big.toFixed(st.big % 1 ? 1 : 0)}%</span>
-                  <span className={mark(st.wear, base?.wear, false)}><small>{tl("多耗損")}</small>{st.wear ? pct(st.wear, 0) : tl("無")}</span>
-                  <span className={mark(st.levy, base?.levy, false)}><small>{tl("出發成本")}</small>{pct(st.levy, 0)}</span>
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      {open && <small className="v3-decision__hint">{d.deep ? tl("回航時刻（揭曉前 10 分鐘）前截止；沒選就當作順其自然。") : tl("揭曉前 1 分鐘截止；沒選就當作順其自然。")}</small>}
-      {stage && onLater && <button type="button" className="v3-decision__later" onClick={onLater}>{tl("先看航線，等一下再選")}</button>}
-    </div>
-  );
-}
-
-/** Below 1180px the decision covers the whole screen; the voyage scene is its own stacking context, so a full-screen
- *  layer inside it would sit under the menu and the log. There it renders at the game root instead. */
-function StageLayer({ children }: { children: ReactNode }) {
-  const [narrow, setNarrow] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(max-width: 1180px)");
-    const on = () => setNarrow(m.matches);
-    on();
-    m.addEventListener("change", on);
-    return () => m.removeEventListener("change", on);
-  }, []);
-  const host = narrow ? document.querySelector(".ldg-app") : null;
-  return host ? createPortal(children, host) : <>{children}</>;
-}
-
 /** What this voyage carries: a deep dive, a supply, the crew bond at departure. */
 function Tags({ d }: { d: SimDive }) {
   const tags: [string, string | null][] = [];
@@ -580,43 +495,20 @@ function Tags({ d }: { d: SimDive }) {
   return <p className="v3-voyage__tags">{tags.map(([t, icon]) => <span key={t}>{icon && <img src={icon} alt="" />}{t}</span>)}</p>;
 }
 
-/** A deep dive's second decision: from 10 minutes before the reveal until 1 minute before it, press on or turn back. */
-function TurnBack({ sim, d }: { sim: Sim; d: SimDive }) {
-  const open = turning(d, sim.now);
-  const set = (back: boolean) => { sim.turnBack(d.id, back); play(back ? "toggle" : "great"); };
-  if (sim.now < turnOpenAt(d)) {
-    return <p className="v3-turnback is-later">{tl("深潛的最後 10 分鐘可以選擇回航（{0} 後）。", { 0: clock(turnOpenAt(d) - sim.now) })}</p>;
-  }
-  return (
-    <div className={`v3-turnback${open ? " is-open" : ""}`}>
-      <b>{tl("深潛 · 繼續還是回航？")}</b>
-      <div>
-        <button type="button" className={!d.turnedBack ? "is-on" : ""} disabled={!open} onClick={() => set(false)}>
-          <b>{tl("繼續深潛")}</b><span>{tl("照這趟的勝算揭曉，光塵 ×2")}</span>
-        </button>
-        <button type="button" className={d.turnedBack ? "is-on" : ""} disabled={!open} onClick={() => set(true)}>
-          <b>{tl("回航")}</b><span>{tl("固定 ×1.00，只耗損 1 次航程")}</span>
-        </button>
-      </div>
-      <small>{open ? tl("揭曉前 1 分鐘截止，截止前可以改。") : tl("已截止。")}</small>
-    </div>
-  );
-}
-
-/** The small mark beside a log line: Rovyn's face, the seeker who spoke, the star event, the decision, the result. */
+/** The small mark beside a log line: Rovyn's face, the seeker who spoke, the star event, the story card, the result. */
 function LogIcon({ e, d }: { e: Entry; d: SimDive }) {
   if (e.kind === "rovyn") {
     // eslint-disable-next-line @next/next/no-img-element
     return <span className="v3-logicon is-rovyn"><img src="/lightdive/keeper-face.webp" alt="" /></span>;
   }
-  if (e.kind === "seeker" && e.who) {
+  if ((e.kind === "seeker" || e.kind === "voice") && e.who) {
     return <span className="v3-logicon is-seeker" title={tl("探索者 #{0}", { 0: e.who.id })}><NftArt a={{ kind: 2, rarity: e.who.rarity, trait: e.who.trait, variant: 0 }} /></span>;
   }
   // eslint-disable-next-line @next/next/no-img-element
   if (e.kind === "star") return d.plan.event ? <span className="v3-logicon is-sky" aria-hidden="true"><img src={skyIcon(d.plan.event)} alt="" /></span> : <span className="v3-logicon is-star" aria-hidden="true" />;
-  if (e.kind === "decision" || e.kind === "choice") return <span className={`v3-logicon is-decision${d.choice ? ` is-${d.choice}` : ""}`} aria-hidden="true" />;
+  if (e.kind === "story" || e.kind === "voice") return <span className="v3-logicon is-decision" aria-hidden="true" />;
   if (e.kind === "result" && d.result) return <span className="v3-logicon is-result" style={{ ["--tc" as string]: OUTCOME_TONE[d.result.outcome] }} aria-hidden="true" />;
   if (e.kind === "attuned" && e.light !== undefined) return <span className="v3-logicon is-attuned" aria-hidden="true"><LightIcon light={e.light} /></span>;
   if (e.kind === "omen" || e.kind === "reading" || e.kind === "state") return <span className={`v3-logicon is-${e.kind}`} aria-hidden="true" />;
-  return <span className={`v3-logicon is-${e.kind === "after" ? "after" : "line"}`} aria-hidden="true" />;
+  return <span className={`v3-logicon is-${e.kind === "episode" ? "after" : "line"}`} aria-hidden="true" />;
 }

@@ -4,15 +4,16 @@
 //   node --experimental-strip-types scripts/lightdive-v3-smoke.mjs           # in another
 //
 // Plays the whole loop as two players with ganache's unlocked development accounts: test RVYN from the faucet,
-// summons revealed with drand, a team, a dive, a voyage decision, the result predicted from the drand signature
-// (lib/lightdive-v3/onchain.ts) and then revealed on chain (prediction and settlement must agree), a claim, and a
-// market sale. v3.1: the dive carries a star chart (paid into the pool), the crew bond grows, and a daily commission
-// is checked against the website's copy of the rules (lib/lightdive-v3/commissions.ts). Everything goes through the
-// same reads the website uses.
+// summons, a team, a dive, the result predicted from the drand signature (lib/lightdive-v3/onchain.ts) and then
+// settled on chain (prediction and settlement must agree), a claim, and a market sale. v3.1: the dive carries a star
+// chart (paid into the pool), the crew bond grows, and a daily commission is checked against the website's copy of the
+// rules (lib/lightdive-v3/commissions.ts). v3.3: cards are minted sealed and the website's drawCard must match what the
+// chain unseals; reveals ride along with the player's next transaction; the commission is taken with the dive and
+// completes on its own. Everything goes through the same reads the website uses.
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { createPublicClient, createWalletClient, defineChain, http, maxUint256, parseEther } from "viem";
-import { contractsOf, drandSignature, events, predictDive, readMarket, readPlayer, readWorld, roundTime } from "../lib/lightdive-v3/onchain.ts";
+import { NO_SETTLE, SEALED, contractsOf, drandSignature, events, predictDive, predictSummon, readMarket, readPlayer, readWorld, roundTime } from "../lib/lightdive-v3/onchain.ts";
 import { commissionsOf, meetsCommission, COMMISSION_KINDS } from "../lib/lightdive-v3/commissions.ts";
 import { DESTINATIONS, baseTable, outcomesOf } from "../lib/lightdive-v3/rules.ts";
 
@@ -42,12 +43,22 @@ const waitRound = async (round) => {
     await new Promise((r) => setTimeout(r, 2000));
   }
 };
+/** Summons; the cards exist at once, sealed. Once drand publishes the round, the website's prediction is checked
+ *  against what the chain unseals (here by a stranger's reveal; in the game, by the player's next transaction). */
 const summon = async (who, kind, qty) => {
-  const r = await send(who, c.minter, "LightdiveMinter3", "summon", [kind, qty]);
+  const r = await send(who, c.minter, "LightdiveMinter3", "summon", [kind, qty, [], []]);
   const [req] = (await events(ctx, c.minter, abi.LightdiveMinter3, "SummonRequested", { player: who }, r.blockNumber)).slice(-1);
+  const first = req.args.firstId;
+  const sealed = await client.readContract({ address: c.nft, abi: abi.LightdiveNFT3, functionName: "attributes", args: [first] });
+  assert.equal(Number(sealed.rarity), SEALED, "minted sealed");
   const sig = await waitRound(req.args.round);
+  const predicted = predictSummon({ id: req.args.requestId, kind, qty }, sig);
   await tick();
   await send(bob, c.minter, "LightdiveMinter3", "reveal", [req.args.requestId, sig]); // anyone may reveal
+  for (let i = 0; i < qty; i++) {
+    const a = await client.readContract({ address: c.nft, abi: abi.LightdiveNFT3, functionName: "attributes", args: [first + BigInt(i)] });
+    assert.deepEqual({ rarity: Number(a.rarity), trait: Number(a.trait), power: Number(a.power), dna: BigInt(a.dna) }, predicted[i], "the website's drawCard equals the unsealed card");
+  }
 };
 
 for (const p of [alice, bob]) {
@@ -74,26 +85,24 @@ log("summons ok", me.cards.map((x) => `${["spire", "prism", "seeker"][x.kind]}#$
 const spire = me.cards.find((x) => x.kind === 0);
 const prism = me.cards.find((x) => x.kind === 1);
 const seekers = me.cards.filter((x) => x.kind === 2).sort((a, b) => b.power - a.power).slice(0, spire.trait);
-await send(alice, c.expedition, "Expedition3", "setTeam", [spire.id, prism.id, seekers.map((x) => x.id)]);
-// a commission first, so the dive counts for it
+await send(alice, c.expedition, "Expedition3", "setTeam", [spire.id, prism.id, seekers.map((x) => x.id), NO_SETTLE]);
+// the commission is taken with the dive (no transaction of its own)
 const day = world.day;
 const list = commissionsOf(day);
-await send(alice, c.commissions, "LightdiveCommissions3", "accept", [0]);
 const balanceBefore = (await readPlayer(ctx, alice, world, true)).balance;
-await send(alice, c.expedition, "Expedition3", "dive", [spire.id, 0, 2, false]); // with a star chart
+await send(alice, c.expedition, "Expedition3", "dive", [spire.id, 0, 2, false, 0, NO_SETTLE]); // a star chart, commission 0
 me = await readPlayer(ctx, alice, world, true);
 assert.ok(me.balance < balanceBefore, "the star chart was paid for");
 assert.equal(me.commission.active?.index, 0, "the commission is active");
 assert.equal(me.teams.length, 1);
 const dive = me.dives[0];
 assert.ok(dive && !dive.revealed);
-await send(alice, c.expedition, "Expedition3", "decide", [dive.id, 1]); // steady
 log(`dive #${dive.id} to destination 0, round ${dive.round} at ${new Date(roundTime(dive.round) * 1000).toISOString().slice(11, 19)}`);
 
 // a second player lists a card meanwhile; alice buys it
 await summon(bob, 2, 1);
 const bobCard = (await readPlayer(ctx, bob, world, true)).cards[0];
-await send(bob, c.market, "LightdiveMarket3", "list", [bobCard.id, parseEther("12")]);
+await send(bob, c.market, "LightdiveMarket3", "list", [bobCard.id, parseEther("12"), [], []]);
 const market = await readMarket(ctx);
 assert.equal(market.length, 1);
 await send(alice, c.market, "LightdiveMarket3", "buy", [bobCard.id, parseEther("12")]);
@@ -107,10 +116,10 @@ const sig = await waitRound(dive.round);
 await tick();
 me = await readPlayer(ctx, alice, world, true);
 const d = me.dives.find((x) => x.id === dive.id);
-assert.equal(d.decision, 1);
 assert.equal(d.supply, 2);
 const predicted = await predictDive(ctx, d, sig, world.chartStability);
-await send(alice, c.expedition, "Expedition3", "revealMany", [[d.id], [sig]]);
+// the website's settle: any transaction of the player carries it; here on its own
+await send(alice, c.expedition, "Expedition3", "settle", [{ dives: [d.id], diveProofs: [sig], summons: [], summonProofs: [] }]);
 world = await readWorld(ctx, true);
 me = await readPlayer(ctx, alice, world, true);
 const settled = me.dives.find((x) => x.id === dive.id).result;
@@ -119,8 +128,7 @@ assert.deepEqual(
   { tier: predicted.tier, multX100: predicted.multX100, wear: predicted.wear, reward: predicted.reward, levy: predicted.levy },
   "the website's prediction equals the settlement",
 );
-assert.ok(predicted.tier !== 0, "steady never comes back empty");
-assert.equal(me.credit, settled.reward);
+const done0 = me.dives.find((x) => x.id === dive.id);
 log(`reveal ok: x${settled.multX100 / 100}, wear ${settled.wear}, reward ${Number(settled.reward) / 1e18}`);
 assert.equal(me.teams[0].bond, 1, "the crew bond grew");
 // v3.2 echo bridges: the first dive of the day there follows nobody, and leaves alice's bridge behind
@@ -132,31 +140,32 @@ assert.ok(typeof me.nextDripAt === "number" && me.nextDripAt > 0, "the faucet ti
 log("echo bridges ok");
 
 // every commission of the day: the website's test equals the contract's
-const done = me.dives.find((x) => x.id === dive.id);
+const done = done0;
 const names = outcomesOf(baseTable(DESTINATIONS[done.dest].cluster, predicted.plan.risk));
 const view = {
-  dest: done.dest, at: done.day * 86_400_000, choice: ["none", "steady", "bold", "detour"][done.decision], deep: done.long, supply: done.supply,
-  attuned: done.attuned, turnedBack: done.turnedBack, result: { outcome: names[settled.tier] ?? "normal", multX100: settled.multX100, tier: settled.tier },
+  dest: done.dest, at: done.day * 86_400_000, bond: done.bond, deep: done.long, supply: done.supply,
+  attuned: done.attuned, result: { outcome: names[settled.tier] ?? "normal", multX100: settled.multX100, tier: settled.tier },
 };
 for (const cm of list) {
   const chainSays = await client.readContract({ address: c.commissions, abi: abi.LightdiveCommissions3, functionName: "meets", args: [done.id, { kind: COMMISSION_KINDS.indexOf(cm.kind), param: cm.param }] });
   assert.equal(meetsCommission(cm, view), chainSays, `commission ${cm.kind}/${cm.param}`);
 }
+// the settlement completed it on its own when the dive met it, and paid the bonus with the result
 if (meetsCommission(list[0], view)) {
-  const creditBefore = me.credit;
-  await send(alice, c.commissions, "LightdiveCommissions3", "complete", [done.id]);
-  me = await readPlayer(ctx, alice, world, true);
-  assert.ok(me.credit > creditBefore, "the commission paid into the claimable balance");
-  log(`commission ${list[0].kind} completed`);
+  assert.equal(me.commission.active, null, "the commission completed with the settlement");
+  assert.ok(me.commission.marks & 1, "marked done");
+  assert.ok(me.credit > settled.reward, "the bonus was credited with the result");
+  log(`commission ${list[0].kind} completed on its own`);
 } else {
-  await send(alice, c.commissions, "LightdiveCommissions3", "abandon");
-  log(`commission ${list[0].kind} not met by this dive; abandoned`);
+  assert.equal(me.credit, settled.reward);
+  assert.equal(me.commission.active?.index, 0, "still active: the dive did not meet it");
+  log(`commission ${list[0].kind} not met by this dive; still active`);
 }
 me = await readPlayer(ctx, alice, world, true);
 log(`commissions ok: ${list.map((x) => x.kind).join(", ")}`);
 
 const before = me.balance;
-await send(alice, c.expedition, "Expedition3", "claim");
+await send(alice, c.expedition, "Expedition3", "claim", [NO_SETTLE]);
 me = await readPlayer(ctx, alice, world, true);
 assert.ok(me.balance > before && me.credit === 0n && me.claimed > 0n);
 log(`claim ok: +${Number(me.balance - before) / 1e18} (fee ${Number(me.claimFees) / 1e18})`);

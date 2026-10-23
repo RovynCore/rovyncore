@@ -111,12 +111,13 @@ for (const l of section("航行日誌")) {
 const LIGHT_NAMES = ["曦光", "霧光", "晶光", "熾光", "雷光", "淵光"];
 // 10-21: by destination, the team's state, the readings (empty-handed chance), attunement, deep dives, approach by
 // cluster and the omen at the reveal
-const PART = { 啟程: "start", 途中: "travel", "途中（依目的地）": "place", 探索者: "seeker", 星象: "star", 抉擇之後: "after", 接近: "approach", "接近（依星團）": "near", 收束: "closing", 隊伍狀態: "state", 讀數: "reading", 同頻: "attuned", 深潛: "deep", 揭曉前兆: "omen" };
+// v3.3 (10-23): no decisions; short stories by cluster (three lines each), what follows an event card, and Rovyn midway
+const PART = { 啟程: "start", 途中: "travel", "途中（依目的地）": "place", 探索者: "seeker", 星象: "star", 接近: "approach", "接近（依星團）": "near", 收束: "closing", 隊伍狀態: "state", 讀數: "reading", 同頻: "attuned", 深潛: "deep", 揭曉前兆: "omen", 小故事: "episode", 事件之後: "aftermath", "Rovyn 途中": "midway" };
 const TEAM_STATE = { 跟著光橋: "echo", 今日首航: "first", 深潛: "deep", 燈油: "oil", 星圖殘頁: "chart", 默契: "bond", 一般: "plain" };
 const READING = { 穩: "steady", 中: "even", 險: "hard" };
-const OMEN = { ...OUT, 回航: "back" };
+const OMEN = OUT;
 const six = () => Array.from({ length: 6 }, () => []);
-const voyage = { start: [], travel: six(), place: Array.from({ length: 24 }, () => []), seeker: six(), star: {}, after: {}, approach: [], near: six(), closing: [], state: {}, reading: {}, attuned: six(), deep: six(), omen: {} };
+const voyage = { start: [], travel: six(), place: Array.from({ length: 24 }, () => []), seeker: six(), star: {}, approach: [], near: six(), closing: [], state: {}, reading: {}, attuned: six(), deep: six(), omen: {}, episode: Array.from({ length: 7 }, () => []), aftermath: [], midway: [] };
 let part = null, slot = null;
 for (const l of section("航程文本")) {
   let m = l.match(/^### (.+)$/);
@@ -125,18 +126,19 @@ for (const l of section("航程文本")) {
   if (m && part) {
     const t = m[1];
     if (part === "travel" || part === "near" || part === "deep") slot = CIRCLED.indexOf(t[0]);
+    else if (part === "episode") slot = t === "通用" ? 6 : CIRCLED.indexOf(t[0]);
     else if (part === "place") slot = clusters.flatMap((c) => c.destinations.map((d) => d.name)).indexOf(t);
     else if (part === "seeker" || part === "attuned") slot = LIGHT_NAMES.indexOf(t);
     else if (part === "star") voyage.star[(slot = STAR[t])] = [];
-    else if (part === "after") voyage.after[(slot = EFFECT[t])] = [];
     else if (part === "state") voyage.state[(slot = TEAM_STATE[t])] = [];
     else if (part === "reading") voyage.reading[(slot = READING[t])] = [];
     else if (part === "omen") voyage.omen[(slot = OMEN[t])] = [];
     if (slot === undefined || slot === -1) throw new Error(`unknown heading ${t} in ${part}`);
     continue;
   }
+  if (part === "episode" && /^\d+\. /.test(l)) { voyage.episode[slot].push(quotes(l)); continue; }
   if (!part || !l.startsWith("- ")) continue;
-  if (part === "start" || part === "approach" || part === "closing") voyage[part].push(...quotes(l));
+  if (part === "start" || part === "approach" || part === "closing" || part === "aftermath" || part === "midway") voyage[part].push(...quotes(l));
   else voyage[part][slot].push(...quotes(l));
 }
 
@@ -145,7 +147,7 @@ const names = clusters.flatMap((c) => c.destinations.map((d) => d.name));
 if (clusters.length !== 6 || names.length !== 24) throw new Error(`expected 6 clusters and 24 destinations, got ${clusters.length} / ${names.length}`);
 for (const n of names) if (!logs[n] || Object.keys(logs[n]).length < 5) throw new Error("missing logs for " + n);
 if (departures.length !== 6 || wearReasons[5].length === 0) throw new Error("departure or wear text missing");
-if ([...voyage.travel, ...voyage.seeker, ...voyage.place, ...voyage.near, ...voyage.deep].some((x) => x.length < 3) || voyage.attuned.some((x) => x.length < 2) || Object.keys(voyage.state).length !== 7 || Object.keys(voyage.reading).length !== 3 || Object.keys(voyage.omen).length !== 7 || Object.keys(voyage.star).length !== 4 || Object.keys(voyage.after).length !== 4 || !voyage.start.length || !voyage.approach.length || !voyage.closing.length) throw new Error("voyage text missing");
+if ([...voyage.travel, ...voyage.seeker, ...voyage.place, ...voyage.near, ...voyage.deep].some((x) => x.length < 3) || voyage.attuned.some((x) => x.length < 2) || Object.keys(voyage.state).length !== 7 || Object.keys(voyage.reading).length !== 3 || Object.keys(voyage.omen).length !== 6 || Object.keys(voyage.star).length !== 4 || voyage.episode.some((x) => x.length < 5 || x.some((e) => e.length !== 3)) || voyage.aftermath.length < 8 || voyage.midway.length < 8 || !voyage.start.length || !voyage.approach.length || !voyage.closing.length) throw new Error("voyage text missing");
 for (const c of cards) if (!c.scene || c.options.length < 2 || c.options.some((o) => !o.choice)) throw new Error("bad event card " + c.title);
 
 const data = { clusters, departures, starLines, rovyn, cards, wearReasons, logs: names.map((n) => logs[n]), voyage };

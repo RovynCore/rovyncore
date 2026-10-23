@@ -31,7 +31,6 @@ function statusOf(sim: Sim, spire: number): Status {
   const s = sim.state!;
   const team = s.teams.find((t) => t.spire === spire);
   if (s.dives.some((d) => d.spire === spire && !d.result)) return { label: tl("光橋上"), tone: "busy" };
-  if (s.dives.some((d) => d.spire === spire && d.pending)) return { label: tl("待收取"), tone: "busy" };
   if (!team) return s.teams.length >= MAX_TEAMS ? { label: tl("隊伍已滿"), tone: "done" } : { label: tl("未組隊"), tone: "empty" };
   if (!team.seekers.length) return { label: tl("缺探索者"), tone: "empty" };
   if (sim.chain?.drafts.includes(spire)) return { label: tl("未儲存"), tone: "empty" }; // live game: saved with the dive or the save bar

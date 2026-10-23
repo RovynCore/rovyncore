@@ -1,5 +1,4 @@
 import application from "../dist/server/index.js";
-import { runKeeper } from "../lib/lightdive-v3/keeper.ts";
 
 // Baseline browser hardening. No CSP yet: wallet extensions and third-party media need a reviewed policy first.
 const SECURITY_HEADERS = {
@@ -25,11 +24,6 @@ const worker = {
     // Browsers probe /favicon.ico regardless of <link rel=icon>; point them at the SVG icon.
     if (new URL(request.url).pathname === "/favicon.ico") return Response.redirect(new URL("/favicon.svg", request.url).toString(), 301);
     return withSecurityHeaders(await application.fetch(request, env, context));
-  },
-  // 自動揭曉 (10-22): every two minutes, reveal the dives and summons whose drand round is out. Does nothing until the
-  // founder sets the keeper wallet's key (Worker secret LIGHTDIVE_KEEPER_KEY).
-  async scheduled(_event, env, context) {
-    context.waitUntil(runKeeper(env).catch((e) => console.error("lightdive keeper", e)));
   },
 };
 

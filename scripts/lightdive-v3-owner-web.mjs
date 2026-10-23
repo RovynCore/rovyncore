@@ -4,11 +4,11 @@
 //
 //   npm run lightdive:v3:owner:web                         the testnet deployment in packages/web3/lightdive-v3.json
 //   npm run lightdive:v3:owner:web -- --network local      tmp/lightdive-v3-local.json on RPC_URL
-//   ... -- --passes 10                                     also raise the daily passes per wallet (a game decision)
+//   ... -- --passes 10                                     the daily passes per wallet (a game decision)
+//   ... -- --fallback-days 1                               how long a dive with no drand proof waits for its fallback
 //
-// 10-22 (the anti-cheat pass): the neutral fallback of an unrevealed dive moves from 1 day to 7 days (the most the
-// contract allows), so leaving a bad result unrevealed costs a team a week; with the site's keeper revealing every
-// dive within minutes it is out of reach anyway. Nothing else changes unless asked for on the command line.
+// Nothing changes unless asked for on the command line. (v3.3: a fallback is empty-handed with the most wear and only
+// its owner may take it, so its delay is only about how soon a team stuck by a drand outage is free again.)
 import fs from "node:fs";
 import http from "node:http";
 import { createPublicClient, defineChain, encodeFunctionData, getAddress, http as httpTransport } from "viem";
@@ -30,15 +30,17 @@ const read = (functionName) => client.readContract({ address: config, abi, funct
 
 const DAY = 86_400;
 const passes = arg("passes") ? Number(arg("passes")) : null;
+const fallbackDays = arg("fallback-days") ? Number(arg("fallback-days")) : null;
 /** The settings to change, each read back after it is sent. */
 async function changes() {
   const [voyage, close, fallback, daily, team, teams] = await Promise.all(["voyageSeconds", "decisionCloseSeconds", "fallbackSeconds", "dailyPasses", "teamDivesPerDay", "maxTeams"].map(read));
-  const list = [{
+  const list = [];
+  if (fallbackDays !== null) list.push({
     name: "fallback",
-    label: `沒人揭曉時的保底結算：${Number(fallback) / 3600} 小時 → 7 天`,
-    done: Number(fallback) === 7 * DAY,
-    data: encodeFunctionData({ abi, functionName: "setTiming", args: [Number(voyage), Number(close), 7 * DAY] }),
-  }];
+    label: `沒有 drand 證明時的保底結算：${Number(fallback) / 3600} 小時 → ${fallbackDays} 天`,
+    done: Number(fallback) === fallbackDays * DAY,
+    data: encodeFunctionData({ abi, functionName: "setTiming", args: [Number(voyage), Number(close), fallbackDays * DAY] }),
+  });
   if (passes !== null) list.push({
     name: "passes",
     label: `每個錢包每天的出發令：${daily} → ${passes}（每隊每天 ${team} 趟、最多 ${teams} 隊不變）`,

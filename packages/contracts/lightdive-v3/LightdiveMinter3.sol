@@ -15,14 +15,17 @@ interface IBurnable {
 
 /// @notice Summons (sells) Lightdive v3 cards for RVYN, and renews docked cards.
 ///
-/// Cards are drawn from decks: each deck of 1000 holds an exact number of cards per rarity (48/29/15/7/1% for spires,
-/// 50/28/15/6/1% for prisms, 44/35/15/5/1% for seekers; prisms also an exact 40/40/20% split of beams per rarity). A
-/// drawn card is gone; an empty deck is replaced by a new one with the same composition, so the odds are exact and can
-/// be read from `deckOf`.
+/// Every card is drawn on its own (v3.3): rarity 48/29/15/7/1% for spires, 50/28/15/6/1% for prisms, 44/35/15/5/1% for
+/// seekers; a prism's beam 40/40/20%; a seeker's light one of six. A card depends only on its own drand round, its
+/// request and its place in the request, so the order or time of reveals changes nothing. (Up to v3.2 cards came from
+/// shared decks, which let a reveal's timing change a card.)
 ///
-/// A summon takes two steps. `request` takes the payment and fixes a drand round a few seconds ahead; once drand has
-/// published that round, anyone can `reveal` the request with the round's signature and the cards are drawn from it.
-/// Nobody, including us, can know the round before it is published, so nobody can pick their cards.
+/// A summon takes payment, mints its cards sealed at once (their ids are known) and fixes a drand round a few seconds
+/// ahead. Once drand has published that round, the cards can be unsealed with the round's signature: by anyone with
+/// `reveal`, and by the player's next summon, dive, team change, claim or listing, which carry the proofs, so revealing
+/// needs no transaction of its own. Nobody, including us, can know the round before it is published, so nobody can pick
+/// their cards; and since a revealed card is fixed by its round, waiting to reveal gains nothing. A request left without
+/// a proof for `FALLBACK_AFTER` may be unsealed as the weakest possible cards, never better than any draw.
 ///
 /// Every payment is split 70% to the Core Light Pool, 15% burned and 15% to the treasury. Prices start at 50/30/20 RVYN
 /// and may later follow the RVYN market price, but only within 10%-200% of the launch price and 10% per day.
@@ -34,22 +37,14 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
     uint8 public constant PRISM = 1;
     uint8 public constant SEEKER = 2;
     uint256 public constant BP = 10_000;
-    uint32 public constant DECK_SIZE = 1000;
     uint256 public constant EARLY_WINDOW = 48 hours;
     uint16 public constant EARLY_SPIRES_PER_WALLET = 3;
     uint256 public constant REVEAL_DELAY = 6; // the round drawn is the first published at least this long after a request
-    uint256 public constant FALLBACK_AFTER = 1 days; // without a drand proof by then, the request's own entropy is used
+    uint256 public constant FALLBACK_AFTER = 7 days; // without a drand proof by then: the weakest cards (v3.3)
     uint256 public constant DOCK_SECONDS = 7 days;
     uint16 public constant POOL_BP = 7000;
     uint16 public constant BURN_BP = 1500; // the treasury receives the rest
     uint16 public constant RENEW_BP = 5000; // renewal costs half the current summon price
-
-    struct Deck {
-        uint32 number;
-        uint32 remaining;
-        uint32[5] rarityLeft;
-        uint32[3][5] beamLeft; // prisms only: per rarity, per beam (wide, focused, needle)
-    }
 
     struct Request {
         address player;
@@ -58,7 +53,7 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
         bool revealed;
         uint64 round;
         uint64 requestedAt;
-        bytes32 entropy;
+        uint256 firstId; // the cards are firstId .. firstId + qty - 1, minted sealed at the request
     }
 
     IERC20 public immutable rvyn;
@@ -76,11 +71,11 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
     uint32[3] public priceDay; // UTC day of the last price move, per kind
     uint16[3] public voyages = [uint16(180), 135, 45];
 
-    Deck[3] internal _decks;
     Request[] internal _requests;
-    uint32[3] public pending; // requested but not yet revealed, counted against the NFT caps
     mapping(address => uint16) public earlySpires;
 
+    // Chance of each rarity in basis points (Glimmer .. Corestar), per kind.
+    uint16[5][3] internal RARITY_BP = [[uint16(4800), 2900, 1500, 700, 100], [uint16(5000), 2800, 1500, 600, 100], [uint16(4400), 3500, 1500, 500, 100]];
     // Power range per rarity, [lo, hi] inclusive: bands touch, so a rarer card is always stronger.
     uint16[2][5] internal SPIRE_POWER = [[uint16(41), 55], [uint16(56), 75], [uint16(76), 95], [uint16(96), 115], [uint16(116), 140]];
     uint16[2][5] internal PRISM_POWER = [[uint16(10), 19], [uint16(20), 29], [uint16(30), 39], [uint16(40), 49], [uint16(50), 60]];
@@ -90,9 +85,8 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
     event PricerSet(address pricer);
     event SaleOpened(uint256 start);
     event PriceSet(uint8 indexed kind, uint256 price);
-    event SummonRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 round, uint256 paid);
+    event SummonRequested(uint256 indexed requestId, address indexed player, uint8 kind, uint16 qty, uint64 round, uint256 paid, uint256 firstId);
     event SummonRevealed(uint256 indexed requestId, bool fallbackUsed);
-    event DeckOpened(uint8 indexed kind, uint32 number);
     event Renewal(uint256 indexed id, address indexed owner, uint256 paid);
 
     error BadKind();
@@ -120,13 +114,13 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
         rng = rng_;
         pool = pool_;
         treasury = treasury_;
-        for (uint8 kind; kind < 3; ++kind) _openDeck(kind);
     }
 
     // ---------------------------------------------------------------- views
 
-    function deckOf(uint8 kind) external view returns (Deck memory) {
-        return _decks[kind];
+    /// @notice Chance of each rarity (basis points) for a kind.
+    function rarityOdds(uint8 kind) external view returns (uint16[5] memory) {
+        return RARITY_BP[kind];
     }
 
     function request(uint256 id) external view returns (Request memory) {
@@ -147,7 +141,10 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
 
     // ---------------------------------------------------------------- players
 
-    function summon(uint8 kind, uint16 qty) external whenNotPaused nonReentrant returns (uint256 id) {
+    /// @notice Summons `qty` cards of `kind`. `revealIds` and `proofs`: earlier requests (anyone's) to unseal first,
+    /// with their rounds' signatures; any already revealed is skipped.
+    function summon(uint8 kind, uint16 qty, uint256[] calldata revealIds, bytes[] calldata proofs) external whenNotPaused nonReentrant returns (uint256 id) {
+        _revealAll(revealIds, proofs);
         if (kind > SEEKER) revert BadKind();
         if (qty == 0 || qty > maxPerTx(kind)) revert BadQuantity();
         if (saleStart == 0 || block.timestamp < saleStart) revert SaleClosed();
@@ -155,14 +152,15 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
             if (earlySpires[msg.sender] + qty > EARLY_SPIRES_PER_WALLET) revert EarlyLimit();
             earlySpires[msg.sender] += qty;
         }
-        if (uint256(nft.alive(kind)) + pending[kind] + qty > nft.maxAlive(kind)) revert SoldOut();
-        pending[kind] += qty;
+        if (uint256(nft.alive(kind)) + qty > nft.maxAlive(kind)) revert SoldOut();
 
         uint256 total = price[kind] * qty;
         _collect(total);
 
         id = _requests.length;
         uint64 round = rng.roundAt(block.timestamp + REVEAL_DELAY);
+        uint256 first = nft.mintSealed(msg.sender, kind, voyages[kind]);
+        for (uint256 i = 1; i < qty; ++i) nft.mintSealed(msg.sender, kind, voyages[kind]);
         _requests.push(Request({
             player: msg.sender,
             kind: kind,
@@ -170,24 +168,34 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
             revealed: false,
             round: round,
             requestedAt: uint64(block.timestamp),
-            entropy: keccak256(abi.encode(blockhash(block.number - 1), msg.sender, id))
+            firstId: first
         }));
-        emit SummonRequested(id, msg.sender, kind, qty, round, total);
+        emit SummonRequested(id, msg.sender, kind, qty, round, total, first);
     }
 
-    /// @notice Draws the cards of a request with its drand round. Anyone may call it once the round is published.
+    /// @notice Unseals the cards of a request with its drand round. Anyone may call it once the round is published.
     function reveal(uint256 id, bytes calldata proof) external nonReentrant {
         Request storage req = _requests[id];
         if (req.revealed) revert AlreadyRevealed();
         _draw(id, req, rng.randomness(req.round, proof), false);
     }
 
-    /// @notice If drand never published the round (or nobody brought it) for a day, the request's own entropy is used.
+    /// @notice Unseals several requests, skipping any already revealed. Expedition3 and the market call it with the
+    /// proofs a player's transaction carries.
+    function revealPending(uint256[] calldata ids, bytes[] calldata proofs) external nonReentrant {
+        _revealAll(ids, proofs);
+    }
+
+    /// @notice A request with no proof `FALLBACK_AFTER` after its round is unsealed as the weakest cards of its kind
+    /// (Glimmer, lowest power), so leaving a request unrevealed is never better than revealing it. Only the player
+    /// who summoned may use it: anyone else could otherwise erase cards the player has already seen but not sealed
+    /// on chain yet (v3.3).
     function revealFallback(uint256 id) external nonReentrant {
         Request storage req = _requests[id];
+        if (msg.sender != req.player) revert NotOwner();
         if (req.revealed) revert AlreadyRevealed();
         if (block.timestamp < rng.roundTime(req.round) + FALLBACK_AFTER) revert NotYet();
-        _draw(id, req, keccak256(abi.encode(req.entropy, "lightdive.fallback")), true);
+        _draw(id, req, bytes32(0), true);
     }
 
     /// @notice Renews a docked card once, within its 7 docking days, for half the current summon price.
@@ -256,76 +264,53 @@ contract LightdiveMinter3 is Ownable2Step, Pausable, ReentrancyGuard {
         if (toTreasury > 0) rvyn.safeTransfer(treasury, toTreasury);
     }
 
+    function _revealAll(uint256[] calldata ids, bytes[] calldata proofs) internal {
+        if (ids.length != proofs.length) revert BadQuantity();
+        for (uint256 i; i < ids.length; ++i) {
+            Request storage req = _requests[ids[i]];
+            if (!req.revealed) _draw(ids[i], req, rng.randomness(req.round, proofs[i]), false);
+        }
+    }
+
     function _draw(uint256 id, Request storage req, bytes32 r, bool fallbackUsed) internal {
         req.revealed = true;
-        pending[req.kind] -= req.qty;
         for (uint256 i; i < req.qty; ++i) {
-            nft.mint(req.player, _card(req.kind, uint256(keccak256(abi.encode(r, id, i)))));
+            uint256 card = req.firstId + i;
+            // a card sent home before its reveal (it cannot be: sealed cards never sail) would simply be skipped
+            if (!nft.exists(card)) continue;
+            if (fallbackUsed) {
+                uint16[2] memory low = _band(req.kind, 0);
+                nft.unseal(card, 0, req.kind == SPIRE ? 1 : 0, low[0], 0);
+            } else {
+                (uint8 rarity, uint8 trait, uint16 power, uint64 dna) = _card(req.kind, uint256(keccak256(abi.encode(r, id, i))));
+                nft.unseal(card, rarity, trait, power, dna);
+            }
         }
         emit SummonRevealed(id, fallbackUsed);
     }
 
-    function _openDeck(uint8 kind) internal {
-        Deck storage d = _decks[kind];
-        d.number += 1;
-        d.remaining = DECK_SIZE;
-        if (kind == SPIRE) {
-            d.rarityLeft = [uint32(480), 290, 150, 70, 10];
-        } else if (kind == PRISM) {
-            d.rarityLeft = [uint32(500), 280, 150, 60, 10];
-            for (uint256 r; r < 5; ++r) {
-                uint32 n = d.rarityLeft[r];
-                uint32 wide = n * 4 / 10;
-                uint32 focused = n * 4 / 10;
-                d.beamLeft[r] = [wide, focused, n - wide - focused];
-            }
-        } else {
-            d.rarityLeft = [uint32(440), 350, 150, 50, 10];
-        }
-        emit DeckOpened(kind, d.number);
+    function _band(uint8 kind, uint8 rarity) internal view returns (uint16[2] memory) {
+        return kind == SPIRE ? SPIRE_POWER[rarity] : kind == PRISM ? PRISM_POWER[rarity] : SEEKER_POWER[rarity];
     }
 
-    function _pick5(uint32[5] storage left, uint256 r) internal returns (uint8) {
-        uint256 total;
-        for (uint256 i; i < 5; ++i) total += left[i];
-        uint256 x = r % total;
-        for (uint8 i; i < 5; ++i) {
-            if (x < left[i]) {
-                left[i] -= 1;
-                return i;
-            }
-            x -= left[i];
-        }
-        revert SoldOut(); // unreachable
-    }
-
-    function _pick3(uint32[3] storage left, uint256 r) internal returns (uint8) {
-        uint256 x = r % (uint256(left[0]) + left[1] + left[2]);
-        for (uint8 i; i < 3; ++i) {
-            if (x < left[i]) {
-                left[i] -= 1;
-                return i;
-            }
-            x -= left[i];
-        }
-        revert SoldOut(); // unreachable
-    }
-
-    function _card(uint8 kind, uint256 seed) internal returns (LightdiveNFT3.Attributes memory a) {
-        Deck storage d = _decks[kind];
-        if (d.remaining == 0) _openDeck(kind);
+    /// @dev One card from its own seed: rarity by the kind's odds, power within the rarity's band, then the trait
+    /// (a spire's berths = rarity + 1, a prism's beam 40/40/20%, a seeker's light one of six). The website draws the
+    /// same way (lib/lightdive-v3/onchain.ts, drawCard).
+    function _card(uint8 kind, uint256 seed) internal view returns (uint8 rarity, uint8 trait, uint16 power, uint64 dna) {
         uint256 u1 = uint256(keccak256(abi.encode(seed, 1)));
         uint256 u2 = uint256(keccak256(abi.encode(seed, 2)));
         uint256 u3 = uint256(keccak256(abi.encode(seed, 3)));
-        uint8 rarity = _pick5(d.rarityLeft, u1);
-        d.remaining -= 1;
-        uint16[2] memory band = kind == SPIRE ? SPIRE_POWER[rarity] : kind == PRISM ? PRISM_POWER[rarity] : SEEKER_POWER[rarity];
-        a.kind = kind;
-        a.rarity = rarity;
-        a.power = uint16(band[0] + u2 % (uint256(band[1]) - band[0] + 1));
-        a.voyagesLeft = voyages[kind];
-        a.deck = d.number;
-        a.dna = uint64(u3 >> 128);
-        a.trait = kind == SPIRE ? rarity + 1 : kind == PRISM ? _pick3(d.beamLeft[rarity], u3) : uint8((u2 >> 64) % 6);
+        uint256 x = u1 % BP;
+        uint16[5] memory odds = RARITY_BP[kind];
+        for (; rarity < 4; ++rarity) {
+            if (x < odds[rarity]) break;
+            x -= odds[rarity];
+        }
+        uint16[2] memory band = _band(kind, rarity);
+        power = uint16(band[0] + u2 % (uint256(band[1]) - band[0] + 1));
+        dna = uint64(u3 >> 128);
+        if (kind == SPIRE) trait = rarity + 1;
+        else if (kind == PRISM) { uint256 b = u3 % 10; trait = b < 4 ? 0 : b < 8 ? 1 : 2; }
+        else trait = uint8((u2 >> 64) % 6);
     }
 }

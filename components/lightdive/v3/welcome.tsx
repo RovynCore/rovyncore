@@ -32,17 +32,17 @@ export function WelcomeBack({ sim, go }: { sim: Sim; go: (v: View) => void }) {
   }, []);
   if (away === null || !s) return null;
 
-  const waiting = s.dives.filter((d) => d.pending);
+  // voyages that came back while the player was away (v3.3: already counted)
+  const waiting = s.dives.filter((d) => d.result && d.revealAt > sim.now - away);
   const docked = s.nfts.filter((n) => n.dockedAt !== undefined && !n.homeAt).length;
   const left = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   const cm = sim.commissions;
   const open = cm.list.filter((c) => !cm.done.includes(c.index) && !cm.abandoned.includes(c.index)).length;
   const hours = Math.floor(away / 3_600_000);
   const rows: { text: string; to: View }[] = [];
-  if (waiting.length) rows.push({ text: tl("{0} 趟結果等你收取，一共 {1} $RVYN", { 0: waiting.length, 1: fmt(waiting.reduce((a, d) => a + (d.reward ?? 0), 0)) }), to: "dive" });
+  if (waiting.length) rows.push({ text: tl("你不在的時候 {0} 趟航行回來了，一共帶回 {1} $RVYN，已算進金庫", { 0: waiting.length, 1: fmt(waiting.reduce((a, d) => a + (d.reward ?? 0), 0)) }), to: "treasury" });
   const commissionsOpen = unlocksOf(s).commissions; // (not shown before the daily commissions open)
-  if (commissionsOpen && cm.ready !== null) rows.push({ text: tl("手上的委託已經可以完成"), to: "commissions" });
-  else if (commissionsOpen && cm.active === null && open) rows.push({ text: tl("今天還有 {0} 個委託可以接", { 0: open }), to: "commissions" });
+  if (commissionsOpen && cm.active === null && open) rows.push({ text: tl("今天還有 {0} 個委託可以接", { 0: open }), to: "commissions" });
   if (s.credit > 0.005) rows.push({ text: tl("金庫裡有 {0} $RVYN 可以提領", { 0: fmt(s.credit) }), to: "treasury" });
   if (docked) rows.push({ text: tl("{0} 張卡停泊了，可以續航或等它歸航", { 0: docked }), to: "spires" });
   if (left) rows.push({ text: tl("今天還有 {0} 張出發令", { 0: left }), to: "dive" });

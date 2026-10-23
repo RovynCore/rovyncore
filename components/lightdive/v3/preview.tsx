@@ -29,6 +29,7 @@ import { Treasury } from "./treasury";
 import { Settings } from "./settings-page";
 import { Logbook, recordsOf, unseenFootprints } from "./logbook";
 import { CommissionsPage, commissionBadge } from "./commissions";
+import { VotePage } from "./vote";
 import { isDaylight, useSettings } from "./settings";
 import { useVoyageAlerts } from "./alerts";
 import { useLanguage } from "@/components/language-provider";
@@ -52,7 +53,7 @@ const MENU_SRC: MenuGroup[] = [
   { group: "資產", items: [{ key: "spires", label: "光塔", icon: "spires" }, { key: "prisms", label: "稜鏡", icon: "prisms" }, { key: "seekers", label: "探索者", icon: "seekers" }] },
   { group: "取得", items: [{ key: "summon", label: "召喚", icon: "summon" }, { key: "market", label: "市集", icon: "market" }, { key: "buy", label: "購買 $RVYN", icon: "rvyn" }] },
   { group: "收益", items: [{ key: "treasury", label: "金庫", icon: "treasury" }] },
-  { group: "其他", items: [{ key: "guide", label: "玩法", icon: "guide" }, { key: "story", label: "故事", icon: "voyage" }, { key: "whitepaper", label: "白皮書", icon: "codex" }, { key: "credits", label: "素材授權", icon: "codex" }, { key: "settings", label: "設定", icon: "settings" }] },
+  { group: "其他", items: [{ key: "guide", label: "玩法", icon: "guide" }, { key: "story", label: "故事", icon: "voyage" }, { key: "vote", label: "世界觀投票", icon: "signal" }, { key: "whitepaper", label: "白皮書", icon: "codex" }, { key: "credits", label: "素材授權", icon: "codex" }, { key: "settings", label: "設定", icon: "settings" }] },
 ];
 const MENU = localized(MENU_SRC);
 /** On the testnet the "buy $RVYN" page is the test-token faucet instead. */
@@ -115,8 +116,8 @@ export function LightdiveApp({ sim }: { sim: Game }) {
     if (!s) return {} as Partial<Record<View, number>>;
     const docked = (k: number) => s.nfts.filter((n) => n.kind === k && n.dockedAt !== undefined && !n.homeAt).length;
     return {
-      // results waiting to be collected come first; otherwise the tickets left today
-      dive: s.dives.filter((d) => d.pending).length || Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today)),
+      // the tickets left today
+      dive: Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today)),
       spires: docked(0), prisms: docked(1), seekers: docked(2),
       treasury: s.credit > 0 ? 1 : 0,
       logbook: view === "logbook" ? 0 : unseenFootprints(recordsOf(sim)), // opening the page marks them seen
@@ -196,6 +197,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
           : view === "treasury" ? <Treasury sim={sim} />
           : view === "credits" ? <Credits />
           : view === "story" ? <Story />
+          : view === "vote" ? <VotePage sim={sim} />
           : view === "buy" ? <Buy />
           : view === "faucet" && live ? <Faucet sim={sim} />
           : view === "whitepaper" ? <Suspense fallback={<p className="hud-dim">{tl("載入中…")}</p>}><Whitepaper /></Suspense>

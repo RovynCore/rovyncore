@@ -28,7 +28,7 @@
     "ASSET_STATE_FRESHNESS_SECONDS": "600",
     "PUBLIC_API_RATE_LIMIT": "120"
   },
-  "triggers": { "crons": ["*/2 * * * *"] },
+  "triggers": { "crons": [] },
   "observability": {
     "enabled": true
   }

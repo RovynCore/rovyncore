@@ -15,6 +15,7 @@ import http from "node:http";
 import { createPublicClient, defineChain, encodeDeployData, encodeFunctionData, getAddress, http as httpTransport, keccak256, parseEther, toBytes } from "viem";
 import { CHAINS } from "../packages/web3/config.ts";
 import { ODDS } from "../lib/lightdive-v3/odds.ts";
+import { NFT_BASE_URI } from "../lib/lightdive-v3/metadata.ts";
 
 const BEAM_KEY = ["廣域", "聚焦", "針芒"];
 const A = JSON.parse(fs.readFileSync("packages/contracts/lightdive-v3/artifacts/contracts.json", "utf8"));
@@ -67,8 +68,8 @@ function steps() {
     deploy("LightdiveNFT3", () => [me, treasury]),
     deploy("CoreLightPool3", () => [me, at("TestRVYN")]),
     deploy("LightdiveMinter3", () => [me, at("TestRVYN"), at("LightdiveNFT3"), at("DrandEvmnetRandomness"), at("CoreLightPool3"), treasury]),
-    deploy("Expedition3", () => [me, at("LightdiveNFT3"), at("LightdiveConfig3"), at("DrandEvmnetRandomness"), at("CoreLightPool3")]),
-    deploy("LightdiveMarket3", () => [me, at("TestRVYN"), at("LightdiveNFT3"), at("LightdiveConfig3"), at("CoreLightPool3")]),
+    deploy("Expedition3", () => [me, at("LightdiveNFT3"), at("LightdiveConfig3"), at("DrandEvmnetRandomness"), at("CoreLightPool3"), at("LightdiveMinter3")]),
+    deploy("LightdiveMarket3", () => [me, at("TestRVYN"), at("LightdiveNFT3"), at("LightdiveConfig3"), at("CoreLightPool3"), at("LightdiveMinter3")]),
     deploy("LightdiveCommissions3", () => [me, at("Expedition3"), at("LightdiveConfig3")]),
   ];
   for (let c = 0; c < 6; c++) {
@@ -82,6 +83,7 @@ function steps() {
     call("nft.setGame", "連接：卡片 → 遠征", C.nft, "setGame", () => [at("Expedition3")]),
     call("pool.setExpedition", "連接：核光池 → 遠征", C.pool, "setExpedition", () => [at("Expedition3")]),
     call("expedition.setCommissions", "連接：遠征 → 每日委託", C.expedition, "setCommissions", () => [at("LightdiveCommissions3")]),
+    call("nft.setBaseURI", "設定卡片資料網址（錢包和瀏覽器顯示卡圖和屬性）", C.nft, "setBaseURI", () => [NFT_BASE_URI]),
     call("tRVYN mint pool seed", "鑄造核光池的 tRVYN", C.rvyn, "mint", () => [me, seed]),
     call("tRVYN approve pool", "允許核光池使用 tRVYN", C.rvyn, "approve", () => [at("CoreLightPool3"), seed]),
     call("pool.fund", "存入核光池", C.pool, "fund", () => [seed]),

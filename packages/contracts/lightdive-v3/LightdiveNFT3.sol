@@ -12,7 +12,8 @@ import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step
 /// @notice RovynCore: Lightdive v3 NFTs (RVDIV): Spires, Resonance Prisms and Seekers in one collection, every game
 /// attribute on chain.
 ///
-/// Life of a card: it is minted with its full voyages; each dive spends 1-3. At zero it docks for 7 days, during which
+/// Life of a card: it is minted sealed the moment it is summoned (its id and kind are known, the rest is not), and
+/// unsealed when its summon is revealed with the drand round (v3.3). It starts with its full voyages; each dive spends 1-3. At zero it docks for 7 days, during which
 /// it may be renewed once (voyages refilled). Once renewed and spent again, or docked 7 days without renewal, it goes
 /// home: it is burned and its name stays on the Star Map Roll (the Homecoming event).
 ///
@@ -24,10 +25,12 @@ contract LightdiveNFT3 is IERC721, IERC721Metadata, IERC721Errors, ERC2981, Owna
     uint8 public constant SPIRE = 0;
     uint8 public constant PRISM = 1;
     uint8 public constant SEEKER = 2;
+    /// @notice The rarity of a card whose summon is not revealed yet (v3.3).
+    uint8 public constant SEALED = 255;
 
     struct Attributes {
         uint8 kind; // SPIRE, PRISM, SEEKER
-        uint8 rarity; // 0 Glimmer .. 4 Corestar
+        uint8 rarity; // 0 Glimmer .. 4 Corestar; SEALED until its summon is revealed
         uint8 trait; // spire: berths 1-5 (= rarity + 1); prism: beam 0 wide, 1 focused, 2 needle; seeker: light 0-5
         bool renewed; // a card can be renewed once
         uint16 power;
@@ -58,6 +61,7 @@ contract LightdiveNFT3 is IERC721, IERC721Metadata, IERC721Errors, ERC2981, Owna
     event GameSet(address game);
     event MaxAliveLowered(uint8 kind, uint32 maxAlive);
     event Minted(uint256 indexed id, address indexed to, Attributes attributes);
+    event Unsealed(uint256 indexed id, Attributes attributes);
     event VoyagesUsed(uint256 indexed id, uint16 voyagesLeft);
     event Docked(uint256 indexed id, uint64 at);
     event Renewed(uint256 indexed id, uint16 voyages);
@@ -172,12 +176,18 @@ contract LightdiveNFT3 is IERC721, IERC721Metadata, IERC721Errors, ERC2981, Owna
 
     // ---------------------------------------------------------------- minter
 
-    function mint(address to, Attributes calldata a) external returns (uint256 id) {
+    /// @notice Mints a sealed card of `kind` (v3.3): it counts against the cap at once and is unsealed by the minter
+    /// when its summon is revealed.
+    function mintSealed(address to, uint8 kind, uint16 voyages) external returns (uint256 id) {
         if (msg.sender != minter) revert NotMinter();
         if (to == address(0)) revert ERC721InvalidReceiver(address(0));
-        if (a.kind > SEEKER || a.voyagesLeft == 0 || a.renewed || a.dockedAt != 0) revert BadValue();
-        if (alive[a.kind] >= maxAlive[a.kind]) revert BadValue();
+        if (kind > SEEKER || voyages == 0) revert BadValue();
+        if (alive[kind] >= maxAlive[kind]) revert BadValue();
         id = nextId++;
+        Attributes memory a;
+        a.kind = kind;
+        a.rarity = SEALED;
+        a.voyagesLeft = voyages;
         _attributes[id] = a;
         alive[a.kind] += 1;
         // Not a safe mint: a contract that cannot receive must not be able to block a reveal.
@@ -187,6 +197,19 @@ contract LightdiveNFT3 is IERC721, IERC721Metadata, IERC721Errors, ERC2981, Owna
         }
         emit Transfer(address(0), to, id);
         emit Minted(id, to, a);
+    }
+
+    /// @notice Reveals a sealed card's draw: rarity, trait, power and art seed (kind and voyages stay as minted).
+    function unseal(uint256 id, uint8 rarity, uint8 trait, uint16 power, uint64 dna) external {
+        if (msg.sender != minter) revert NotMinter();
+        _requireOwned(id);
+        Attributes storage a = _attributes[id];
+        if (a.rarity != SEALED || rarity > 4) revert BadValue();
+        a.rarity = rarity;
+        a.trait = trait;
+        a.power = power;
+        a.dna = dna;
+        emit Unsealed(id, a);
     }
 
     /// @notice Renewal: refills a docked card's voyages. Allowed once per card, within the docking period (the minter

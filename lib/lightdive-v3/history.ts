@@ -11,7 +11,7 @@ export type CardHistory = {
   best: number; // best multiplier x100
   legends: number;
   greats: number; // great haul or better
-  deepDives: number; // deep dives that pressed on to the end
+  deepDives: number; // deep dives with a result
   spires: number; // different teams (spires) it sailed with
   first: number | null; // day of its first voyage
 };
@@ -22,14 +22,13 @@ const skies = new Map<number, Sky>();
 const sky = (day: number) => { if (!skies.has(day)) skies.set(day, skyOf(day)); return skies.get(day)!; };
 /** The name of a result tier, from the table the dive drew from (cluster and risk, as the game shows it). */
 export function outcomeNameOf(dest: number, day: number, beam: number, long: boolean, tier: number): string {
-  if (tier === 254) return "turnedBack";
   const ev = sky(day).events.get(dest);
   const risk = Math.max(0, Math.min(2, beam + (ev === "storm" ? 1 : ev === "calm" ? -1 : 0) + (long ? 1 : 0))) as Beam;
   return outcomesOf(baseTable(DESTINATIONS[dest].cluster, risk))[tier] ?? "normal";
 }
 
 /** One voyage as the history needs it. */
-export type Voyage = { crew: number[]; spire: number; dest: number; day: number; outcome?: string; multX100?: number; deep?: boolean; turnedBack?: boolean };
+export type Voyage = { crew: number[]; spire: number; dest: number; day: number; outcome?: string; multX100?: number; deep?: boolean };
 
 /** Folds voyages into each card's history. */
 export function historiesOf(voyages: Voyage[]): Map<number, CardHistory> {
@@ -46,7 +45,7 @@ export function historiesOf(voyages: Voyage[]): Map<number, CardHistory> {
         h.best = Math.max(h.best, v.multX100 ?? 0);
         if (v.outcome === "legend") h.legends += 1;
         if (v.outcome === "great" || v.outcome === "legend") h.greats += 1;
-        if (v.deep && !v.turnedBack) h.deepDives += 1;
+        if (v.deep) h.deepDives += 1;
       }
       if (!spires.has(id)) spires.set(id, new Set());
       spires.get(id)!.add(v.spire);
@@ -58,10 +57,11 @@ export function historiesOf(voyages: Voyage[]): Map<number, CardHistory> {
 }
 
 type Ev = { args: Record<string, unknown>; blockNumber: bigint; logIndex: number };
-export type LedgerLogs = { teamSet: Ev[]; disbanded: Ev[]; dived: Ev[]; details: Ev[]; turned: Ev[]; revealed: Ev[] };
+export type LedgerLogs = { teamSet: Ev[]; disbanded: Ev[]; dived: Ev[]; details: Ev[]; revealed: Ev[] };
 
-/** Voyages from the chain's events: each dive with the roster its team had at that moment. */
-export function voyagesFromLogs(l: LedgerLogs): Voyage[] {
+/** Voyages from the chain's events: each dive with the roster its team had at that moment. `decided`: results drand has
+ *  decided that are not settled on chain yet (v3.3 settles lazily), by dive id. */
+export function voyagesFromLogs(l: LedgerLogs, decided?: Map<string, { tier: number; multX100: number }>): Voyage[] {
   type Step = { at: [bigint, number]; kind: "set" | "off" | "dive"; e: Ev };
   const steps: Step[] = [
     ...l.teamSet.map((e) => ({ at: [e.blockNumber, e.logIndex] as [bigint, number], kind: "set" as const, e })),
@@ -69,7 +69,6 @@ export function voyagesFromLogs(l: LedgerLogs): Voyage[] {
     ...l.dived.map((e) => ({ at: [e.blockNumber, e.logIndex] as [bigint, number], kind: "dive" as const, e })),
   ].sort((a, b) => (a.at[0] === b.at[0] ? a.at[1] - b.at[1] : a.at[0] < b.at[0] ? -1 : 1));
   const long = new Set(l.details.filter((e) => e.args.long).map((e) => String(e.args.diveId)));
-  const back = new Map(l.turned.map((e) => [String(e.args.diveId), Boolean(e.args.turnBack)]));
   const result = new Map(l.revealed.map((e) => [String(e.args.diveId), e.args]));
   const roster = new Map<number, number[]>();
   const out: Voyage[] = [];
@@ -80,11 +79,11 @@ export function voyagesFromLogs(l: LedgerLogs): Voyage[] {
     else if (s.kind === "off") roster.delete(spire);
     else {
       const id = String(a.diveId), dest = Number(a.dest), day = Number(a.day);
-      const r = result.get(id);
+      const r = result.get(id) ?? decided?.get(id);
       const deep = long.has(id);
       out.push({
-        crew: [spire, ...(roster.get(spire) ?? [])], spire, dest, day, deep, turnedBack: back.get(id) ?? false,
-        outcome: r ? (r.fallbackUsed ? "normal" : outcomeNameOf(dest, day, Number(a.beam), deep, Number(r.tier))) : undefined,
+        crew: [spire, ...(roster.get(spire) ?? [])], spire, dest, day, deep,
+        outcome: r ? ("fallbackUsed" in r && r.fallbackUsed ? "empty" : outcomeNameOf(dest, day, Number(a.beam), deep, Number(r.tier))) : undefined,
         multX100: r ? Number(r.multX100) : undefined,
       });
     }

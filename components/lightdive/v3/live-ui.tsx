@@ -103,15 +103,15 @@ export function DraftBar({ sim }: { sim: Game }) {
   );
 }
 
-/** Summons paid for but not opened yet (the wallet closed, or the page was left while waiting). */
+/** Summons whose drand round is late (v3.3: they open on their own as soon as drand publishes it; nothing to sign). */
 export function SummonBar({ sim }: { sim: Game }) {
   const ch = sim.chain!;
-  const due = (sim.state?.mints ?? []).filter((m) => sim.now >= m.revealAt + 3000);
+  const due = (sim.state?.mints ?? []).filter((m) => sim.now >= m.revealAt + 15_000);
   if (!due.length || ch.tx?.running) return null;
   return (
-    <div className="v3-draftbar is-summon" role="region" aria-label={tl("待開啟的召喚")}>
-      <span><b>{tl("{0} 次召喚還沒開啟", { 0: due.length })}</b><small>{tl("付款已完成，開啟後卡片就會進到你的錢包。")}</small></span>
-      <button type="button" className="hud-btn hud-btn--primary hud-btn--sm" onClick={() => void ch.openSummons(due.map((m) => m.id))}><Sparkles aria-hidden="true" />{tl("開啟召喚陣")}</button>
+    <div className="v3-draftbar is-summon" role="region" aria-label={tl("等待中的召喚")}>
+      <span><b>{tl("{0} 次召喚在等 drand", { 0: due.length })}</b><small>{tl("卡片已經在你的錢包裡（封印中），drand 公開這一輪後就會自動揭曉，不用再簽錢包。")}</small></span>
+      <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm" onClick={() => void ch.reload()}><Sparkles aria-hidden="true" />{tl("重新整理")}</button>
     </div>
   );
 }

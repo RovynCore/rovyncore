@@ -34,6 +34,3 @@
 .lds__cols > * { flex: 1 1 260px; min-width: 0; }
 /* 自動揭曉 status (10-22) */
 .lds__warn { margin: 0; padding: 10px 14px; border: 1px solid rgba(255, 138, 106, 0.5); border-radius: 10px; background: rgba(255, 138, 106, 0.08); color: #ffb39c; }
-.lds__keeper { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; padding: 10px 14px; border: 1px solid rgba(201, 255, 85, 0.35); border-radius: 10px; }
-.lds__keeper.is-warn { border-color: rgba(255, 138, 106, 0.6); }
-.lds__keeper b { color: #c9ff55; }

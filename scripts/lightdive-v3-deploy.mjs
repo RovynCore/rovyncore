@@ -27,6 +27,7 @@ import { createPublicClient, createWalletClient, defineChain, getAddress, http, 
 import { privateKeyToAccount } from "viem/accounts";
 import { CHAINS } from "../packages/web3/config.ts";
 import { ODDS } from "../lib/lightdive-v3/odds.ts";
+import { NFT_BASE_URI } from "../lib/lightdive-v3/metadata.ts";
 
 const MAINNET_RVYN = "0x545a1ff27596de2f31480df39aa9548f363fc361";
 const BEAM_KEY = ["廣域", "聚焦", "針芒"];
@@ -182,8 +183,8 @@ const config = await deploy("LightdiveConfig3", [me]);
 const nft = await deploy("LightdiveNFT3", [me, treasury]);
 const pool = await deploy("CoreLightPool3", [me, rvyn]);
 const minter = await deploy("LightdiveMinter3", [me, rvyn, nft, rng, pool, treasury]);
-const expedition = await deploy("Expedition3", [me, nft, config, rng, pool]);
-const market = await deploy("LightdiveMarket3", [me, rvyn, nft, config, pool]);
+const expedition = await deploy("Expedition3", [me, nft, config, rng, pool, minter]);
+const market = await deploy("LightdiveMarket3", [me, rvyn, nft, config, pool, minter]);
 const commissions = await deploy("LightdiveCommissions3", [me, expedition, config]);
 
 for (let c = 0; c < 6; c++) {
@@ -196,6 +197,7 @@ await call("nft.setMinter", nft, "LightdiveNFT3", "setMinter", [minter]);
 await call("nft.setGame", nft, "LightdiveNFT3", "setGame", [expedition]);
 await call("pool.setExpedition", pool, "CoreLightPool3", "setExpedition", [expedition]);
 await call("expedition.setCommissions", expedition, "Expedition3", "setCommissions", [commissions]);
+await call("nft.setBaseURI", nft, "LightdiveNFT3", "setBaseURI", [NFT_BASE_URI]); // 卡片資料 (lib/lightdive-v3/metadata.ts)
 
 if (!mainnet) {
   await call("tRVYN mint pool seed", rvyn, "TestRVYN", "mint", [me, seed]);

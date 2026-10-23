@@ -7,11 +7,12 @@ import {LightdiveConfig3} from "./LightdiveConfig3.sol";
 import {Expedition3} from "./Expedition3.sol";
 
 /// @notice Daily commissions for Lightdive (v3.1). Every UTC day has three commissions, the same for everyone and
-/// derived from the day alone (like the sky), so nobody sets them by hand. A player accepts one at a time; a dive that
-/// departs after accepting and meets the commission completes it once its result is revealed, and completing pays a
-/// bonus of `bonusBp` of that dive's x1.00 reward into the player's claimable balance (within the day's ceiling, see
-/// Expedition3.creditBonus). An abandoned commission cannot be taken again that day; each is completed at most once.
-/// @dev Candidate, unaudited. Reads dives and results from Expedition3; pays through Expedition3.creditBonus.
+/// derived from the day alone (like the sky), so nobody sets them by hand. A player takes one at a time, on its own or
+/// together with a dive (v3.3); a dive of the same day that departs after taking it and meets it completes it when the
+/// dive is settled, with no transaction of its own, and completing pays a bonus of `bonusBp` of that dive's x1.00
+/// reward into the player's claimable balance (within the day's ceiling, see Expedition3). An abandoned commission
+/// cannot be taken again that day; each is completed at most once.
+/// @dev Candidate, unaudited. Reads dives and results from Expedition3, which calls `acceptFor` and `settled`.
 contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
     uint256 internal constant BP = 10_000;
     uint8 public constant PER_DAY = 3;
@@ -19,7 +20,7 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
     // kinds (param in brackets)
     uint8 public constant CLUSTER = 0; // a result that is not empty-handed in cluster [0..2]
     uint8 public constant GOOD = 1; // a "good" result or better anywhere
-    uint8 public constant DECISION = 2; // a dive with decision [1 steady, 2 bold, 3 detour]
+    uint8 public constant BOND = 2; // a dive whose crew bond was at least [1..3] at departure (v3.3; was a decision)
     uint8 public constant ATTUNED = 3; // a dive with an attuned seeker
     uint8 public constant SKY = 4; // a dive to a destination with a star event that day
     uint8 public constant DEEP = 5; // a deep dive
@@ -60,6 +61,7 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
     error NotRevealed();
     error NotMet();
     error OutOfBounds();
+    error NotExpedition();
 
     constructor(address owner_, Expedition3 expedition_, LightdiveConfig3 config_) Ownable(owner_) {
         expedition = expedition_;
@@ -81,7 +83,7 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
             uint8 kind = uint8(h % KINDS);
             if (taken[kind]) continue;
             taken[kind] = true;
-            uint8 param = kind == CLUSTER ? uint8((h >> 8) % 3) : kind == DECISION ? uint8((h >> 8) % 3) + 1 : 0;
+            uint8 param = kind == CLUSTER ? uint8((h >> 8) % 3) : kind == BOND ? uint8((h >> 8) % 3) + 1 : 0;
             out[found++] = Commission(kind, param);
         }
     }
@@ -93,7 +95,7 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
         Expedition3.Result memory r = expedition.result(id);
         if (c.kind == CLUSTER) return config.clusterOf(d.dest) == c.param && r.multX100 > 0;
         if (c.kind == GOOD) return _goodOrBetter(id, d, r);
-        if (c.kind == DECISION) return d.decision == c.param;
+        if (c.kind == BOND) return d.bond >= c.param;
         if (c.kind == ATTUNED) return d.attuned;
         if (c.kind == SKY) return config.eventAt(d.day, d.dest) != 0;
         if (c.kind == DEEP) return d.long;
@@ -105,13 +107,16 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
 
     /// @notice Takes commission `index` of today. One at a time; not one already completed or abandoned today.
     function accept(uint8 index) external {
-        if (index >= PER_DAY) revert BadIndex();
-        uint32 day = today();
-        Active storage a = active[msg.sender];
-        if (a.on && a.day == day) revert Taken();
-        if (marks[msg.sender][day] & (uint16(1) << index | uint16(1) << (index + 8)) != 0) revert Taken();
-        active[msg.sender] = Active(day, index, true, expedition.diveCount());
-        emit Accepted(msg.sender, day, index);
+        _accept(msg.sender, index);
+    }
+
+    /// @notice Expedition3 takes a commission for a player together with a dive. Taking the one already active is a
+    /// no-op, so a dive can always carry the player's choice.
+    function acceptFor(address player, uint8 index) external {
+        if (msg.sender != address(expedition)) revert NotExpedition();
+        Active storage a = active[player];
+        if (a.on && a.day == today() && a.index == index) return;
+        _accept(player, index);
     }
 
     /// @notice Gives up the active commission; it cannot be taken again today.
@@ -123,22 +128,19 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
         delete active[msg.sender];
     }
 
-    /// @notice Completes the active commission with a revealed dive of the same day that departed after accepting.
-    function complete(uint256 diveId) external nonReentrant returns (uint256 bonus) {
-        Active memory a = active[msg.sender];
-        if (!a.on) revert NoneActive();
-        if (a.day != today()) revert Expired();
-        if (diveId < a.fromDive) revert TooEarly();
+    /// @notice Expedition3 reports a settled dive: if it completes the owner's active commission (same day, departed
+    /// after taking it, meets it), the commission is marked done and the bonus to credit is returned; otherwise 0.
+    function settled(address owner, uint256 diveId) external returns (uint256 bonus) {
+        if (msg.sender != address(expedition)) revert NotExpedition();
+        Active memory a = active[owner];
+        if (!a.on || diveId < a.fromDive) return 0;
         Expedition3.Dive memory d = expedition.diveInfo(diveId);
-        if (d.owner != msg.sender) revert NotYours();
-        if (d.day != a.day) revert Expired();
-        if (!d.revealed) revert NotRevealed();
-        if (!meets(diveId, commissionsOf(a.day)[a.index])) revert NotMet();
-        delete active[msg.sender];
-        marks[msg.sender][a.day] |= uint16(1) << a.index;
+        if (d.day != a.day || !meets(diveId, commissionsOf(a.day)[a.index])) return 0;
+        delete active[owner];
+        marks[owner][a.day] |= uint16(1) << a.index;
         // the dive's x1.00 reward before the departure cost, times the bonus share
-        bonus = expedition.creditBonus(msg.sender, d.pointsE2 * d.rate / 100 * bonusBp / BP);
-        emit Completed(msg.sender, a.day, a.index, diveId, bonus);
+        bonus = d.pointsE2 * d.rate / 100 * bonusBp / BP;
+        emit Completed(owner, a.day, a.index, diveId, bonus);
     }
 
     // ---------------------------------------------------------------- owner
@@ -151,11 +153,21 @@ contract LightdiveCommissions3 is Ownable2Step, ReentrancyGuard {
 
     // ---------------------------------------------------------------- internal
 
+    function _accept(address player, uint8 index) internal {
+        if (index >= PER_DAY) revert BadIndex();
+        uint32 day = today();
+        Active storage a = active[player];
+        if (a.on && a.day == day) revert Taken();
+        if (marks[player][day] & (uint16(1) << index | uint16(1) << (index + 8)) != 0) revert Taken();
+        active[player] = Active(day, index, true, expedition.diveCount());
+        emit Accepted(player, day, index);
+    }
+
     /// @dev "Good" or better: the row named good, great or legend in the dive's table (the same naming as the
     /// website: after row 0 (empty) comes an optional "slight loss" row whose top is at most x0.80, then normal, then
-    /// good, great, legend). A turned-back or fallback dive is x1.00, never good.
+    /// good, great, legend). A fallback is empty-handed (tier 0), never good.
     function _goodOrBetter(uint256 id, Expedition3.Dive memory d, Expedition3.Result memory r) internal view returns (bool) {
-        if (r.tier >= expedition.TURNED_BACK() || r.tier == 0) return false;
+        if (r.tier == 0) return false;
         uint8 stability = d.bond + (d.supply == expedition.CHART() ? config.chartStability() : 0) + (expedition.echoed(id) ? config.echoStability() : 0);
         LightdiveConfig3.Plan memory p = config.plan(d.dest, d.power, d.beam, d.day, d.decision, stability, d.long);
         // rows are named from the base table (before a decision rescales the multipliers), as LightdiveConfig3 does

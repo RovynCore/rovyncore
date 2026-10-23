@@ -9,8 +9,8 @@
 A day of play is just three steps:
 
 - **Build a team**: Spire + Prism + Seekers = one team. The higher its Power, the deeper it can go.
-- **Dive**: Pick a destination and set out. The voyage takes 5 minutes, its log is written line by line, and you make one decision along the way.
-- **Collect**: After the reveal, collect by hand. Rewards go into the Treasury and can be withdrawn to your wallet at any time.
+- **Dive**: Pick a destination and set out. The voyage takes 5 minutes, and its log is written line by line, like a short story.
+- **Rewards**: At the reveal, rewards go into the Treasury on their own, with nothing to collect, and can be withdrawn to your wallet at any time.
 
 Rewards are not fixed. The Core Light Pool releases only 1% of its balance each day, shared out in proportion to the Lightdust each person brought back that day. The more people dive, the less each one gets; no new $RVYN is ever minted.
 
@@ -49,9 +49,9 @@ The full story is on the in-game Story page.
 |---|---|
 | 00:00 UTC | A new day: 3 Dive Passes per wallet; the 24 destinations take on today's light; 4 sky events are announced; today's rate is updated. |
 | Any time | Use a Dive Pass: choose a team → a cluster → a destination → confirm → set out. |
-| Within 5 minutes of setting out | The voyage log writes itself; at 30% a voyage decision appears. |
+| Within 5 minutes of setting out | The voyage log writes itself: the crew's words, the sky, the small stories along the way. |
 | 5 minutes after setting out | The result and wear are revealed. |
-| After the reveal | Collect by hand; only then do rewards go into the Treasury. A team that hasn't collected can't set out again. |
+| After the reveal | Rewards go into the Treasury on their own, and the team can set out again. The result is written on chain by the player's next transaction. |
 | Any time | Withdraw from the Treasury to your wallet; the later you withdraw, the lower the fee. |
 
 ### Limits
@@ -154,26 +154,19 @@ All 18 tables are on the in-game Rules page, with every chance public.
 | Thunderstorm | Risk up one level, departure cost −2 percentage points |
 | Calm Sea | Risk down one level |
 
-### Voyage decision
+### Stories on the way
 
-Each voyage brings one decision at 30%, open until 1 minute before the reveal; if you don't choose, it counts as Let it ride. The effects are fixed, and you can see how the odds change before you choose.
+From v3.3 there is nothing to decide during a voyage. Each voyage tells the story of an event card on the way, with one crew member saying a line; the line is only story and changes no odds or results.
 
-| Decision | Effect | Average multiplier |
-|---|---|---|
-| Steady (safety net) | This dive won't come back empty, but tops out at Good haul | ×0.97 |
-| Bold (go big) | Empty-handed chance ×1.5 plus 4 percentage points; Great haul chance ×2.5, Legendary ×3 | ×1.03 |
-| Detour (protect the team) | Odds unchanged; only 1 voyage of wear this dive, departure cost +2 percentage points | ×1.00 |
-| Let it ride | No change | ×1.00 |
-
-The average multipliers differ by only 3% on purpose: everyone shares the same pool, so there must be no "always pick this" answer.
+Decisions were removed so that nothing needs a wallet signature after departure: the result depends only on the conditions at departure and on drand, and the player just watches the voyage unfold.
 
 ### Order of application
 
-Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo → voyage decision.
+Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo.
 
 ### Deep dives
 
-Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. The voyage decision comes early and closes 10 minutes before the reveal; then comes a second call: from 10 minutes to 1 minute before the reveal you may turn back. A voyage that turns back settles at ×1.00 with 1 wear, and still pays its departure cost.
+Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. There is no turning back on the way; a deep dive settles at the reveal like any other voyage.
 
 ### Crew bond
 
@@ -196,7 +189,7 @@ Of the $RVYN paid, 95% goes into the Core Light Pool and 5% is burned, like ever
 
 ### Daily commissions
 
-Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after accepting and meets it, once revealed, completes it for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a given voyage decision, an attuned seeker, a destination with a sky event, a deep dive, a supply.
+Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after taking it and meets it completes it on its own at the reveal, for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. On the website, taking a commission needs no wallet signature of its own: your next departure takes it. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a crew bond of at least a given level, an attuned seeker, a destination with a sky event, a deep dive, a supply.
 
 ### Wear
 
@@ -212,7 +205,7 @@ Lightdust brought back per dive = (team Power + attuned bonus) × destination re
 
 Today's rate = 1% of the Core Light Pool's available balance ÷ everyone's total Lightdust the previous day; in other words, how much $RVYN each point of Lightdust is worth. There is a cap at launch: at most 0.015 $RVYN per point.
 
-The rate is fixed for the whole day by the day's first dive (UTC): the bigger the pool, the higher it is; the more people dived the day before, the lower it is. At the reveal, what you bring back is worked out at this rate straight away and can be collected at once. So that one day can't hand out too much, every dive first reserves its ×1.00 reward; once a day's reservations reach 1.5% of the Core Light Pool, no more dives can set out that day. The game shows today's figure directly, along with how much it rose or fell since yesterday.
+The rate is fixed for the whole day by the day's first dive (UTC): the bigger the pool, the higher it is; the more people dived the day before, the lower it is. At the reveal, what you bring back is worked out at this rate straight away and goes into the Treasury. So that one day can't hand out too much, every dive first reserves its ×1.00 reward; once a day's reservations reach 1.5% of the Core Light Pool, no more dives can set out that day. The game shows today's figure directly, along with how much it rose or fell since yesterday.
 
 ### Base reward
 
@@ -235,9 +228,9 @@ Each destination also shows a "benchmark": the base reward of a team exactly at 
 
 (In $RVYN.) The shallowest and deepest benchmarks differ by about 37 times.
 
-### Collecting and withdrawing
+### Rewards and withdrawing
 
-- After the reveal you must **collect by hand** before the reward goes into the Treasury. It's the Observatory's oldest rule: light only truly comes home when it's handed to the one waiting for it.
+- At the reveal, the reward goes into the Treasury on its own. drand decides the result and the website works it out at once; the player's next departure, summon, listing or withdrawal writes it on chain along the way, so a reveal never costs a fee of its own.
 - Withdrawing to your wallet carries a fee: 15% right after a withdrawal, dropping 1 percentage point a day, free from day 15.
 
 ## 9. The $RVYN economy
@@ -267,7 +260,7 @@ Launch prices: Spire 50, Prism 30, Seeker 20 $RVYN. Once the liquidity pool open
 
 ### How a summon works
 
-Submit a request → wait a few seconds for the random signal to be published → reveal. The request fixes which random signal it will use, and no one (including us) knows that signal's value before it is published, so no one can see the result first and then choose.
+Pay, and the cards are in your wallet at once, sealed → wait a few seconds for the random signal to be published → the cards are revealed. Each card depends only on its own random signal, not on when or in what order anyone reveals. The request fixes which random signal it will use, and no one (including us) knows that signal's value before it is published, so no one can see the result first and then choose.
 
 ### Market
 
@@ -291,8 +284,8 @@ Each NFT can be renewed only once in its life. Going home keeps NFTs from piling
 ## 11. Fairness and transparency
 
 - Every chance, odds table, sky event and rate is public and always visible on screen.
-- Randomness comes from drand, a public randomness beacon run jointly by many independent organisations, which produces a new value every 3 seconds; the contract verifies its signature. A dive is tied at departure to the value published 5 minutes later, which no one (including us) can know before it is published; decisions close 1 minute before the reveal.
-- Should drand stall for more than a day, that dive settles at ×1.00 with 1 voyage of wear.
+- Randomness comes from drand, a public randomness beacon run jointly by many independent organisations, which produces a new value every 3 seconds; the contract verifies its signature. A dive is tied at departure to the value published 5 minutes later, which no one (including us) can know before it is published.
+- Should drand stall, only the owner of a voyage with no proof may settle it by the fallback: empty-handed with the most wear (1 with lamp oil); for a summon, the weakest cards. The fallback is never better than a normal draw, so holding back a reveal gains nothing.
 - The Core Light Pool balance, daily release and burns are all on-chain and can be checked on the website's Transparency page.
 - The per-wallet Dive Pass and team limits cap how large a share any big player can take at once.
 
@@ -308,7 +301,7 @@ Each NFT can be renewed only once in its life. Going home keeps NFTs from piling
 | Stage | Details |
 |---|---|
 | Now | Preview: all gameplay simulated in the browser, nothing on-chain |
-| Next | v3 contracts: Power and summons, 24 destinations and 18 odds tables, sky events and decisions, collecting, docking and renewal, daily Dive Passes and the 5-team limit, the rate, the 95/5 split of taxes, the Market |
+| Next | v3 contracts: Power and summons, 24 destinations and 18 odds tables, sky events, voyage stories and automatic rewards, docking and renewal, daily Dive Passes and the 5-team limit, the rate, the 95/5 split of taxes, the Market |
 | After that | Full testnet deployment → independent audit → liquidity pool and Buy page → mainnet |
 | Ongoing | The novel, four languages, more sky events and encounters, seasons |
 
@@ -329,4 +322,4 @@ Every step will be announced and confirmed before it goes on-chain.
 | Docked / Renewal / Going home | The three stages after voyages run out |
 | Attuned | A Seeker's light matching the destination's light today |
 | Sky event | A special event at 4 destinations each day |
-| Voyage decision | Once per dive: Steady, Bold, Detour or Let it ride |
+| Voyage episode | The event story told on the way of each voyage; it doesn't affect the result |

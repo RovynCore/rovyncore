@@ -32,7 +32,7 @@ export type Stats = {
   wallets: number;
   activeToday: number;
   totals: {
-    dives: number; deep: number; turnedBack: number; summons: number; summonPaid: number; rewards: number; levy: number;
+    dives: number; deep: number; summons: number; summonPaid: number; rewards: number; levy: number;
     claimed: number; claimFees: number; burned: number; supplies: [number, number]; supplyPaid: number;
     commissions: number; commissionBonus: number; sales: number; salesVolume: number; salesTax: number; drips: number;
     echoes: number; // v3.2: dives that followed someone else's bridge
@@ -40,9 +40,8 @@ export type Stats = {
   days: DayStats[]; // the last 14 days, newest first
   retention: { d1: number | null; d7: number | null; cohorts: number };
   clusters: number[]; // share of dives per cluster
-  decisions: number[]; // none, steady, bold, detour
   outcomes: Record<string, number>; // tier counts by name: empty, normal...
-  rarities: number[][]; // [kind][rarity] cards minted
+  rarities: number[][]; // [kind][rarity] cards unsealed (v3.3: a card is minted sealed and unsealed by its drand round)
 };
 
 const day = (ms: number) => Math.floor(ms / 86_400_000);
@@ -50,17 +49,15 @@ const day = (ms: number) => Math.floor(ms / 86_400_000);
 export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
   const { c, abi } = ctx;
   const E = abi.Expedition3, M = abi.LightdiveMinter3, K = abi.LightdiveMarket3, N = abi.LightdiveNFT3, P = abi.CoreLightPool3, C = abi.LightdiveCommissions3;
-  const [world, dived, details, decided, turned, revealed, claimed, opened, requested, minted, sold, burned, collected, paid, completed, drips, echoed] = await Promise.all([
+  const [world, dived, details, revealed, claimed, opened, requested, unsealed, sold, burned, collected, paid, completed, drips, echoed] = await Promise.all([
     readWorld(ctx, testToken),
     events<A>(ctx, c.expedition, E, "Dived"),
     events<A>(ctx, c.expedition, E, "DiveDetails"),
-    events<A>(ctx, c.expedition, E, "Decided"),
-    events<A>(ctx, c.expedition, E, "TurnedBack"),
     events<A>(ctx, c.expedition, E, "Revealed"),
     events<A>(ctx, c.expedition, E, "Claimed"),
     events<A>(ctx, c.expedition, E, "DayOpened"),
     events<A>(ctx, c.minter, M, "SummonRequested"),
-    events<A>(ctx, c.nft, N, "Minted"),
+    events<A>(ctx, c.nft, N, "Unsealed"),
     events<A>(ctx, c.market, K, "Sold"),
     events<A>(ctx, c.pool, P, "Burned").catch(() => [] as Log<A>[]),
     events<A>(ctx, c.pool, P, "Collected").catch(() => [] as Log<A>[]),
@@ -142,7 +139,7 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
     const a = args(l), d = diveDay.get(String(a.diveId)) ?? dayAt(blockOf(l));
     const r = num(a.reward); rewards += r; levy += num(a.levy); at(d).rewards += r;
     const tier = Number(a.tier);
-    const name = tier === 254 ? "turnedBack" : a.fallbackUsed ? "normal" : outcomeName(String(a.diveId), tier);
+    const name = a.fallbackUsed ? "empty" : outcomeName(String(a.diveId), tier);
     outcomes[name] = (outcomes[name] ?? 0) + 1;
   }
   let summons = 0, summonPaid = 0;
@@ -159,11 +156,8 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
 
   const clusters = [0, 0, 0, 0, 0, 0];
   for (const [, dest] of diveDest) clusters[DESTINATIONS[dest]?.cluster ?? 0] += 1;
-  const decisions = [0, 0, 0, 0];
-  for (const l of decided) decisions[Number(args(l).decision)] = (decisions[Number(args(l).decision)] ?? 0) + 1;
-  decisions[0] = Math.max(0, dived.length - decisions[1] - decisions[2] - decisions[3]);
   const rarities = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]];
-  for (const l of minted) {
+  for (const l of unsealed) {
     const at2 = args(l).attributes as { kind: number; rarity: number } | undefined;
     if (at2 && rarities[Number(at2.kind)]) rarities[Number(at2.kind)][Number(at2.rarity)] += 1;
   }
@@ -186,7 +180,7 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
     wallets: activeDays.size,
     activeToday: divers.get(today)?.size ?? 0,
     totals: {
-      dives: dived.length, deep, turnedBack: turned.filter((l) => args(l).turnBack).length, summons, summonPaid, rewards, levy,
+      dives: dived.length, deep, summons, summonPaid, rewards, levy,
       claimed: claimed.reduce((a, l) => a + num(args(l).gross), 0), claimFees: claimed.reduce((a, l) => a + num(args(l).fee), 0),
       burned: burned.reduce((a, l) => a + num(args(l).amount), 0) + collected.reduce((a, l) => a + num(args(l).burned), 0) + paid.reduce((a, l) => a + num(args(l).burned), 0),
       supplies: supplyCount, supplyPaid, commissions: completed.length, commissionBonus,
@@ -195,7 +189,6 @@ export async function readStats(ctx: Ctx, testToken: boolean): Promise<Stats> {
     days: Array.from({ length: 14 }, (_, i) => days.get(today - i) ?? blank(today - i)),
     retention: { d1: cohort(1), d7: cohort(7), cohorts: firstDay.size },
     clusters,
-    decisions,
     outcomes,
     rarities,
   };

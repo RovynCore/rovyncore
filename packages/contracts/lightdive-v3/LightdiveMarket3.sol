@@ -9,6 +9,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {LightdiveNFT3} from "./LightdiveNFT3.sol";
 import {LightdiveConfig3} from "./LightdiveConfig3.sol";
 
+interface IMinterUnseal {
+    function revealPending(uint256[] calldata ids, bytes[] calldata proofs) external;
+}
+
 interface IBurnableToken {
     function burn(uint256 amount) external;
 }
@@ -48,22 +52,30 @@ contract LightdiveMarket3 is Ownable2Step, Pausable, ReentrancyGuard {
     error Docked();
     error PriceChanged();
     error BadBatch();
+    error Sealed();
 
-    constructor(address owner_, IERC20 rvyn_, LightdiveNFT3 nft_, LightdiveConfig3 config_, address pool_) Ownable(owner_) {
+    /// @notice Unseals summons a listing carries (v3.3), so a freshly summoned card can be listed in one transaction.
+    IMinterUnseal public immutable minter;
+
+    constructor(address owner_, IERC20 rvyn_, LightdiveNFT3 nft_, LightdiveConfig3 config_, address pool_, IMinterUnseal minter_) Ownable(owner_) {
         rvyn = rvyn_;
         nft = nft_;
         config = config_;
         pool = pool_;
+        minter = minter_;
     }
 
-    /// @notice Lists a card (not on a team, not docked). The caller must have approved this contract for it.
-    function list(uint256 id, uint256 price) external whenNotPaused nonReentrant {
+    /// @notice Lists a card (not on a team, not docked, not sealed). The caller must have approved this contract for
+    /// it. `summons` and `proofs`: summon requests to unseal first (with their drand rounds' signatures).
+    function list(uint256 id, uint256 price, uint256[] calldata summons, bytes[] calldata proofs) external whenNotPaused nonReentrant {
+        if (summons.length != 0) minter.revealPending(summons, proofs);
         _list(id, price);
     }
 
     /// @notice Lists up to MAX_BATCH cards in one transaction, each at its own price (a player leaving the game can list
     /// all their idle cards with one approval for all and one signature). All or nothing: one bad card reverts the batch.
-    function listMany(uint256[] calldata ids, uint256[] calldata prices) external whenNotPaused nonReentrant {
+    function listMany(uint256[] calldata ids, uint256[] calldata prices, uint256[] calldata summons, bytes[] calldata proofs) external whenNotPaused nonReentrant {
+        if (summons.length != 0) minter.revealPending(summons, proofs);
         if (ids.length == 0 || ids.length > MAX_BATCH || ids.length != prices.length) revert BadBatch();
         for (uint256 i = 0; i < ids.length; i++) _list(ids[i], prices[i]);
     }
@@ -71,7 +83,9 @@ contract LightdiveMarket3 is Ownable2Step, Pausable, ReentrancyGuard {
     function _list(uint256 id, uint256 price) internal {
         if (price == 0 || price > MAX_PRICE) revert BadPrice();
         if (nft.ownerOf(id) != msg.sender) revert NotSeller();
-        if (nft.attributes(id).dockedAt != 0) revert Docked();
+        LightdiveNFT3.Attributes memory a = nft.attributes(id);
+        if (a.rarity == nft.SEALED()) revert Sealed();
+        if (a.dockedAt != 0) revert Docked();
         nft.transferFrom(msg.sender, address(this), id); // reverts while the card is locked on a team
         listings[id] = Listing(msg.sender, uint128(price), uint64(block.timestamp));
         emit Listed(id, msg.sender, price);

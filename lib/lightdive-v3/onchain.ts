@@ -2,6 +2,10 @@
 // player's cards, teams, dives and summons are rebuilt from the contracts' events and views every time. The site
 // (components/lightdive/v3/use-chain.ts) turns this into the same SimState the preview uses; tests/lightdive-v3-chain
 // runs it in Node against a local chain. Relative imports only, so Node can load this file directly.
+//
+// v3.3 settles lazily: a dive's result and a summon's cards are fixed by their drand round, so they are computed here
+// as soon as the round is out and written on chain by the player's next transaction (`settleOf`), never by one of
+// their own. drawDive and drawCard mirror the contracts exactly.
 import { encodeAbiParameters, getAddress, keccak256, sha256, type Abi, type Address, type Hex, type PublicClient } from "viem";
 
 export type Contracts3 = {
@@ -50,8 +54,13 @@ export const DRAND_PERIOD = 3;
 export const DRAND_API = "https://api.drand.sh/v2/beacons/evmnet/rounds";
 export const roundTime = (round: bigint | number) => DRAND_GENESIS + (Number(round) - 1) * DRAND_PERIOD;
 
+/** Published signatures never change: each round is fetched once. */
+const SIGNATURES = new Map<string, Hex>();
+
 /** The signature of a drand evmnet round (64 bytes), or null while the round is not published yet. */
 export async function drandSignature(round: bigint | number, fetcher: typeof fetch = fetch): Promise<Hex | null> {
+  const known = SIGNATURES.get(String(round));
+  if (known) return known;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetcher(`${DRAND_API}/${round}`, { cache: "no-store" });
@@ -59,7 +68,9 @@ export async function drandSignature(round: bigint | number, fetcher: typeof fet
       if (!res.ok) throw new Error(`drand ${res.status}`);
       const body = (await res.json()) as { round: number; signature: string };
       if (BigInt(body.round) !== BigInt(round) || !/^[0-9a-f]{128}$/i.test(body.signature)) throw new Error("drand: bad answer");
-      return `0x${body.signature}`;
+      const sig: Hex = `0x${body.signature}`;
+      SIGNATURES.set(String(round), sig);
+      return sig;
     } catch (e) {
       if (attempt === 2) throw e;
       await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
@@ -96,6 +107,44 @@ export function drawDive(plan: ChainPlan, r: bigint) {
   const wear = w < plan.wear3Bp ? 3 : w < plan.wear3Bp + plan.wear2Bp ? 2 : 1;
   return { tier, multX100: mult, wear };
 }
+
+// Chance of each rarity (basis points) and power band per rarity, per kind: LightdiveMinter3.RARITY_BP and *_POWER.
+export const RARITY_BP = [[4800, 2900, 1500, 700, 100], [5000, 2800, 1500, 600, 100], [4400, 3500, 1500, 500, 100]] as const;
+export const POWER_BANDS = [
+  [[41, 55], [56, 75], [76, 95], [96, 115], [116, 140]],
+  [[10, 19], [20, 29], [30, 39], [40, 49], [50, 60]],
+  [[10, 39], [40, 79], [80, 119], [120, 159], [160, 200]],
+] as const;
+export const SEALED = 255;
+
+const u256 = [{ type: "uint256" }, { type: "uint256" }] as const;
+const word = (seed: bigint, n: bigint) => BigInt(keccak256(encodeAbiParameters(u256, [seed, n])));
+
+/** The seed of card `index` of summon `requestId` (LightdiveMinter3._draw): the round's randomness, the request and the
+ *  card's place in it. Nothing else, so the order or time of reveals changes nothing. */
+export const cardSeed = (signature: Hex, requestId: bigint, index: number) =>
+  BigInt(keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint256" }, { type: "uint256" }], [sha256(signature), requestId, BigInt(index)])));
+
+/** One card exactly as LightdiveMinter3._card draws it. */
+export function drawCard(kind: number, seed: bigint) {
+  const u1 = word(seed, 1n), u2 = word(seed, 2n), u3 = word(seed, 3n);
+  let x = Number(u1 % 10_000n), rarity = 0;
+  const odds = RARITY_BP[kind];
+  for (; rarity < 4; rarity++) {
+    if (x < odds[rarity]) break;
+    x -= odds[rarity];
+  }
+  const [lo, hi] = POWER_BANDS[kind][rarity];
+  const power = lo + Number(u2 % BigInt(hi - lo + 1));
+  const dna = (u3 >> 128n) & 0xffff_ffff_ffff_ffffn;
+  const b = Number(u3 % 10n);
+  const trait = kind === 0 ? rarity + 1 : kind === 1 ? (b < 4 ? 0 : b < 8 ? 1 : 2) : Number((u2 >> 64n) % 6n);
+  return { rarity, trait, power, dna };
+}
+
+/** The cards of a summon whose round is out, in order of id. */
+export const predictSummon = (r: Pick<Request3, "id" | "kind" | "qty">, signature: Hex) =>
+  Array.from({ length: r.qty }, (_, i) => drawCard(r.kind, cardSeed(signature, r.id, i)));
 
 /** What a revealed dive credits (Expedition3._settle, before the pool's own cap): reward after the departure cost. */
 export function diveReward(pointsE2: bigint, multX100: number, rate: bigint, levyBp: number) {
@@ -257,13 +306,14 @@ export async function readWorld(ctx: Ctx, testToken: boolean): Promise<World> {
   };
 }
 
+/** `rarity` is SEALED until the card's summon is revealed on chain (the site predicts it from drand meanwhile). */
 export type Card3 = Attributes3 & { id: bigint; locked: boolean; listedPrice?: bigint; listedAt?: number; homeAt?: number; soldAt?: number; request?: bigint; mintBlock?: bigint; mintTx?: Hex };
 export type Team3 = { spire: bigint; prism: bigint; seekers: bigint[]; activeDive: bigint; divesToday: number; bond: number };
 export type Dive3 = {
-  id: bigint; spire: bigint; day: number; dest: number; beam: number; decision: number; revealed: boolean; power: number;
+  id: bigint; spire: bigint; day: number; dest: number; beam: number; revealed: boolean; power: number;
   round: bigint; pointsE2: bigint; rate: bigint;
-  // v3.1
-  long: boolean; turnedBack: boolean; attuned: boolean; supply: number; bond: number;
+  // v3.1 (v3.3: no decisions and no turning back)
+  long: boolean; attuned: boolean; supply: number; bond: number;
   // v3.2: points its echo moved (it followed someone else's bridge)
   echo: number;
   result?: { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; fallbackUsed: boolean };
@@ -271,7 +321,8 @@ export type Dive3 = {
 /** The player's commission state: the active one (index and the first dive id that counts) and today's marks
  *  (bit i completed, bit i + 8 abandoned). */
 export type CommissionState = { active: { day: number; index: number; fromDive: bigint } | null; marks: number };
-export type Request3 = { id: bigint; kind: number; qty: number; round: bigint; paid: bigint; revealed: boolean; cards: bigint[] };
+/** A summon: its cards are firstId .. firstId + qty - 1, minted sealed at once (v3.3). */
+export type Request3 = { id: bigint; kind: number; qty: number; round: bigint; paid: bigint; revealed: boolean; firstId: bigint; cards: bigint[] };
 export type Player = {
   balance: bigint;
   eth: bigint;
@@ -338,9 +389,16 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
   const soldAt = new Map<bigint, { price: bigint; at: number }>();
   for (const l of soldMine) soldAt.set(BigInt(l.args.id as bigint), { price: BigInt(l.args.price as bigint), at: await blockTime(ctx, times, l.blockNumber) });
 
-  // which summon each card came from: Minted in the same transaction as SummonRevealed
-  const revealedReq = await events<A>(ctx, c.minter, M, "SummonRevealed", { requestId: requested.map((l) => BigInt(l.args.requestId as bigint)) });
-  const reqByTx = new Map(revealedReq.map((l) => [l.transactionHash, BigInt(l.args.requestId as bigint)]));
+  // which summon each card came from: its id is within the request's range
+  const revealedReq = requested.length
+    ? await events<A>(ctx, c.minter, M, "SummonRevealed", { requestId: requested.map((l) => BigInt(l.args.requestId as bigint)) })
+    : [];
+  const ranges = requested.map((l) => ({ id: BigInt(l.args.requestId as bigint), first: BigInt(l.args.firstId as bigint), qty: BigInt(l.args.qty as number) }));
+  const requestOf = (id: bigint) => ranges.find((r) => id >= r.first && id < r.first + r.qty)?.id;
+  // a card that went home or was sold: its attributes as unsealed (Minted has them sealed)
+  const gone = ids.filter((id) => homeAt.has(id) || soldAt.has(id));
+  const unsealed = new Map<bigint, Record<string, unknown>>();
+  if (gone.length) for (const l of await events<A>(ctx, c.nft, N, "Unsealed", { id: gone })) unsealed.set(BigInt(l.args.id as bigint), l.args.attributes as Record<string, unknown>);
 
   const cards: Card3[] = [];
   ids.forEach((id, i) => {
@@ -349,12 +407,12 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     const mine = owner?.toLowerCase() === me.toLowerCase();
     const listedByMe = owner?.toLowerCase() === c.market.toLowerCase() && listing?.[0]?.toLowerCase() === me.toLowerCase();
     const m = mintedById.get(id);
-    const request = m ? reqByTx.get(m.transactionHash) : undefined;
+    const request = requestOf(id);
     const origin = m ? { mintBlock: m.blockNumber, mintTx: m.transactionHash } : {};
     if (mine || listedByMe) {
       cards.push({ id, ...attrsOf(views[i * 4 + 1]), locked: Boolean(views[i * 4 + 2]), listedPrice: listedByMe ? listing![1] : undefined, listedAt: listedByMe ? Number(listing![2]) : undefined, request, ...origin });
     } else if (m && (homeAt.has(id) || soldAt.has(id))) {
-      const a = attrsOf(m.args.attributes);
+      const a = attrsOf(unsealed.get(id) ?? m.args.attributes);
       cards.push({ id, ...a, voyagesLeft: 0, locked: false, homeAt: homeAt.get(id), soldAt: soldAt.get(id)?.at, request, ...origin });
     }
   });
@@ -396,9 +454,9 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
     const d = diveViews[i] as Record<string, unknown>;
     const res = results.get(id);
     return {
-      id, spire: BigInt(d.spire as bigint), day: Number(d.day), dest: Number(d.dest), beam: Number(d.beam), decision: Number(d.decision),
+      id, spire: BigInt(d.spire as bigint), day: Number(d.day), dest: Number(d.dest), beam: Number(d.beam),
       revealed: Boolean(d.revealed), power: Number(d.power), round: BigInt(d.round as bigint), pointsE2: BigInt(d.pointsE2 as bigint), rate: BigInt(d.rate as bigint),
-      long: Boolean(d.long), turnedBack: Boolean(d.turnedBack), attuned: Boolean(d.attuned), supply: Number(d.supply ?? 0), bond: Number(d.bond ?? 0),
+      long: Boolean(d.long), attuned: Boolean(d.attuned), supply: Number(d.supply ?? 0), bond: Number(d.bond ?? 0),
       echo: echoViews[i] ? world.echoStability : 0,
       result: res ? {
         tier: Number(res.tier), multX100: Number(res.multX100), wear: Number(res.wear), reward: BigInt(res.reward as bigint), levy: BigInt(res.levy as bigint),
@@ -410,9 +468,10 @@ export async function readPlayer(ctx: Ctx, me: Address, world: World, testToken:
   const doneReq = new Set(revealedReq.map((l) => BigInt(l.args.requestId as bigint)));
   const requests: Request3[] = requested.map((l) => {
     const id = BigInt(l.args.requestId as bigint);
+    const firstId = BigInt(l.args.firstId as bigint), qty = Number(l.args.qty);
     return {
-      id, kind: Number(l.args.kind), qty: Number(l.args.qty), round: BigInt(l.args.round as bigint), paid: BigInt(l.args.paid as bigint),
-      revealed: doneReq.has(id), cards: cards.filter((x) => x.request === id).map((x) => x.id),
+      id, kind: Number(l.args.kind), qty, round: BigInt(l.args.round as bigint), paid: BigInt(l.args.paid as bigint),
+      revealed: doneReq.has(id), firstId, cards: Array.from({ length: qty }, (_, i) => firstId + BigInt(i)),
     };
   });
 
@@ -461,25 +520,56 @@ export async function readMarket(ctx: Ctx): Promise<MarketListing[]> {
   return out;
 }
 
-export type FeedItem = { id: bigint; owner: Address; dest: number; beam: number; day: number; round: bigint; tier?: number; multX100?: number; decision?: number };
+/** One dive in the live log. `decided`: the result is drand's, not yet settled on chain (v3.3); `long`: a deep dive
+ *  (known once decideFeed has read it). */
+export type FeedItem = { id: bigint; owner: Address; dest: number; beam: number; day: number; round: bigint; tier?: number; multX100?: number; long?: boolean; decided?: boolean };
 
 /** Everyone's recent dives for the live log: departures and results in the last `blocks` blocks. */
 export async function readFeed(ctx: Ctx, blocks = 400_000n): Promise<FeedItem[]> {
   const { c, abi } = ctx;
   const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
   const from = latest > blocks ? (latest - blocks > ctx.fromBlock ? latest - blocks : ctx.fromBlock) : ctx.fromBlock;
-  const [dived, revealed, decided] = await Promise.all([
+  const [dived, revealed] = await Promise.all([
     events<Record<string, unknown>>(ctx, c.expedition, abi.Expedition3, "Dived", undefined, from),
     events<Record<string, unknown>>(ctx, c.expedition, abi.Expedition3, "Revealed", undefined, from),
-    events<Record<string, unknown>>(ctx, c.expedition, abi.Expedition3, "Decided", undefined, from),
   ]);
   const res = new Map(revealed.map((l) => [BigInt(l.args.diveId as bigint), l.args]));
-  const dec = new Map(decided.map((l) => [BigInt(l.args.diveId as bigint), Number(l.args.decision)]));
   return dived.map((l) => {
     const id = BigInt(l.args.diveId as bigint);
     const r = res.get(id);
-    return { id, owner: l.args.owner as Address, dest: Number(l.args.dest), beam: Number(l.args.beam), day: Number(l.args.day), round: BigInt(l.args.round as bigint), tier: r ? Number(r.tier) : undefined, multX100: r ? Number(r.multX100) : undefined, decision: dec.get(id) };
+    return { id, owner: l.args.owner as Address, dest: Number(l.args.dest), beam: Number(l.args.beam), day: Number(l.args.day), round: BigInt(l.args.round as bigint), tier: r ? Number(r.tier) : undefined, multX100: r ? Number(r.multX100) : undefined };
   });
+}
+
+/** Anyone's dives whose drand round is out but that nobody has settled yet: their results are already decided, so
+ *  the live log shows them at once (the latest `max`; each needs the dive's view and its plan). */
+export async function decideFeed(ctx: Ctx, items: FeedItem[], w: World, max = 40): Promise<FeedItem[]> {
+  const now = Date.now() / 1000;
+  const due = items.filter((f) => f.tier === undefined && roundTime(f.round) <= now).slice(-max);
+  if (!due.length) return items;
+  const E = ctx.abi.Expedition3;
+  const [infos, echoes] = await Promise.all([
+    many<Record<string, unknown>>(ctx, due.map((f) => ({ address: ctx.c.expedition, abi: E, functionName: "diveInfo", args: [f.id] }))),
+    w.echoStability ? many<boolean>(ctx, due.map((f) => ({ address: ctx.c.expedition, abi: E, functionName: "echoed", args: [f.id] }))) : Promise.resolve([] as (boolean | null)[]),
+  ]);
+  await Promise.all(due.map(async (f, i) => {
+    const d = infos[i];
+    if (!d || d.revealed) return;
+    const sig = await drandSignature(f.round).catch(() => null);
+    if (!sig) return;
+    const dive: Dive3 = {
+      id: f.id, spire: BigInt(d.spire as bigint), day: Number(d.day), dest: Number(d.dest), beam: Number(d.beam), revealed: false, power: Number(d.power),
+      round: f.round, pointsE2: BigInt(d.pointsE2 as bigint), rate: BigInt(d.rate as bigint), long: Boolean(d.long), attuned: Boolean(d.attuned),
+      supply: Number(d.supply ?? 0), bond: Number(d.bond ?? 0), echo: echoes[i] ? w.echoStability : 0,
+    };
+    const r = await predictDive(ctx, dive, sig, w.chartStability).catch(() => null);
+    if (!r) return;
+    f.tier = r.tier;
+    f.multX100 = r.multX100;
+    f.long = dive.long;
+    f.decided = true;
+  }));
+  return items;
 }
 
 /** Cards of each kind locked on teams right now (for the supply panel), from the lock events and the team rosters. */
@@ -506,10 +596,10 @@ export async function readOnTeam(ctx: Ctx): Promise<[number, number, number]> {
 /** Points of empty-handed chance a dive moves to "normal": its crew bond, a star chart and an echo. */
 export const stabilityOf = (d: Pick<Dive3, "bond" | "supply" | "echo">, chartStability: number) => d.bond + (d.supply === 2 ? chartStability : 0) + d.echo;
 
-export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "decision" | "bond" | "supply" | "long" | "echo">, chartStability: number): Promise<ChainPlan> {
+export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam" | "day" | "bond" | "supply" | "long" | "echo">, chartStability: number): Promise<ChainPlan> {
   const p = (await ctx.client.readContract({
     address: ctx.c.config, abi: ctx.abi.LightdiveConfig3, functionName: "plan",
-    args: [d.dest, BigInt(d.power), d.beam, d.day, d.decision, stabilityOf(d, chartStability), d.long],
+    args: [d.dest, BigInt(d.power), d.beam, d.day, 0, stabilityOf(d, chartStability), d.long], // 0: no decision (v3.3)
   })) as Record<string, unknown>;
   return {
     table: (p.table as Record<string, number>[]).map((t) => ({ probBp: Number(t.probBp), lo: Number(t.lo), hi: Number(t.hi) })),
@@ -517,17 +607,35 @@ export async function readPlan(ctx: Ctx, d: Pick<Dive3, "dest" | "power" | "beam
   };
 }
 
-/** A dive whose drand round is out but that nobody has revealed yet: its result is already decided, and shown as
- *  waiting to be collected (the reveal transaction credits it). */
+/** A dive whose drand round is out but that is not settled on chain yet: its result is already decided and counted
+ *  (the player's next transaction settles it). Lamp oil caps the wear at 1. */
 export async function predictDive(ctx: Ctx, d: Dive3, signature: Hex, chartStability: number) {
   const plan = await readPlan(ctx, d, chartStability);
-  // a deep dive that turned back ends at x1.00 with 1 voyage of wear; lamp oil caps the wear at 1
   const drawn = drawDive(plan, diveRandom(signature, d.id));
-  const draw = d.turnedBack ? { tier: TURNED_BACK, multX100: 100, wear: 1 } : { ...drawn, wear: d.supply === 1 ? 1 : drawn.wear };
+  const draw = { ...drawn, wear: d.supply === 1 ? 1 : drawn.wear };
   return { ...draw, ...diveReward(d.pointsE2, draw.multX100, d.rate, plan.levyBp), plan };
 }
 
-export const TURNED_BACK = 254;
+/** The reveals a transaction carries (Expedition3.Settle): dives and summons whose drand round is out. */
+export type Settle = { dives: bigint[]; diveProofs: Hex[]; summons: bigint[]; summonProofs: Hex[] };
+export const NO_SETTLE: Settle = { dives: [], diveProofs: [], summons: [], summonProofs: [] };
+
+/** Everything of a player's that is decided by drand but not settled on chain, with the signatures already known. */
+export function settleOf(p: Pick<Player, "dives" | "requests">, signature: (round: bigint) => Hex | undefined): Settle {
+  const out: Settle = { dives: [], diveProofs: [], summons: [], summonProofs: [] };
+  for (const d of p.dives) {
+    const sig = d.revealed ? undefined : signature(d.round);
+    if (sig) { out.dives.push(d.id); out.diveProofs.push(sig); }
+  }
+  for (const r of p.requests) {
+    const sig = r.revealed ? undefined : signature(r.round);
+    if (sig) { out.summons.push(r.id); out.summonProofs.push(sig); }
+  }
+  return out;
+}
+
+/** A signature already fetched (null while unknown), for building a Settle without waiting. */
+export const knownSignature = (round: bigint) => SIGNATURES.get(String(round));
 
 function commissionState(active: unknown, marks: unknown, day: number): CommissionState {
   const a = active as [number, number, boolean, bigint] | Record<string, unknown> | null;
@@ -541,18 +649,24 @@ function commissionState(active: unknown, marks: unknown, day: number): Commissi
 
 export type RecentSummon = { id: bigint; who: Address; kind: number; rarity: number; at: number };
 
-/** The latest cards summoned by anyone (newest first), for the summon page's live feed. */
+/** The latest cards summoned by anyone (newest first), for the summon page's live feed: each summon's cards as drand
+ *  decided them (v3.3: they may still be sealed on chain); summons whose round is not out yet are left out. */
 export async function readRecentSummons(ctx: Ctx, count = 6, blocks = 400_000n): Promise<RecentSummon[]> {
   const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
   const from = latest > blocks && latest - blocks > ctx.fromBlock ? latest - blocks : ctx.fromBlock;
-  const minted = (await events<Record<string, unknown>>(ctx, ctx.c.nft, ctx.abi.LightdiveNFT3, "Minted", undefined, from)).slice(-count).reverse();
+  const requested = (await events<Record<string, unknown>>(ctx, ctx.c.minter, ctx.abi.LightdiveMinter3, "SummonRequested", undefined, from)).slice(-count).reverse();
   const times = new Map<bigint, number>();
   const out: RecentSummon[] = [];
-  for (const l of minted) {
-    const a = attrsOf(l.args.attributes);
-    out.push({ id: BigInt(l.args.id as bigint), who: l.args.to as Address, kind: a.kind, rarity: a.rarity, at: await blockTime(ctx, times, l.blockNumber) });
+  for (const l of requested) {
+    const r = { id: BigInt(l.args.requestId as bigint), kind: Number(l.args.kind), qty: Number(l.args.qty) };
+    const sig = Date.now() / 1000 >= roundTime(l.args.round as bigint) ? await drandSignature(l.args.round as bigint).catch(() => null) : null;
+    if (!sig) continue;
+    const at = await blockTime(ctx, times, l.blockNumber);
+    const first = BigInt(l.args.firstId as bigint);
+    predictSummon(r, sig).forEach((c, i) => out.push({ id: first + BigInt(i), who: l.args.player as Address, kind: r.kind, rarity: c.rarity, at }));
+    if (out.length >= count) break;
   }
-  return out;
+  return out.slice(0, count);
 }
 
 /** Everyone's dives of the last `days` days (for the weekly boards): the block range is estimated from the chain's
@@ -578,9 +692,9 @@ export async function readLedger(ctx: Ctx, from: bigint) {
   const E = abi.Expedition3;
   type A = Record<string, unknown>;
   const latest = await ctx.client.getBlockNumber({ cacheTime: 0 });
-  if (from > latest) return { latest, logs: { teamSet: [], disbanded: [], dived: [], details: [], turned: [], revealed: [] } };
-  const [teamSet, disbanded, dived, details, turned, revealed] = await Promise.all(
-    ["TeamSet", "TeamDisbanded", "Dived", "DiveDetails", "TurnedBack", "Revealed"].map((n) => events<A>(ctx, c.expedition, E, n, undefined, from)),
+  if (from > latest) return { latest, logs: { teamSet: [], disbanded: [], dived: [], details: [], revealed: [] } };
+  const [teamSet, disbanded, dived, details, revealed] = await Promise.all(
+    ["TeamSet", "TeamDisbanded", "Dived", "DiveDetails", "Revealed"].map((n) => events<A>(ctx, c.expedition, E, n, undefined, from)),
   );
-  return { latest, logs: { teamSet, disbanded, dived, details, turned, revealed } };
+  return { latest, logs: { teamSet, disbanded, dived, details, revealed } };
 }

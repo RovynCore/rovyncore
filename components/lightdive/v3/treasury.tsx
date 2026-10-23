@@ -8,14 +8,15 @@ import { DESTINATIONS, MARKET_TAX, PRICE, RENEW_SHARE, TAX_TO_POOL, claimFee, ty
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { PageHead } from "../game/hud";
 import { play } from "./audio";
-import { collected, dayOf, owned, type Sim, type SimDive } from "./sim";
+import { dayOf, owned, type Sim, type SimDive } from "./sim";
 import { CountUp, RarityGem, Tile, Voyages, flyLight } from "./kit";
 import { CIRCLED, KIND, OUTCOME, OUTCOME_TONE, SLOT, STAR, fmt, outcomeName, pct } from "./copy";
-import { tl, localized } from "@/lib/lightdive-v3/i18n";
+import { tl } from "@/lib/lightdive-v3/i18n";
 
 const DAY = 86_400_000;
 const OUTCOMES: Outcome[] = ["empty", "partial", "normal", "good", "great", "legend"];
-const CHOICE_NAME = localized({ steady: "求穩", bold: "求險", detour: "繞道", none: "順其自然" } as const);
+/** A voyage with a result (v3.3: counted at once, nothing waits to be collected). */
+const collected = (d: SimDive) => !!d.result;
 const destName = (id: number) => {
   const d = DESTINATIONS[id];
   return `${CIRCLED[d.cluster]}${SLOT[d.slot]} ${TEXTS.clusters[d.cluster].destinations[d.slot].name}`;
@@ -30,7 +31,7 @@ export function Treasury({ sim }: { sim: Sim }) {
   const feeTomorrow = claimFee(since + 1);
   const freeIn = Math.max(0, 15 - Math.floor(since));
   const done = s.dives.filter(collected);
-  const waiting = s.dives.filter((d) => d.pending);
+  const waiting = s.dives.filter((d) => d.unsettled);
   const sum = (list: SimDive[]) => list.reduce((a, d) => a + (d.reward ?? 0), 0);
   const within = (days: number) => done.filter((d) => dayOf(d.at) > sim.today - days);
   const brought = sum(done);
@@ -79,7 +80,7 @@ export function Treasury({ sim }: { sim: Sim }) {
         <Tile label={tl("昨天")} value={fmt(sum(done.filter((d) => dayOf(d.at) === sim.today - 1)))} />
         <Tile label={tl("近 7 天")} value={fmt(sum(within(7)))} />
         <Tile label={tl("近 30 天")} value={fmt(sum(within(30)))} />
-        <Tile label={tl("待收取")} value={waiting.length ? fmt(waiting.reduce((a, d) => a + (d.reward ?? 0), 0)) : "—"} sub={waiting.length ? tl("{0} 趟，到潛光頁確認收取", { 0: waiting.length }) : tl("沒有待收取的結果")} tone={waiting.length ? "#f0c766" : undefined} />
+        <Tile label={tl("待寫入鏈上")} value={waiting.length ? fmt(waiting.reduce((a, d) => a + (d.reward ?? 0), 0)) : "—"} sub={waiting.length ? tl("{0} 趟，已算進金庫；下次出發、召喚或領取時一起寫入", { 0: waiting.length }) : tl("全部都已寫入")} tone={waiting.length ? "#9fe8d6" : undefined} />
         <Tile label={tl("最佳一趟")} value={done.length ? fmt(Math.max(...done.map((d) => d.reward ?? 0))) : "—"} tone="#f0c766" />
       </div>
 
@@ -290,7 +291,7 @@ function History({ sim }: { sim: Sim }) {
                 <span className="v3-history2__tags">
                   <i>{tl("耗損 {0}", { 0: d.result!.wear })}</i>
                   {d.plan.event && <i style={{ color: STAR[d.plan.event].color }}>{STAR[d.plan.event].name}</i>}
-                  {d.choice && <i>{CHOICE_NAME[d.choice]}</i>}
+                  {d.commission && <i>{tl("完成委託")}</i>}
                 </span>
                 <em className="is-good">+{fmt(d.reward ?? 0)}</em>
                 <small>{tl("成本")} {fmt(d.levyPaid ?? 0)}</small>

@@ -21,8 +21,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "**組隊**：光塔 ＋ 稜鏡 ＋ 探索者 ＝ 一支隊伍。戰力越高，能去越深的地方。",
-       "**潛光**：選一個目的地出發。航行 5 分鐘，航行日誌一段一段寫出來，途中做一次抉擇。",
-       "**收取**：揭曉後親手收取，收益記進金庫，隨時可以提領到錢包。"
+       "**潛光**：選一個目的地出發。航行 5 分鐘，航行日誌一段一段寫出來，像在看一段故事。",
+       "**入帳**：揭曉時收益自動記進金庫，不用另外收取，隨時可以提領到錢包。"
       ]
      },
      {
@@ -129,7 +129,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "出發後 5 分鐘內",
-        "航行日誌自動寫出；走到 30% 時出現一次航行抉擇。"
+        "航行日誌自動寫出：隊員的對話、星象、路上遇到的小故事。"
        ],
        [
         "出發 5 分鐘後",
@@ -137,7 +137,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "揭曉後",
-        "親手收取，收益才記進金庫。沒收取的隊伍不能再出發。"
+        "收益自動記進金庫，隊伍可以再出發。結果在玩家的下一筆交易裡一起寫入鏈上。"
        ],
        [
         "隨時",
@@ -527,45 +527,15 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "航行抉擇"
+      "text": "航行中的故事"
      },
      {
       "t": "p",
-      "text": "每趟航行在 30% 時出現一次抉擇，揭曉前 1 分鐘截止；沒選就當作順其自然。效果是確定的，選之前就能看到勝算會變成怎樣。"
-     },
-     {
-      "t": "table",
-      "head": [
-       "抉擇",
-       "效果",
-       "平均倍率"
-      ],
-      "rows": [
-       [
-        "求穩（保底）",
-        "這趟不會空手，但最多只到豐收",
-        "×0.97"
-       ],
-       [
-        "求險（搏大）",
-        "空手機率 ×1.5 再加 4 個百分點；大豐收機率 ×2.5、傳說機率 ×3",
-        "×1.03"
-       ],
-       [
-        "繞道（護隊）",
-        "勝算不變；這趟只耗損 1 次航程，出發成本 +2 個百分點",
-        "×1.00"
-       ],
-       [
-        "順其自然",
-        "不改變",
-        "×1.00"
-       ]
-      ]
+      "text": "v3.3 起，航行中不再需要做任何決定。每趟航行在途中講一張事件卡的故事，由一位隊員說出一句台詞；那句話只是故事，不改變任何機率或結果。"
      },
      {
       "t": "p",
-      "text": "平均倍率只差 3%，是刻意的：收益是大家分同一個池子，不能有「永遠選這個就對了」的答案。"
+      "text": "拿掉抉擇，是為了讓出發之後不必再簽錢包：結果完全由出發時的條件和 drand 決定，玩家只要看著航程寫完。"
      },
      {
       "t": "h3",
@@ -573,7 +543,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 深潛（風險升一級）→ 超出門檻的穩定、默契、星圖殘頁與光橋回聲 → 航行抉擇。"
+      "text": "基礎勝算表（星團 × 光束）→ 今日星象 → 深潛（風險升一級）→ 超出門檻的穩定、默契、星圖殘頁與光橋回聲。"
      },
      {
       "t": "h3",
@@ -581,7 +551,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "第③星團以後的目的地可以選擇深潛：用 2 張出發令（也算這支隊伍今天的 2 次），航行 15 分鐘，光塵 ×2，稜鏡風險高一級。航行抉擇在前段出現，揭曉前 10 分鐘截止；接著是第二個決定：揭曉前 10 分鐘到 1 分鐘之間可以選擇回航。回航的這趟固定 ×1.00、只耗損 1 次航程，出發成本照付。"
+      "text": "第③星團以後的目的地可以選擇深潛：用 2 張出發令（也算這支隊伍今天的 2 次），航行 15 分鐘，光塵 ×2，稜鏡風險高一級。深潛途中沒有回航的選擇，和一般航行一樣在揭曉時直接結算。"
      },
      {
       "t": "h3",
@@ -637,7 +607,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "每天 3 個委託，由日期決定（任何人都能從合約算出同樣的 3 個），不需要有人手動發布。一次接一個；接下後出發、揭曉後符合條件的一趟，就能完成委託，從核光池領到那趟 ×1.00 收益的 10%，計入當天的分配上限。放棄的委託當天不能再接。委託種類：指定星團帶回光、豐收以上、指定航行抉擇、帶同頻探索者、前往有星象的目的地、深潛、帶補給。"
+      "text": "每天 3 個委託，由日期決定（任何人都能從合約算出同樣的 3 個），不需要有人手動發布。一次接一個；接下後出發、符合條件的一趟，揭曉時自動完成委託，從核光池領到那趟 ×1.00 收益的 10%，計入當天的分配上限。在網站上接委託不用另外簽錢包，下一趟出發時一起接下。放棄的委託當天不能再接。委託種類：指定星團帶回光、豐收以上、默契達到指定等級、帶同頻探索者、前往有星象的目的地、深潛、帶補給。"
      },
      {
       "t": "h3",
@@ -670,7 +640,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "分配率在每天（UTC）第一趟出發時固定一整天：池子越大越高，前一天出發的人越多越低。揭曉當下就用這個分配率算出帶回多少，可以立刻收取。為了不讓一天分出太多，每趟出發會先預留它 1.00 倍的收益；當天預留的總額到達核光池的 1.5% 時，當天就不能再出發。遊戲畫面會直接顯示今天的數字，以及比昨天漲或跌了多少。"
+      "text": "分配率在每天（UTC）第一趟出發時固定一整天：池子越大越高，前一天出發的人越多越低。揭曉當下就用這個分配率算出帶回多少，直接記進金庫。為了不讓一天分出太多，每趟出發會先預留它 1.00 倍的收益；當天預留的總額到達核光池的 1.5% 時，當天就不能再出發。遊戲畫面會直接顯示今天的數字，以及比昨天漲或跌了多少。"
      },
      {
       "t": "h3",
@@ -752,12 +722,12 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "收取與提領"
+      "text": "入帳與提領"
      },
      {
       "t": "ul",
       "items": [
-       "揭曉後要**親手收取**，收益才記進金庫。這是觀測站最老的規矩：光要交到等你的人手上，才算真的回來了。",
+       "揭曉時收益自動記進金庫。結果由 drand 決定，網站當下就算得出來；玩家下一次出發、召喚、上架或提領時，交易會順便把結果寫入鏈上，不需要為了揭曉另外付手續費。",
        "提領到錢包時收手續費：剛提領完是 15%，每天降 1 個百分點，第 15 天起免費。"
       ]
      }
@@ -840,7 +810,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "送出申請 → 等幾秒鐘的隨機訊號公開 → 揭曉。申請時就決定了要用哪一個隨機訊號，那個訊號公開前沒有人（包括我們）知道它的值，所以沒有人能先看到結果再挑。"
+      "text": "付款後卡片立刻進到錢包，先是封印狀態 → 等幾秒鐘的隨機訊號公開 → 卡片揭曉。每張卡只由它自己的隨機訊號決定，和別人什麼時候揭曉、揭曉的先後都無關。申請時就決定了要用哪一個隨機訊號，那個訊號公開前沒有人（包括我們）知道它的值，所以沒有人能先看到結果再挑。"
      },
      {
       "t": "h3",
@@ -901,8 +871,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "所有機率、勝算表、星象、分配率都公開，畫面上隨時看得到。",
-       "隨機數來自 drand：多個獨立機構共同運作的公開隨機信標，每 3 秒產生一個，合約會驗證它的簽章。出發時就指定用出發 5 分鐘後的那一個，它公開前沒有人（包括我們）知道結果；抉擇在揭曉前 1 分鐘截止。",
-       "萬一 drand 停擺超過一天，那一趟以 1.00 倍、耗損 1 次結算。",
+       "隨機數來自 drand：多個獨立機構共同運作的公開隨機信標，每 3 秒產生一個，合約會驗證它的簽章。出發時就指定用出發 5 分鐘後的那一個，它公開前沒有人（包括我們）知道結果。",
+       "萬一 drand 停擺，沒有證明的那一趟只有它的主人能用保底結算：空手而歸、耗損最多（帶燈油時 1 次）；召喚則是最弱的卡。保底永遠不會比正常抽到的好，所以拖著不揭曉沒有好處。",
        "核光池餘額、每日釋出量、銷毀量都上鏈，可以在網站的透明度頁查。",
        "每個錢包的出發令和隊伍上限，限制了大戶一次佔據的份額。"
       ]
@@ -939,7 +909,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "下一步",
-        "v3 合約：戰力與抽卡、24 個目的地與 18 張勝算表、星象與抉擇、收取、停泊與續航、每日出發令與 5 隊上限、分配率、稅的 95／5 分流、市集"
+        "v3 合約：戰力與抽卡、24 個目的地與 18 張勝算表、星象、航行故事與自動入帳、停泊與續航、每日出發令與 5 隊上限、分配率、稅的 95／5 分流、市集"
        ],
        [
         "之後",
@@ -1012,8 +982,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "每天 4 個目的地的特殊事件"
        ],
        [
-        "航行抉擇",
-        "每趟一次的求穩、求險、繞道或順其自然"
+        "航行插曲",
+        "每趟航行途中講的一段事件故事，不影響結果"
        ]
       ]
      }
@@ -1039,8 +1009,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "**组队**：光塔 ＋ 棱镜 ＋ 探索者 ＝ 一支队伍。战力越高，能去越深的地方。",
-       "**潜光**：选一个目的地出发。航行 5 分钟，航行日志一段一段写出来，途中做一次抉择。",
-       "**收取**：揭晓后亲手收取，收益记进金库，随时可以提领到钱包。"
+       "**潜光**：选一个目的地出发。航行 5 分钟，航行日志一段一段写出来，像在看一段故事。",
+       "**入账**：揭晓时收益自动记进金库，不用另外收取，随时可以提领到钱包。"
       ]
      },
      {
@@ -1147,7 +1117,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "出发后 5 分钟内",
-        "航行日志自动写出；走到 30% 时出现一次航行抉择。"
+        "航行日志自动写出：队员的对话、星象、路上遇到的小故事。"
        ],
        [
         "出发 5 分钟后",
@@ -1155,7 +1125,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "揭晓后",
-        "亲手收取，收益才记进金库。没收取的队伍不能再出发。"
+        "收益自动记进金库，队伍可以再出发。结果在玩家的下一笔交易里一起写入链上。"
        ],
        [
         "随时",
@@ -1545,45 +1515,15 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "航行抉择"
+      "text": "航行中的故事"
      },
      {
       "t": "p",
-      "text": "每趟航行在 30% 时出现一次抉择，揭晓前 1 分钟截止；没选就当作顺其自然。效果是确定的，选之前就能看到胜算会变成怎样。"
-     },
-     {
-      "t": "table",
-      "head": [
-       "抉择",
-       "效果",
-       "平均倍率"
-      ],
-      "rows": [
-       [
-        "求稳（保底）",
-        "这趟不会空手，但最多只到丰收",
-        "×0.97"
-       ],
-       [
-        "求险（搏大）",
-        "空手概率 ×1.5 再加 4 个百分点；大丰收概率 ×2.5、传说概率 ×3",
-        "×1.03"
-       ],
-       [
-        "绕道（护队）",
-        "胜算不变；这趟只耗损 1 次航程，出发成本 +2 个百分点",
-        "×1.00"
-       ],
-       [
-        "顺其自然",
-        "不改变",
-        "×1.00"
-       ]
-      ]
+      "text": "v3.3 起，航行中不再需要做任何决定。每趟航行在途中讲一张事件卡的故事，由一位队员说出一句台词；那句话只是故事，不改变任何概率或结果。"
      },
      {
       "t": "p",
-      "text": "平均倍率只差 3%，是刻意的：收益是大家分同一个池子，不能有「永远选这个就对了」的答案。"
+      "text": "拿掉抉择，是为了让出发之后不必再签钱包：结果完全由出发时的条件和 drand 决定，玩家只要看着航程写完。"
      },
      {
       "t": "h3",
@@ -1591,7 +1531,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 深潜（风险升一级）→ 超出门槛的稳定、默契、星图残页与光桥回声 → 航行抉择。"
+      "text": "基础胜算表（星团 × 光束）→ 今日星象 → 深潜（风险升一级）→ 超出门槛的稳定、默契、星图残页与光桥回声。"
      },
      {
       "t": "h3",
@@ -1599,7 +1539,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "第③星团以后的目的地可以选择深潜：用 2 张出发令（也算这支队伍今天的 2 次），航行 15 分钟，光尘 ×2，棱镜风险高一级。航行抉择在前段出现，揭晓前 10 分钟截止；接着是第二个决定：揭晓前 10 分钟到 1 分钟之间可以选择回航。回航的这趟固定 ×1.00、只耗损 1 次航程，出发成本照付。"
+      "text": "第③星团以后的目的地可以选择深潜：用 2 张出发令（也算这支队伍今天的 2 次），航行 15 分钟，光尘 ×2，棱镜风险高一级。深潜途中没有回航的选择，和一般航行一样在揭晓时直接结算。"
      },
      {
       "t": "h3",
@@ -1655,7 +1595,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "每天 3 个委托，由日期决定（任何人都能从合约算出同样的 3 个），不需要有人手动发布。一次接一个；接下后出发、揭晓后符合条件的一趟，就能完成委托，从核光池领到那趟 ×1.00 收益的 10%，计入当天的分配上限。放棄的委托当天不能再接。委托种类：指定星团带回光、丰收以上、指定航行抉择、带同频探索者、前往有星象的目的地、深潜、带补给。"
+      "text": "每天 3 个委托，由日期决定（任何人都能从合约算出同样的 3 个），不需要有人手动发布。一次接一个；接下后出发、符合条件的一趟，揭晓时自动完成委托，从核光池领到那趟 ×1.00 收益的 10%，计入当天的分配上限。在网站上接委托不用另外签钱包，下一趟出发时一起接下。放棄的委托当天不能再接。委托种类：指定星团带回光、丰收以上、默契达到指定等级、带同频探索者、前往有星象的目的地、深潜、带补给。"
      },
      {
       "t": "h3",
@@ -1688,7 +1628,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "分配率在每天（UTC）第一趟出发时固定一整天：池子越大越高，前一天出发的人越多越低。揭晓当下就用这个分配率算出带回多少，可以立刻收取。为了不让一天分出太多，每趟出发会先预留它 1.00 倍的收益；当天预留的总额到达核光池的 1.5% 时，当天就不能再出发。游戏画面会直接显示今天的数字，以及比昨天涨或跌了多少。"
+      "text": "分配率在每天（UTC）第一趟出发时固定一整天：池子越大越高，前一天出发的人越多越低。揭晓当下就用这个分配率算出带回多少，直接记进金库。为了不让一天分出太多，每趟出发会先预留它 1.00 倍的收益；当天预留的总额到达核光池的 1.5% 时，当天就不能再出发。游戏画面会直接显示今天的数字，以及比昨天涨或跌了多少。"
      },
      {
       "t": "h3",
@@ -1770,12 +1710,12 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "收取与提领"
+      "text": "入账与提领"
      },
      {
       "t": "ul",
       "items": [
-       "揭晓后要**亲手收取**，收益才记进金库。这是观测站最老的规矩：光要交到等你的人手上，才算真的回来了。",
+       "揭晓时收益自动记进金库。结果由 drand 决定，网站当下就算得出来；玩家下一次出发、召唤、上架或提领时，交易会顺便把结果写入链上，不需要为了揭晓另外付手续费。",
        "提领到钱包时收手续费：刚提领完是 15%，每天降 1 个百分点，第 15 天起免费。"
       ]
      }
@@ -1858,7 +1798,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "送出申请 → 等几秒钟的随机讯号公开 → 揭晓。申请时就决定了要用哪一个随机讯号，那个讯号公开前没有人（包括我们）知道它的值，所以没有人能先看到结果再挑。"
+      "text": "付款后卡片立刻进到钱包，先是封印状态 → 等几秒钟的随机讯号公开 → 卡片揭晓。每张卡只由它自己的随机讯号决定，和别人什么时候揭晓、揭晓的先后都无关。申请时就决定了要用哪一个随机讯号，那个讯号公开前没有人（包括我们）知道它的值，所以没有人能先看到结果再挑。"
      },
      {
       "t": "h3",
@@ -1919,8 +1859,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "所有概率、胜算表、星象、分配率都公开，画面上随时看得到。",
-       "随机数来自 drand：多个独立机构共同运作的公开随机信标，每 3 秒产生一个，合约会验证它的签章。出发时就指定用出发 5 分钟后的那一个，它公开前没有人（包括我们）知道结果；抉择在揭晓前 1 分钟截止。",
-       "万一 drand 停摆超过一天，那一趟以 1.00 倍、耗损 1 次结算。",
+       "随机数来自 drand：多个独立机构共同运作的公开随机信标，每 3 秒产生一个，合约会验证它的签章。出发时就指定用出发 5 分钟后的那一个，它公开前没有人（包括我们）知道结果。",
+       "万一 drand 停摆，没有证明的那一趟只有它的主人能用保底结算：空手而归、耗损最多（带灯油时 1 次）；召唤则是最弱的卡。保底永远不会比正常抽到的好，所以拖着不揭晓没有好处。",
        "核光池余额、每日释出量、销毁量都上链，可以在网站的透明度页查。",
        "每个钱包的出发令和队伍上限，限制了大户一次占据的份额。"
       ]
@@ -1957,7 +1897,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "下一步",
-        "v3 合约：战力与抽卡、24 个目的地与 18 张胜算表、星象与抉择、收取、停泊与续航、每日出发令与 5 队上限、分配率、税的 95／5 分流、市集"
+        "v3 合约：战力与抽卡、24 个目的地与 18 张胜算表、星象、航行故事与自动入账、停泊与续航、每日出发令与 5 队上限、分配率、税的 95／5 分流、市集"
        ],
        [
         "之后",
@@ -2030,8 +1970,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "每天 4 个目的地的特殊事件"
        ],
        [
-        "航行抉择",
-        "每趟一次的求稳、求险、绕道或顺其自然"
+        "航行插曲",
+        "每趟航行途中讲的一段事件故事，不影响结果"
        ]
       ]
      }
@@ -2057,8 +1997,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "**Build a team**: Spire + Prism + Seekers = one team. The higher its Power, the deeper it can go.",
-       "**Dive**: Pick a destination and set out. The voyage takes 5 minutes, its log is written line by line, and you make one decision along the way.",
-       "**Collect**: After the reveal, collect by hand. Rewards go into the Treasury and can be withdrawn to your wallet at any time."
+       "**Dive**: Pick a destination and set out. The voyage takes 5 minutes, and its log is written line by line, like a short story.",
+       "**Rewards**: At the reveal, rewards go into the Treasury on their own, with nothing to collect, and can be withdrawn to your wallet at any time."
       ]
      },
      {
@@ -2165,7 +2105,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "Within 5 minutes of setting out",
-        "The voyage log writes itself; at 30% a voyage decision appears."
+        "The voyage log writes itself: the crew's words, the sky, the small stories along the way."
        ],
        [
         "5 minutes after setting out",
@@ -2173,7 +2113,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "After the reveal",
-        "Collect by hand; only then do rewards go into the Treasury. A team that hasn't collected can't set out again."
+        "Rewards go into the Treasury on their own, and the team can set out again. The result is written on chain by the player's next transaction."
        ],
        [
         "Any time",
@@ -2563,45 +2503,15 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "Voyage decision"
+      "text": "Stories on the way"
      },
      {
       "t": "p",
-      "text": "Each voyage brings one decision at 30%, open until 1 minute before the reveal; if you don't choose, it counts as Let it ride. The effects are fixed, and you can see how the odds change before you choose."
-     },
-     {
-      "t": "table",
-      "head": [
-       "Decision",
-       "Effect",
-       "Average multiplier"
-      ],
-      "rows": [
-       [
-        "Steady (safety net)",
-        "This dive won't come back empty, but tops out at Good haul",
-        "×0.97"
-       ],
-       [
-        "Bold (go big)",
-        "Empty-handed chance ×1.5 plus 4 percentage points; Great haul chance ×2.5, Legendary ×3",
-        "×1.03"
-       ],
-       [
-        "Detour (protect the team)",
-        "Odds unchanged; only 1 voyage of wear this dive, departure cost +2 percentage points",
-        "×1.00"
-       ],
-       [
-        "Let it ride",
-        "No change",
-        "×1.00"
-       ]
-      ]
+      "text": "From v3.3 there is nothing to decide during a voyage. Each voyage tells the story of an event card on the way, with one crew member saying a line; the line is only story and changes no odds or results."
      },
      {
       "t": "p",
-      "text": "The average multipliers differ by only 3% on purpose: everyone shares the same pool, so there must be no \"always pick this\" answer."
+      "text": "Decisions were removed so that nothing needs a wallet signature after departure: the result depends only on the conditions at departure and on drand, and the player just watches the voyage unfold."
      },
      {
       "t": "h3",
@@ -2609,7 +2519,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo → voyage decision."
+      "text": "Base odds table (cluster × beam) → today's sky event → deep dive (one risk level up) → stability from overflow, crew bond, a star chart and an echo."
      },
      {
       "t": "h3",
@@ -2617,7 +2527,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. The voyage decision comes early and closes 10 minutes before the reveal; then comes a second call: from 10 minutes to 1 minute before the reveal you may turn back. A voyage that turns back settles at ×1.00 with 1 wear, and still pays its departure cost."
+      "text": "Destinations from cluster ③ on can be deep dives: they use 2 Dive Passes (and count as 2 of the team's dives today), take 15 minutes, carry twice the Lightdust and one risk level up. There is no turning back on the way; a deep dive settles at the reveal like any other voyage."
      },
      {
       "t": "h3",
@@ -2673,7 +2583,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after accepting and meets it, once revealed, completes it for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a given voyage decision, an attuned seeker, a destination with a sky event, a deep dive, a supply."
+      "text": "Three commissions a day, set by the date (anyone can compute the same three from the contract); nobody posts them by hand. Take one at a time; a voyage that departs after taking it and meets it completes it on its own at the reveal, for 10% of that voyage's ×1.00 reward from the Core Light Pool, counted against the day's cap. On the website, taking a commission needs no wallet signature of its own: your next departure takes it. An abandoned commission can't be taken again that day. Kinds: bring back light from a given cluster, Good haul or better, a crew bond of at least a given level, an attuned seeker, a destination with a sky event, a deep dive, a supply."
      },
      {
       "t": "h3",
@@ -2706,7 +2616,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "The rate is fixed for the whole day by the day's first dive (UTC): the bigger the pool, the higher it is; the more people dived the day before, the lower it is. At the reveal, what you bring back is worked out at this rate straight away and can be collected at once. So that one day can't hand out too much, every dive first reserves its ×1.00 reward; once a day's reservations reach 1.5% of the Core Light Pool, no more dives can set out that day. The game shows today's figure directly, along with how much it rose or fell since yesterday."
+      "text": "The rate is fixed for the whole day by the day's first dive (UTC): the bigger the pool, the higher it is; the more people dived the day before, the lower it is. At the reveal, what you bring back is worked out at this rate straight away and goes into the Treasury. So that one day can't hand out too much, every dive first reserves its ×1.00 reward; once a day's reservations reach 1.5% of the Core Light Pool, no more dives can set out that day. The game shows today's figure directly, along with how much it rose or fell since yesterday."
      },
      {
       "t": "h3",
@@ -2788,12 +2698,12 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "Collecting and withdrawing"
+      "text": "Rewards and withdrawing"
      },
      {
       "t": "ul",
       "items": [
-       "After the reveal you must **collect by hand** before the reward goes into the Treasury. It's the Observatory's oldest rule: light only truly comes home when it's handed to the one waiting for it.",
+       "At the reveal, the reward goes into the Treasury on its own. drand decides the result and the website works it out at once; the player's next departure, summon, listing or withdrawal writes it on chain along the way, so a reveal never costs a fee of its own.",
        "Withdrawing to your wallet carries a fee: 15% right after a withdrawal, dropping 1 percentage point a day, free from day 15."
       ]
      }
@@ -2876,7 +2786,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "Submit a request → wait a few seconds for the random signal to be published → reveal. The request fixes which random signal it will use, and no one (including us) knows that signal's value before it is published, so no one can see the result first and then choose."
+      "text": "Pay, and the cards are in your wallet at once, sealed → wait a few seconds for the random signal to be published → the cards are revealed. Each card depends only on its own random signal, not on when or in what order anyone reveals. The request fixes which random signal it will use, and no one (including us) knows that signal's value before it is published, so no one can see the result first and then choose."
      },
      {
       "t": "h3",
@@ -2937,8 +2847,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "Every chance, odds table, sky event and rate is public and always visible on screen.",
-       "Randomness comes from drand, a public randomness beacon run jointly by many independent organisations, which produces a new value every 3 seconds; the contract verifies its signature. A dive is tied at departure to the value published 5 minutes later, which no one (including us) can know before it is published; decisions close 1 minute before the reveal.",
-       "Should drand stall for more than a day, that dive settles at ×1.00 with 1 voyage of wear.",
+       "Randomness comes from drand, a public randomness beacon run jointly by many independent organisations, which produces a new value every 3 seconds; the contract verifies its signature. A dive is tied at departure to the value published 5 minutes later, which no one (including us) can know before it is published.",
+       "Should drand stall, only the owner of a voyage with no proof may settle it by the fallback: empty-handed with the most wear (1 with lamp oil); for a summon, the weakest cards. The fallback is never better than a normal draw, so holding back a reveal gains nothing.",
        "The Core Light Pool balance, daily release and burns are all on-chain and can be checked on the website's Transparency page.",
        "The per-wallet Dive Pass and team limits cap how large a share any big player can take at once."
       ]
@@ -2975,7 +2885,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "Next",
-        "v3 contracts: Power and summons, 24 destinations and 18 odds tables, sky events and decisions, collecting, docking and renewal, daily Dive Passes and the 5-team limit, the rate, the 95/5 split of taxes, the Market"
+        "v3 contracts: Power and summons, 24 destinations and 18 odds tables, sky events, voyage stories and automatic rewards, docking and renewal, daily Dive Passes and the 5-team limit, the rate, the 95/5 split of taxes, the Market"
        ],
        [
         "After that",
@@ -3048,8 +2958,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "A special event at 4 destinations each day"
        ],
        [
-        "Voyage decision",
-        "Once per dive: Steady, Bold, Detour or Let it ride"
+        "Voyage episode",
+        "The event story told on the way of each voyage; it doesn't affect the result"
        ]
       ]
      }
@@ -3075,8 +2985,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "**팀 구성**: 광탑 + 프리즘 + 탐색자 = 한 팀. 전투력이 높을수록 더 깊이 갈 수 있습니다.",
-       "**다이브**: 목적지를 골라 출발합니다. 항해는 5분이며, 항해 일지가 한 줄씩 쓰이고 도중에 한 번 선택을 합니다.",
-       "**수령**: 공개 후 직접 수령하면 보상이 금고에 기록되고, 언제든 지갑으로 인출할 수 있습니다."
+       "**다이브**: 목적지를 골라 출발합니다. 항해는 5분이며, 항해 일지가 한 편의 짧은 이야기처럼 한 줄씩 쓰입니다.",
+       "**입금**: 공개 때 보상이 자동으로 금고에 기록되며 따로 수령할 필요가 없고, 언제든 지갑으로 인출할 수 있습니다."
       ]
      },
      {
@@ -3183,7 +3093,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "출발 후 5분 동안",
-        "항해 일지가 자동으로 쓰이고, 30% 지점에서 항해 선택이 한 번 나타납니다."
+        "항해 일지가 자동으로 쓰입니다. 팀원들의 대화, 천체 현상, 길에서 만난 작은 이야기들."
        ],
        [
         "출발 5분 후",
@@ -3191,7 +3101,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "공개 후",
-        "직접 수령해야 보상이 금고에 기록됩니다. 수령하지 않은 팀은 다시 출발할 수 없습니다."
+        "보상이 자동으로 금고에 기록되고, 팀은 다시 출발할 수 있습니다. 결과는 플레이어의 다음 거래 때 함께 체인에 기록됩니다."
        ],
        [
         "언제든",
@@ -3581,45 +3491,15 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "항해 선택"
+      "text": "항해 중의 이야기"
      },
      {
       "t": "p",
-      "text": "항해마다 30% 지점에서 선택이 한 번 나타나며, 공개 1분 전에 마감됩니다. 고르지 않으면 '흐름대로'로 처리됩니다. 효과는 확정적이며, 고르기 전에 확률이 어떻게 바뀌는지 볼 수 있습니다."
-     },
-     {
-      "t": "table",
-      "head": [
-       "선택",
-       "효과",
-       "평균 배율"
-      ],
-      "rows": [
-       [
-        "안정 (보장)",
-        "이번 다이브는 빈손이 없지만 최대 풍작까지",
-        "×0.97"
-       ],
-       [
-        "모험 (크게 걸기)",
-        "빈손 확률 ×1.5 후 +4%p, 대풍작 확률 ×2.5, 전설 확률 ×3",
-        "×1.03"
-       ],
-       [
-        "우회 (팀 보호)",
-        "확률 변화 없음, 이번 다이브는 항해 1회만 소모, 출발 비용 +2%p",
-        "×1.00"
-       ],
-       [
-        "흐름대로",
-        "변화 없음",
-        "×1.00"
-       ]
-      ]
+      "text": "v3.3부터 항해 중에는 아무것도 결정할 필요가 없습니다. 항해마다 도중에 사건 카드 하나의 이야기가 펼쳐지고, 팀원 한 명이 대사를 한마디 합니다. 그 대사는 이야기일 뿐, 확률이나 결과를 바꾸지 않습니다."
      },
      {
       "t": "p",
-      "text": "평균 배율 차이가 3%뿐인 것은 의도된 설계입니다. 보상은 모두가 같은 풀을 나누는 것이므로, '항상 이것만 고르면 된다'는 정답이 있어서는 안 됩니다."
+      "text": "선택을 없앤 이유는 출발한 뒤에 지갑 서명이 필요 없도록 하기 위해서입니다. 결과는 출발 때의 조건과 drand만으로 정해지며, 플레이어는 항해가 끝까지 쓰이는 것을 지켜보기만 하면 됩니다."
      },
      {
       "t": "h3",
@@ -3627,7 +3507,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 딥 다이브(위험 한 단계 상승) → 기준 초과 안정화·호흡·성도 조각·빛다리 메아리 → 항해 선택."
+      "text": "기본 확률표(성단 × 광선) → 오늘의 천체 현상 → 딥 다이브(위험 한 단계 상승) → 기준 초과 안정화·호흡·성도 조각·빛다리 메아리."
      },
      {
       "t": "h3",
@@ -3635,7 +3515,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "③성단 이후 목적지에서는 딥 다이브를 할 수 있습니다. 출발령 2장을 쓰고(팀의 오늘 출발 2회로 계산), 15분 동안 항해하며, 빛가루 ×2, 위험이 한 단계 올라갑니다. 항해 선택은 초반에 나오고 공개 10분 전에 마감됩니다. 이어서 두 번째 결정: 공개 10분 전부터 1분 전까지 회항할 수 있습니다. 회항한 항해는 ×1.00 고정, 소모 1회이며 출발 비용은 그대로 냅니다."
+      "text": "③성단 이후 목적지에서는 딥 다이브를 할 수 있습니다. 출발령 2장을 쓰고(팀의 오늘 출발 2회로 계산), 15분 동안 항해하며, 빛가루 ×2, 위험이 한 단계 올라갑니다. 도중에 회항하는 선택은 없으며, 일반 항해와 마찬가지로 공개 때 바로 정산됩니다."
      },
      {
       "t": "h3",
@@ -3691,7 +3571,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "매일 의뢰 3개가 날짜로 정해지며(누구나 컨트랙트에서 같은 3개를 계산할 수 있음) 누구도 직접 게시하지 않습니다. 한 번에 하나씩 받고, 수락 후 출발해 공개된 항해가 조건을 충족하면 의뢰를 완료하고 그 항해 ×1.00 보상의 10%를 코어빛 풀에서 받습니다(그날의 분배 상한에 포함). 포기한 의뢰는 그날 다시 받을 수 없습니다. 종류: 지정 성단에서 빛 가져오기, 풍작 이상, 지정 항해 선택, 동조 탐색자, 천체 현상 목적지, 딥 다이브, 보급."
+      "text": "매일 의뢰 3개가 날짜로 정해지며(누구나 컨트랙트에서 같은 3개를 계산할 수 있음) 누구도 직접 게시하지 않습니다. 한 번에 하나씩 받고, 받은 뒤 출발한 항해가 조건을 충족하면 공개 때 자동으로 의뢰가 완료되어 그 항해 ×1.00 보상의 10%를 코어빛 풀에서 받습니다(그날의 분배 상한에 포함). 웹사이트에서 의뢰를 받는 데는 지갑 서명이 따로 필요 없으며, 다음 출발 때 함께 받습니다. 포기한 의뢰는 그날 다시 받을 수 없습니다. 종류: 지정 성단에서 빛 가져오기, 풍작 이상, 지정 단계 이상의 호흡, 동조 탐색자, 천체 현상 목적지, 딥 다이브, 보급."
      },
      {
       "t": "h3",
@@ -3724,7 +3604,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "분배율은 매일(UTC) 첫 출발 때 하루 동안 고정됩니다. 풀이 클수록 높아지고, 전날 출발한 사람이 많을수록 낮아집니다. 공개 즉시 이 분배율로 가져온 양이 정해지며 바로 수령할 수 있습니다. 하루에 너무 많이 나가지 않도록, 출발마다 ×1.00 기준 보상을 먼저 예약하며, 그날 예약 합계가 코어빛 풀의 1.5%에 이르면 그날은 더 출발할 수 없습니다. 게임 화면에는 오늘의 수치와 어제보다 얼마나 오르거나 내렸는지가 바로 표시됩니다."
+      "text": "분배율은 매일(UTC) 첫 출발 때 하루 동안 고정됩니다. 풀이 클수록 높아지고, 전날 출발한 사람이 많을수록 낮아집니다. 공개 즉시 이 분배율로 가져온 양이 정해지며 바로 금고에 기록됩니다. 하루에 너무 많이 나가지 않도록, 출발마다 ×1.00 기준 보상을 먼저 예약하며, 그날 예약 합계가 코어빛 풀의 1.5%에 이르면 그날은 더 출발할 수 없습니다. 게임 화면에는 오늘의 수치와 어제보다 얼마나 오르거나 내렸는지가 바로 표시됩니다."
      },
      {
       "t": "h3",
@@ -3806,12 +3686,12 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "h3",
-      "text": "수령과 인출"
+      "text": "입금과 인출"
      },
      {
       "t": "ul",
       "items": [
-       "공개 후 **직접 수령**해야 보상이 금고에 기록됩니다. 관측소의 가장 오래된 규칙입니다. 빛은 기다리는 사람의 손에 건네져야 비로소 돌아온 것입니다.",
+       "공개 때 보상이 자동으로 금고에 기록됩니다. 결과는 drand가 정하고 웹사이트가 바로 계산하며, 플레이어의 다음 출발·소환·등록·인출 거래가 그 결과를 함께 체인에 기록하므로, 공개를 위해 수수료를 따로 내지 않습니다.",
        "지갑으로 인출할 때 수수료가 붙습니다. 인출 직후에는 15%이고, 매일 1%p씩 내려가 15일째부터 무료입니다."
       ]
      }
@@ -3894,7 +3774,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
      },
      {
       "t": "p",
-      "text": "신청 제출 → 몇 초 뒤 무작위 신호 공개 대기 → 공개. 신청할 때 어떤 무작위 신호를 쓸지 정해지며, 그 신호는 공개되기 전까지 누구도(저희도) 알 수 없으므로, 누구도 결과를 먼저 보고 고를 수 없습니다."
+      "text": "결제하면 카드가 봉인된 상태로 바로 지갑에 들어옵니다 → 몇 초 뒤 무작위 신호 공개 대기 → 카드 공개. 카드마다 자신의 무작위 신호로만 정해지며, 누가 언제 어떤 순서로 공개하든 상관없습니다. 신청할 때 어떤 무작위 신호를 쓸지 정해지며, 그 신호는 공개되기 전까지 누구도(저희도) 알 수 없으므로, 누구도 결과를 먼저 보고 고를 수 없습니다."
      },
      {
       "t": "h3",
@@ -3955,8 +3835,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
       "t": "ul",
       "items": [
        "모든 확률, 확률표, 천체 현상, 분배율은 공개되어 있으며 화면에서 언제든 볼 수 있습니다.",
-       "무작위 수는 drand에서 옵니다. 여러 독립 기관이 함께 운영하는 공개 무작위 신호로, 3초마다 새 값이 나오고 컨트랙트가 서명을 검증합니다. 출발할 때 5분 뒤에 공개될 값이 지정되며, 공개 전에는 누구도(저희도) 알 수 없습니다. 선택은 공개 1분 전에 마감됩니다.",
-       "만약 drand가 하루 넘게 멈추면, 그 다이브는 ×1.00, 항해 1회 소모로 정산됩니다.",
+       "무작위 수는 drand에서 옵니다. 여러 독립 기관이 함께 운영하는 공개 무작위 신호로, 3초마다 새 값이 나오고 컨트랙트가 서명을 검증합니다. 출발할 때 5분 뒤에 공개될 값이 지정되며, 공개 전에는 누구도(저희도) 알 수 없습니다.",
+       "만약 drand가 멈추면, 증명이 없는 항해는 그 주인만 보장 정산을 할 수 있습니다. 빈손, 최대 소모(등불 기름이 있으면 1회), 소환이라면 가장 약한 카드입니다. 보장 정산은 정상적으로 뽑힌 결과보다 절대 좋을 수 없으므로, 공개를 미뤄도 얻는 것이 없습니다.",
        "코어빛 풀 잔액, 매일 방출량, 소각량은 모두 온체인에 기록되며, 웹사이트의 투명성 페이지에서 확인할 수 있습니다.",
        "지갑당 출발령과 팀 상한이 큰손이 한 번에 차지할 수 있는 몫을 제한합니다."
       ]
@@ -3993,7 +3873,7 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
        ],
        [
         "다음",
-        "v3 컨트랙트: 전투력과 소환, 목적지 24곳과 확률표 18장, 천체 현상과 선택, 수령, 정박과 연장, 매일 출발령과 5팀 상한, 분배율, 세금 95／5 분배, 마켓"
+        "v3 컨트랙트: 전투력과 소환, 목적지 24곳과 확률표 18장, 천체 현상, 항해 이야기와 자동 입금, 정박과 연장, 매일 출발령과 5팀 상한, 분배율, 세금 95／5 분배, 마켓"
        ],
        [
         "그 후",
@@ -4066,8 +3946,8 @@ export const WHITEPAPERS: Record<Locale, Wp> = {
         "매일 목적지 4곳에 생기는 특별한 사건"
        ],
        [
-        "항해 선택",
-        "다이브마다 한 번: 안정, 모험, 우회, 흐름대로"
+        "항해 일화",
+        "항해마다 도중에 펼쳐지는 사건 이야기로, 결과에 영향을 주지 않습니다"
        ]
       ]
      }

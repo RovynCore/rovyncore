@@ -17,7 +17,7 @@ export const ALL_UNLOCKED: Unlocks = { profile: true, supplies: true, commission
 const SUPPLIES_AT = 3;
 
 export function unlocksOf(s: SimState): Unlocks {
-  const done = s.dives.filter((d) => d.result && !d.pending).length;
+  const done = s.dives.filter((d) => d.result).length;
   const strongest = Math.max(0, ...s.teams.filter((t) => t.seekers.length).map((t) => teamPower(teamInput(s, t))));
   const usedSupply = s.dives.some((d) => (d.supply ?? 0) > 0);
   return {
@@ -33,8 +33,8 @@ type Key = keyof Unlocks;
 const NOTICE: Record<Key, { title: () => string; text: () => string; go?: View; cta?: () => string }> = {
   profile: { title: () => tl("個人檔案開放了"), text: () => tl("你收下了第一趟結果。個人檔案會記下你走過的地方、拿到的稱號和每個目的地的故事。"), go: "logbook", cta: () => tl("看我的檔案") },
   supplies: { title: () => tl("新玩法：出航補給"), text: () => tl("出發時可以花一點 $RVYN 帶一種補給：燈油讓這趟只耗損 1 次航程，星圖殘頁讓空手機率少 3 個百分點。不帶也完全可以。") },
-  commissions: { title: () => tl("新玩法：每日委託"), text: () => tl("每天 3 個委託，接一個，出航時順便完成，就能多領那趟基礎收益的 10%。"), go: "commissions", cta: () => tl("看今天的委託") },
-  deep: { title: () => tl("新玩法：深潛"), text: () => tl("你的隊伍到得了第③星團了。那裡可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2，最後 10 分鐘還能選擇回航。"), go: "dive", cta: () => tl("去星圖") },
+  commissions: { title: () => tl("新玩法：每日委託"), text: () => tl("每天 3 個委託，接一個，出航時順便完成，就能多領那趟基礎收益的 10%。接委託不用另外簽錢包。"), go: "commissions", cta: () => tl("看今天的委託") },
+  deep: { title: () => tl("新玩法：深潛"), text: () => tl("你的隊伍到得了第③星團了。那裡可以深潛：用 2 張出發令、航行 15 分鐘，光塵 ×2，航程裡會穿過目的地，看見更深的一層。"), go: "dive", cta: () => tl("去星圖") },
 };
 
 /** Announces each new unlock once. The first look only remembers what is already open, so an existing player is

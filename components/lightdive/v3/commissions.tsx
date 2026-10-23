@@ -1,23 +1,21 @@
 "use client";
 
 // 每日委託 (v3.1): three commissions a UTC day, the same for everyone and derived from the day alone (nobody sets
-// them). One at a time; a voyage that departs after accepting and meets the commission completes it, for 10% of that
-// voyage's x1.00 reward. Every action is one button.
+// them). One at a time; a voyage that departs after accepting and meets the commission completes it on its own at the
+// reveal (v3.3), for 10% of that voyage's x1.00 reward. On chain, accepting costs nothing: the next dive takes it.
 import { useState } from "react";
-import { Anchor, Check, Compass, Gem, Orbit, Package, Rocket, Sparkles, Star, X, type LucideIcon } from "lucide-react";
-import { basePoints } from "@/lib/lightdive-v3/rules";
+import { Anchor, Check, Gem, Orbit, Package, Rocket, Sparkles, Star, Users, X, type LucideIcon } from "lucide-react";
 import type { Commission } from "@/lib/lightdive-v3/commissions";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { PageHead } from "../game/hud";
-import { CHOICE, CIRCLED, ERROR, OUTCOME, clock, fmt, pct } from "./copy";
+import { CIRCLED, ERROR, OUTCOME, clock, fmt, pct } from "./copy";
 import { dayOf, type Sim } from "./sim";
 import type { View } from "./pages";
 
-const DECISIONS = ["none", "steady", "bold", "detour"] as const;
 const TITLES: Record<Commission["kind"], () => string> = {
   cluster: () => tl("星團巡航"),
   good: () => tl("滿載而歸"),
-  decision: () => tl("照指示航行"),
+  bond: () => tl("老搭檔"),
   attuned: () => tl("同頻共鳴"),
   sky: () => tl("追星"),
   deep: () => tl("深處的光"),
@@ -29,7 +27,7 @@ export const commissionTitle = (c: Commission) => TITLES[c.kind]();
 const KIND_LOOK: Record<Commission["kind"], { icon: LucideIcon; hue: string }> = {
   cluster: { icon: Orbit, hue: "#3de7e0" },
   good: { icon: Gem, hue: "#f0c766" },
-  decision: { icon: Compass, hue: "#9fe8d6" },
+  bond: { icon: Users, hue: "#9fe8d6" },
   attuned: { icon: Sparkles, hue: "#c9ff55" },
   sky: { icon: Star, hue: "#b8c4ff" },
   deep: { icon: Anchor, hue: "#7fd3ff" },
@@ -41,7 +39,7 @@ export function commissionText(c: Commission) {
   switch (c.kind) {
     case "cluster": return tl("到第{0}星團的任一目的地，帶回光（不是空手而歸）。", { 0: CIRCLED[c.param] });
     case "good": return tl("帶回「{0}」或更好的結果。", { 0: OUTCOME.good });
-    case "decision": return tl("航行抉擇選「{0}」。", { 0: CHOICE[DECISIONS[c.param]].name });
+    case "bond": return tl("派默契至少 {0} 的隊伍出發（同一組人平安回來一趟，默契 +1）。", { 0: c.param });
     case "attuned": return tl("帶著同頻的探索者出發（探索者的光紋和目的地今天的光相同）。");
     case "sky": return tl("前往今天有星象的目的地。");
     case "deep": return tl("完成一趟深潛（第③星團以後）。");
@@ -49,10 +47,10 @@ export function commissionText(c: Commission) {
   }
 }
 
-/** Today's commission state, for the menu badge: 1 when one can be completed, otherwise how many can be taken. */
+/** Today's commission state, for the menu badge: how many can be taken (none while one is active). */
 export function commissionBadge(sim: Sim) {
   const c = sim.commissions;
-  if (c.active !== null) return c.ready !== null ? 1 : 0;
+  if (c.active !== null) return 0;
   return c.list.filter((x) => !c.done.includes(x.index) && !c.abandoned.includes(x.index)).length;
 }
 
@@ -72,11 +70,9 @@ function useCommissionActions() {
   return { busy, error, act };
 }
 
-/** The reward the ready voyage would pay: its share of that voyage's x1.00 reward. */
-export function readyBonus(sim: Sim) {
-  const c = sim.commissions;
-  const d = c.ready !== null ? sim.state!.dives.find((x) => x.id === c.ready) : undefined;
-  return d ? basePoints(d.plan) * (d.deep ? 2 : 1) * (d.rate ?? sim.rateOn(dayOf(d.at))) * c.bonus : null;
+/** The voyage of today that completed commission `index`, with the bonus it paid. */
+export function completedBy(sim: Sim, index: number) {
+  return sim.state?.dives.find((d) => d.commission?.index === index && dayOf(d.at) === sim.today) ?? null;
 }
 
 function CommissionCard({ sim, c, go, compact }: { sim: Sim; c: Commission; go: (v: View) => void; compact?: boolean }) {
@@ -86,32 +82,28 @@ function CommissionCard({ sim, c, go, compact }: { sim: Sim; c: Commission; go: 
   const dropped = cm.abandoned.includes(c.index);
   const active = cm.active === c.index;
   const blocked = cm.active !== null && !active;
-  const bonus = active ? readyBonus(sim) : null;
-  const state = done ? "is-done" : dropped ? "is-dropped" : blocked ? "is-blocked" : active ? (cm.ready !== null ? "is-ready" : "is-active") : "";
+  const by = done ? completedBy(sim, c.index) : null;
+  const state = done ? "is-done" : dropped ? "is-dropped" : blocked ? "is-blocked" : active ? "is-active" : "";
   const look = KIND_LOOK[c.kind];
   const Icon = look.icon;
   return (
     <li className={`v3-comm ${state}`} style={{ ["--ck" as string]: look.hue }}>
       <div className="v3-comm__head">
         <span className="v3-comm__icon" aria-hidden="true"><Icon /></span>
-        <span className="v3-comm__kicker">{done ? tl("已完成") : dropped ? tl("已放棄") : active ? (cm.ready !== null ? tl("可以完成") : tl("進行中")) : tl("委託 {0}", { 0: c.index + 1 })}</span>
+        <span className="v3-comm__kicker">{done ? tl("已完成") : dropped ? tl("已放棄") : active ? (cm.queued ? tl("下一趟帶上") : tl("進行中")) : tl("委託 {0}", { 0: c.index + 1 })}</span>
       </div>
       <b>{TITLES[c.kind]()}</b>
       <p>{commissionText(c)}</p>
       {!compact && <small className="v3-comm__reward">{tl("獎勵：符合的那一趟基礎收益的 {0}，進金庫。", { 0: pct(cm.bonus) })}</small>}
       <div className="v3-comm__foot">
       {done ? (
-        <span className="v3-comm__mark"><Check aria-hidden="true" />{tl("今天完成了")}</span>
+        <span className="v3-comm__mark"><Check aria-hidden="true" />{by?.commission ? tl("今天完成了（+{0} $RVYN）", { 0: fmt(by.commission.bonus) }) : tl("今天完成了")}</span>
       ) : dropped ? (
         <span className="v3-comm__mark">{tl("今天不能再接")}</span>
-      ) : active && cm.ready !== null ? (
-        <button type="button" className="hud-btn hud-btn--primary hud-btn--block" disabled={busy} onClick={() => act(() => cm.complete())}>
-          <Check aria-hidden="true" />{bonus !== null ? tl("完成委託（+{0} $RVYN）", { 0: fmt(bonus) }) : tl("完成委託")}
-        </button>
       ) : active ? (
         <div className="v3-comm__row">
           <button type="button" className="hud-btn hud-btn--gold" onClick={() => go("dive")}><Rocket aria-hidden="true" />{tl("去出發")}</button>
-          <button type="button" className="hud-btn hud-btn--ghost" disabled={busy} onClick={() => act(() => cm.abandon())}><X aria-hidden="true" />{tl("放棄委託")}</button>
+          <button type="button" className="hud-btn hud-btn--ghost" disabled={busy} onClick={() => act(() => cm.abandon())}><X aria-hidden="true" />{cm.queued ? tl("不帶了") : tl("放棄委託")}</button>
         </div>
       ) : blocked ? (
         <span className="v3-comm__mark">{tl("先完成或放棄手上的委託")}</span>
@@ -120,7 +112,7 @@ function CommissionCard({ sim, c, go, compact }: { sim: Sim; c: Commission; go: 
           {tl("接受委託")}
         </button>
       )}
-      {active && cm.ready === null && <small className="v3-comm__hint">{tl("接下之後出發的航程才算；結果還沒收取的話，完成時會一起收取。")}</small>}
+      {active && <small className="v3-comm__hint">{cm.queued ? tl("下一趟出發時一起接下，不用另外簽錢包；符合條件的話，揭曉時自動完成。") : tl("接下之後出發的航程才算；符合條件的話，揭曉時自動完成。")}</small>}
       {error && <p className="v3-error" role="alert">{error}</p>}
       </div>
     </li>
@@ -132,7 +124,7 @@ export function CommissionsPage({ sim, go }: { sim: Sim; go: (v: View) => void }
   return (
     <div className="hud-page v3-comms">
       <PageHead kicker={tl("每日委託")} icon="signal" title={tl("每日委託")}
-        lead={tl("每天 3 個委託，所有人都一樣，換日自動更新。一次接一個，接下後出發的航程符合條件、揭曉之後，按一下就完成。")}
+        lead={tl("每天 3 個委託，所有人都一樣，換日自動更新。一次接一個，接下後出發的航程符合條件，揭曉時就自動完成，獎勵直接進金庫。")}
         side={<span className="v3-comms__reset">{tl("{0} 後換一批", { 0: clock(resetIn) })}</span>} />
       <ul className="v3-comms__list">
         {sim.commissions.list.map((c) => <CommissionCard key={c.index} sim={sim} c={c} go={go} />)}

@@ -3,7 +3,9 @@ import { ANNOUNCEMENTS_KEY, activeAnnouncements, announcementListSchema, type An
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import { readDaily, type Daily } from "@/lib/lightdive-v3/daily";
 import { cleanStyle } from "@/lib/lightdive-v3/profile";
-import { KEEPER_STATUS, type KeeperStatus } from "@/lib/lightdive-v3/keeper";
+import { closesAt, monthOf, voteOf } from "@/lib/lightdive-v3/votes";
+import { metadataOf } from "@/lib/lightdive-v3/metadata";
+import { attrsOf } from "@/lib/lightdive-v3/onchain";
 import { CHAT_CHANNELS, CHAT_DAILY, CHAT_GAP_SECONDS, CHAT_KEEP_DAYS, CHAT_PAGE, CHAT_REPORTS_HIDE, checkChat, isChannel, type ChatChannel, type ChatMessage } from "@/lib/lightdive-chat";
 import { z } from "zod";
 import { walletSession, walletSessionAccount } from "@/lib/wallet-session";
@@ -206,6 +208,7 @@ const clearChat = async (channel?: string) => {
   await Promise.all(CHAT_CHANNELS.filter((c) => !channel || c === channel).map((c) => cache.delete(chatKey(c))));
 };
 const profileKey = (account: string) => `https://profile.lightdive.internal/${account}`;
+const voteKey = (month: string) => `https://vote.lightdive.internal/${month}`;
 const cardHolders = new Map<string, number>(); // account -> until when "holds a card" is trusted (this isolate only)
 async function holdsCard(account: string) {
   const until = cardHolders.get(account);
@@ -281,9 +284,39 @@ async function handle(request: Request) {
         if (cache) await cache.put(profileKey(account), new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=30" } }));
         return respond(data);
       }
-      if (route === "lightdive" && path[1] === "keeper" && path.length === 2) {
+      if (route === "lightdive" && path[1] === "nft" && path.length === 3) {
+        // 卡片資料: LightdiveNFT3.tokenURI points here, so wallets and explorers show the card's art and attributes
+        await rate(request, "lightdive-public", 240);
+        if (!/^\d{1,12}$/.test(path[2])) fail(400, "卡片編號不正確");
+        const G = gameChain();
+        if (!G.contracts) fail(404, "Lightdive is not deployed");
+        const client = createPublicClient({ chain: G.chain, transport: http(G.rpcUrl) });
+        const raw = await client.readContract({ address: G.contracts!.nft, abi: G.abi.LightdiveNFT3, functionName: "attributes", args: [BigInt(path[2])] }).catch(() => null);
+        if (!raw) fail(404, "沒有這張卡（或已經歸航）");
+        const a = attrsOf(raw);
+        // a sealed card changes once its summon is revealed: keep it short then
+        return respond(metadataOf(BigInt(path[2]), a), 200, { "Cache-Control": `public, max-age=${a.rarity === 255 ? 30 : 300}`, "Access-Control-Allow-Origin": "*" });
+      }
+      if (route === "lightdive" && path[1] === "vote" && path.length === 2) {
+        // 世界觀投票: the month's counts (kept at the edge for 30 seconds) and, when signed in, the wallet's own vote
         await rate(request, "lightdive-public", 120);
-        return respond({ status: await setting<KeeperStatus | null>(KEEPER_STATUS, null) });
+        const month = url.searchParams.get("month") ?? monthOf(Date.now());
+        const vote = voteOf(month);
+        if (!vote) fail(404, "這個月沒有投票");
+        const cache = chatCache();
+        const hit = cache ? await cache.match(voteKey(month)) : undefined;
+        let tally: { counts: number[]; off?: boolean };
+        if (hit) tally = await hit.json();
+        else {
+          // until the table exists the vote shows as not open yet
+          const rows = await db().prepare("SELECT choice, COUNT(*) AS n FROM lightdive_vote WHERE month=? GROUP BY choice").bind(month).all<{ choice: number; n: number }>()
+            .then((r) => r.results).catch((e: unknown) => { if (/no such table/i.test(String(e))) return null; throw e; });
+          tally = rows ? { counts: vote.options.map((_, i) => rows.find((r) => r.choice === i)?.n ?? 0) } : { counts: vote.options.map(() => 0), off: true };
+          if (cache) await cache.put(voteKey(month), new Response(JSON.stringify(tally), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=30" } }));
+        }
+        const actor = tally.off ? null : await walletSessionAccount(request, db()).catch(() => null);
+        const mine = actor ? await db().prepare("SELECT choice FROM lightdive_vote WHERE month=? AND account=?").bind(month, actor.toLowerCase()).first<{ choice: number }>() : null;
+        return respond({ month, ...tally, mine: mine?.choice ?? null, closesAt: closesAt(month) });
       }
       if (route === "lightdive" && path[1] === "daily" && path.length === 2) {
         // 觀測站日報: yesterday (UTC) in numbers, from the chain; stored once the day's reveals are in (30 minutes after
@@ -606,6 +639,19 @@ async function handle(request: Request) {
         .bind(account, JSON.stringify(style), now()).run();
       await chatCache()?.delete(profileKey(account));
       return respond({ ok: true, style });
+    }
+    if (route === "lightdive" && path[1] === "vote" && path.length === 2) {
+      const actor = await walletSessionAccount(request, db());
+      if (!actor) fail(401, "請先連接錢包並簽名登入，才能投票");
+      const { month, choice } = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/), choice: z.number().int().min(0).max(9) }).strict().parse(body);
+      const vote = voteOf(month);
+      if (!vote || month !== monthOf(Date.now())) fail(409, "這個月的投票已經結束或還沒開始");
+      if (choice >= vote.options.length) fail(400, "沒有這個選項");
+      // one vote per wallet per month; it can be changed until the month ends
+      await db().prepare("INSERT INTO lightdive_vote(month,account,choice,updated) VALUES(?,?,?,?) ON CONFLICT(month,account) DO UPDATE SET choice=excluded.choice,updated=excluded.updated")
+        .bind(month, actor.toLowerCase(), choice, now()).run();
+      await chatCache()?.delete(voteKey(month));
+      return respond({ ok: true, choice });
     }
     if (route === "rvyn" && path[1] === "register") {
       z.object({}).strict().parse(body);

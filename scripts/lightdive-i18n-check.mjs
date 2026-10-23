@@ -32,6 +32,7 @@ function scan(file, everything) {
 }
 for (const f of fs.readdirSync(V3)) if (/\.(tsx?)$/.test(f) && !SKIP.has(f)) scan(path.join(V3, f), false);
 scan("lib/lightdive-v3/texts.ts", true);
+scan("lib/lightdive-v3/votes.ts", false); // 世界觀投票 (shared with the API)
 
 // dictionary rows
 const rows = new Map();

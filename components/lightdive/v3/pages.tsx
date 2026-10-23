@@ -16,14 +16,14 @@ import { isDaylight, useSettings } from "./settings";
 const DAY_OBSERVATORY = "/lightdive/bg/light-bg-observatory.webp";
 import { GameIcon } from "../game/icon";
 import { PageHead, Panel } from "../game/hud";
-import { dayOf, deciding, passesOn, owned, teamInput, teamName, teamOut, turning, type Sim, type SimNft, type SimState } from "./sim";
+import { dayOf, passesOn, owned, teamInput, teamName, teamOut, type Sim, type SimNft, type SimState } from "./sim";
 import type { IconName } from "../game/icons";
 import { CIRCLED, CLUSTER_HUE, KIND, LIGHT, LIGHT_COLOR, OUTCOME_TONE, SLOT, STAR, ago, clock, fmt, outcomeName, RARITY_COLOR } from "./copy";
 import { gap, plurals, tl } from "@/lib/lightdive-v3/i18n";
 import { CommissionsBrief } from "./commissions";
 import { unlocksOf } from "./unlocks";
 
-export type View = "lobby" | "dive" | "commissions" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings";
+export type View = "lobby" | "dive" | "commissions" | "plain" | "logbook" | "spires" | "seekers" | "prisms" | "summon" | "market" | "buy" | "faucet" | "treasury" | "guide" | "story" | "credits" | "whitepaper" | "settings" | "vote";
 const DAY = 86_400_000;
 
 const alive = (n: SimNft) => !n.homeAt;
@@ -38,8 +38,6 @@ export function rovynPool(sim: Sim): readonly string[] {
   if (sim.chain && !sim.chain.account) return [tl("第一次來嗎？連上錢包，我帶你去看第一道光。"), tl("這裡用的是測試幣，沒有價值。先看看也可以：預覽版不用錢包。"), tl("光橋每天都會換一次天象。今天的光，正在等第一位觀測者。")];
   if (!s.nfts.some(owned)) return [tl("先召喚一座光塔和一位探索者，就能組成第一支隊伍。"), tl("光塔決定能帶幾位探索者，探索者決定戰力。先從召喚開始吧。")];
   if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt)) return r.docked;
-  if (s.dives.some((d) => d.pending)) return r.collect;
-  if (s.dives.some((d) => deciding(d, sim.now))) return r.eventPending;
   const used = passesOn(s, sim.today);
   if (used < DIVES_PER_DAY) {
     // lines that name a destination need a team that can reach one
@@ -56,8 +54,8 @@ export function rovynPool(sim: Sim): readonly string[] {
  *  something needs the player soon, quiet when the day is done or a voyage came back empty, otherwise guiding. */
 export type RovynPose = "guide" | "bright" | "warn" | "quiet" | "cheer" | "comfort";
 /** Rovyn's reaction to one result (10-22: cheer and comfort are the founder's P3 poses). */
-export const rovynFor = (d: { turnedBack?: boolean; result?: { outcome: string } }): RovynPose =>
-  d.turnedBack || !d.result ? "guide"
+export const rovynFor = (d: { result?: { outcome: string } }): RovynPose =>
+  !d.result ? "guide"
     : d.result.outcome === "great" || d.result.outcome === "legend" ? "cheer"
       : d.result.outcome === "good" ? "bright"
         : d.result.outcome === "empty" || d.result.outcome === "partial" ? "comfort" : "guide";
@@ -65,9 +63,9 @@ export function rovynPose(sim: Sim): RovynPose {
   const s = sim.state!;
   const recent = s.dives.filter((d) => d.result && sim.now - d.revealAt < 15 * 60_000).sort((a, b) => b.revealAt - a.revealAt)[0];
   if (recent && (recent.result!.outcome === "great" || recent.result!.outcome === "legend")) return "cheer";
-  if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt) || s.dives.some((d) => deciding(d, sim.now) && !d.choice) || s.dives.some((d) => turning(d, sim.now))) return "warn";
+  if (s.nfts.some((n) => n.dockedAt !== undefined && !n.homeAt)) return "warn";
   if (recent && recent.result!.outcome === "empty") return "comfort";
-  if (passesOn(s, sim.today) >= DIVES_PER_DAY && !s.dives.some((d) => !d.result || d.pending)) return "quiet";
+  if (passesOn(s, sim.today) >= DIVES_PER_DAY && !s.dives.some((d) => !d.result)) return "quiet";
   return "guide";
 }
 export const rovynImage = (pose: RovynPose) => `/lightdive/npc/rovyn-pose-${pose}.webp`;
@@ -108,7 +106,7 @@ export function Rovyn({ sim, line, onNext }: { sim: Sim; line: string; onNext: (
       名字: docked ? `${KIND[docked.kind]} #${docked.id}` : tl("探索者"),
       // docked: days left to renew; otherwise (the claim lines): days until withdrawing is free
       天: docked ? Math.max(0, 7 - Math.floor((sim.now - (docked.dockedAt ?? 0)) / DAY)) : Math.round(fee * 100),
-      數量: fmt(s.dives.some((d) => d.pending) ? s.dives.reduce((a, d) => a + (d.pending ? d.reward ?? 0 : 0), 0) : s.credit),
+      數量: fmt(s.credit),
       費: Math.round(fee * 100),
       費2: 0,
     };
@@ -225,15 +223,10 @@ function todoItems(sim: Sim, go: (v: View) => void): Todo[] {
   const watch = (id: number) => { try { sessionStorage.setItem("lightdive:v3:watch", String(id)); } catch {} go("dive"); };
   const destName = (id: number) => TEXTS.clusters[DESTINATIONS[id].cluster].destinations[DESTINATIONS[id].slot].name;
   const items: Todo[] = [];
-  const deciding_ = s.dives.filter((d) => deciding(d, sim.now));
-  if (deciding_.length) {
-    const d = deciding_[0];
-    items.push({ key: "decide", icon: "signal", tone: "gold", title: tl("{0} 趟航行等你抉擇", { 0: deciding_.length }), sub: tl("{0} 在{1}遇到岔路，揭曉前 1 分鐘截止。", { 0: teamName(s, d.spire), 1: destName(d.dest) }), action: tl("去抉擇"), run: () => watch(d.id) });
-  }
-  const waiting = s.dives.filter((d) => d.pending);
-  if (waiting.length) {
-    const total = waiting.reduce((a, d) => a + (d.reward ?? 0), 0);
-    items.push({ key: "collect", icon: "claim", tone: "gold", title: tl("{0} 趟結果待收取", { 0: waiting.length }), sub: tl("一共 {0} $RVYN，收下後才會進到「可領取」。", { 0: fmt(total) }), action: tl("去收取"), run: () => watch(waiting[0].id) });
+  const sailing = s.dives.filter((d) => !d.result).sort((a, b) => a.revealAt - b.revealAt);
+  if (sailing.length) {
+    const d = sailing[0];
+    items.push({ key: "sailing", icon: "expedition", tone: "blue", title: tl("{0} 趟航行中", { 0: sailing.length }), sub: tl("{0} 正在前往{1}，{2} 後揭曉；結果會自動算進金庫。", { 0: teamName(s, d.spire), 1: destName(d.dest), 2: clock(Math.max(0, d.revealAt - sim.now)) }), action: tl("看航行"), run: () => watch(d.id) });
   }
   const left = Math.max(0, DIVES_PER_DAY - passesOn(s, sim.today));
   const ready = s.teams.filter((x) => x.seekers.length && !teamOut(s, x.spire));
@@ -257,7 +250,7 @@ function todoItems(sim: Sim, go: (v: View) => void): Todo[] {
   if (idle.length && s.teams.length < MAX_TEAMS) {
     items.push({ key: "idle", icon: "fleets", tone: "plain", title: tl("{0} 座光塔閒置", { 0: idle.length }), sub: tl("還能再組 {0} 支隊伍，放上探索者就能出發。", { 0: MAX_TEAMS - s.teams.length }), action: tl("去碑原"), run: () => go("plain") });
   }
-  if (!s.teams.some((x) => x.seekers.length) && !s.dives.some((d) => !d.result || d.pending)) {
+  if (!s.teams.some((x) => x.seekers.length) && !s.dives.some((d) => !d.result)) {
     const usable = (k: number) => s.nfts.some((n) => n.kind === k && owned(n) && n.dockedAt === undefined && n.listed === undefined);
     items.push(usable(0) && usable(2)
       ? { key: "team", icon: "fleets", tone: "lime", title: tl("還沒有可以出發的隊伍"), sub: tl("到碑原把探索者放上光塔，就能出發。"), action: tl("去組隊"), run: () => go("plain") }
@@ -294,7 +287,7 @@ const STAGES = [
   { label: "召喚", sub: "取得光塔和探索者", steps: [0, 1] },
   { label: "組隊", sub: "探索者坐上光塔", steps: [2] },
   { label: "潛光", sub: "派隊伍到目的地", steps: [3, 4, 5] },
-  { label: "收取", sub: "把帶回的光收進金庫", steps: [6, 7] },
+  { label: "入帳", sub: "帶回的光自動進金庫", steps: [6, 7] },
 ] as const;
 
 /** The top of the observatory: today's suggested route. For the strongest team that can still dive today, the
@@ -365,16 +358,10 @@ function TodayRoute({ sim, go, date }: { sim: Sim; go: (v: View) => void; date: 
         btn(wait ? tl("{0} 後可以再領", { 0: clock(wait) }) : tl("領取 {0} tRVYN", { 0: fmt(ch.drip.amount, 0) }), "claim", () => void ch.drip!.run(), busy || wait > 0));
     }
   }
-  const waiting = s.dives.filter((d) => d.pending);
-  if (waiting.length) {
-    const total = waiting.reduce((a, d) => a + (d.reward ?? 0), 0);
-    return hero(tl("· 光橋回來了"), tl("{0} 趟結果等你收取", { 0: waiting.length }), tl("一共 {0} $RVYN。收取後才會進金庫，隊伍也才能再出發。", { 0: fmt(total) }),
-      <>{btn(waiting.length > 1 ? tl("全部收取") : tl("收取結果"), "claim", () => void sim.collect(), !!ch?.tx?.running)}<button type="button" className="hud-btn hud-btn--ghost" onClick={() => go("dive")}>{tl("先看結果")}</button></>);
-  }
   const onBridge = s.dives.filter((d) => !d.result);
   if (onBridge.length && !ready.length) {
     const first = Math.min(...onBridge.map((d) => d.revealAt));
-    return hero(tl("· 航行中"), tl("{0} 支隊伍在光橋上", { 0: onBridge.length }), tl("{0} 後揭曉第一趟。揭曉後回來收取。", { 0: clock(Math.max(0, first - sim.now)) }), btn(tl("看航行"), "expedition", () => go("dive")));
+    return hero(tl("· 航行中"), tl("{0} 支隊伍在光橋上", { 0: onBridge.length }), tl("{0} 後揭曉第一趟。結果會自動算進金庫，不用另外收取。", { 0: clock(Math.max(0, first - sim.now)) }), btn(tl("看航行"), "expedition", () => go("dive")));
   }
 
   if (!team || !pick) {
@@ -470,9 +457,8 @@ function questSteps(s: SimState): { label: string; done: boolean; to: View }[] {
     { label: tl("召喚探索者（預覽已附贈）"), done: s.nfts.some((n) => n.kind === 2), to: "summon" },
     { label: tl("在碑原把探索者放上光塔"), done: s.teams.some((t) => t.seekers.length > 0), to: "plain" },
     { label: tl("到 ① 微光淺域出發一次"), done: s.dives.length > 0, to: "dive" },
-    { label: tl("回答一張航行抉擇事件卡"), done: s.dives.some((d) => d.choice), to: "dive" },
     { label: tl("看一次光橋揭曉"), done: s.dives.some((d) => d.result), to: "dive" },
-    { label: tl("親手收取一趟帶回的光"), done: s.dives.some((d) => d.result && !d.pending), to: "dive" },
+    { label: tl("接一個每日委託"), done: !!s.commission || Object.values(s.commissionMarks ?? {}).some((m) => m), to: "commissions" },
     { label: tl("在金庫看到收益"), done: s.credit > 0 || s.claimed > 0, to: "treasury" },
   ];
 }
@@ -540,7 +526,7 @@ function RecentVoyages({ sim, go }: { sim: Sim; go: (v: View) => void }) {
             <button type="button" onClick={() => open(d.id)}>
               <span className="v3-recentdives__where"><b>{CIRCLED[dest.cluster]}{SLOT[dest.slot]} {TEXTS.clusters[dest.cluster].destinations[dest.slot].name}</b><small>{teamName(s, d.spire)} · {ago(sim.now - d.revealAt)}</small></span>
               <span className="v3-recentdives__mult"><small>{outcomeName(d)}</small><b>×{(r.multX100 / 100).toFixed(2)}</b></span>
-              <span className="v3-recentdives__reward">{d.pending ? <em>{tl("待收取")}</em> : null}+{fmt(d.reward ?? 0)}</span>
+              <span className="v3-recentdives__reward">{d.commission ? <em>{tl("委託")}</em> : null}+{fmt(d.reward ?? 0)}</span>
             </button>
           </li>
         );
@@ -559,10 +545,9 @@ function TeamsAtGlance({ sim, go }: { sim: Sim; go: (v: View) => void }) {
     <ul className="v3-teamsglance">
       {teams.map((x) => {
         const out = s.dives.find((d) => d.spire === x.spire && !d.result);
-        const waiting = s.dives.find((d) => d.spire === x.spire && d.pending);
         const today = passesOn(s, sim.today, x.spire);
-        const st = out ? (deciding(out, sim.now) ? { t: tl("抉擇中"), c: "gold" } : { t: tl("航行中 · {0}", { 0: clock(out.revealAt - sim.now) }), c: "blue" })
-          : waiting ? { t: tl("待收取"), c: "gold" } : today >= 3 ? { t: tl("今天已出發 3 次"), c: "dim" } : !left ? { t: tl("出發令已用完"), c: "dim" } : { t: tl("可出發"), c: "lime" };
+        const st = out ? { t: tl("航行中 · {0}", { 0: clock(out.revealAt - sim.now) }), c: "blue" }
+          : today >= 3 ? { t: tl("今天已出發 3 次"), c: "dim" } : !left ? { t: tl("出發令已用完"), c: "dim" } : { t: tl("可出發"), c: "lime" };
         const spire = s.nfts.find((n) => n.id === x.spire);
         return (
           <li key={x.spire}>

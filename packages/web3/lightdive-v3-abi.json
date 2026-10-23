@@ -2210,6 +2210,72 @@
      "type": "uint256"
     },
     {
+     "components": [
+      {
+       "internalType": "uint8",
+       "name": "kind",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "rarity",
+       "type": "uint8"
+      },
+      {
+       "internalType": "uint8",
+       "name": "trait",
+       "type": "uint8"
+      },
+      {
+       "internalType": "bool",
+       "name": "renewed",
+       "type": "bool"
+      },
+      {
+       "internalType": "uint16",
+       "name": "power",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint16",
+       "name": "voyagesLeft",
+       "type": "uint16"
+      },
+      {
+       "internalType": "uint32",
+       "name": "deck",
+       "type": "uint32"
+      },
+      {
+       "internalType": "uint64",
+       "name": "dockedAt",
+       "type": "uint64"
+      },
+      {
+       "internalType": "uint64",
+       "name": "dna",
+       "type": "uint64"
+      }
+     ],
+     "indexed": false,
+     "internalType": "struct LightdiveNFT3.Attributes",
+     "name": "attributes",
+     "type": "tuple"
+    }
+   ],
+   "name": "Unsealed",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "uint256",
+     "name": "id",
+     "type": "uint256"
+    },
+    {
      "indexed": false,
      "internalType": "uint16",
      "name": "voyagesLeft",
@@ -2222,6 +2288,19 @@
   {
    "inputs": [],
    "name": "PRISM",
+   "outputs": [
+    {
+     "internalType": "uint8",
+     "name": "",
+     "type": "uint8"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "SEALED",
    "outputs": [
     {
      "internalType": "uint8",
@@ -2565,59 +2644,17 @@
      "type": "address"
     },
     {
-     "components": [
-      {
-       "internalType": "uint8",
-       "name": "kind",
-       "type": "uint8"
-      },
-      {
-       "internalType": "uint8",
-       "name": "rarity",
-       "type": "uint8"
-      },
-      {
-       "internalType": "uint8",
-       "name": "trait",
-       "type": "uint8"
-      },
-      {
-       "internalType": "bool",
-       "name": "renewed",
-       "type": "bool"
-      },
-      {
-       "internalType": "uint16",
-       "name": "power",
-       "type": "uint16"
-      },
-      {
-       "internalType": "uint16",
-       "name": "voyagesLeft",
-       "type": "uint16"
-      },
-      {
-       "internalType": "uint32",
-       "name": "deck",
-       "type": "uint32"
-      },
-      {
-       "internalType": "uint64",
-       "name": "dockedAt",
-       "type": "uint64"
-      },
-      {
-       "internalType": "uint64",
-       "name": "dna",
-       "type": "uint64"
-      }
-     ],
-     "internalType": "struct LightdiveNFT3.Attributes",
-     "name": "a",
-     "type": "tuple"
+     "internalType": "uint8",
+     "name": "kind",
+     "type": "uint8"
+    },
+    {
+     "internalType": "uint16",
+     "name": "voyages",
+     "type": "uint16"
     }
    ],
-   "name": "mint",
+   "name": "mintSealed",
    "outputs": [
     {
      "internalType": "uint256",
@@ -3017,6 +3054,39 @@
     }
    ],
    "name": "transferOwnership",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "id",
+     "type": "uint256"
+    },
+    {
+     "internalType": "uint8",
+     "name": "rarity",
+     "type": "uint8"
+    },
+    {
+     "internalType": "uint8",
+     "name": "trait",
+     "type": "uint8"
+    },
+    {
+     "internalType": "uint16",
+     "name": "power",
+     "type": "uint16"
+    },
+    {
+     "internalType": "uint64",
+     "name": "dna",
+     "type": "uint64"
+    }
+   ],
+   "name": "unseal",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -3594,25 +3664,6 @@
    "inputs": [
     {
      "indexed": true,
-     "internalType": "uint8",
-     "name": "kind",
-     "type": "uint8"
-    },
-    {
-     "indexed": false,
-     "internalType": "uint32",
-     "name": "number",
-     "type": "uint32"
-    }
-   ],
-   "name": "DeckOpened",
-   "type": "event"
-  },
-  {
-   "anonymous": false,
-   "inputs": [
-    {
-     "indexed": true,
      "internalType": "address",
      "name": "previousOwner",
      "type": "address"
@@ -3767,6 +3818,12 @@
      "internalType": "uint256",
      "name": "paid",
      "type": "uint256"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "firstId",
+     "type": "uint256"
     }
    ],
    "name": "SummonRequested",
@@ -3838,19 +3895,6 @@
      "internalType": "uint16",
      "name": "",
      "type": "uint16"
-    }
-   ],
-   "stateMutability": "view",
-   "type": "function"
-  },
-  {
-   "inputs": [],
-   "name": "DECK_SIZE",
-   "outputs": [
-    {
-     "internalType": "uint32",
-     "name": "",
-     "type": "uint32"
     }
    ],
    "stateMutability": "view",
@@ -3996,47 +4040,6 @@
   {
    "inputs": [
     {
-     "internalType": "uint8",
-     "name": "kind",
-     "type": "uint8"
-    }
-   ],
-   "name": "deckOf",
-   "outputs": [
-    {
-     "components": [
-      {
-       "internalType": "uint32",
-       "name": "number",
-       "type": "uint32"
-      },
-      {
-       "internalType": "uint32",
-       "name": "remaining",
-       "type": "uint32"
-      },
-      {
-       "internalType": "uint32[5]",
-       "name": "rarityLeft",
-       "type": "uint32[5]"
-      },
-      {
-       "internalType": "uint32[3][5]",
-       "name": "beamLeft",
-       "type": "uint32[3][5]"
-      }
-     ],
-     "internalType": "struct LightdiveMinter3.Deck",
-     "name": "",
-     "type": "tuple"
-    }
-   ],
-   "stateMutability": "view",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
      "internalType": "address",
      "name": "",
      "type": "address"
@@ -4151,25 +4154,6 @@
    "type": "function"
   },
   {
-   "inputs": [
-    {
-     "internalType": "uint256",
-     "name": "",
-     "type": "uint256"
-    }
-   ],
-   "name": "pending",
-   "outputs": [
-    {
-     "internalType": "uint32",
-     "name": "",
-     "type": "uint32"
-    }
-   ],
-   "stateMutability": "view",
-   "type": "function"
-  },
-  {
    "inputs": [],
    "name": "pendingOwner",
    "outputs": [
@@ -4241,6 +4225,25 @@
      "internalType": "address",
      "name": "",
      "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint8",
+     "name": "kind",
+     "type": "uint8"
+    }
+   ],
+   "name": "rarityOdds",
+   "outputs": [
+    {
+     "internalType": "uint16[5]",
+     "name": "",
+     "type": "uint16[5]"
     }
    ],
    "stateMutability": "view",
@@ -4328,9 +4331,9 @@
        "type": "uint64"
       },
       {
-       "internalType": "bytes32",
-       "name": "entropy",
-       "type": "bytes32"
+       "internalType": "uint256",
+       "name": "firstId",
+       "type": "uint256"
       }
      ],
      "internalType": "struct LightdiveMinter3.Request",
@@ -4381,6 +4384,24 @@
     }
    ],
    "name": "revealFallback",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256[]",
+     "name": "ids",
+     "type": "uint256[]"
+    },
+    {
+     "internalType": "bytes[]",
+     "name": "proofs",
+     "type": "bytes[]"
+    }
+   ],
+   "name": "revealPending",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -4479,6 +4500,16 @@
      "internalType": "uint16",
      "name": "qty",
      "type": "uint16"
+    },
+    {
+     "internalType": "uint256[]",
+     "name": "revealIds",
+     "type": "uint256[]"
+    },
+    {
+     "internalType": "bytes[]",
+     "name": "proofs",
+     "type": "bytes[]"
     }
    ],
    "name": "summon",
@@ -4572,6 +4603,11 @@
      "internalType": "contract CoreLightPool3",
      "name": "pool_",
      "type": "address"
+    },
+    {
+     "internalType": "contract IMinterReveal",
+     "name": "minter_",
+     "type": "address"
     }
    ],
    "stateMutability": "nonpayable",
@@ -4609,11 +4645,6 @@
   },
   {
    "inputs": [],
-   "name": "DecisionClosed",
-   "type": "error"
-  },
-  {
-   "inputs": [],
    "name": "Docked",
    "type": "error"
   },
@@ -4630,11 +4661,6 @@
   {
    "inputs": [],
    "name": "NoPasses",
-   "type": "error"
-  },
-  {
-   "inputs": [],
-   "name": "NotCommissions",
    "type": "error"
   },
   {
@@ -4808,25 +4834,6 @@
     }
    ],
    "name": "DayOpened",
-   "type": "event"
-  },
-  {
-   "anonymous": false,
-   "inputs": [
-    {
-     "indexed": true,
-     "internalType": "uint256",
-     "name": "diveId",
-     "type": "uint256"
-    },
-    {
-     "indexed": false,
-     "internalType": "uint8",
-     "name": "decision",
-     "type": "uint8"
-    }
-   ],
-   "name": "Decided",
    "type": "event"
   },
   {
@@ -5118,25 +5125,6 @@
    "anonymous": false,
    "inputs": [
     {
-     "indexed": true,
-     "internalType": "uint256",
-     "name": "diveId",
-     "type": "uint256"
-    },
-    {
-     "indexed": false,
-     "internalType": "bool",
-     "name": "turnBack",
-     "type": "bool"
-    }
-   ],
-   "name": "TurnedBack",
-   "type": "event"
-  },
-  {
-   "anonymous": false,
-   "inputs": [
-    {
      "indexed": false,
      "internalType": "address",
      "name": "account",
@@ -5174,7 +5162,7 @@
   },
   {
    "inputs": [],
-   "name": "FALLBACK",
+   "name": "NO_COMMISSION",
    "outputs": [
     {
      "internalType": "uint8",
@@ -5200,26 +5188,41 @@
   },
   {
    "inputs": [],
-   "name": "TURNED_BACK",
-   "outputs": [
-    {
-     "internalType": "uint8",
-     "name": "",
-     "type": "uint8"
-    }
-   ],
-   "stateMutability": "view",
-   "type": "function"
-  },
-  {
-   "inputs": [],
    "name": "acceptOwnership",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
   },
   {
-   "inputs": [],
+   "inputs": [
+    {
+     "components": [
+      {
+       "internalType": "uint256[]",
+       "name": "dives",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "diveProofs",
+       "type": "bytes[]"
+      },
+      {
+       "internalType": "uint256[]",
+       "name": "summons",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "summonProofs",
+       "type": "bytes[]"
+      }
+     ],
+     "internalType": "struct Expedition3.Settle",
+     "name": "s",
+     "type": "tuple"
+    }
+   ],
    "name": "claim",
    "outputs": [],
    "stateMutability": "nonpayable",
@@ -5268,30 +5271,6 @@
     }
    ],
    "stateMutability": "view",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
-     "internalType": "address",
-     "name": "owner",
-     "type": "address"
-    },
-    {
-     "internalType": "uint256",
-     "name": "amount",
-     "type": "uint256"
-    }
-   ],
-   "name": "creditBonus",
-   "outputs": [
-    {
-     "internalType": "uint256",
-     "name": "credited",
-     "type": "uint256"
-    }
-   ],
-   "stateMutability": "nonpayable",
    "type": "function"
   },
   {
@@ -5374,24 +5353,6 @@
    "inputs": [
     {
      "internalType": "uint256",
-     "name": "id",
-     "type": "uint256"
-    },
-    {
-     "internalType": "uint8",
-     "name": "decision",
-     "type": "uint8"
-    }
-   ],
-   "name": "decide",
-   "outputs": [],
-   "stateMutability": "nonpayable",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
-     "internalType": "uint256",
      "name": "spire",
      "type": "uint256"
     }
@@ -5422,6 +5383,38 @@
      "internalType": "bool",
      "name": "deep",
      "type": "bool"
+    },
+    {
+     "internalType": "uint8",
+     "name": "commission",
+     "type": "uint8"
+    },
+    {
+     "components": [
+      {
+       "internalType": "uint256[]",
+       "name": "dives",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "diveProofs",
+       "type": "bytes[]"
+      },
+      {
+       "internalType": "uint256[]",
+       "name": "summons",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "summonProofs",
+       "type": "bytes[]"
+      }
+     ],
+     "internalType": "struct Expedition3.Settle",
+     "name": "s",
+     "type": "tuple"
     }
    ],
    "name": "dive",
@@ -5565,6 +5558,38 @@
      "internalType": "uint8",
      "name": "supply",
      "type": "uint8"
+    },
+    {
+     "internalType": "uint8",
+     "name": "commission",
+     "type": "uint8"
+    },
+    {
+     "components": [
+      {
+       "internalType": "uint256[]",
+       "name": "dives",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "diveProofs",
+       "type": "bytes[]"
+      },
+      {
+       "internalType": "uint256[]",
+       "name": "summons",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "summonProofs",
+       "type": "bytes[]"
+      }
+     ],
+     "internalType": "struct Expedition3.Settle",
+     "name": "s",
+     "type": "tuple"
     }
    ],
    "name": "diveMany",
@@ -5652,6 +5677,19 @@
    "outputs": [
     {
      "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "minter",
+   "outputs": [
+    {
+     "internalType": "contract IMinterReveal",
      "name": "",
      "type": "address"
     }
@@ -5838,45 +5876,9 @@
      "internalType": "uint256",
      "name": "id",
      "type": "uint256"
-    },
-    {
-     "internalType": "bytes",
-     "name": "proof",
-     "type": "bytes"
-    }
-   ],
-   "name": "reveal",
-   "outputs": [],
-   "stateMutability": "nonpayable",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
-     "internalType": "uint256",
-     "name": "id",
-     "type": "uint256"
     }
    ],
    "name": "revealFallback",
-   "outputs": [],
-   "stateMutability": "nonpayable",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
-     "internalType": "uint256[]",
-     "name": "ids",
-     "type": "uint256[]"
-    },
-    {
-     "internalType": "bytes[]",
-     "name": "proofs",
-     "type": "bytes[]"
-    }
-   ],
-   "name": "revealMany",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -5936,9 +5938,71 @@
      "internalType": "uint256[]",
      "name": "seekers",
      "type": "uint256[]"
+    },
+    {
+     "components": [
+      {
+       "internalType": "uint256[]",
+       "name": "dives",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "diveProofs",
+       "type": "bytes[]"
+      },
+      {
+       "internalType": "uint256[]",
+       "name": "summons",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "summonProofs",
+       "type": "bytes[]"
+      }
+     ],
+     "internalType": "struct Expedition3.Settle",
+     "name": "s",
+     "type": "tuple"
     }
    ],
    "name": "setTeam",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "components": [
+      {
+       "internalType": "uint256[]",
+       "name": "dives",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "diveProofs",
+       "type": "bytes[]"
+      },
+      {
+       "internalType": "uint256[]",
+       "name": "summons",
+       "type": "uint256[]"
+      },
+      {
+       "internalType": "bytes[]",
+       "name": "summonProofs",
+       "type": "bytes[]"
+      }
+     ],
+     "internalType": "struct Expedition3.Settle",
+     "name": "s",
+     "type": "tuple"
+    }
+   ],
+   "name": "settle",
    "outputs": [],
    "stateMutability": "nonpayable",
    "type": "function"
@@ -6122,24 +6186,6 @@
    "type": "function"
   },
   {
-   "inputs": [
-    {
-     "internalType": "uint256",
-     "name": "id",
-     "type": "uint256"
-    },
-    {
-     "internalType": "bool",
-     "name": "back",
-     "type": "bool"
-    }
-   ],
-   "name": "turnBack",
-   "outputs": [],
-   "stateMutability": "nonpayable",
-   "type": "function"
-  },
-  {
    "inputs": [],
    "name": "unpause",
    "outputs": [],
@@ -6173,6 +6219,11 @@
     {
      "internalType": "address",
      "name": "pool_",
+     "type": "address"
+    },
+    {
+     "internalType": "contract IMinterUnseal",
+     "name": "minter_",
      "type": "address"
     }
    ],
@@ -6255,6 +6306,11 @@
     }
    ],
    "name": "SafeERC20FailedOperation",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "Sealed",
    "type": "error"
   },
   {
@@ -6490,6 +6546,16 @@
      "internalType": "uint256",
      "name": "price",
      "type": "uint256"
+    },
+    {
+     "internalType": "uint256[]",
+     "name": "summons",
+     "type": "uint256[]"
+    },
+    {
+     "internalType": "bytes[]",
+     "name": "proofs",
+     "type": "bytes[]"
     }
    ],
    "name": "list",
@@ -6508,6 +6574,16 @@
      "internalType": "uint256[]",
      "name": "prices",
      "type": "uint256[]"
+    },
+    {
+     "internalType": "uint256[]",
+     "name": "summons",
+     "type": "uint256[]"
+    },
+    {
+     "internalType": "bytes[]",
+     "name": "proofs",
+     "type": "bytes[]"
     }
    ],
    "name": "listMany",
@@ -6539,6 +6615,19 @@
      "internalType": "uint64",
      "name": "listedAt",
      "type": "uint64"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "minter",
+   "outputs": [
+    {
+     "internalType": "contract IMinterUnseal",
+     "name": "",
+     "type": "address"
     }
    ],
    "stateMutability": "view",
@@ -6692,6 +6781,11 @@
   {
    "inputs": [],
    "name": "NoneActive",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotExpedition",
    "type": "error"
   },
   {
@@ -6904,7 +6998,7 @@
   },
   {
    "inputs": [],
-   "name": "CLUSTER",
+   "name": "BOND",
    "outputs": [
     {
      "internalType": "uint8",
@@ -6917,7 +7011,7 @@
   },
   {
    "inputs": [],
-   "name": "DECISION",
+   "name": "CLUSTER",
    "outputs": [
     {
      "internalType": "uint8",
@@ -7027,6 +7121,24 @@
    "type": "function"
   },
   {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "player",
+     "type": "address"
+    },
+    {
+     "internalType": "uint8",
+     "name": "index",
+     "type": "uint8"
+    }
+   ],
+   "name": "acceptFor",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
    "inputs": [],
    "name": "acceptOwnership",
    "outputs": [],
@@ -7109,25 +7221,6 @@
     }
    ],
    "stateMutability": "pure",
-   "type": "function"
-  },
-  {
-   "inputs": [
-    {
-     "internalType": "uint256",
-     "name": "diveId",
-     "type": "uint256"
-    }
-   ],
-   "name": "complete",
-   "outputs": [
-    {
-     "internalType": "uint256",
-     "name": "bonus",
-     "type": "uint256"
-    }
-   ],
-   "stateMutability": "nonpayable",
    "type": "function"
   },
   {
@@ -7259,6 +7352,30 @@
    ],
    "name": "setBonus",
    "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "owner",
+     "type": "address"
+    },
+    {
+     "internalType": "uint256",
+     "name": "diveId",
+     "type": "uint256"
+    }
+   ],
+   "name": "settled",
+   "outputs": [
+    {
+     "internalType": "uint256",
+     "name": "bonus",
+     "type": "uint256"
+    }
+   ],
    "stateMutability": "nonpayable",
    "type": "function"
   },

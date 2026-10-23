@@ -4,10 +4,12 @@
 // player's wallet. Every page works unchanged on either: they read `sim.state` (rebuilt from the chain on every load)
 // and call the same actions, which here send transactions. Reads: lib/lightdive-v3/onchain.ts.
 //
-// A dive's result is decided by its drand round. As soon as drand publishes it, the result is computed here exactly as
-// the contract will settle it and shown as "waiting to be collected"; collecting sends the reveal transaction that
-// credits it. A summon is paid first, then opened with its drand round (a second transaction, sent automatically).
-// Team changes are drafted locally and saved together (one transaction per changed team).
+// v3.3: only summoning, departing and claiming (plus team changes and listings) need the wallet. A dive's result and a
+// summon's cards are fixed by their drand round; as soon as drand publishes it they are computed here exactly as the
+// contracts will settle them and counted at once (rewards, wear, cards, commissions). The player's next transaction
+// carries the signatures and settles them on chain in passing (Expedition3.Settle); nothing waits to be collected.
+// Team changes are drafted locally and saved together (one transaction per changed team). A daily commission is chosen
+// here and taken on chain together with the next dive.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BaseError, ContractFunctionRevertedError, UserRejectedRequestError, createPublicClient, createWalletClient, custom, decodeEventLog, formatEther,
@@ -15,25 +17,28 @@ import {
 } from "viem";
 import { usePlatform } from "@/components/platform-context";
 import {
-  DESTINATIONS, baseTable, outcomesOf, planDive, planOf, seeded, skyOf, type Beam, type Choice, type Kind,
+  DESTINATIONS, outcomesOf, planDive, planOf, seeded, skyOf, type Beam, type Kind, type Outcome,
 } from "@/lib/lightdive-v3/rules";
 import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  TURNED_BACK, drandSignature, predictDive, readFeed, readLedger, readMarket, readOnTeam, readPlayer, readRecentSummons, readWeek, readWorld, roundTime,
-  type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type World,
+  NO_SETTLE, SEALED, decideFeed, drandSignature, knownSignature, predictDive, predictSummon, readFeed, readLedger, readMarket, readOnTeam, readPlayer,
+  readRecentSummons, readWeek, readWorld, roundTime, settleOf,
+  type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type Settle, type World,
 } from "@/lib/lightdive-v3/onchain";
 import type { Listing, Supply } from "./market-data";
 import {
   commissionView, stabilityOf, supplyCost, teamInput,
   type Commissions, type DiveOpts, type Game, type MintRequest, type PullRecord, type SimDive, type SimNft, type SimState, type SimTeam,
 } from "./sim";
-import { commissionsOf } from "@/lib/lightdive-v3/commissions";
-import { firstsBy, firstsOf, historiesOf, voyagesFromLogs, type CardHistory, type First, type LedgerLogs } from "@/lib/lightdive-v3/history";
+import { commissionsOf, meetsCommission } from "@/lib/lightdive-v3/commissions";
+import { NFT_BASE_URI } from "@/lib/lightdive-v3/metadata";
+import { firstsBy, firstsOf, historiesOf, outcomeNameOf, voyagesFromLogs, type CardHistory, type First, type LedgerLogs } from "@/lib/lightdive-v3/history";
 
-const CHOICES: Choice[] = ["none", "steady", "bold", "detour"];
 const NAMES_KEY = "lightdive:v3:team-names";
+const PICK_KEY = "lightdive:v3:commission-pick";
+const NO_COMMISSION = 255;
 const num = (wei: bigint) => Number(formatEther(wei));
 
 export type TxStep = { label: string; address: Address; abi: Abi; functionName: string; args?: readonly unknown[] };
@@ -62,7 +67,8 @@ export type ChainExtras = {
   drafts: number[];
   saveTeams: () => Promise<string | null>;
   discardTeams: () => void;
-  openSummons: (ids?: number[]) => Promise<void>;
+  /** Results and cards decided by drand that the next transaction will write on chain. */
+  unsettled: number;
   tx: TxState | null;
   closeTx: () => void;
   join: () => Promise<void>;
@@ -77,10 +83,10 @@ const REVERT: Record<string, string> = {
   NoPasses: "noTickets", TeamTired: "teamLimit", Busy: "onBridge", TooWeak: "tooDim", TooManyTeams: "teamCap", BadTeam: "badTeam",
   ERC20InsufficientBalance: "balance", ERC20InsufficientAllowance: "balance", CannotRenew: "cannotRenew", Docked: "docked", CardLocked: "onTeam",
   NotSeller: "notOwned", NotOwner: "notOwned", BadPrice: "price", BadBatch: "batch", DayFull: "dayFull", SaleClosed: "saleClosed", SoldOut: "soldOut",
-  EarlyLimit: "earlyLimit", DecisionClosed: "decisionClosed", NotListed: "gone", PriceChanged: "priceChanged", NotDue: "notDue", TooSoon: "dripSoon",
+  EarlyLimit: "earlyLimit", NotListed: "gone", PriceChanged: "priceChanged", NotDue: "notDue", TooSoon: "dripSoon",
   BadQuantity: "batch", EnforcedPause: "paused",
   NotDeep: "notDeep", BadSupply: "badSupply", Taken: "commissionTaken", NoneActive: "commissionNone", Expired: "commissionNone",
-  NotMet: "commissionNotMet", NotRevealed: "commissionNotMet", TooEarly: "commissionNotMet",
+  Sealed: "sealed", WrongKind: "sealed", NotPublished: "sealed", BadSignature: "sealed",
 };
 function reason(error: unknown): string {
   if (error instanceof BaseError) {
@@ -94,37 +100,113 @@ function reason(error: unknown): string {
   return "chain";
 }
 
-/** The decision card of a dive: fixed by its id, so every visit shows the same one. */
+/** The story card of a dive: fixed by its id, so every visit shows the same one. */
 function cardOf(id: number, dest: number) {
   const cluster = DESTINATIONS[dest].cluster;
   const cards = TEXTS.cards.map((c, i) => ({ c, i })).filter(({ c }) => c.cluster === -1 || c.cluster === cluster);
   return cards[Math.floor(seeded(id * 7919 + 13)() * cards.length)].i;
 }
-const riskOf = (beam: number, dest: number, day: number) => {
-  const ev = skyOf(day).events.get(dest);
-  return Math.max(0, Math.min(2, beam + (ev === "storm" ? 1 : ev === "calm" ? -1 : 0))) as Beam;
-};
 
-type Prediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint; signature: Hex };
+type DivePrediction = { tier: number; multX100: number; wear: number; reward: bigint; levy: bigint };
+type CardPrediction = { rarity: number; trait: number; power: number; dna: bigint };
+type Predictions = { dives: Map<number, DivePrediction>; summons: Map<number, CardPrediction[]> };
 type Loaded = { world: World; player: Player | null; market: MarketListing[]; feed: FeedItem[]; week: FeedItem[]; onTeam: [number, number, number]; summons: RecentSummon[]; histories: Map<number, CardHistory>; firsts: Map<string, First> };
-const NO_LOGS = (): LedgerLogs => ({ teamSet: [], disbanded: [], dived: [], details: [], turned: [], revealed: [] });
+const NO_LOGS = (): LedgerLogs => ({ teamSet: [], disbanded: [], dived: [], details: [], revealed: [] });
+const noPredictions = (): Predictions => ({ dives: new Map(), summons: new Map() });
 
 function readNames(): Record<number, string> {
   try { return JSON.parse(localStorage.getItem(NAMES_KEY) ?? "{}"); } catch { return {}; }
 }
 
-/** A player's chain data in the preview's shape. Also used for anyone's public profile (no drafts, no names, no
- *  predictions: only what the chain has settled). */
-function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>, names: Record<number, string>, predictions: Map<number, Prediction>): SimState {
-  const nfts: SimNft[] = p.cards.map((x) => ({
-    id: Number(x.id), kind: x.kind as Kind, rarity: x.rarity, power: x.power, trait: x.trait, voyages: x.voyagesLeft, renewed: x.renewed,
-    dockedAt: x.dockedAt ? x.dockedAt * 1000 : undefined,
-    homeAt: x.homeAt ? x.homeAt * 1000 : undefined,
-    soldAt: x.soldAt ? x.soldAt * 1000 : undefined,
-    listed: x.listedPrice !== undefined ? num(x.listedPrice) : undefined,
-    mint: x.request !== undefined ? Number(x.request) : undefined,
-  }));
-  const onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number), bond: t.bond }));
+/** Everything of a player's that drand has decided but the chain has not settled: results and summoned cards. Known
+ *  ones (in `into`) are not computed again. */
+async function predictAll(ctx: Ctx, p: Player, w: World, into: Predictions, now = Date.now()) {
+  await Promise.all([
+    ...p.dives.filter((d) => !d.revealed && roundTime(d.round) * 1000 <= now && !into.dives.has(Number(d.id))).map(async (d) => {
+      const sig = await drandSignature(d.round).catch(() => null);
+      if (!sig) return;
+      const r = await predictDive(ctx, d, sig, w.chartStability);
+      into.dives.set(Number(d.id), { tier: r.tier, multX100: r.multX100, wear: r.wear, reward: r.reward, levy: r.levy });
+    }),
+    ...p.requests.filter((r) => !r.revealed && roundTime(r.round) * 1000 <= now && !into.summons.has(Number(r.id))).map(async (r) => {
+      const sig = await drandSignature(r.round).catch(() => null);
+      if (sig) into.summons.set(Number(r.id), predictSummon(r, sig));
+    }),
+  ]);
+}
+
+/** A player's chain data in the preview's shape, with everything drand has decided counted as done. Also used for
+ *  anyone's public profile (no drafts, no names). */
+function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>, names: Record<number, string>, pr: Predictions): SimState {
+  // cards: a sealed card shows as drand decided it; one whose round is not out yet waits in `mints`
+  const sealedCards = new Map<bigint, CardPrediction>();
+  for (const r of p.requests) {
+    const cards = !r.revealed ? pr.summons.get(Number(r.id)) : undefined;
+    cards?.forEach((c, i) => sealedCards.set(r.firstId + BigInt(i), c));
+  }
+  const nfts: SimNft[] = [];
+  for (const x of p.cards) {
+    const seen = x.rarity === SEALED ? sealedCards.get(x.id) : x;
+    if (!seen) continue;
+    nfts.push({
+      id: Number(x.id), kind: x.kind as Kind, rarity: seen.rarity, power: seen.power, trait: seen.trait, voyages: x.voyagesLeft, renewed: x.renewed,
+      dockedAt: x.dockedAt ? x.dockedAt * 1000 : undefined,
+      homeAt: x.homeAt ? x.homeAt * 1000 : undefined,
+      soldAt: x.soldAt ? x.soldAt * 1000 : undefined,
+      listed: x.listedPrice !== undefined ? num(x.listedPrice) : undefined,
+      mint: x.request !== undefined ? Number(x.request) : undefined,
+    });
+  }
+  const card = (id: number) => nfts.find((n) => n.id === id);
+  let onChain: SimTeam[] = p.teams.map((t) => ({ spire: Number(t.spire), prism: t.prism ? Number(t.prism) : undefined, seekers: t.seekers.map(Number), bond: t.bond }));
+
+  // results drand has decided, in order: wear and bond as Expedition3._wear will apply them (a team cannot change while
+  // its dive is out, so the team now is the team that sailed), and the commission they complete
+  let credit = p.credit, levy = p.levyTotal;
+  const active = p.commission.active;
+  let commission = active ? { ...active } : null;
+  let marks = p.commission.marks;
+  const completed = new Map<number, { index: number; bonus: number }>();
+  for (const d of [...p.dives].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    const r = !d.revealed ? pr.dives.get(Number(d.id)) : undefined;
+    if (!r) continue;
+    credit += r.reward;
+    levy += r.levy;
+    const at = roundTime(d.round) * 1000;
+    const team = onChain.find((t) => t.spire === Number(d.spire));
+    if (team) {
+      const out = (id: number) => {
+        const n = card(id);
+        if (!n) return false;
+        n.voyages = Math.max(0, n.voyages - r.wear);
+        if (n.voyages > 0) return false;
+        if (n.renewed) n.homeAt = at; else n.dockedAt = at;
+        return true;
+      };
+      const left = team.seekers.filter(out);
+      const prismOut = team.prism !== undefined && out(team.prism);
+      if (out(team.spire)) onChain = onChain.filter((t) => t !== team);
+      else {
+        team.seekers = team.seekers.filter((s) => !left.includes(s));
+        if (prismOut) team.prism = undefined;
+        team.bond = left.length || prismOut ? 0 : Math.min(w.bondMax, (team.bond ?? 0) + 1);
+      }
+    }
+    // LightdiveCommissions3.settled: the active one, taken the same day before this dive departed, met by it
+    if (commission && d.day === commission.day && d.id >= commission.fromDive) {
+      const c = commissionsOf(commission.day)[commission.index];
+      const outcome = outcomeNameOf(d.dest, d.day, d.beam, d.long, r.tier) as Outcome;
+      const view = { dest: d.dest, at: d.day * 86_400_000, bond: d.bond, deep: d.long, supply: d.supply, attuned: d.attuned, result: { outcome, multX100: r.multX100, tier: r.tier } };
+      if (meetsCommission(c, view)) {
+        const bonus = (d.pointsE2 * d.rate / 100n * BigInt(w.commissionBonusBp)) / 10_000n;
+        credit += bonus;
+        completed.set(Number(d.id), { index: commission.index, bonus: num(bonus) });
+        marks |= 1 << commission.index;
+        commission = null;
+      }
+    }
+  }
+
   let teams = onChain.filter((t) => !(t.spire in drafts));
   // a draft keeps the bond only when it is the same crew
   for (const t of Object.values(drafts)) {
@@ -132,57 +214,60 @@ function playerState(p: Player, w: World, drafts: Record<number, SimTeam | null>
     const was = onChain.find((x) => x.spire === t.spire);
     teams.push({ ...t, bond: was && was.prism === t.prism && was.seekers.join() === t.seekers.join() ? was.bond : 0 });
   }
-  teams = teams.filter((t) => nfts.some((n) => n.id === t.spire));
+  teams = teams.filter((t) => nfts.some((n) => n.id === t.spire && !n.dockedAt && !n.homeAt));
   const dives: SimDive[] = p.dives.map((d) => {
     const id = Number(d.id), dest = d.dest;
-    const choice = d.decision ? CHOICES[d.decision] : undefined;
     // attunement is not stored on its own: recover it from the recorded points (power + attunement) x weight
     // (a deep dive records twice the points)
     const coefBp = planOf({ power: d.power, bonus: 0, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day)).coefBp;
     const bonus = Math.max(0, Math.round((Number(d.pointsE2) * 10_000) / coefBp / (d.long ? 2 : 1)) / 100 - d.power);
     const mods = { stability: stabilityOf(d.bond, d.supply, d.echo), deep: d.long };
-    const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), choice ?? "none", mods);
+    const plan = planOf({ power: d.power, bonus, beam: d.beam as Beam }, DESTINATIONS[dest], skyOf(d.day), "none", mods);
     const voyageMs = (d.long ? w.longVoyageSeconds : w.voyageSeconds) * 1000;
     const names = plan.names ?? outcomesOf(plan.table);
     const revealAt = roundTime(d.round) * 1000;
     const settled = d.result;
-    const predicted = predictions.get(id);
+    const predicted = !d.revealed ? pr.dives.get(id) : undefined;
     const r = settled ?? predicted;
-    const outcome = r ? (settled?.fallbackUsed || r.tier === TURNED_BACK ? "normal" : names[r.tier] ?? "normal") : undefined;
+    const outcome = r ? (settled?.fallbackUsed ? "empty" : names[r.tier] ?? "normal") : undefined;
     const lines = TEXTS.logs[dest] as Record<string, readonly string[]>;
+    const done = completed.get(id);
     return {
-      id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), choice, rate: num(d.rate),
-      deep: d.long, supply: d.supply, bond: d.bond, turnedBack: d.turnedBack, attuned: d.attuned, ...(d.echo ? { echo: d.echo } : {}),
+      id, spire: Number(d.spire), dest, at: revealAt - voyageMs, revealAt, plan, card: cardOf(id, dest), rate: num(d.rate),
+      deep: d.long, supply: d.supply, bond: d.bond, attuned: d.attuned, ...(d.echo ? { echo: d.echo } : {}),
       result: r && outcome ? { outcome, tier: r.tier, multX100: r.multX100, wear: r.wear } : undefined,
       reward: r ? num(r.reward) : undefined,
       levyPaid: r ? num(r.levy) : undefined,
-      pending: !d.revealed && !!predicted ? true : undefined,
-      collectedAt: d.revealed ? revealAt : undefined,
+      ...(predicted ? { unsettled: true } : {}),
+      ...(done ? { commission: done } : {}),
       log: r && outcome ? (lines[outcome] ?? lines.normal)[id % (lines[outcome] ?? lines.normal).length] : undefined,
-    };
+    } as SimDive;
   });
-  const mints: MintRequest[] = p.requests.filter((r) => !r.revealed).map((r) => ({
+  const open = (r: Player["requests"][number]) => r.revealed || pr.summons.has(Number(r.id));
+  const mints: MintRequest[] = p.requests.filter((r) => !open(r)).map((r) => ({
     id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid),
   }));
-  const pulls: PullRecord[] = p.requests.filter((r) => r.revealed).map((r) => ({
+  const pulls: PullRecord[] = p.requests.filter(open).map((r) => ({
     id: Number(r.id), kind: r.kind as Kind, qty: r.qty, at: (roundTime(r.round) - 6) * 1000, revealAt: roundTime(r.round) * 1000, paid: num(r.paid), cards: r.cards.map(Number),
   }));
   return {
     version: 1,
     nextId: 0,
     balance: num(p.balance),
-    credit: num(p.credit),
+    credit: num(credit),
     lastClaimAt: p.lastClaimAt * 1000,
     nfts, teams, dives, mints, pulls,
     claimed: num(p.claimed),
-    levyTotal: num(p.levyTotal),
+    levyTotal: num(levy),
     feesPaid: num(p.claimFees),
     listings: p.cards.filter((x) => x.listedPrice !== undefined).map((x) => ({ nftId: Number(x.id), price: num(x.listedPrice!), at: (x.listedAt ?? 0) * 1000 })),
     sold: [],
     sales: p.sales.map((s) => ({ nftId: Number(s.id), price: num(s.price), at: s.at * 1000 })),
     spent: { mint: num(p.spent.mint), renew: num(p.spent.renew), market: num(p.spent.market) },
     teamNames: names,
-    commissionsDone: p.commissionsDone,
+    commission: commission ? { day: commission.day, index: commission.index, fromDive: Number(commission.fromDive) } : null,
+    commissionMarks: { [w.day]: marks },
+    commissionsDone: p.commissionsDone + completed.size,
     echoesGiven: w.echoStability ? p.echoesGiven : undefined,
   };
 }
@@ -204,15 +289,25 @@ export function useChain(): Game {
   const [walletChain, setWalletChain] = useState<number | null>(null);
   const [now, setNow] = useState(0);
   const offset = useRef(0); // chain time minus local time, ms
-  const predictions = useRef(new Map<number, Prediction>());
+  const predictions = useRef<Predictions>(noPredictions());
   const ledger = useRef<{ next: bigint; logs: LedgerLogs; seen: Set<string> }>({ next: BigInt(G.deployment.deploymentBlock ?? 0), logs: NO_LOGS(), seen: new Set() });
   const [drafts, setDrafts] = useState<Record<number, SimTeam | null>>({}); // spire -> unsaved team (null = take apart)
   const [names, setNames] = useState<Record<number, string>>({});
+  const [pick, setPick] = useState<{ account: string; day: number; index: number } | null>(null); // the commission for the next dive
   const [tx, setTx] = useState<TxState | null>(null);
   const inflight = useRef<Promise<void> | null>(null);
   const again = useRef(false);
 
-  useEffect(() => { queueMicrotask(() => setNames(readNames())); }, []);
+  useEffect(() => {
+    queueMicrotask(() => {
+      setNames(readNames());
+      try { setPick(JSON.parse(localStorage.getItem(PICK_KEY) ?? "null")); } catch { /* none */ }
+    });
+  }, []);
+  const savePick = useCallback((v: { account: string; day: number; index: number } | null) => {
+    setPick(v);
+    try { localStorage.setItem(PICK_KEY, JSON.stringify(v)); } catch {}
+  }, []);
 
   const load = useCallback(async (): Promise<void> => {
     if (!ctx) return;
@@ -227,22 +322,14 @@ export function useChain(): Game {
         const [player, market, feed, week, onTeam, summons, chainId] = await Promise.all([
           account ? readPlayer(ctx, account, world, G.testToken) : Promise.resolve(null),
           readMarket(ctx),
-          readFeed(ctx).catch(() => []),
+          readFeed(ctx).then((f) => decideFeed(ctx, f, world)).catch(() => []),
           readWeek(ctx).catch(() => []),
           readOnTeam(ctx).catch(() => [0, 0, 0] as [number, number, number]),
           readRecentSummons(ctx).catch(() => [] as RecentSummon[]),
           account ? platform.walletProvider().request({ method: "eth_chainId" }).then(Number).catch(() => null) : Promise.resolve(null),
         ]);
-        // results already decided by drand but not collected yet
-        if (player) {
-          const due = player.dives.filter((d) => !d.revealed && roundTime(d.round) * 1000 <= Date.now() && !predictions.current.has(Number(d.id)));
-          await Promise.all(due.map(async (d) => {
-            const sig = await drandSignature(d.round).catch(() => null);
-            if (!sig) return;
-            const p = await predictDive(ctx, d, sig, world.chartStability);
-            predictions.current.set(Number(d.id), { tier: p.tier, multX100: p.multX100, wear: p.wear, reward: p.reward, levy: p.levy, signature: sig });
-          }));
-        }
+        // results and cards drand has decided that the chain has not settled yet
+        if (player) await predictAll(ctx, player, world, predictions.current);
         // card histories: only the new blocks each time, merged without duplicates
         const led = ledger.current;
         const fresh = await readLedger(ctx, led.next).catch(() => null);
@@ -257,7 +344,8 @@ export function useChain(): Game {
           }
           led.next = fresh.latest + 1n;
         }
-        const histories = historiesOf(voyagesFromLogs(led.logs));
+        const decided = new Map([...predictions.current.dives].map(([id, r]) => [String(id), r]));
+        const histories = historiesOf(voyagesFromLogs(led.logs, decided));
         const firsts = firstsOf(led.logs.dived);
         setData({ world, player, market, feed, week, onTeam, summons, histories, firsts });
         setWalletChain(chainId);
@@ -274,7 +362,7 @@ export function useChain(): Game {
     return run;
   }, [ctx, account, G, platform]);
 
-  // load on start, when the wallet changes, every 20 s, and right after a voyage's round is due
+  // load on start, when the wallet changes, every 20 s, and right after a voyage's or a summon's round is due
   useEffect(() => {
     queueMicrotask(() => void load());
     const t = window.setInterval(() => { if (!document.hidden) void load(); }, 20_000);
@@ -285,20 +373,25 @@ export function useChain(): Game {
     queueMicrotask(() => setNow(Date.now() + offset.current));
     return () => window.clearInterval(t);
   }, []);
-  const dueRef = useRef<number[]>([]);
+  const dueRef = useRef<string[]>([]);
   useEffect(() => {
     const p = data?.player;
     if (!p || !now) return;
-    // a round comes out a few seconds after its time; look a little later
-    const due = p.dives.filter((d) => !d.revealed && !predictions.current.has(Number(d.id)) && now >= roundTime(d.round) * 1000 + 4000).map((d) => Number(d.id));
+    // a round comes out a few seconds after its time; look a little later (and again while drand is slow)
+    const due = [
+      ...p.dives.filter((d) => !d.revealed && !predictions.current.dives.has(Number(d.id)) && now >= roundTime(d.round) * 1000 + 4000).map((d) => `d${d.id}`),
+      ...p.requests.filter((r) => !r.revealed && !predictions.current.summons.has(Number(r.id)) && now >= roundTime(r.round) * 1000 + 3000).map((r) => `s${r.id}`),
+    ];
     const fresh = due.filter((id) => !dueRef.current.includes(id));
+    if (fresh.length || (due.length && Math.floor(now / 1000) % 5 === 0)) void load();
     dueRef.current = due;
-    if (fresh.length) void load();
   }, [now, data, load]);
 
   // ---------------------------------------------------------------- state in the preview's shape
 
   const today = Math.floor((now || Date.now()) / 86_400_000);
+  /** The teams as they are (or will be once the pending results settle), without unsaved changes. */
+  const baseTeams = useMemo(() => (data?.player ? playerState(data.player, data.world, {}, {}, predictions.current).teams : []), [data]);
   const state = useMemo<SimState | null>(() => {
     if (!data) return null;
     if (!data.player) {
@@ -316,7 +409,9 @@ export function useChain(): Game {
     if (!ctx || !data || !/^0x[0-9a-fA-F]{40}$/.test(address)) return null;
     try {
       const p = await readPlayer(ctx, address as Address, data.world, G.testToken);
-      return { ...playerState(p, data.world, {}, {}, new Map()), firsts: firstsBy(data.firsts, address) };
+      const pr = noPredictions();
+      await predictAll(ctx, p, data.world, pr);
+      return { ...playerState(p, data.world, {}, {}, pr), firsts: firstsBy(data.firsts, address) };
     } catch (e) {
       console.warn("lightdive profile", e);
       return null;
@@ -324,17 +419,15 @@ export function useChain(): Game {
   }, [ctx, data, G.testToken]);
 
   const market = useMemo<Listing[]>(() => (data?.market ?? [])
-    .filter((l) => !account || l.seller.toLowerCase() !== account.toLowerCase())
+    .filter((l) => (!account || l.seller.toLowerCase() !== account.toLowerCase()) && l.rarity !== SEALED)
     .map((l) => ({ id: Number(l.id), nftId: Number(l.id), kind: l.kind as Kind, rarity: l.rarity, power: l.power, trait: l.trait, voyages: l.voyagesLeft, renewed: l.renewed, price: num(l.price), seller: l.seller, listedAt: l.listedAt * 1000 })), [data, account]);
 
   // everyone else's dives (the pages add the player's own from state)
   const toRows = useCallback((list: FeedItem[]) => list.filter((f) => !account || f.owner.toLowerCase() !== account.toLowerCase()).map((f) => {
-    const names = outcomesOf(baseTable(DESTINATIONS[f.dest].cluster, riskOf(f.beam, f.dest, f.day)));
     return {
       id: String(f.id), who: `${f.owner.slice(0, 6)}…${f.owner.slice(-4)}`, owner: f.owner, dest: f.dest,
-      outcome: f.tier !== undefined ? names[f.tier] ?? "normal" : undefined, mult: f.multX100,
-      at: (roundTime(f.round) - (data?.world.voyageSeconds ?? 300)) * 1000,
-      choice: f.decision !== undefined ? CHOICES[f.decision] : "none",
+      outcome: f.tier !== undefined ? outcomeNameOf(f.dest, f.day, f.beam, !!f.long, f.tier) : undefined, mult: f.multX100,
+      at: (roundTime(f.round) - ((f.long ? data?.world.longVoyageSeconds : data?.world.voyageSeconds) ?? 300)) * 1000,
     };
   }).sort((a, b) => b.at - a.at), [data, account]);
   const feedRows = useMemo(() => toRows(data?.feed ?? []), [toRows, data]);
@@ -401,26 +494,11 @@ export function useChain(): Game {
     if (p && p.eth === 0n) return "noGas";
     return null;
   };
-
-  const revealing = useRef(new Set<number>());
-  /** Opens summons whose drand round is out (anyone may; the player's wallet does it here). */
-  const openSummons = useCallback(async (ids?: number[]) => {
-    if (!c || !p) return;
-    const open = p.requests.filter((r) => !r.revealed && (!ids || ids.includes(Number(r.id))) && !revealing.current.has(Number(r.id)));
-    for (const r of open) {
-      revealing.current.add(Number(r.id));
-      try {
-        let sig: Hex | null = null;
-        for (let tries = 0; !sig && tries < 40; tries++) {
-          sig = Date.now() >= roundTime(r.round) * 1000 ? await drandSignature(r.round).catch(() => null) : null;
-          if (!sig) await new Promise((res) => setTimeout(res, 1500));
-        }
-        if (sig) await run([step(tl("開啟召喚陣"), c.minter, A.LightdiveMinter3, "reveal", [r.id, sig])]);
-      } finally {
-        revealing.current.delete(Number(r.id));
-      }
-    }
-  }, [c, p, A, run]);
+  /** The reveals the player's next transaction carries: every result and summon drand has decided, not yet settled. */
+  const pending = (): Settle => (p ? settleOf(p, knownSignature) : NO_SETTLE);
+  const unsettled = p ? (() => { const s = pending(); return s.dives.length + s.summons.length; })() : 0;
+  /** A transaction of its own that only settles (when the next step cannot carry the reveals itself). */
+  const settleStep = (s: Settle): TxStep[] => (s.dives.length || s.summons.length ? [step(tl("寫入航行結果"), c!.expedition, A.Expedition3, "settle", [s])] : []);
 
   const mint = useCallback(async (kind: Kind, qty: number) => {
     const e = ready();
@@ -429,34 +507,33 @@ export function useChain(): Game {
     if (!w.saleStart || w.now < w.saleStart) return { error: "saleClosed" };
     const cost = w.price[kind] * BigInt(qty);
     if (p!.balance < cost) return { error: "balance" };
+    const s = pending();
     const { receipts, error } = await run([
       ...pay(c!.minter, p!.minterAllowance, cost, tl("允許召喚使用 $RVYN")),
-      step(tl("付款召喚"), c!.minter, A.LightdiveMinter3, "summon", [kind, qty]),
+      step(tl("付款召喚"), c!.minter, A.LightdiveMinter3, "summon", [kind, qty, s.summons, s.summonProofs]),
     ]);
     if (!receipts) return { error };
+    // the cards exist at once, sealed; drand decides them a few seconds later and the page shows them then
     const req = logArgs(receipts, A.LightdiveMinter3, "SummonRequested")[0];
-    const id = Number(req?.requestId);
-    // open it as soon as drand publishes its round (a few seconds)
-    void (async () => {
-      const round = BigInt(req.round as bigint);
-      let sig: Hex | null = null;
-      for (let tries = 0; !sig && tries < 40; tries++) {
-        sig = Date.now() >= roundTime(round) * 1000 ? await drandSignature(round).catch(() => null) : null;
-        if (!sig) await new Promise((res) => setTimeout(res, 1500));
-      }
-      if (sig) await run([step(tl("開啟召喚陣"), c!.minter, A.LightdiveMinter3, "reveal", [BigInt(id), sig])]);
-    })();
-    return { error: null, id };
+    return { error: null, id: Number(req?.requestId) };
   }, [data, p, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Every unsaved team change as transactions: teams taken apart first, so cards moving between teams are free when
-   *  the team they join is set. */
-  const draftSteps = (): TxStep[] => {
+   *  the team they join is set. The first team set carries the pending reveals; taking apart a team whose last result
+   *  is not settled needs them first, in a step of its own. */
+  const draftSteps = (s: Settle): { steps: TxStep[]; carried: boolean } => {
     const entries = Object.entries(drafts);
     const order = [...entries.filter(([, t]) => !t), ...entries.filter(([, t]) => t)];
-    return order.map(([spire, t]) => (t
-      ? step(tl("儲存隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "setTeam", [BigInt(spire), BigInt(t.prism ?? 0), t.seekers.map(BigInt)])
-      : step(tl("解散隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "disband", [BigInt(spire)])));
+    const busy = new Set(p?.dives.filter((d) => !d.revealed).map((d) => Number(d.spire)) ?? []);
+    const pre = order.some(([spire, t]) => !t && busy.has(Number(spire))) ? settleStep(s) : [];
+    let carried = pre.length > 0;
+    const steps = order.map(([spire, t]) => {
+      if (!t) return step(tl("解散隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "disband", [BigInt(spire)]);
+      const settle = carried ? NO_SETTLE : s;
+      carried = true;
+      return step(tl("儲存隊伍 光塔 #{0}", { 0: spire }), c!.expedition, A.Expedition3, "setTeam", [BigInt(spire), BigInt(t.prism ?? 0), t.seekers.map(BigInt), settle]);
+    });
+    return { steps: [...pre, ...steps], carried };
   };
 
   /** The RVYN a supply costs for one team's dive (paid into the pool on departure). */
@@ -471,6 +548,14 @@ export function useChain(): Game {
   const supplySteps = (cost: bigint): TxStep[] | string =>
     cost === 0n ? [] : p!.balance < cost ? "balance" : pay(c!.pool, p!.poolAllowance, cost + cost / 10n, tl("允許補給使用 $RVYN"));
 
+  // 每日委託: chosen here, taken on chain with the next dive (or already active on chain)
+  const C3 = A.LightdiveCommissions3;
+  const chainActive = state?.commission && state.commission.day === today ? state.commission : null;
+  const marks = state?.commissionMarks?.[today] ?? 0;
+  const picked = !chainActive && pick && account && pick.account === account.toLowerCase() && pick.day === today && !(marks & ((1 << pick.index) | (1 << (pick.index + 8)))) ? pick.index : null;
+  /** The commission index a dive takes with it (NO_COMMISSION: none). */
+  const carry = () => (picked ?? NO_COMMISSION);
+
   const dive = useCallback(async (spire: number, dest: number, opts: DiveOpts = {}) => {
     const e = ready();
     if (e) return { error: e };
@@ -482,19 +567,20 @@ export function useChain(): Game {
     if (p!.passesUsed + uses > 3) return { error: "noTickets" };
     if ((p!.teams.find((t) => Number(t.spire) === spire)?.divesToday ?? 0) + uses > 3) return { error: "teamLimit" };
     if (st.dives.some((d) => d.spire === spire && !d.result)) return { error: "onBridge" };
-    if (st.dives.some((d) => d.spire === spire && d.pending)) return { error: "uncollected" };
-    // unsaved team changes are saved in the same go, right before the team departs
-    const save = draftSteps();
+    // unsaved team changes are saved in the same go, right before the team departs; the reveals ride along
+    const s = pending();
+    const save = draftSteps(s);
     const supply = opts.supply ?? 0;
     const approve = supplySteps(supplyWei(spire, dest, supply, opts.deep));
     if (typeof approve === "string") return { error: approve };
     const label = opts.deep ? tl("派隊伍深潛") : tl("派隊伍出發");
-    const { receipts, error } = await run([...save, ...approve, step(label, c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest, supply, !!opts.deep])]);
+    const { receipts, error } = await run([...save.steps, ...approve, step(label, c!.expedition, A.Expedition3, "dive", [BigInt(spire), dest, supply, !!opts.deep, carry(), save.carried ? NO_SETTLE : s])]);
     if (!receipts) return { error };
-    if (save.length) setDrafts({});
+    if (save.steps.length) setDrafts({});
+    if (picked !== null) savePick(null);
     const id = Number(logArgs(receipts, A.Expedition3, "Dived")[0]?.diveId);
     return { error: null, id, card: cardOf(id, dest) };
-  }, [state, data, p, c, A, run, drafts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, data, p, c, A, run, drafts, picked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const diveMany = useCallback(async (list: { spire: number; dest: number }[], supply = 0) => {
     const e = ready();
@@ -502,17 +588,18 @@ export function useChain(): Game {
     const st = state!;
     const blocked = (spire: number) =>
       !st.teams.find((t) => t.spire === spire)?.seekers.length ? "noTeam"
-          : st.dives.some((d) => d.spire === spire && !d.result) ? "onBridge"
-            : st.dives.some((d) => d.spire === spire && d.pending) ? "uncollected" : null;
+        : st.dives.some((d) => d.spire === spire && !d.result) ? "onBridge" : null;
     const errors = list.map((t) => blocked(t.spire));
     const go = list.filter((_, i) => !errors[i]);
     if (go.length > 3 - p!.passesUsed) return list.map(() => ({ error: "noTickets" }));
     if (!go.length) return errors.map((error) => ({ error }));
-    const saves = draftSteps();
+    const s = pending();
+    const saves = draftSteps(s);
     const approve = supplySteps(go.reduce((a, t) => a + supplyWei(t.spire, t.dest, supply), 0n));
     if (typeof approve === "string") return list.map(() => ({ error: approve }));
-    const { receipts, error } = await run([...saves, ...approve, step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest), supply])]);
-    if (receipts && saves.length) setDrafts({});
+    const { receipts, error } = await run([...saves.steps, ...approve, step(tl("一次派遣 {0} 支隊伍", { 0: go.length }), c!.expedition, A.Expedition3, "diveMany", [go.map((t) => BigInt(t.spire)), go.map((t) => t.dest), supply, carry(), saves.carried ? NO_SETTLE : s])]);
+    if (receipts && saves.steps.length) setDrafts({});
+    if (receipts && picked !== null) savePick(null);
     const ids = receipts ? logArgs(receipts, A.Expedition3, "Dived").map((x) => Number(x.diveId)) : [];
     let k = 0;
     return list.map((t, i) => {
@@ -521,84 +608,63 @@ export function useChain(): Game {
       const id = ids[k++];
       return { error: null, id, card: cardOf(id, t.dest) };
     });
-  }, [state, p, c, A, run, drafts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, p, c, A, run, drafts, picked]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const choose = useCallback(async (diveId: number, choice: Choice) => {
-    if (ready()) return;
-    await run([step(tl("航行抉擇"), c!.expedition, A.Expedition3, "decide", [BigInt(diveId), CHOICES.indexOf(choice)])]);
-  }, [c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const turnBack = useCallback(async (diveId: number, back: boolean) => {
-    if (ready()) return;
-    await run([step(back ? tl("回航") : tl("繼續深潛"), c!.expedition, A.Expedition3, "turnBack", [BigInt(diveId), back])]);
-  }, [c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 每日委託: the list comes from the day; the active one and the marks from the chain
-  const C3 = A.LightdiveCommissions3;
-  const ca = p?.commission.active;
-  const cview = state && p
-    ? commissionView(state, today, ca ? { index: ca.index, fromDive: Number(ca.fromDive) } : null, p.commission.marks)
-    : { list: commissionsOf(today), active: null, done: [], abandoned: [], ready: null };
   const commissions: Commissions = {
-    ...cview,
+    ...commissionView(chainActive ?? (picked !== null ? { index: picked } : null), marks, today),
+    queued: picked !== null,
     bonus: (data?.world.commissionBonusBp ?? 1000) / 10_000,
-    accept: async (index) => ready() ?? (await run([step(tl("接受委託"), c!.commissions, C3, "accept", [index])])).error,
-    abandon: async () => { if (!ready()) await run([step(tl("放棄委託"), c!.commissions, C3, "abandon")]); },
-    complete: async () => {
+    accept: async (index) => {
       const e = ready();
       if (e) return e;
-      if (cview.ready === null) return "commissionNotMet";
-      // a result still waiting is revealed on chain first, in the same go
-      const d = state!.dives.find((x) => x.id === cview.ready)!;
-      const sig = d.pending ? predictions.current.get(d.id)?.signature : undefined;
-      if (d.pending && !sig) return "commissionNotMet";
-      const reveal = sig ? [step(tl("收取結果"), c!.expedition, A.Expedition3, "revealMany", [[BigInt(d.id)], [sig]])] : [];
-      return (await run([...reveal, step(tl("完成委託"), c!.commissions, C3, "complete", [BigInt(cview.ready)])])).error;
+      if (chainActive) return "commissionActive";
+      if (marks & ((1 << index) | (1 << (index + 8)))) return "commissionTaken";
+      savePick({ account: account!.toLowerCase(), day: today, index });
+      return null;
+    },
+    abandon: async () => {
+      if (picked !== null) { savePick(null); return; }
+      if (!ready() && chainActive) await run([step(tl("放棄委託"), c!.commissions, C3, "abandon")]);
     },
   };
 
-  const collect = useCallback(async (ids?: number[]) => {
-    if (ready()) return 0;
-    const due = (state?.dives ?? []).filter((d) => d.pending && (!ids || ids.includes(d.id)));
-    const sigs = due.map((d) => predictions.current.get(d.id)?.signature).filter((s): s is Hex => !!s);
-    if (!due.length || sigs.length !== due.length) return 0;
-    const { receipts } = await run([step(due.length > 1 ? tl("收取 {0} 趟結果", { 0: due.length }) : tl("收取結果"), c!.expedition, A.Expedition3, "revealMany", [due.map((d) => BigInt(d.id)), sigs])]);
-    if (!receipts) return 0;
-    return logArgs(receipts, A.Expedition3, "Revealed").reduce((a, r) => a + num(r.reward as bigint), 0);
-  }, [state, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const claim = useCallback(async () => {
-    if (ready() || !p || p.credit === 0n) return;
-    await run([step(tl("領取到錢包"), c!.expedition, A.Expedition3, "claim")]);
-  }, [p, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (ready() || !p || !state || state.credit <= 0) return;
+    await run([step(tl("領取到錢包"), c!.expedition, A.Expedition3, "claim", [pending()])]);
+  }, [p, state, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renew = useCallback(async (id: number) => {
     const e = ready();
     if (e) return e;
-    const card = p!.cards.find((x) => Number(x.id) === id);
-    if (!card || !card.dockedAt || card.renewed) return "cannotRenew";
+    const card = state?.nfts.find((x) => x.id === id);
+    if (!card || card.dockedAt === undefined || card.renewed) return "cannotRenew";
     const cost = data!.world.renewPrice[card.kind];
     if (p!.balance < cost) return "balance";
+    // docked by a result not settled yet: settle it first
+    const onChain = p!.cards.find((x) => Number(x.id) === id);
     const { error } = await run([
+      ...(onChain?.dockedAt ? [] : settleStep(pending())),
       ...pay(c!.minter, p!.minterAllowance, cost, tl("允許續航使用 $RVYN")),
       step(tl("續航"), c!.minter, A.LightdiveMinter3, "renew", [BigInt(id)]),
     ]);
     return error;
-  }, [p, data, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, p, data, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendHome = useCallback(async (id: number) => {
     if (ready()) return;
-    const card = p?.cards.find((x) => Number(x.id) === id);
-    if (!card?.dockedAt || (now || Date.now()) / 1000 < card.dockedAt + 7 * 86_400) { setTx({ steps: [], error: "notDue", running: false }); return; }
-    await run([step(tl("歸航"), c!.expedition, A.Expedition3, "sendHome", [BigInt(id)])]);
-  }, [p, now, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
+    const card = state?.nfts.find((x) => x.id === id);
+    if (!card?.dockedAt || (now || Date.now()) < card.dockedAt + 7 * 86_400_000) { setTx({ steps: [], error: "notDue", running: false }); return; }
+    const onChain = p?.cards.find((x) => Number(x.id) === id);
+    await run([...(onChain?.dockedAt ? [] : settleStep(pending())), step(tl("歸航"), c!.expedition, A.Expedition3, "sendHome", [BigInt(id)])]);
+  }, [state, p, now, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approveCards = (): TxStep[] => (p?.marketApproved ? [] : [step(tl("允許市集保管上架的卡"), c!.nft, A.LightdiveNFT3, "setApprovalForAll", [c!.market, true])]);
   const listNft = useCallback(async (id: number, price: number) => {
     const e = ready();
     if (e) return e;
     if (!(price > 0)) return "price";
-    const { error } = await run([...approveCards(), step(tl("上架"), c!.market, A.LightdiveMarket3, "list", [BigInt(id), parseEther(String(Math.round(price * 100) / 100))])]);
+    const s = pending();
+    const { error } = await run([...approveCards(), step(tl("上架"), c!.market, A.LightdiveMarket3, "list", [BigInt(id), parseEther(String(Math.round(price * 100) / 100)), s.summons, s.summonProofs])]);
     return error;
   }, [p, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
   const listMany = useCallback(async (items: { id: number; price: number }[]) => {
@@ -606,8 +672,9 @@ export function useChain(): Game {
     if (e) return e;
     if (!items.length || items.length > 20) return "batch";
     if (items.some((x) => !(x.price > 0))) return "price";
+    const s = pending();
     const { error } = await run([...approveCards(), step(tl("一次上架 {0} 張", { 0: items.length }), c!.market, A.LightdiveMarket3, "listMany", [
-      items.map((x) => BigInt(x.id)), items.map((x) => parseEther(String(Math.round(x.price * 100) / 100))),
+      items.map((x) => BigInt(x.id)), items.map((x) => parseEther(String(Math.round(x.price * 100) / 100))), s.summons, s.summonProofs,
     ])]);
     return error;
   }, [p, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -634,9 +701,9 @@ export function useChain(): Game {
     const others = st.teams.filter((x) => x.spire !== t.spire);
     const keep = t.seekers.length > 0 || t.prism !== undefined;
     if (keep && others.length >= 5) return "teamCap";
-    if (st.dives.some((d) => d.spire === t.spire && (!d.result || d.pending))) return "onBridge";
-    const onChain = p?.teams.find((x) => Number(x.spire) === t.spire);
-    const same = onChain && Number(onChain.prism) === (t.prism ?? 0) && onChain.seekers.length === t.seekers.length && onChain.seekers.every((s, i) => Number(s) === t.seekers[i]);
+    if (st.dives.some((d) => d.spire === t.spire && !d.result)) return "onBridge";
+    const onChain = baseTeams.find((x) => x.spire === t.spire);
+    const same = onChain && (onChain.prism ?? 0) === (t.prism ?? 0) && onChain.seekers.length === t.seekers.length && onChain.seekers.every((s, i) => s === t.seekers[i]);
     setDrafts((d) => {
       const next = { ...d };
       if ((!keep && !onChain) || same) delete next[t.spire];
@@ -644,11 +711,11 @@ export function useChain(): Game {
       return next;
     });
     return null;
-  }, [state, p]);
+  }, [state, baseTeams]);
   const saveTeams = useCallback(async () => {
     if (ready()) return ready();
     if (Object.values(drafts).some((t) => t && !t.seekers.length)) return "needSeeker";
-    const { error } = await run(draftSteps());
+    const { error } = await run(draftSteps(pending()).steps);
     if (!error) setDrafts({});
     return error;
   }, [drafts, c, A, run]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -701,6 +768,9 @@ export function useChain(): Game {
     summons: (data?.summons ?? []).map((x) => ({ id: Number(x.id), who: account && x.who.toLowerCase() === account.toLowerCase() ? tl("你") : `${x.who.slice(0, 6)}…${x.who.slice(-4)}`, owner: account && x.who.toLowerCase() === account.toLowerCase() ? undefined : x.who, kind: x.kind as Kind, rarity: x.rarity, at: x.at * 1000 })),
     chainOf: (n) => {
       const raw = data?.player?.cards.find((x) => Number(x.id) === n.id);
+      const sealed = raw?.rarity === SEALED;
+      const req = sealed ? data?.player?.requests.find((r) => raw!.id >= r.firstId && raw!.id < r.firstId + BigInt(r.qty)) : undefined;
+      const dna = sealed && req ? predictions.current.summons.get(Number(req.id))?.[Number(raw!.id - req.firstId)]?.dna : raw?.dna;
       return {
         tokenId: n.id,
         contract: c?.nft ?? "",
@@ -709,9 +779,9 @@ export function useChain(): Game {
         chain: `${G.chain.name}（${G.chain.id}）`,
         mintBlock: raw?.mintBlock !== undefined ? Number(raw.mintBlock) : null,
         mintTx: raw?.mintTx ?? null,
-        dna: raw ? `0x${raw.dna.toString(16).padStart(16, "0")}` : null,
-        deck: raw?.deck ?? null,
-        tokenUri: null,
+        dna: dna !== undefined ? `0x${dna.toString(16).padStart(16, "0")}` : null,
+        deck: null,
+        tokenUri: `${NFT_BASE_URI}${n.id}`,
         royalty: "5%（ERC-2981）",
         explorer: G.explorer && c ? `${G.explorer}/token/${c.nft}/instance/${n.id}` : null,
       };
@@ -728,7 +798,7 @@ export function useChain(): Game {
       const last = w?.bridges[dest];
       return w && w.echoStability && last && (!account || last !== account.toLowerCase()) ? w.echoStability : 0;
     },
-    dive, diveMany, turnBack, commissions, choose, collect, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
+    dive, diveMany, commissions, setTeam, nameTeam, mint, renew, sendHome, claim, listNft, listMany, unlist, buy,
     chain: {
       account,
       ready: !!c,
@@ -750,7 +820,7 @@ export function useChain(): Game {
       drafts: Object.keys(drafts).map(Number),
       saveTeams,
       discardTeams: () => setDrafts({}),
-      openSummons,
+      unsettled,
       tx,
       closeTx: () => setTx(null),
       join,
@@ -760,4 +830,3 @@ export function useChain(): Game {
     },
   };
 }
-
