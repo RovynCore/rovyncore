@@ -54,6 +54,19 @@ export const DRAND_PERIOD = 3;
 export const DRAND_API = "https://api.drand.sh/v2/beacons/evmnet/rounds";
 export const roundTime = (round: bigint | number) => DRAND_GENESIS + (Number(round) - 1) * DRAND_PERIOD;
 
+/** How far drand is behind the clock, in seconds: now minus the time of its latest published round (null when drand
+ *  cannot be reached). A few seconds is normal; a minute or more means the beacon is stalled and results wait for it. */
+export async function drandLag(fetcher: typeof fetch = fetch): Promise<number | null> {
+  try {
+    const res = await fetcher(`${DRAND_API}/latest`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { round: number };
+    return Math.max(0, Math.round(Date.now() / 1000 - roundTime(body.round)));
+  } catch {
+    return null;
+  }
+}
+
 /** Published signatures never change: each round is fetched once. */
 const SIGNATURES = new Map<string, Hex>();
 

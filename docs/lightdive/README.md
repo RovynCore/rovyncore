@@ -2,67 +2,54 @@
 
 Design documents for the first RovynCore game.
 
+## Current: Lightdive v3 (testnet)
+
+The live game at `/game/lightdive` runs on the v3 contracts in `packages/contracts/lightdive-v3/` (deployment in `packages/web3/lightdive-v3.json`). The contracts are candidates and **have not been audited**.
+
 | File | What |
 |---|---|
-| `Lightdive-Whitepaper-v1.0.pdf` | Whitepaper and engineering design, v1.0 (decisions confirmed 2026-10-06). The source of truth for game rules and parameters. |
-| `source/whitepaper.html` | Source of the PDF. Edit this, then re-render. |
-| `simulation/sim.py` | Economy simulator (365 days, three scenarios). Parameters at the top mirror Appendix A of the whitepaper. |
-| `simulation/sweep.py` | Parameter sweeps used while choosing the v1.0 values. |
-| `simulation/charts.py` | Renders the simulation charts used in chapter 8. |
-| `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities) for the art team. |
-| `Lightdive-Art-Direction-v1.0.pdf` | Detailed brief for every non-NFT art asset (star chart, observatory, Signal-Keeper poses and glow layers, icons, card back, wordmark, share images): story, gameplay use, composition, layers, prompts and acceptance checks. |
-| `Lightdive-NFT-Art-Direction-v2.1.pdf` | Proposal (pending sign-off) to redesign the spire and seeker NFT art: low-angle monumental spires with countable berths, five faceless seeker classes instead of the 7-layer portrait, and a five-signal rarity system. No contract change. Source: `source/nft-art-direction.html`. |
-| `source/art-direction.html` | Source of the art brief PDF; reference art in `source/ref/`. |
+| `WHITEPAPER-v3.md` (`.en.md`, `.ko.md`) | Rules and economy as they are now. `scripts/lightdive-v3-whitepaper.mjs` builds the game's 白皮書 page from them. |
+| `V31-SPEC.md` | The v3.1 additions (deep dives, crew bond, supplies, daily commissions). |
+| `TEXTS-v3-draft.md` | All game text (Traditional Chinese source); `scripts/lightdive-v3-texts.mjs` builds `lib/lightdive-v3/texts.ts`. |
+| `MAINNET-SWITCH.md` | The step-by-step mainnet switch; every step needs the founder's explicit approval at the time. |
 | `WORKLOG.md` | Work log: what was decided, built and deployed, and what is still open. |
+| `econ-sim/` | The v3 economy simulator. |
 
-The contracts that implement this design live in `packages/contracts/lightdive/`.
+### Randomness: drand, no operator
 
-## Changing a parameter
+Every random result in v3 (dive results, summoned cards) comes from **drand evmnet**, a public randomness beacon run by many independent organisations that publishes a new round every 3 seconds.
 
-1. Change the value in `source/whitepaper.html` (Appendix A and the chapter that explains it).
-2. Change the same value in `simulation/sim.py` and re-run it.
-3. Change the default in `packages/contracts/lightdive/LightdiveConfig.sol` and run `npm run test:lightdive`.
+- A dive or summon fixes its drand round **when it is sent** (a round a few seconds or minutes in the future), so nobody, the team included, can know the result before the round is published.
+- The contracts verify the round's BLS signature on chain (`DrandEvmnet.sol`, `RoundRandomness.sol`). Nobody holds a seed or a key that decides results.
+- Results are settled by the player's next transaction, which carries the published signatures (`Expedition3.Settle`); anyone may also call `settle`.
+- If a round's proof never arrives, only the owner may settle by the fallback, which is never better than a normal draw: empty-handed with the most wear for a dive, the weakest cards for a summon.
+- Any revealed dive can be recomputed by anyone at `/game/lightdive/verify/<dive id>` from the public drand signature.
 
-## Re-running the simulation
+There is no randomness operator, no seed secret and no keeper in v3.
 
-```sh
-cd docs/lightdive/simulation
-python3 sim.py sim.json          # prints the scenario summary and writes sim.json
-python3 charts.py                # needs matplotlib and Noto Sans TC TTFs in ./fonts
-```
+### Testnet runbook (v3)
 
-## Re-rendering the PDF
+Everything below runs from a maintainer's own terminal. The site never holds a key.
 
-`source/render.mjs` prints `whitepaper.html` (or another page passed as the second argument, e.g. `art-direction.html`) with Playwright's Chromium. Set `CHROMIUM_PATH` to use a specific Chromium build. It expects the chart PNGs next to the HTML and Noto Sans TC TTFs in `source/fonts/` (not committed; download from Google Fonts).
+1. **Compile and test**: `npm run test:lightdive:v3`
+2. **Local chain** (ganache with real drand rounds): `npm run lightdive:v3:localnet`, then `node --experimental-strip-types scripts/lightdive-v3-smoke.mjs` plays the whole loop and checks the website's predictions against the chain.
+3. **Deploy to the testnet** from the browser wallet, with no private key in any file: `npm run lightdive:v3:deploy:web`, open http://127.0.0.1:8790 and sign each step. The page writes `packages/web3/lightdive-v3.json`; commit it to point the site at the deployment.
+4. **Owner settings** (signed in the browser wallet): `npm run lightdive:v3:owner:web` (http://127.0.0.1:8791).
+5. **Play** at `/game/lightdive`; the wallet-free preview is `/game/lightdive/preview`.
 
-```sh
-cd docs/lightdive/source
-NODE_PATH=$(npm root -g) node render.mjs "$PWD/../Lightdive-Whitepaper-v1.0.pdf"   # needs a global playwright install
-```
+## Legacy: Lightdive v1 (retired 2026-10-16)
 
-## Testnet runbook
+v1 used an operator-run hash chain for randomness (`LIGHTDIVE_SEED_SECRET`). It was replaced by drand in v3 and is **retired**: its contracts (`packages/contracts/lightdive/`), its operator (`workers/lightdive-operator/`, `scripts/lightdive-operator*.mjs`) and its workflows are kept for history only and must not be run again. See `packages/contracts/lightdive/DEPRECATED.md`.
 
-Everything below runs from a maintainer's own terminal. Private keys are read from the environment at run time and never written to the repository; the website itself never holds a key.
+The v1 design documents:
 
-1. **Compile**: `npm run contracts:compile:lightdive`
-2. **Deploy** (Robinhood Chain testnet, 46630). Use a separate operator wallet that will never play.
-   ```sh
-   DEPLOYER_PRIVATE_KEY=0x... OPERATOR_ADDRESS=0x... npm run lightdive:deploy
-   ```
-   Without `RVYN_ADDRESS` a test token `tRVYN` is deployed and 1,000,000 of it seeds the Core Light Pool. The script writes the addresses to `packages/web3/lightdive.json`; commit that file to point the site at the deployment. Mainnet is refused on purpose.
-3. **Run the randomness operator.** Time is cut into one-minute slots with one hash chain per UTC day. The operator commits today and the next two days, and each minute reveals the finished slot that a mint or dive waits for (mints resolve in about a minute, dives five minutes after departure). Mints and dives are refused in slots whose day has no commitment, so the game pauses if the operator stops for two days.
-   - Primary: the Cloudflare Worker in `workers/lightdive-operator`, every minute:
-     ```sh
-     npx wrangler deploy -c workers/lightdive-operator/wrangler.jsonc
-     npx wrangler secret put OPERATOR_PRIVATE_KEY -c workers/lightdive-operator/wrangler.jsonc
-     npx wrangler secret put LIGHTDIVE_SEED_SECRET -c workers/lightdive-operator/wrangler.jsonc
-     ```
-     Or let GitHub do it: `.github/workflows/lightdive-operator-deploy.yml` deploys the Worker and copies the operator secrets in (repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` needed). It runs by hand or whenever the deployment file changes on `main`, because the Worker bundles `packages/web3/lightdive.json` and must be redeployed after every contract deployment.
-   - Backup: `.github/workflows/lightdive-operator.yml` every five minutes on `main` (repository secrets `LIGHTDIVE_OPERATOR_PRIVATE_KEY`, `LIGHTDIVE_SEED_SECRET`).
-   - Local: `OPERATOR_PRIVATE_KEY=0x... LIGHTDIVE_SEED_SECRET=0x<64 random hex> npm run lightdive:operator -- --watch`
+| File | What |
+|---|---|
+| `Lightdive-Whitepaper-v1.0.pdf` | Whitepaper and engineering design, v1.0 (decisions confirmed 2026-10-06). Superseded by `WHITEPAPER-v3.md`. |
+| `source/whitepaper.html` | Source of the PDF. |
+| `simulation/sim.py`, `sweep.py`, `charts.py` | The v1 economy simulator, sweeps and charts. |
+| `ART-ASSETS.md` | Art asset checklist (specs, counts, priorities). |
+| `Lightdive-Art-Direction-v1.0.pdf` | Brief for every non-NFT art asset. Source: `source/art-direction.html`; reference art in `source/ref/`. |
+| `Lightdive-NFT-Art-Direction-v2.1.pdf` | Proposal for the spire and seeker NFT art. Source: `source/nft-art-direction.html`. |
 
-   Keep `LIGHTDIVE_SEED_SECRET` private: anyone holding it can predict results.
-4. **Open the spire sale** from `/admin/lightdive` with the deployer wallet (the contract owner). Seekers and prisms can be minted as soon as the operator has committed the current day.
-5. **Play** at `/game/lightdive` (not linked from the site and not indexed).
-
-For local development, point reads at a local chain by adding `"rpcUrl": "http://127.0.0.1:8545"` to `packages/web3/lightdive.json` (do not commit it).
+To re-run the v1 simulation: `cd docs/lightdive/simulation && python3 sim.py sim.json && python3 charts.py` (charts need matplotlib and Noto Sans TC TTFs in `./fonts`). To re-render a PDF: `source/render.mjs` prints `whitepaper.html` (or another page) with Playwright's Chromium.

@@ -183,3 +183,23 @@ PR：[RovynCore/rovyncore#1](https://github.com/RovynCore/rovyncore/pull/1)，�
 | 營運錢包餘額不足時補充測試網 ETH（揭露與承諾由它支付） | 老闆 |
 | 確認 NFT 美術設計書 v2.1 第 08 章的決定 | 老闆 |
 | 主網前：確認 Robinhood Chain 是否已有 VRF，有的話替換 RandomnessBeacon | 開發 |
+
+## 2026-10-30：v1 隨機數營運者退役（規格書 P0-02）
+
+v3 從 2026-10-16 起用 drand evmnet（鏈上驗證，沒有營運者、seed 或金鑰），但 v1 的營運者還在跑：
+
+- GitHub Actions `lightdive-operator.yml` 仍每隔幾小時排程執行並成功（最近一次 2026-10-29 12:50 UTC），用 repository secrets `LIGHTDIVE_OPERATOR_PRIVATE_KEY`、`LIGHTDIVE_SEED_SECRET` 對 v1 測試網合約送交易。
+- Cloudflare Worker `lightdive-operator-testnet`（每分鐘排程）仍存在，最後一次部署 2026-10-13。
+
+已做（repo 內）：
+- 兩個 workflow 拿掉排程與 push 觸發，只剩手動，並在檔頭註明退役。
+- `packages/contracts/lightdive/DEPRECATED.md`、`workers/lightdive-operator/DEPRECATED.md`；營運者腳本檔頭註明退役。
+- `docs/lightdive/README.md` 改寫：目前是 v3 與 drand，v1 移到「Legacy」。
+
+待老闆處理：
+
+| 事項 | 負責 |
+|---|---|
+| 刪除 Cloudflare Worker `lightdive-operator-testnet`（或允許我刪） | 老闆 |
+| 刪除 GitHub repository secrets `LIGHTDIVE_OPERATOR_PRIVATE_KEY`、`LIGHTDIVE_SEED_SECRET`（以及只給它用的 `CLOUDFLARE_API_TOKEN`，若沒有別的用途） | 老闆 |
+| 營運錢包 `0xe36D…6C90` 已不再需要，剩餘測試網 ETH 可以收回 | 老闆 |

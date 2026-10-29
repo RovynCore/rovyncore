@@ -103,6 +103,18 @@ export function DraftBar({ sim }: { sim: Game }) {
   );
 }
 
+/** drand, the randomness every result waits for, is behind by a minute or more (P0-02). Nothing is lost: a dive or
+ *  summon already fixed its round, and its result is that round's whenever drand publishes it. */
+export function DrandBanner({ sim }: { sim: Game }) {
+  const lag = sim.chain?.drandLag;
+  if (lag === null || lag === undefined || lag < 60) return null;
+  return (
+    <div className="v3-draftbar is-drand" role="status">
+      <span><b>{tl("隨機信標 drand 延遲中（約 {0} 分鐘）", { 0: Math.max(1, Math.round(lag / 60)) })}</b><small>{tl("揭曉會晚一點出現。已經出發或召喚的結果不受影響：它們用的那一輪早就固定了，drand 一公開就會揭曉。")}</small></span>
+    </div>
+  );
+}
+
 /** Summons whose drand round is late (v3.3: they open on their own as soon as drand publishes it; nothing to sign). */
 export function SummonBar({ sim }: { sim: Game }) {
   const ch = sim.chain!;

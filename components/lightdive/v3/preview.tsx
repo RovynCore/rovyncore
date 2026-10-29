@@ -13,7 +13,7 @@ import { GameIcon } from "../game/icon";
 import type { IconName } from "../game/icons";
 import { Nebula } from "../game/nebula";
 import { passesOn, useSim, type Game } from "./sim";
-import { ChainStrip, DraftBar, Faucet, SummonBar, TxPanel, WalletBox } from "./live-ui";
+import { ChainStrip, DraftBar, DrandBanner, Faucet, SummonBar, TxPanel, WalletBox } from "./live-ui";
 import { StarMap } from "./starmap";
 import { Credits, Lobby, Rovyn, rovynPool, type View } from "./pages";
 import { Guide } from "./guide";
@@ -211,7 +211,7 @@ export function LightdiveApp({ sim }: { sim: Game }) {
         {view === "dive" && <div className="v3-dock-rovyn">{rovyn}</div>}
         {view !== "dive" && <ObservatoryMusic quiet={view === "story" || view === "whitepaper"} />}
       </div>
-      {live && <><DraftBar sim={sim} /><SummonBar sim={sim} /><TxPanel sim={sim} /></>}
+      {live && <><DrandBanner sim={sim} /><DraftBar sim={sim} /><SummonBar sim={sim} /><TxPanel sim={sim} /></>}
 
       <nav className="hud-tabbar" aria-label={tl("潛光遠征")}>
         {PHONE.map((k) => {

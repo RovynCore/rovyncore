@@ -1,3 +1,4 @@
+// RETIRED 2026-10-30: the Lightdive v1 randomness operator. v3 uses drand with no operator; kept for history only.
 // Shared logic of the Lightdive randomness operator, used by the CLI (scripts/lightdive-operator.mjs)
 // and the Cloudflare Worker (workers/lightdive-operator). No file or environment access here.
 //

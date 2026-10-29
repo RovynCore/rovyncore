@@ -1,3 +1,4 @@
+// RETIRED 2026-10-30: the Lightdive v1 randomness operator. v3 uses drand with no operator; kept for history only.
 // Lightdive randomness operator (CLI). Commits one hash chain per UTC day ahead of time and reveals
 // the finished one-minute slots that mints and dives are waiting for. Mints and dives are only
 // accepted in slots whose day already has a commitment, so something must run this regularly:

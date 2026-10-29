@@ -41,3 +41,21 @@ jobs:
         run: npm run build
       - name: API integration tests
         run: npm run test:api
+
+  # Lightdive v3 (the live game's contracts) and the website's copy of its rules. Its own job: the ganache suite is
+  # the slowest test here.
+  lightdive-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm run install:ci
+      - name: Contract tests (drand verification, game contracts)
+        run: npm run test:lightdive:v3
+      - name: Website rules match the contracts
+        run: node --experimental-strip-types --test tests/lightdive-v3-rules.test.ts

@@ -1,4 +1,8 @@
-name: Lightdive randomness operator (testnet)
+name: Lightdive randomness operator (testnet, RETIRED)
+
+# RETIRED 2026-10-30. This served the Lightdive v1 contracts, which drew randomness from an operator hash chain.
+# Lightdive v3 uses drand evmnet, verified on chain, with no operator (docs/lightdive/README.md). The schedule is
+# removed; the workflow is kept for history only. Do not run it, and delete its repository secrets.
 
 # Backup for the Cloudflare Worker in workers/lightdive-operator, which runs every minute: commits the
 # daily hash chains ahead and reveals the one-minute slots that mints and dives wait for. Mints and
@@ -7,8 +11,6 @@ name: Lightdive randomness operator (testnet)
 # Scheduled workflows only run from the default branch.
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:

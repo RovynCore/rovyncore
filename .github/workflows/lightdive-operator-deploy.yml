@@ -1,4 +1,6 @@
-name: Deploy Lightdive operator Worker (testnet)
+name: Deploy Lightdive operator Worker (testnet, RETIRED)
+
+# RETIRED 2026-10-30 with the v1 operator (see lightdive-operator.yml). It no longer runs on push; kept for history only.
 
 # Deploys workers/lightdive-operator to Cloudflare and copies the operator secrets into it.
 # The Worker bundles packages/web3/lightdive.json, so it redeploys whenever that file changes on main.
@@ -7,13 +9,6 @@ name: Deploy Lightdive operator Worker (testnet)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - packages/web3/lightdive.json
-      - packages/web3/lightdive-abi.json
-      - scripts/lightdive-operator-core.mjs
-      - workers/lightdive-operator/**
 
 permissions:
   contents: read

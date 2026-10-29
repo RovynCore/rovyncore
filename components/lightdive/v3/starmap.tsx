@@ -193,7 +193,7 @@ export function StarMap({ sim, say }: { sim: Sim; say: (line: string) => void })
         </div>
       </section>
       <LiveLog sim={sim} />
-      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={featuredTitle(recordsOf(sim), sim.chain?.account ?? null)} omen={omenOf(sim, revealed)} onDone={closeReveal} onAgain={again} queued={fresh.length - 1} onAll={seeAll} />}
+      {revealed && !arriving && <Reveal key={revealed.id} d={revealed} skipScan={arrived === revealed.id} commission={commissionHere} title={featuredTitle(recordsOf(sim), sim.chain?.account ?? null)} omen={omenOf(sim, revealed)} onDone={closeReveal} onAgain={again} queued={fresh.length - 1} onAll={seeAll} verify={sim.mode === "chain" ? `/game/lightdive/verify/${revealed.id}` : undefined} />}
       {supplyFor && <SupplyPrompt sim={sim} go={[supplyFor]} onConfirm={(supply) => departAgain(supplyFor, supply)} onClose={() => setSupplyFor(null)} />}
       {dispatching && <Dispatch sim={sim} onClose={() => setDispatching(false)} onDeparted={departed} />}
     </div>
@@ -605,7 +605,7 @@ function Odds({ plan, base }: { plan: DivePlan; base?: number }) {
 
 /** The reveal: a short scan while the signal "comes back", then the result with a counting multiplier. */
 type RevealCommission = { title: string; bonus: number };
-function Reveal({ d, skipScan, onDone, onAgain, queued, onAll, commission, title, omen }: { d: SimDive; skipScan?: boolean; onDone: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null; omen: string[] }) {
+function Reveal({ d, skipScan, onDone, onAgain, queued, onAll, commission, title, omen, verify }: { d: SimDive; skipScan?: boolean; onDone: () => void; onAgain: () => void; queued: number; onAll: () => void; commission?: RevealCommission | null; title?: string | null; omen: string[]; verify?: string }) {
   const r = d.result!;
   const dest = DESTINATIONS[d.dest];
   const reason = r.wear > 1 ? TEXTS.wearReasons[dest.cluster][d.id % Math.max(1, TEXTS.wearReasons[dest.cluster].length)] : null;
@@ -662,6 +662,7 @@ function Reveal({ d, skipScan, onDone, onAgain, queued, onAll, commission, title
           <div><dt>{tl("耗損航程")}</dt><dd>{tl("{0} 次", { 0: r.wear })}{reason ? tl("：{0}", { 0: reason }) : ""}</dd></div>
         </dl>
         <ShareButtons d={d} title={title} />
+        {verify && <a className="v3-reveal__verify" href={verify} target="_blank" rel="noopener">{tl("自己驗證這趟結果")} ↗</a>}
         {queued > 0 && <button type="button" className="hud-btn hud-btn--ghost hud-btn--sm v3-acceptall" onClick={onAll}>{tl("還有 {0} 趟結果 · 全部略過", { 0: queued })}</button>}
         {commission && (
           <div className="v3-reveal__commission">

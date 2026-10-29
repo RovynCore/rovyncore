@@ -2207,3 +2207,7 @@ body:has(.v3-modal) .v3-chat__fab { display: none; }
 .v3-vote__bars li.is-top > i > i { background: #c9ff55; }
 .v3-vote__bars li.is-mine b::after { content: " ✓"; color: #f0c766; }
 .v3-vote__bars span { color: var(--h-text-2); font-variant-numeric: tabular-nums; }
+
+/* P0-02 (10-30): the reveal links to the page that recomputes the result from drand */
+.v3-reveal__verify { justify-self: center; color: #9fe8d6; font-size: 13px; text-decoration: none; }
+.v3-reveal__verify:hover { text-decoration: underline; }

@@ -23,7 +23,7 @@ import { TEXTS } from "@/lib/lightdive-v3/texts";
 import { tl } from "@/lib/lightdive-v3/i18n";
 import { gameChain } from "@/lib/lightdive-v3/deployment";
 import {
-  NO_SETTLE, SEALED, decideFeed, drandSignature, knownSignature, predictDive, predictSummon, readFeed, readLedger, readMarket, readOnTeam, readPlayer,
+  NO_SETTLE, SEALED, decideFeed, drandLag, drandSignature, knownSignature, predictDive, predictSummon, readFeed, readLedger, readMarket, readOnTeam, readPlayer,
   readRecentSummons, readWeek, readWorld, roundTime, settleOf,
   type Contracts3, type Ctx, type FeedItem, type MarketListing, type Player, type RecentSummon, type Settle, type World,
 } from "@/lib/lightdive-v3/onchain";
@@ -69,6 +69,8 @@ export type ChainExtras = {
   discardTeams: () => void;
   /** Results and cards decided by drand that the next transaction will write on chain. */
   unsettled: number;
+  /** Seconds drand is behind the clock (null: not checked or unreachable). A minute or more: the beacon is stalled. */
+  drandLag: number | null;
   tx: TxState | null;
   closeTx: () => void;
   join: () => Promise<void>;
@@ -295,6 +297,7 @@ export function useChain(): Game {
   const [names, setNames] = useState<Record<number, string>>({});
   const [pick, setPick] = useState<{ account: string; day: number; index: number } | null>(null); // the commission for the next dive
   const [tx, setTx] = useState<TxState | null>(null);
+  const [lag, setLag] = useState<number | null>(null);
   const inflight = useRef<Promise<void> | null>(null);
   const again = useRef(false);
 
@@ -368,6 +371,13 @@ export function useChain(): Game {
     const t = window.setInterval(() => { if (!document.hidden) void load(); }, 20_000);
     return () => window.clearInterval(t);
   }, [load]);
+  // the beacon's health, once a minute (results wait for drand; a stalled beacon is shown, nothing is lost)
+  useEffect(() => {
+    const check = () => { if (!document.hidden) void drandLag().then(setLag); };
+    queueMicrotask(check);
+    const t = window.setInterval(check, 60_000);
+    return () => window.clearInterval(t);
+  }, []);
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now() + offset.current), 1000);
     queueMicrotask(() => setNow(Date.now() + offset.current));
@@ -821,6 +831,7 @@ export function useChain(): Game {
       saveTeams,
       discardTeams: () => setDrafts({}),
       unsettled,
+      drandLag: lag,
       tx,
       closeTx: () => setTx(null),
       join,
